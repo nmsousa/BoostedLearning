@@ -1,20 +1,149 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
+    <ion-title>BoostedLearning</ion-title>
+    <ion-buttons slot="end">
+      <!-- Learning-language selector: flag-only button, flag + name inside -->
+      <button
+        type="button"
+        class="lang-trigger"
+        id="lang-trigger"
+        aria-label="Change learning language">
+        <img class="flag" [src]="currentLanguage.flagUrl" [alt]="currentLanguage.name" />
+        <ion-icon name="chevron-down" class="lang-caret"></ion-icon>
+      </button>
+      <ion-popover trigger="lang-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
+        <ng-template>
+          <ion-list class="lang-list">
+            <ion-item
+              *ngFor="let lang of availableLanguages"
+              button
+              detail="false"
+              [class.active]="lang.code === learningLanguage"
+              (click)="selectLanguage(lang.code)">
+              <img class="flag" slot="start" [src]="lang.flagUrl" [alt]="lang.name" />
+              <ion-label>{{ lang.name }}</ion-label>
+              <ion-icon *ngIf="lang.code === learningLanguage" name="checkmark" slot="end" color="primary"></ion-icon>
+            </ion-item>
+          </ion-list>
+        </ng-template>
+      </ion-popover>
+      <ion-button (click)="navigateToSettings()" aria-label="Settings">
+        <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <ion-header collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
+      <ion-title size="large">BoostedLearning</ion-title>
     </ion-toolbar>
   </ion-header>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>{{ t('common.loading') }}</p>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading" class="home-content">
+    <!-- Hero section with primary action -->
+    <section class="hero-section" *ngIf="dueCount > 0">
+      <ion-card class="primary-action-card" (click)="startReviewSession()">
+        <ion-card-content>
+          <div class="action-icon">
+            <ion-icon name="play-circle" color="primary"></ion-icon>
+          </div>
+          <div class="action-text">
+            <h2>{{ t('session.start') }}</h2>
+            <p>{{ dueCount }} {{ t('progress.dueToday') }}</p>
+          </div>
+          <ion-icon name="chevron-forward" class="action-arrow"></ion-icon>
+        </ion-card-content>
+      </ion-card>
+    </section>
+
+    <!-- Recovery alert -->
+    <ion-card *ngIf="recoveringCount > 0" class="recovery-card">
+      <ion-card-content>
+        <ion-icon name="alert-circle" color="warning"></ion-icon>
+        <div class="recovery-text">
+          <strong>{{ t('recovery.title') }}</strong>
+          <span>{{ recoveringCount }} {{ t('recovery.forgottenItems') }}</span>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Continue learning (single entry for the selected language) -->
+    <section class="continue-section" *ngIf="courseLanguages.length > 0">
+      <ion-item
+        [button]="true"
+        (click)="navigateToLanguage(learningLanguage)"
+        detail="true"
+        class="continue-item"
+      >
+        <ion-icon name="book-outline" slot="start" color="primary"></ion-icon>
+        <ion-label>
+          <h2>Continue learning</h2>
+          <p>Pick up where you left off</p>
+        </ion-label>
+      </ion-item>
+    </section>
+
+    <!-- Practice modes section -->
+    <section class="practice-section">
+      <h3 class="section-title">Practice</h3>
+      <div class="mode-grid">
+        <button type="button" class="mode-card flip" (click)="startMode('flip')">
+          <ion-icon name="albums-outline"></ion-icon>
+          <span class="mode-name">Flashcards</span>
+          <span class="mode-desc">Flip &amp; rate yourself</span>
+        </button>
+
+        <button type="button" class="mode-card write" (click)="startMode('write')">
+          <ion-icon name="create-outline"></ion-icon>
+          <span class="mode-name">Write</span>
+          <span class="mode-desc">Type the translation</span>
+        </button>
+
+        <button type="button" class="mode-card match" (click)="startMode('match')">
+          <ion-icon name="git-compare-outline"></ion-icon>
+          <span class="mode-name">Match</span>
+          <span class="mode-desc">Connect the pairs</span>
+        </button>
+
+        <button type="button" class="mode-card quiz" (click)="startMode('quiz')">
+          <ion-icon name="help-circle-outline"></ion-icon>
+          <span class="mode-name">Quiz</span>
+          <span class="mode-desc">Multiple choice</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Quick stats -->
+    <section class="stats-section">
+      <div class="stat-card">
+        <ion-icon name="flame-outline" color="primary"></ion-icon>
+        <div class="stat-value">{{ dueCount }}</div>
+        <div class="stat-label">Due today</div>
+      </div>
+      <div class="stat-card">
+        <ion-icon name="refresh-outline" color="warning"></ion-icon>
+        <div class="stat-value">{{ recoveringCount }}</div>
+        <div class="stat-label">Recovering</div>
+      </div>
+    </section>
+
+    <!-- Empty state -->
+    <div *ngIf="courseLanguages.length === 0 && !isLoading" class="empty-state">
+      <ion-icon name="school-outline"></ion-icon>
+      <h2>Welcome to BoostedLearning</h2>
+      <p>Start your language learning journey today.</p>
+      <ion-button expand="block" (click)="navigateToLanguage('nl')">
+        Start Learning Dutch
+      </ion-button>
+    </div>
   </div>
 </ion-content>

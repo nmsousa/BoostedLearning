@@ -1,0 +1,203 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="endStudy()" aria-label="End study">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      <span *ngIf="levelNumber > 0">Level {{ levelNumber }} · </span>
+      {{ completedCount }} / {{ totalUnique }}
+    </ion-title>
+  </ion-toolbar>
+  <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="study-content">
+  <!-- Question Phase (also shown when correct) -->
+  <div *ngIf="(phase === 'question' || (phase === 'feedback' && feedbackResult === 'correct')) && currentCard" class="question-container">
+    <div class="card-section">
+      <div class="word-display">
+        <h1 class="target-word">{{ promptText }}</h1>
+        <p class="instruction">{{ instructionText }}</p>
+        
+        <!-- Hint display -->
+        <p *ngIf="hintText && phase === 'question'" class="hint-display">
+          💡 {{ hintText }}
+        </p>
+      </div>
+    </div>
+
+    <div class="answer-section">
+      <!-- Input shown during question phase -->
+      <ng-container *ngIf="phase === 'question'">
+        <ion-item class="answer-input">
+          <ion-input
+            #answerInput
+            [(ngModel)]="userAnswer"
+            type="text"
+            placeholder="Type your answer..."
+            (keyup.enter)="submitAnswer()"
+            aria-label="Your answer">
+          </ion-input>
+        </ion-item>
+
+        <div class="button-row">
+          <ion-button
+            expand="block"
+            (click)="submitAnswer()"
+            [disabled]="!userAnswer.trim()"
+            class="submit-button">
+            Check
+          </ion-button>
+          
+          <ion-button
+            fill="outline"
+            color="medium"
+            (click)="showHint()"
+            class="hint-button"
+            [disabled]="hintExhausted"
+            aria-label="Show a hint">
+            <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </ng-container>
+
+      <!-- Correct answer display (same layout as input) -->
+      <ng-container *ngIf="phase === 'feedback' && feedbackResult === 'correct'">
+        <ion-item class="answer-input correct-answer-display">
+          <ion-icon name="checkmark-circle" slot="start" class="correct-icon"></ion-icon>
+          <span class="answered-text">{{ submittedAnswer }}</span>
+        </ion-item>
+
+        <ion-button expand="block" color="success" (click)="nextCard()" class="submit-button">
+          Continue
+        </ion-button>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Feedback Phase (only for almost/incorrect) -->
+  <div *ngIf="phase === 'feedback' && feedbackResult !== 'correct'" class="question-container">
+    <!-- Keep word prominent like question screen - same structure -->
+    <div class="card-section">
+      <div class="word-display">
+        <h1 class="target-word">{{ promptText }}</h1>
+      </div>
+    </div>
+
+    <div class="answer-section">
+      <!-- Almost: encouragement + a hint of the correct answer -->
+      <ng-container *ngIf="feedbackResult === 'almost'">
+        <div class="almost-hint">
+          <p class="hint-text">Almost! Small typo in your answer:</p>
+          <span class="user-attempt">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            {{ submittedAnswer }}
+          </span>
+          <p *ngIf="hintText" class="almost-hint-reveal">💡 {{ hintText }}</p>
+        </div>
+
+        <div class="button-row">
+          <ion-button expand="block" color="warning" (click)="tryAgain()" class="submit-button">
+            Try Again
+          </ion-button>
+          <ion-button
+            fill="outline"
+            color="medium"
+            (click)="showHintInAlmost()"
+            class="hint-button"
+            [disabled]="hintExhausted"
+            aria-label="Show a hint">
+            <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
+          </ion-button>
+        </div>
+        <ion-button expand="block" fill="outline" (click)="acceptAlmost()" class="skip-button">
+          Skip
+        </ion-button>
+      </ng-container>
+
+      <!-- Incorrect: show comparison -->
+      <ng-container *ngIf="feedbackResult === 'incorrect'">
+        <!-- Answer revealed via the hint button -->
+        <ng-container *ngIf="revealedViaHint">
+          <div class="revealed-label">
+            <ion-icon name="bulb"></ion-icon>
+            <span>{{ revealedForms.length > 1 ? 'Accepted answers' : 'The answer is' }}</span>
+          </div>
+
+          <div class="answer-reveal">
+            <span class="right-answer">{{ revealedForms.join(' · ') }}</span>
+          </div>
+        </ng-container>
+
+        <!-- Normal wrong answer -->
+        <ng-container *ngIf="!revealedViaHint">
+          <div class="incorrect-label">
+            <ion-icon name="close-circle"></ion-icon>
+            <span>Incorrect</span>
+          </div>
+
+          <div class="answer-comparison">
+            <span class="wrong-answer">{{ submittedAnswer }}</span>
+            <ion-icon name="arrow-forward"></ion-icon>
+            <span class="right-answer">{{ correctAnswer }}</span>
+          </div>
+        </ng-container>
+
+        <!-- Alternatives if any -->
+        <p *ngIf="alternativeAnswers.length > 0" class="alternatives">
+          Also: {{ alternativeAnswers.join(', ') }}
+        </p>
+
+        <ion-button expand="block" [color]="revealedViaHint ? 'warning' : 'danger'" (click)="nextCard()" class="submit-button">
+          <ion-icon name="arrow-forward" slot="end"></ion-icon>
+          Continue
+        </ion-button>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Complete Phase -->
+  <div *ngIf="phase === 'complete'" class="complete-container">
+    <!-- Star display -->
+    <div class="stars-display">
+      <ion-icon *ngFor="let s of getStarArray(earnedStars)" name="star" class="star filled"></ion-icon>
+      <ion-icon *ngFor="let s of getEmptyStarArray(earnedStars)" name="star-outline" class="star empty"></ion-icon>
+    </div>
+
+    <h1>
+      <ng-container *ngIf="earnedStars >= 1">
+        {{ levelNumber > 0 ? 'Level Complete!' : 'Study Complete!' }}
+      </ng-container>
+      <ng-container *ngIf="earnedStars === 0">
+        Keep Practicing!
+      </ng-container>
+    </h1>
+    
+    <p *ngIf="isNewBest" class="new-best">🎉 New best score!</p>
+
+    <div class="summary-card">
+      <div class="summary-stat">
+        <span class="stat-value">{{ totalUnique }}</span>
+        <span class="stat-label">Cards</span>
+      </div>
+      <div class="summary-stat">
+        <span class="stat-value correct">{{ correctCount }}</span>
+        <span class="stat-label">Correct</span>
+      </div>
+      <div class="summary-stat">
+        <span class="stat-value incorrect">{{ incorrectCount }}</span>
+        <span class="stat-label">Incorrect</span>
+      </div>
+      <div class="summary-stat">
+        <span class="stat-value">{{ accuracy }}%</span>
+        <span class="stat-label">Accuracy</span>
+      </div>
+    </div>
+
+    <ion-button expand="block" (click)="finishStudy()" class="finish-button">
+      Done
+    </ion-button>
+  </div>
+</ion-content>

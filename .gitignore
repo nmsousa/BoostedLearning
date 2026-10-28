@@ -68,3 +68,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Stray local test output
+test-core-output.txt

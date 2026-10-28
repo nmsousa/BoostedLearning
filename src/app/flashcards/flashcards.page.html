@@ -1,0 +1,94 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ modeLabel }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">{{ modeLabel }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="loading-state">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading decks...</p>
+  </div>
+
+  <div *ngIf="!isLoading" class="flashcards-container">
+    <!-- Empty state -->
+    <div *ngIf="decks.length === 0" class="empty-state">
+      <ion-icon name="layers-outline"></ion-icon>
+      <h2>No Words Yet</h2>
+      <p>Add vocabulary from Settings → Vocabulary to start practicing.</p>
+      <ion-button (click)="goToVocabularySettings()" expand="block">
+        <ion-icon slot="start" name="settings-outline"></ion-icon>
+        Open Settings
+      </ion-button>
+    </div>
+
+    <!-- Deck list -->
+    <div *ngIf="decks.length > 0" class="deck-list">
+      <ion-card *ngFor="let deck of decks" class="deck-card">
+        <ion-card-header (click)="toggleDeckExpand(deck.id)" class="deck-header">
+          <ion-card-title>{{ deck.name }}</ion-card-title>
+          <ion-card-subtitle>
+            {{ getUniqueCardCount(deck) }} cards · {{ getLevels(deck.id).length }} levels
+            <ion-badge *ngIf="deck.isBundled" color="primary" style="margin-left: 8px;">Built-in</ion-badge>
+            <ion-badge *ngIf="getCustomCardCount(deck) > 0" color="tertiary" style="margin-left: 8px;">
+              {{ getCustomCardCount(deck) }} custom
+            </ion-badge>
+          </ion-card-subtitle>
+          <div class="deck-stars">
+            <ion-icon name="star" color="warning"></ion-icon>
+            <span>{{ getTotalStars(deck.id) }} / {{ getMaxStars(deck.id) }}</span>
+            <ion-icon [name]="isDeckExpanded(deck.id) ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
+          </div>
+        </ion-card-header>
+
+        <!-- Levels list (expandable) -->
+        <ion-card-content *ngIf="isDeckExpanded(deck.id)" class="levels-content">
+          <div class="levels-list">
+            <div
+              *ngFor="let level of getLevels(deck.id)"
+              class="level-item"
+              [class.locked]="!level.isUnlocked"
+              (click)="startLevel(deck, level)">
+
+              <div class="level-info">
+                <span class="level-number">Level {{ level.levelNumber }}</span>
+                <span class="level-cards">{{ level.cardCount }} cards</span>
+              </div>
+
+              <div class="level-stars">
+                <ng-container *ngIf="level.isUnlocked">
+                  <ion-icon *ngFor="let s of getStarArray(level.bestStars)" name="star" class="star filled"></ion-icon>
+                  <ion-icon *ngFor="let s of getEmptyStarArray(level.bestStars)" name="star-outline" class="star empty"></ion-icon>
+                </ng-container>
+                <ion-icon *ngIf="!level.isUnlocked" name="lock-closed" class="lock-icon"></ion-icon>
+              </div>
+            </div>
+          </div>
+
+          <div class="deck-actions">
+            <ion-button fill="outline" size="small" (click)="startQuickStudy(deck)">
+              <ion-icon slot="start" name="shuffle-outline"></ion-icon>
+              Quick Study
+            </ion-button>
+            <ion-button fill="clear" size="small" (click)="confirmResetProgress(deck)">
+              <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+            </ion-button>
+            <ion-button *ngIf="!deck.isBundled" fill="clear" size="small" color="danger" (click)="confirmDeleteDeck(deck)">
+              <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+</ion-content>

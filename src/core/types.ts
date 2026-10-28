@@ -15,7 +15,15 @@
  * Measurable aspects of knowledge for a learning item.
  * Each dimension is tracked independently (R1.5).
  */
-export type SkillDimension = 'spelling' | 'meaning' | 'listening-recognition' | 'productive-recall';
+export type SkillDimension = 
+  | 'spelling' 
+  | 'meaning' 
+  | 'listening-recognition' 
+  | 'productive-recall'
+  | 'receptive_vocabulary'
+  | 'productive_vocabulary'
+  | 'grammar'
+  | 'listening_comprehension';
 
 /**
  * Categories of exercises the learner can complete.
@@ -23,22 +31,14 @@ export type SkillDimension = 'spelling' | 'meaning' | 'listening-recognition' | 
  */
 export type ExerciseType =
   | 'flashcard'
-  | 'matching-word-translation'
-  | 'matching-word-image'
-  | 'target-to-native'
-  | 'native-to-target'
+  | 'matching'
+  | 'typed-translation'
   | 'multiple-choice'
-  | 'fill-in-blank'
-  | 'typed-vocabulary'
-  | 'sentence-translation'
+  | 'fill-blank'
+  | 'article-selection'
   | 'word-order'
-  | 'listening-comprehension'
-  | 'audio-dictation'
-  | 'grammar-selection'
-  | 'verb-conjugation'
-  | 'articles-gender-plurals'
-  | 'cloze'
-  | 'reading'
+  | 'listening'
+  | 'conjugation'
   | 'mixed-review';
 
 // ============================================================================
@@ -50,6 +50,16 @@ export type ExerciseType =
  * Recognition (selecting from options) vs unaided recall (producing from memory).
  */
 export type AttemptMode = 'recognition' | 'unaided';
+
+/**
+ * Simplified outcome result string for exercise modules.
+ * Maps to: correct/incorrect, recognition/unaided, with/without hint.
+ */
+export type AttemptOutcomeResult = 
+  | 'correct-unaided'
+  | 'correct-recognition'
+  | 'correct-with-hint'
+  | 'incorrect';
 
 /**
  * The outcome of a single exercise attempt.
@@ -64,6 +74,25 @@ export interface AttemptOutcome {
   usedHint: boolean;
   /** Which skill dimension this attempt tested */
   skillDimension: SkillDimension;
+}
+
+/**
+ * Convert an AttemptOutcomeResult string to a full AttemptOutcome object.
+ */
+export function parseOutcomeResult(
+  result: AttemptOutcomeResult,
+  skillDimension: SkillDimension
+): AttemptOutcome {
+  switch (result) {
+    case 'correct-unaided':
+      return { correct: true, mode: 'unaided', usedHint: false, skillDimension };
+    case 'correct-recognition':
+      return { correct: true, mode: 'recognition', usedHint: false, skillDimension };
+    case 'correct-with-hint':
+      return { correct: true, mode: 'unaided', usedHint: true, skillDimension };
+    case 'incorrect':
+      return { correct: false, mode: 'unaided', usedHint: false, skillDimension };
+  }
 }
 
 // ============================================================================
@@ -110,8 +139,12 @@ export interface ReviewState {
   learningItemId: string;
   /** Opaque scheduler state */
   schedulerState: SchedulerState | null;
-  /** Per-skill-dimension tracking (R1.5) */
-  perSkillState: Record<SkillDimension, PerSkillReviewState>;
+  /**
+   * Per-skill-dimension tracking (R1.5).
+   * Partial because an item only tracks the process-skill dimensions it has
+   * been exercised on; not every SkillDimension is populated for every item.
+   */
+  perSkillState: Partial<Record<SkillDimension, PerSkillReviewState>>;
   /** Total attempts across all skills */
   attemptCount: number;
   /** Total mistakes across all skills */
@@ -345,4 +378,82 @@ export interface RecallQualityResult {
   rating: SchedulerRating;
   /** Evidence weight for retention calculation (higher = stronger evidence) */
   evidenceWeight: number;
+}
+
+
+// ============================================================================
+// Answer Validation (R8)
+// ============================================================================
+
+/**
+ * Tolerance policy for answer validation.
+ * Each dimension is independently toggleable (R8.1-R8.7).
+ */
+export interface TolerancePolicy {
+  /** Ignore case differences (default: true) */
+  ignoreCase: boolean;
+  /** Ignore accent/diacritic differences (default: true, except for accent practice R8.2) */
+  ignoreAccents: boolean;
+  /** Ignore punctuation and whitespace differences (default: true, R8.3) */
+  ignorePunctuationWhitespace: boolean;
+  /** Accept alternative word orders (default: false, R8.4) */
+  freeWordOrder: boolean;
+  /** Accept defined inflections and contractions (default: true, R8.6) */
+  acceptInflectionsContractions: boolean;
+}
+
+/**
+ * Default tolerance policy - permissive by default.
+ */
+export const DEFAULT_TOLERANCE_POLICY: TolerancePolicy = {
+  ignoreCase: true,
+  ignoreAccents: true,
+  ignorePunctuationWhitespace: true,
+  freeWordOrder: false,
+  acceptInflectionsContractions: true,
+};
+
+/**
+ * Graded objective that affects tolerance policy.
+ * When set, the corresponding tolerance is tightened.
+ */
+export type GradedObjective = 'accents' | 'spelling' | 'grammar' | 'vocabulary' | null;
+
+/**
+ * Input to the answer validator.
+ */
+export interface ValidationRequest {
+  /** The learner's submitted answer */
+  submitted: string;
+  /** Curated set of valid answers (alternatives, inflections, contractions) */
+  acceptedAnswers: string[];
+  /** Tolerance policy for this validation */
+  policy: TolerancePolicy;
+  /** Graded objective that may override tolerance (R8.2) */
+  gradedObjective?: GradedObjective;
+}
+
+/**
+ * Result of answer validation.
+ */
+export interface ValidationResult {
+  /** Whether the submitted answer is correct */
+  correct: boolean;
+  /** The accepted answer that matched, or null if incorrect */
+  matchedAnswer: string | null;
+  /** Normalized form of the submitted answer (for debugging/display) */
+  normalizedSubmission: string;
+}
+
+/**
+ * The Answer_Validator interface.
+ * Validates learner responses against curated accepted answers (R8).
+ */
+export interface AnswerValidatorInterface {
+  /**
+   * Validate a submitted answer against accepted answers.
+   * @param request - The validation request
+   * @returns The validation result
+   */
+  validate(request: ValidationRequest): ValidationResult;
 }

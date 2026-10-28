@@ -1,0 +1,168 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="endSession()" aria-label="End session">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      {{ currentIndex + 1 }} / {{ totalItems }}
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="skipItem()" aria-label="Skip">
+        <ion-icon slot="icon-only" name="play-skip-forward-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <!-- Progress bar -->
+  <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="session-content">
+  <!-- Exercise Phase -->
+  <div *ngIf="phase === 'exercise'" class="exercise-container">
+    <!-- Prompt -->
+    <div class="prompt-section">
+      <h1 class="prompt-text">{{ prompt }}</h1>
+      
+      <!-- Audio controls -->
+      <div *ngIf="showAudioControls" class="audio-controls">
+        <ion-button fill="clear" (click)="playAudio(false)" aria-label="Play audio">
+          <ion-icon slot="icon-only" name="volume-high-outline"></ion-icon>
+        </ion-button>
+        <ion-button *ngIf="canSlowDown" fill="clear" (click)="playAudio(true)" aria-label="Play slow">
+          <ion-icon slot="start" name="speedometer-outline"></ion-icon>
+          {{ t('audio.slowDown') }}
+        </ion-button>
+      </div>
+    </div>
+    
+    <!-- Hint -->
+    <div *ngIf="hint" class="hint-section">
+      <ion-button 
+        *ngIf="!hintVisible" 
+        fill="outline" 
+        size="small" 
+        (click)="showHint()"
+      >
+        <ion-icon slot="start" name="bulb-outline"></ion-icon>
+        {{ t('hint.show') }}
+      </ion-button>
+      <p *ngIf="hintVisible" class="hint-text">
+        <ion-icon name="bulb" color="warning"></ion-icon>
+        {{ hint }}
+      </p>
+    </div>
+    
+    <!-- Answer input -->
+    <div class="answer-section">
+      <ion-item class="answer-input">
+        <ion-input
+          #answerInput
+          [(ngModel)]="userAnswer"
+          type="text"
+          placeholder="{{ t('exercise.typeAnswer') }}"
+          (keyup.enter)="submitAnswer()"
+          aria-label="Your answer"
+        ></ion-input>
+      </ion-item>
+      
+      <ion-button 
+        expand="block" 
+        (click)="submitAnswer()" 
+        [disabled]="!userAnswer.trim()"
+        class="submit-button"
+      >
+        {{ t('common.submit') }}
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Feedback Phase -->
+  <div *ngIf="phase === 'feedback'" class="feedback-container">
+    <div class="feedback-icon" 
+         [class.correct]="feedbackResult === 'correct'" 
+         [class.almost]="feedbackResult === 'almost'"
+         [class.incorrect]="feedbackResult === 'incorrect'">
+      <ion-icon [name]="feedbackResult === 'correct' ? 'checkmark-circle' : (feedbackResult === 'almost' ? 'alert-circle' : 'close-circle')"></ion-icon>
+    </div>
+    
+    <h2 class="feedback-message">
+      <ng-container [ngSwitch]="feedbackResult">
+        <span *ngSwitchCase="'correct'">{{ t('feedback.correct') }}</span>
+        <span *ngSwitchCase="'almost'">{{ t('feedback.almost') }}</span>
+        <span *ngSwitchDefault>{{ t('feedback.incorrect') }}</span>
+      </ng-container>
+    </h2>
+    
+    <!-- Show what user typed -->
+    <div class="user-answer-section">
+      <p class="user-answer-label">{{ t('feedback.youTyped') }}</p>
+      <p class="user-answer-text" 
+         [class.correct]="feedbackResult === 'correct'"
+         [class.almost]="feedbackResult === 'almost'"
+         [class.incorrect]="feedbackResult === 'incorrect'">{{ submittedAnswer }}</p>
+    </div>
+    
+    <!-- Show correct answer only when incorrect (not for "correct" or "almost") -->
+    <div *ngIf="feedbackResult === 'incorrect'" class="correct-answer-section">
+      <p class="correct-answer-label">{{ t('feedback.correctAnswer', { answer: '' }) }}</p>
+      <p class="correct-answer-text">{{ correctAnswer }}</p>
+    </div>
+    
+    <!-- Show insight if available (for incorrect answers) -->
+    <div *ngIf="feedbackInsight && feedbackResult === 'incorrect'" class="insight-section">
+      <p class="insight-text">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        {{ feedbackInsight }}
+      </p>
+    </div>
+    
+    <!-- Buttons depend on result -->
+    <ng-container [ngSwitch]="feedbackResult">
+      <!-- Almost correct: two options -->
+      <div *ngSwitchCase="'almost'" class="action-buttons">
+        <ion-button expand="block" color="warning" (click)="tryAgain()" class="retry-button">
+          <ion-icon slot="start" name="refresh"></ion-icon>
+          {{ t('feedback.tryAgain') }}
+        </ion-button>
+        <ion-button expand="block" fill="outline" (click)="acceptAlmost()" class="accept-button">
+          {{ t('common.continue') }}
+        </ion-button>
+      </div>
+      
+      <!-- Correct or Incorrect: continue -->
+      <ion-button *ngSwitchDefault expand="block" (click)="nextExercise()" class="continue-button">
+        {{ t('common.continue') }}
+      </ion-button>
+    </ng-container>
+  </div>
+
+  <!-- Complete Phase -->
+  <div *ngIf="phase === 'complete'" class="complete-container">
+    <div class="complete-icon">
+      <ion-icon name="trophy"></ion-icon>
+    </div>
+    
+    <h1>{{ t('session.complete') }}</h1>
+    
+    <div class="summary-card">
+      <div class="summary-stat">
+        <span class="stat-value">{{ getSummary().completedItems }}</span>
+        <span class="stat-label">{{ t('session.itemsStudied', { count: getSummary().completedItems }) }}</span>
+      </div>
+      <div class="summary-stat">
+        <span class="stat-value">{{ getSummary().accuracy }}%</span>
+        <span class="stat-label">{{ t('session.accuracy', { percent: getSummary().accuracy }) }}</span>
+      </div>
+      <div class="summary-stat" *ngIf="getSummary().durationMinutes > 0">
+        <span class="stat-value">{{ getSummary().durationMinutes }}</span>
+        <span class="stat-label">minutes</span>
+      </div>
+    </div>
+    
+    <ion-button expand="block" (click)="finishSession()">
+      {{ t('common.continue') }}
+    </ion-button>
+  </div>
+</ion-content>

@@ -1,0 +1,272 @@
+// Loading state
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  gap: 1rem;
+  
+  ion-spinner {
+    width: 48px;
+    height: 48px;
+  }
+  
+  p {
+    color: var(--ion-color-medium);
+  }
+}
+
+.flashcards-container {
+  padding: 16px;
+}
+
+// Empty state
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  min-height: 60vh;
+
+  ion-icon {
+    font-size: 80px;
+    color: var(--ion-color-medium);
+    margin-bottom: 24px;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    margin: 0 0 24px;
+    max-width: 280px;
+  }
+
+  ion-button {
+    max-width: 280px;
+  }
+}
+
+// Deck list
+.deck-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.deck-card {
+  margin: 0;
+}
+
+.deck-header {
+  cursor: pointer;
+  position: relative;
+  
+  ion-card-title {
+    font-size: 1.25rem;
+  }
+  
+  ion-card-subtitle {
+    font-size: 0.875rem;
+    color: var(--ion-color-medium);
+  }
+}
+
+.deck-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: var(--ion-color-medium);
+  
+  ion-icon[name="star"] {
+    font-size: 18px;
+  }
+  
+  .expand-icon {
+    margin-left: auto;
+    font-size: 20px;
+  }
+}
+
+// Levels content
+.levels-content {
+  padding-top: 0;
+}
+
+.levels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.level-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--ion-color-light);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  
+  &:hover:not(.locked) {
+    background: var(--ion-color-light-shade);
+  }
+  
+  &.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.level-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  
+  .level-number {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  
+  .level-cards {
+    font-size: 0.8rem;
+    color: var(--ion-color-medium);
+  }
+}
+
+.level-stars {
+  display: flex;
+  gap: 2px;
+  
+  .star {
+    font-size: 20px;
+    
+    &.filled {
+      color: var(--ion-color-warning);
+    }
+    
+    &.empty {
+      color: var(--ion-color-medium);
+    }
+  }
+  
+  .lock-icon {
+    font-size: 20px;
+    color: var(--ion-color-medium);
+  }
+}
+
+.deck-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--ion-color-light-shade);
+}
+
+.add-deck-button {
+  margin-top: 8px;
+}
+
+// Import modal
+.import-instructions {
+  background: var(--ion-color-light);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+  
+  ol {
+    margin: 0;
+    padding-left: 20px;
+    
+    li {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: var(--ion-color-medium-shade);
+    }
+  }
+}
+
+.json-input {
+  margin-top: 16px;
+  
+  ion-textarea {
+    font-family: monospace;
+    font-size: 0.85rem;
+  }
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ion-color-danger);
+  font-size: 0.9rem;
+  margin-top: 16px;
+  
+  ion-icon {
+    flex-shrink: 0;
+  }
+}
+
+// Custom cards notice (in expanded deck + manual modal)
+.custom-notice,
+.manual-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(var(--ion-color-tertiary-rgb), 0.12);
+  border: 1px solid rgba(var(--ion-color-tertiary-rgb), 0.35);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--ion-text-color);
+
+  ion-icon {
+    flex-shrink: 0;
+    font-size: 18px;
+    margin-top: 1px;
+    color: var(--ion-color-tertiary-shade);
+  }
+}
+
+.manual-notice {
+  margin-top: 20px;
+  margin-bottom: 0;
+}
+
+// Manual card modal
+.manual-intro {
+  margin-bottom: 16px;
+
+  p {
+    margin: 0;
+    color: var(--ion-color-medium);
+    font-size: 0.95rem;
+  }
+}
+
+.field-hint {
+  margin: 6px 4px 0;
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+}

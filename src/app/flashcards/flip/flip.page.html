@@ -1,0 +1,118 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="close()" aria-label="Close flashcards">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      <span *ngIf="levelNumber > 0">Level {{ levelNumber }} · </span>
+      {{ currentIndex + (phase === 'complete' ? 0 : 1) }} / {{ cards.length }}
+    </ion-title>
+  </ion-toolbar>
+  <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="flip-content">
+  <!-- Card phase -->
+  <div *ngIf="phase === 'card' && currentCard" class="flip-container">
+    <!-- Flip card -->
+    <div
+      class="flip-card"
+      [class.flipped]="isFlipped"
+      [class.exit-left]="exitDirection === 'left'"
+      [class.exit-right]="exitDirection === 'right'"
+      [class.exit-down]="exitDirection === 'down'"
+      [class.entering]="entering"
+      (click)="flip()">
+      <div class="flip-card-inner">
+        <!-- Front: Dutch -->
+        <div class="flip-card-face flip-card-front">
+          <span class="lang-tag">Dutch</span>
+          <h1 class="card-word">{{ frontText }}</h1>
+          <span class="tap-hint">
+            <ion-icon name="sync-outline"></ion-icon>
+            Tap to flip
+          </span>
+        </div>
+        <!-- Back: English -->
+        <div class="flip-card-face flip-card-back">
+          <span class="lang-tag">English</span>
+          <h1 class="card-word">{{ backText }}</h1>
+          <span class="tap-hint">
+            <ion-icon name="sync-outline"></ion-icon>
+            Tap to flip back
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rating buttons: always available; flipping to check is optional -->
+    <div class="rating-area">
+      <p class="rating-prompt">
+        {{ isFlipped ? 'How well did you know it?' : 'How well do you know it?' }}
+      </p>
+
+      <div class="rating-buttons">
+        <button type="button" class="rate-btn hard" [class.pending]="pendingRating === 'hard'" (click)="rate('hard')" aria-label="I don't know it">
+          <span class="emoji">😢</span>
+          <span class="rate-label">Don't know</span>
+        </button>
+        <button type="button" class="rate-btn medium" [class.pending]="pendingRating === 'medium'" (click)="rate('medium')" aria-label="More or less">
+          <span class="emoji">😐</span>
+          <span class="rate-label">So-so</span>
+        </button>
+        <button type="button" class="rate-btn easy" [class.pending]="pendingRating === 'easy'" (click)="rate('easy')" aria-label="I know it well">
+          <span class="emoji">😎</span>
+          <span class="rate-label">Know it</span>
+        </button>
+      </div>
+
+      <button *ngIf="!isFlipped" type="button" class="reveal-btn" (click)="flip()">
+        <ion-icon name="eye-outline"></ion-icon>
+        Show answer
+      </button>
+    </div>
+  </div>
+
+  <!-- Complete phase -->
+  <div *ngIf="phase === 'complete'" class="complete-container">
+    <!-- Stars (level sessions) -->
+    <div *ngIf="levelNumber > 0" class="stars-display">
+      <ion-icon *ngFor="let s of [1,2,3]" [name]="s <= earnedStars ? 'star' : 'star-outline'"
+        class="star" [class.filled]="s <= earnedStars"></ion-icon>
+    </div>
+
+    <div *ngIf="levelNumber === 0" class="complete-emoji">🎉</div>
+
+    <h1>
+      <ng-container *ngIf="levelNumber > 0 && earnedStars >= 1">Level complete!</ng-container>
+      <ng-container *ngIf="levelNumber > 0 && earnedStars === 0">Keep practicing!</ng-container>
+      <ng-container *ngIf="levelNumber === 0">Session complete!</ng-container>
+    </h1>
+    <p *ngIf="isNewBest" class="new-best">🎉 New best score!</p>
+    <p class="complete-sub">Nice work. Here's how it went:</p>
+
+    <div class="summary-card">
+      <div class="summary-stat">
+        <span class="emoji">😢</span>
+        <span class="stat-value hard">{{ ratedHard }}</span>
+        <span class="stat-label">Don't know</span>
+      </div>
+      <div class="summary-stat">
+        <span class="emoji">😐</span>
+        <span class="stat-value medium">{{ ratedMedium }}</span>
+        <span class="stat-label">So-so</span>
+      </div>
+      <div class="summary-stat">
+        <span class="emoji">😎</span>
+        <span class="stat-value easy">{{ ratedEasy }}</span>
+        <span class="stat-label">Know it</span>
+      </div>
+    </div>
+
+    <ion-button expand="block" (click)="finish()" class="finish-button">
+      Done
+    </ion-button>
+  </div>
+</ion-content>

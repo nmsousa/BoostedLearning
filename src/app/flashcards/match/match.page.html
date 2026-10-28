@@ -1,0 +1,72 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="close()" aria-label="Close match">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      <span *ngIf="levelNumber > 0">Level {{ levelNumber }} · </span>
+      Match
+    </ion-title>
+  </ion-toolbar>
+  <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="match-content">
+  <!-- Play phase -->
+  <div *ngIf="phase === 'play'" class="match-container">
+    <p class="match-hint">Tap a word, then its translation.</p>
+
+    <div class="match-board">
+      <!-- Left column: Dutch -->
+      <div class="match-col">
+        <button
+          *ngFor="let item of leftItems"
+          type="button"
+          class="match-item"
+          [class.selected]="isSelected(item)"
+          [class.matched]="item.matched"
+          [class.wrong]="item.wrong"
+          [disabled]="item.matched"
+          (click)="select(item)">
+          {{ item.label }}
+        </button>
+      </div>
+
+      <!-- Right column: translations -->
+      <div class="match-col">
+        <button
+          *ngFor="let item of rightItems"
+          type="button"
+          class="match-item"
+          [class.selected]="isSelected(item)"
+          [class.matched]="item.matched"
+          [class.wrong]="item.wrong"
+          [disabled]="item.matched"
+          (click)="select(item)">
+          {{ item.label }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complete phase -->
+  <div *ngIf="phase === 'complete'" class="complete-container">
+    <div *ngIf="levelNumber > 0" class="stars-display">
+      <ion-icon *ngFor="let s of [1,2,3]" [name]="s <= earnedStars ? 'star' : 'star-outline'"
+        class="star" [class.filled]="s <= earnedStars"></ion-icon>
+    </div>
+    <div *ngIf="levelNumber === 0" class="complete-emoji">🎉</div>
+
+    <h1>All matched!</h1>
+    <p *ngIf="isNewBest" class="new-best">🎉 New best score!</p>
+    <p class="complete-sub">
+      {{ mistakes === 0 ? 'Flawless - no mistakes!' : mistakes + ' mistake' + (mistakes === 1 ? '' : 's') + ' along the way.' }}
+    </p>
+
+    <ion-button expand="block" (click)="finish()" class="finish-button">
+      Done
+    </ion-button>
+  </div>
+</ion-content>

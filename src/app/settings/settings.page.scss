@@ -1,0 +1,125 @@
+ion-list {
+  background: transparent;
+}
+
+ion-item-divider {
+  --background: transparent;
+  --padding-top: 16px;
+  --padding-bottom: 8px;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+ion-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --min-height: 56px;
+  
+  ion-icon {
+    margin-right: 16px;
+    font-size: 24px;
+  }
+  
+  p {
+    font-size: 0.875rem;
+    color: var(--ion-color-medium);
+  }
+}
+
+ion-select {
+  min-width: 120px;
+  justify-content: flex-end;
+}
+
+ion-toggle {
+  --handle-width: 24px;
+  --handle-height: 24px;
+  --handle-spacing: 4px;
+}
+
+// Accessibility: All interactive elements >= 48dp
+ion-item {
+  min-height: 56px;
+}
+
+ion-toggle,
+ion-select {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+// ---------------------------------------------------------------------------
+// Vocabulary modals (import / manual add)
+// ---------------------------------------------------------------------------
+.vocab-instructions {
+  background: var(--ion-color-light);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+
+  ol {
+    margin: 0;
+    padding-left: 20px;
+
+    li {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: var(--ion-color-medium-shade);
+    }
+  }
+}
+
+.vocab-intro {
+  margin: 0 0 16px;
+  color: var(--ion-color-medium);
+  font-size: 0.95rem;
+}
+
+.vocab-hint {
+  margin: 6px 4px 0;
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+}
+
+.vocab-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(var(--ion-color-tertiary-rgb), 0.12);
+  border: 1px solid rgba(var(--ion-color-tertiary-rgb), 0.35);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 20px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--ion-text-color);
+
+  ion-icon {
+    flex-shrink: 0;
+    font-size: 18px;
+    margin: 1px 0 0;
+    color: var(--ion-color-tertiary-shade);
+  }
+}
+
+.vocab-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ion-color-danger);
+  font-size: 0.9rem;
+  margin-top: 16px;
+
+  ion-icon {
+    flex-shrink: 0;
+  }
+}

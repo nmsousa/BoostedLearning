@@ -1,0 +1,210 @@
+.course-container {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+  padding-bottom: 80px; // Space for FAB
+}
+
+.overview-card {
+  margin-bottom: 16px;
+
+  .course-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+    text-align: center;
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+
+      .stat-value {
+        font-size: 20px;
+        font-weight: bold;
+        color: var(--ion-text-color);
+      }
+
+      .stat-label {
+        font-size: 11px;
+        color: var(--ion-color-medium);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+
+  ion-progress-bar {
+    height: 8px;
+    border-radius: 4px;
+    --background: var(--ion-color-light);
+  }
+}
+
+.modules-list {
+  .module-card {
+    margin-bottom: 12px;
+    overflow: hidden;
+
+    ion-card-header {
+      cursor: pointer;
+      padding: 16px;
+    }
+
+    .module-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .module-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--ion-color-primary);
+      color: var(--ion-color-primary-contrast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .module-info {
+      flex: 1;
+      min-width: 0;
+
+      ion-card-title {
+        font-size: 16px;
+        margin-bottom: 2px;
+      }
+
+      ion-card-subtitle {
+        font-size: 12px;
+      }
+    }
+
+    .module-progress-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .progress-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 3px solid var(--ion-color-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: bold;
+        color: var(--ion-color-medium);
+
+        &.complete {
+          border-color: var(--ion-color-success);
+          background: var(--ion-color-success);
+          color: var(--ion-color-success-contrast);
+        }
+      }
+
+      ion-icon {
+        font-size: 20px;
+        color: var(--ion-color-medium);
+      }
+    }
+
+    ion-card-content {
+      padding: 0;
+      padding-bottom: 8px;
+
+      ion-list {
+        padding: 0;
+
+        ion-item {
+          --padding-start: 16px;
+          --inner-padding-end: 16px;
+          --min-height: 56px;
+          margin: 0 8px;
+          border-radius: 8px;
+
+          &:hover {
+            --background: var(--ion-color-light);
+          }
+
+          &.completed {
+            opacity: 0.8;
+          }
+
+          &.in-progress {
+            --background: rgba(var(--ion-color-primary-rgb), 0.05);
+          }
+
+          .lesson-status {
+            margin-right: 12px;
+
+            ion-icon {
+              font-size: 20px;
+            }
+          }
+
+          ion-label {
+            h2 {
+              font-size: 14px;
+              font-weight: 500;
+              margin-bottom: 2px;
+            }
+
+            p {
+              font-size: 12px;
+              color: var(--ion-color-medium);
+            }
+          }
+
+          ion-badge {
+            font-size: 11px;
+            margin-right: 8px;
+          }
+        }
+      }
+    }
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  min-height: 300px;
+
+  ion-icon {
+    font-size: 64px;
+    color: var(--ion-color-medium);
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: var(--ion-text-color);
+  }
+
+  p {
+    color: var(--ion-color-medium);
+  }
+}
+
+ion-fab-button {
+  --background: var(--ion-color-primary);
+}
+
+// Responsive adjustments
+@media (max-width: 400px) {
+  .overview-card .course-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

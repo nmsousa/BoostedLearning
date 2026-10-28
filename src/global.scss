@@ -33,5 +33,36 @@
  */
 
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import "@ionic/angular/css/palettes/dark.system.css";
+/* Dark mode is toggled via the `.ion-palette-dark` class on <html>,
+   driven by the user's theme setting (see AppComponent / variables.scss). */
+@import "@ionic/angular/css/palettes/dark.class.css";
+
+/**
+ * App-wide max-width constraint
+ * -----------------------------------------------------
+ * Centers the app content on larger screens. The area outside the 800px
+ * column uses a distinct "frame" colour (set on <body>) so the app content
+ * stands out on wide screens. The frame colour differs per theme.
+ */
+:root {
+  // Light theme frame (behind the centered app column)
+  --app-frame-background: #e9e9e9;
+}
+
+.ion-palette-dark {
+  // Dark theme frame - slightly darker than the app background so the
+  // centered column reads as "lifted" off the surrounding area.
+  --app-frame-background: #050607;
+}
+
+body {
+  background: var(--app-frame-background);
+}
+
+ion-app {
+  max-width: 800px;
+  margin: 0 auto;
+  // Keep the app's own background (white / dark) inside the column so it
+  // contrasts with the frame colour behind it.
+  background: var(--ion-background-color);
+}

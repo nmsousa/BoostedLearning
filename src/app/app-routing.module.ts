@@ -11,6 +11,30 @@ const routes: Routes = [
     redirectTo: 'home',
     pathMatch: 'full'
   },
+  {
+    path: 'session',
+    loadChildren: () => import('./session/session.module').then( m => m.SessionPageModule)
+  },
+  {
+    path: 'settings',
+    loadChildren: () => import('./settings/settings.module').then( m => m.SettingsPageModule)
+  },
+  {
+    path: 'progress',
+    loadChildren: () => import('./progress/progress.module').then( m => m.ProgressPageModule)
+  },
+  {
+    path: 'course',
+    loadChildren: () => import('./course/course.module').then( m => m.CoursePageModule)
+  },
+  {
+    path: 'course/:langCode',
+    loadChildren: () => import('./course/course.module').then( m => m.CoursePageModule)
+  },
+  {
+    path: 'flashcards',
+    loadChildren: () => import('./flashcards/flashcards.module').then( m => m.FlashcardsPageModule)
+  },
 ];
 
 @NgModule({

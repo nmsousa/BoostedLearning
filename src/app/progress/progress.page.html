@@ -1,0 +1,123 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Progress</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Progress</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="progress-container">
+    <!-- Overall Progress Card -->
+    <ion-card class="stats-card">
+      <ion-card-header>
+        <ion-card-title>Overall Progress</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="progress-ring-container">
+          <div class="progress-ring">
+            <svg viewBox="0 0 100 100">
+              <circle class="progress-ring-bg" cx="50" cy="50" r="40"/>
+              <circle class="progress-ring-fill" cx="50" cy="50" r="40"
+                [style.strokeDasharray]="'251.2'"
+                [style.strokeDashoffset]="251.2 - (getOverallProgress() * 2.512)"/>
+            </svg>
+            <div class="progress-value">{{ getOverallProgress() | number:'1.0-0' }}%</div>
+          </div>
+          <div class="progress-label">Items Learned</div>
+        </div>
+        
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.totalItems }}</span>
+            <span class="stat-label">Total Items</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.learnedItems }}</span>
+            <span class="stat-label">Learned</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.masteredItems }}</span>
+            <span class="stat-label">Mastered</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.newItems }}</span>
+            <span class="stat-label">New</span>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Review Status Card -->
+    <ion-card class="review-card">
+      <ion-card-header>
+        <ion-card-title>Review Status</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list lines="none">
+          <ion-item>
+            <ion-icon name="time-outline" slot="start" color="warning"></ion-icon>
+            <ion-label>
+              <h2>Due for Review</h2>
+              <p>Items ready to practice</p>
+            </ion-label>
+            <ion-badge slot="end" color="warning">{{ stats.dueItems }}</ion-badge>
+          </ion-item>
+          <ion-item>
+            <ion-icon name="refresh-outline" slot="start" color="danger"></ion-icon>
+            <ion-label>
+              <h2>In Recovery</h2>
+              <p>Items needing extra practice</p>
+            </ion-label>
+            <ion-badge slot="end" color="danger">{{ stats.recoveringItems }}</ion-badge>
+          </ion-item>
+          <ion-item>
+            <ion-icon name="checkmark-circle-outline" slot="start" color="success"></ion-icon>
+            <ion-label>
+              <h2>Total Reviews</h2>
+              <p>All-time practice sessions</p>
+            </ion-label>
+            <ion-badge slot="end" color="success">{{ totalReviews }}</ion-badge>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Module Progress Card -->
+    <ion-card class="modules-card" *ngIf="moduleProgress.length > 0">
+      <ion-card-header>
+        <ion-card-title>Module Progress</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="module-progress" *ngFor="let module of moduleProgress">
+          <div class="module-header">
+            <span class="module-name">{{ module.moduleName }}</span>
+            <span class="module-count">{{ module.completedLessons }}/{{ module.totalLessons }}</span>
+          </div>
+          <ion-progress-bar [value]="module.progress / 100"></ion-progress-bar>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="stats.totalItems === 0">
+      <ion-icon name="school-outline"></ion-icon>
+      <h2>No Progress Yet</h2>
+      <p>Start learning to see your progress here!</p>
+      <ion-button routerLink="/home" expand="block">
+        Start Learning
+      </ion-button>
+    </div>
+  </div>
+</ion-content>
