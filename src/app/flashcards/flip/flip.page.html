@@ -7,7 +7,7 @@
     </ion-buttons>
     <ion-title>
       <span *ngIf="levelNumber > 0">Level {{ levelNumber }} · </span>
-      {{ currentIndex + (phase === 'complete' ? 0 : 1) }} / {{ cards.length }}
+      Flashcards
     </ion-title>
   </ion-toolbar>
   <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
