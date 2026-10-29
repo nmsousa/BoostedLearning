@@ -1117,9 +1117,9 @@ export class FlashcardService {
       
       const progress = progressMap.get(levelNumber);
       
-      // Level is unlocked if it's level 1 or previous level has at least 1 star
+      // Level is unlocked if it's level 1 or the previous level scored >= 70%.
       const previousProgress = progressMap.get(levelNumber - 1);
-      const isUnlocked = levelNumber === 1 || (previousProgress?.bestStars ?? 0) >= 1;
+      const isUnlocked = levelNumber === 1 || (previousProgress?.bestScore ?? 0) >= this.UNLOCK_SCORE;
       
       levels.push({
         levelNumber,
@@ -1155,9 +1155,9 @@ export class FlashcardService {
    * Calculate stars from score percentage
    */
   calculateStars(scorePercent: number): number {
-    if (scorePercent >= 90) return 3;
-    if (scorePercent >= 70) return 2;
-    if (scorePercent >= 50) return 1;
+    if (scorePercent >= 100) return 3;
+    if (scorePercent >= 85) return 2;
+    if (scorePercent >= 70) return 1;
     return 0;
   }
 
@@ -1220,10 +1220,13 @@ export class FlashcardService {
   /**
    * Check if a level is unlocked
    */
+  /** Minimum score on the previous level to unlock the next one (= 1 star). */
+  private readonly UNLOCK_SCORE = 70;
+
   async isLevelUnlocked(deckId: string, mode: PracticeMode, levelNumber: number): Promise<boolean> {
     if (levelNumber === 1) return true;
     
     const previousProgress = await this.getLevelProgress(deckId, mode, levelNumber - 1);
-    return (previousProgress?.bestStars ?? 0) >= 1;
+    return (previousProgress?.bestScore ?? 0) >= this.UNLOCK_SCORE;
   }
 }

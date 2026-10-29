@@ -61,6 +61,7 @@
           <p>Minimize animations</p>
         </ion-label>
         <ion-toggle 
+          mode="ios"
           [checked]="reducedMotion"
           (ionChange)="onReducedMotionChange($event)"
           aria-label="Reduced motion"
@@ -75,6 +76,7 @@
           <p>Hide non-essential gamification</p>
         </ion-label>
         <ion-toggle 
+          mode="ios"
           [checked]="reducedDistraction"
           (ionChange)="onReducedDistractionChange($event)"
           aria-label="Reduced distraction mode"
@@ -194,6 +196,7 @@
           <p>Daily practice reminders</p>
         </ion-label>
         <ion-toggle 
+          mode="ios"
           [checked]="notificationsEnabled"
           (ionChange)="onNotificationsChange($event)"
           aria-label="Enable reminders"

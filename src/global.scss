@@ -66,3 +66,39 @@ ion-app {
   // contrasts with the frame colour behind it.
   background: var(--ion-background-color);
 }
+
+/**
+ * Accessibility / comfort settings
+ * -----------------------------------------------------
+ * Driven by SettingsService, which sets `--text-scale` and toggles the
+ * `.reduced-motion` / `.reduced-distraction` classes on <html>.
+ */
+
+:root {
+  // Default; overridden at runtime by the Text size setting.
+  --text-scale: 1;
+}
+
+// Scale the whole app's typography. Ionic sizes most text in rem/relative
+// units off the root font-size, so scaling it resizes the UI consistently.
+html {
+  font-size: calc(16px * var(--text-scale));
+}
+
+// Reduced motion: neutralize animations and transitions app-wide. Covers the
+// flashcard flip, match pulse/shake, and Ionic transitions.
+.reduced-motion {
+  &,
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// Reduced distraction: elements tagged .gamification are hidden. Components
+// also check SettingsService.reducedDistraction() where logic is involved.
+.reduced-distraction .gamification {
+  display: none !important;
+}

@@ -16,8 +16,8 @@
 <ion-content [fullscreen]="true" class="match-content">
   <!-- Play phase -->
   <div *ngIf="phase === 'play'" class="match-container">
-    <!-- Timer + combo bar -->
-    <div class="match-stats">
+    <!-- Timer + combo bar (gamification: hidden in reduced-distraction mode) -->
+    <div class="match-stats gamification">
       <div class="stat time">
         <ion-icon name="time-outline"></ion-icon>
         <span>{{ formattedTime }}</span>
@@ -65,19 +65,19 @@
 
   <!-- Complete phase -->
   <div *ngIf="phase === 'complete'" class="complete-container">
-    <div *ngIf="levelNumber > 0" class="stars-display">
+    <div *ngIf="levelNumber > 0" class="stars-display gamification">
       <ion-icon *ngFor="let s of [1,2,3]" [name]="s <= earnedStars ? 'star' : 'star-outline'"
         class="star" [class.filled]="s <= earnedStars"></ion-icon>
     </div>
-    <div *ngIf="levelNumber === 0" class="complete-emoji">🎉</div>
+    <div *ngIf="levelNumber === 0" class="complete-emoji gamification">🎉</div>
 
     <h1>All matched!</h1>
-    <p *ngIf="isNewBest" class="new-best">🎉 New best score!</p>
+    <p *ngIf="isNewBest" class="new-best gamification">🎉 New best score!</p>
     <p class="complete-sub">
       {{ mistakes === 0 ? 'Flawless - no mistakes!' : mistakes + ' mistake' + (mistakes === 1 ? '' : 's') + ' along the way.' }}
     </p>
 
-    <div class="complete-metrics">
+    <div class="complete-metrics gamification">
       <div class="metric">
         <ion-icon name="time-outline"></ion-icon>
         <span class="metric-value">{{ formattedTime }}</span>
@@ -96,7 +96,7 @@
     </div>
 
     <!-- Encouragement toward the next star tier -->
-    <p *ngIf="nextStarHint" class="next-star-hint">
+    <p *ngIf="nextStarHint" class="next-star-hint gamification">
       <ion-icon name="sparkles-outline"></ion-icon>
       {{ nextStarHint }}
     </p>

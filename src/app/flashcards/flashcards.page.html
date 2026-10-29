@@ -45,8 +45,10 @@
             </ion-badge>
           </ion-card-subtitle>
           <div class="deck-stars">
-            <ion-icon name="star" color="warning"></ion-icon>
-            <span>{{ getTotalStars(deck.id) }} / {{ getMaxStars(deck.id) }}</span>
+            <span class="deck-star-count gamification">
+              <ion-icon name="star" color="warning"></ion-icon>
+              <span>{{ getTotalStars(deck.id) }} / {{ getMaxStars(deck.id) }}</span>
+            </span>
             <ion-icon [name]="isDeckExpanded(deck.id) ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
           </div>
         </ion-card-header>
@@ -62,14 +64,17 @@
 
               <div class="level-info">
                 <span class="level-number">Level {{ level.levelNumber }}</span>
-                <span class="level-cards">{{ level.cardCount }} cards</span>
+                <span *ngIf="level.isUnlocked" class="level-cards">{{ level.cardCount }} cards</span>
+                <span *ngIf="!level.isUnlocked" class="level-cards level-locked-hint">
+                  Score 70% on the previous level to unlock
+                </span>
               </div>
 
               <div class="level-stars">
-                <ng-container *ngIf="level.isUnlocked">
+                <span *ngIf="level.isUnlocked" class="gamification">
                   <ion-icon *ngFor="let s of getStarArray(level.bestStars)" name="star" class="star filled"></ion-icon>
                   <ion-icon *ngFor="let s of getEmptyStarArray(level.bestStars)" name="star-outline" class="star empty"></ion-icon>
-                </ng-container>
+                </span>
                 <ion-icon *ngIf="!level.isUnlocked" name="lock-closed" class="lock-icon"></ion-icon>
               </div>
             </div>

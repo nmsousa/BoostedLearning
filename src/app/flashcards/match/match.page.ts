@@ -323,7 +323,7 @@ export class MatchPage implements OnInit, OnDestroy {
    *   timeFactor= 1.0 at/under the target pace, easing down to MIN_TIME_FACTOR
    *               the slower the run.
    *   score%    = round(accuracy * timeFactor * 100)
-   * Stars come from the existing thresholds (90/70/50).
+   * Stars come from the shared thresholds (100/85/70).
    */
   private computeScorePercent(total: number, cleanPairs: number): number {
     if (total === 0) return 0;
@@ -340,7 +340,7 @@ export class MatchPage implements OnInit, OnDestroy {
   }
 
   /** Star thresholds (percent) matching FlashcardService.calculateStars. */
-  private readonly STAR_THRESHOLDS = { 3: 90, 2: 70, 1: 50 };
+  private readonly STAR_THRESHOLDS = { 3: 100, 2: 85, 1: 70 };
 
   /** Format seconds as m:ss. */
   private fmt(sec: number): string {

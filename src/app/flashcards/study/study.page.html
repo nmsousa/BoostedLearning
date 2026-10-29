@@ -161,7 +161,7 @@
   <!-- Complete Phase -->
   <div *ngIf="phase === 'complete'" class="complete-container">
     <!-- Star display -->
-    <div class="stars-display">
+    <div class="stars-display gamification">
       <ion-icon *ngFor="let s of getStarArray(earnedStars)" name="star" class="star filled"></ion-icon>
       <ion-icon *ngFor="let s of getEmptyStarArray(earnedStars)" name="star-outline" class="star empty"></ion-icon>
     </div>
@@ -175,7 +175,7 @@
       </ng-container>
     </h1>
     
-    <p *ngIf="isNewBest" class="new-best">🎉 New best score!</p>
+    <p *ngIf="isNewBest" class="new-best gamification">🎉 New best score!</p>
 
     <div class="summary-card">
       <div class="summary-stat">

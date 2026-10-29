@@ -89,6 +89,16 @@ export class SettingsService {
       this.applyThemeToDom(this.effectiveTheme());
     });
 
+    // Apply text size, reduced-motion, and reduced-distraction to the DOM root
+    // so they take effect app-wide and persist across reloads.
+    effect(() => {
+      this.applyAccessibilityToDom(
+        this.settingsSignal().textSize,
+        this.settingsSignal().reducedMotion,
+        this.settingsSignal().reducedDistraction
+      );
+    });
+
     // Listen for system theme changes
     if (typeof window !== 'undefined' && window.matchMedia) {
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
@@ -114,6 +124,28 @@ export class SettingsService {
   private applyThemeToDom(effectiveTheme: 'light' | 'dark'): void {
     if (typeof document === 'undefined') return;
     document.documentElement.classList.toggle('ion-palette-dark', effectiveTheme === 'dark');
+  }
+
+  /**
+   * Apply accessibility/comfort settings to the document root:
+   * - `--text-scale` CSS variable scales the app's base font size.
+   * - `.reduced-motion` gates animations/transitions (see global.scss).
+   * - `.reduced-distraction` hides non-essential gamification (see global.scss
+   *   and per-component checks).
+   */
+  private applyAccessibilityToDom(
+    textSize: TextSize,
+    reducedMotion: boolean,
+    reducedDistraction: boolean
+  ): void {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+
+    const scales: Record<TextSize, number> = { small: 0.9, medium: 1, large: 1.15 };
+    root.style.setProperty('--text-scale', scales[textSize].toString());
+
+    root.classList.toggle('reduced-motion', reducedMotion);
+    root.classList.toggle('reduced-distraction', reducedDistraction);
   }
 
   /**

@@ -73,19 +73,19 @@
   <!-- Complete phase -->
   <div *ngIf="phase === 'complete'" class="complete-container">
     <!-- Stars (level sessions) -->
-    <div *ngIf="levelNumber > 0" class="stars-display">
+    <div *ngIf="levelNumber > 0" class="stars-display gamification">
       <ion-icon *ngFor="let s of [1,2,3]" [name]="s <= earnedStars ? 'star' : 'star-outline'"
         class="star" [class.filled]="s <= earnedStars"></ion-icon>
     </div>
 
-    <div *ngIf="levelNumber === 0" class="complete-emoji">🎉</div>
+    <div *ngIf="levelNumber === 0" class="complete-emoji gamification">🎉</div>
 
     <h1>
       <ng-container *ngIf="levelNumber > 0 && earnedStars >= 1">Level complete!</ng-container>
       <ng-container *ngIf="levelNumber > 0 && earnedStars === 0">Keep practicing!</ng-container>
       <ng-container *ngIf="levelNumber === 0">Session complete!</ng-container>
     </h1>
-    <p *ngIf="isNewBest" class="new-best">🎉 New best score!</p>
+    <p *ngIf="isNewBest" class="new-best gamification">🎉 New best score!</p>
     <p class="complete-sub">Nice work. Here's how it went:</p>
 
     <div class="summary-card">
