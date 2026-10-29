@@ -15,6 +15,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { fsrs, createEmptyCard, Rating, State, type Card as FsrsCard } from 'ts-fsrs';
 import { getDatabase, FlashcardDeckEntity, FlashcardEntity, LevelProgressEntity } from '../../persistence/database';
+import { KnowledgeBreakdown } from '../../core/knowledge-level';
 
 /** Self-rating options in Flashcards (flip) mode. */
 export type FlashcardRating = 'hard' | 'medium' | 'easy';
@@ -925,6 +926,58 @@ export class FlashcardService {
     };
 
     return [...pool].sort((a, b) => score(a) - score(b))[0] ?? all[0];
+  }
+
+  // ============================================
+  // Knowledge breakdown (home "Your words")
+  // ============================================
+
+  /** Consecutive-correct streak needed to count a word as "familiar". */
+  private readonly FAMILIAR_STREAK = 2;
+  /** Consecutive-correct streak needed to count a word as "known". */
+  private readonly KNOWN_STREAK = 4;
+
+  /** Whether a card has been practiced at least once (any mode). */
+  private hasBeenStudied(card: Flashcard): boolean {
+    return card.lastSeen !== null || card.correctCount > 0 || card.incorrectCount > 0;
+  }
+
+  /**
+   * Summarize how well the learner knows their words, derived from real
+   * flashcard practice (any mode updates each card's streak/counts):
+   *   - known:    current streak >= KNOWN_STREAK
+   *   - familiar: current streak >= FAMILIAR_STREAK
+   *   - learning: studied at least once but below familiar
+   *   - neverStudied: never practiced
+   * Counts over de-duplicated prompts so shared forms (de/het) count once.
+   */
+  getKnowledgeBreakdown(): KnowledgeBreakdown {
+    const breakdown: KnowledgeBreakdown = {
+      learning: 0,
+      familiar: 0,
+      known: 0,
+      neverStudied: 0,
+      total: 0,
+    };
+
+    for (const deck of this.getAllDecks()) {
+      for (const card of this.getDedupedCards(deck.id)) {
+        if (!this.hasBeenStudied(card)) {
+          breakdown.neverStudied++;
+          continue;
+        }
+        if (card.streak >= this.KNOWN_STREAK) {
+          breakdown.known++;
+        } else if (card.streak >= this.FAMILIAR_STREAK) {
+          breakdown.familiar++;
+        } else {
+          breakdown.learning++;
+        }
+        breakdown.total++;
+      }
+    }
+
+    return breakdown;
   }
 
   // ============================================

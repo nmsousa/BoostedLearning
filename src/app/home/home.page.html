@@ -49,33 +49,6 @@
 
   <!-- Main content -->
   <div *ngIf="!isLoading" class="home-content">
-    <!-- Hero section with primary action -->
-    <section class="hero-section" *ngIf="dueCount > 0">
-      <ion-card class="primary-action-card" (click)="startReviewSession()">
-        <ion-card-content>
-          <div class="action-icon">
-            <ion-icon name="play-circle" color="primary"></ion-icon>
-          </div>
-          <div class="action-text">
-            <h2>{{ t('session.start') }}</h2>
-            <p>{{ dueCount }} {{ t('progress.dueToday') }}</p>
-          </div>
-          <ion-icon name="chevron-forward" class="action-arrow"></ion-icon>
-        </ion-card-content>
-      </ion-card>
-    </section>
-
-    <!-- Recovery alert -->
-    <ion-card *ngIf="recoveringCount > 0" class="recovery-card">
-      <ion-card-content>
-        <ion-icon name="alert-circle" color="warning"></ion-icon>
-        <div class="recovery-text">
-          <strong>{{ t('recovery.title') }}</strong>
-          <span>{{ recoveringCount }} {{ t('recovery.forgottenItems') }}</span>
-        </div>
-      </ion-card-content>
-    </ion-card>
-
     <!-- Continue learning (single entry for the selected language).
          Temporarily disabled: the course/lesson flow isn't ready yet. -->
     <section class="continue-section" *ngIf="courseLanguages.length > 0">

@@ -9,10 +9,10 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ContentService } from '../services/content.service';
-import { MemoryEngineService } from '../services/memory-engine.service';
 import { SessionService } from '../services/session.service';
 import { SettingsService } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
+import { FlashcardService } from '../services/flashcard.service';
 import { KnowledgeBreakdown } from '../../core/knowledge-level';
 
 interface QuickAction {
@@ -32,16 +32,14 @@ interface QuickAction {
 })
 export class HomePage implements OnInit {
   private content = inject(ContentService);
-  private memory = inject(MemoryEngineService);
   private session = inject(SessionService);
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
+  private flashcards = inject(FlashcardService);
   private router = inject(Router);
 
   quickActions: QuickAction[] = [];
   courseLanguages: { code: string; name: string }[] = [];
-  dueCount = 0;
-  recoveringCount = 0;
 
   /** Three-bucket breakdown of how well the learner knows their words. */
   knowledge: KnowledgeBreakdown = {
@@ -83,10 +81,15 @@ export class HomePage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    // Wait for saved progress to load from storage so the dashboard reflects
-    // past sessions on launch (resolves immediately if there's nothing saved).
-    await this.memory.ready;
+    // Flashcard data drives the "Your words" breakdown; load it before reading.
+    await this.flashcards.initialize();
     this.loadDashboardData();
+  }
+
+  /** Recompute the breakdown when returning to the home tab (e.g. after play). */
+  async ionViewWillEnter(): Promise<void> {
+    await this.flashcards.initialize();
+    this.knowledge = this.flashcards.getKnowledgeBreakdown();
   }
 
   private loadDashboardData(): void {
@@ -96,15 +99,8 @@ export class HomePage implements OnInit {
       name: lang.name,
     }));
 
-    // Get due items count
-    const dueItems = this.memory.getDueItems();
-    this.dueCount = dueItems.length;
-
-    // Get recovering items count
-    this.recoveringCount = this.memory.getRecoveringItems().length;
-
-    // Knowledge breakdown (Learning / Familiar / Known)
-    this.knowledge = this.memory.getKnowledgeBreakdown();
+    // Knowledge breakdown (Learning / Familiar / Known) from real flashcard play.
+    this.knowledge = this.flashcards.getKnowledgeBreakdown();
 
     // Build quick actions
     this.quickActions = this.buildQuickActions();
@@ -112,18 +108,6 @@ export class HomePage implements OnInit {
 
   private buildQuickActions(): QuickAction[] {
     const actions: QuickAction[] = [];
-
-    // Primary action: Continue learning or start review
-    if (this.dueCount > 0) {
-      actions.push({
-        id: 'review',
-        title: this.i18n.t('session.start'),
-        subtitle: this.i18n.t('progress.dueToday'),
-        icon: 'play-circle',
-        color: 'primary',
-        count: this.dueCount,
-      });
-    }
 
     // Learning new content
     for (const lang of this.courseLanguages) {
