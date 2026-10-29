@@ -20,6 +20,13 @@ import { getDatabase, FlashcardDeckEntity, FlashcardEntity, LevelProgressEntity 
 export type FlashcardRating = 'hard' | 'medium' | 'easy';
 
 /**
+ * A practice mode. Level stars/progress are tracked PER MODE so that, e.g.,
+ * clearing a level in Flashcards does not mark it complete in Match.
+ * ('quiz' is defined for completeness but not yet implemented.)
+ */
+export type PracticeMode = 'flip' | 'write' | 'match' | 'quiz';
+
+/**
  * A single flashcard with learning stats
  */
 export interface Flashcard {
@@ -920,7 +927,7 @@ export class FlashcardService {
    * Get all levels for a deck
    * Cards are ordered from oldest learned (Level 1) to newest
    */
-  async getDeckLevels(deckId: string): Promise<DeckLevel[]> {
+  async getDeckLevels(deckId: string, mode: PracticeMode): Promise<DeckLevel[]> {
     const deck = this.getDeck(deckId);
     if (!deck) return [];
 
@@ -930,7 +937,8 @@ export class FlashcardService {
     const totalCards = this.getDedupedCards(deckId).length;
     const totalLevels = Math.ceil(totalCards / this.CARDS_PER_LEVEL);
     
-    // Load all level progress from DB
+    // Load this deck's level progress for the requested mode only, so stars
+    // and unlock state are tracked independently per practice mode.
     const progressRecords = await this.db.levelProgress
       .where('deckId')
       .equals(deckId)
@@ -938,7 +946,9 @@ export class FlashcardService {
     
     const progressMap = new Map<number, LevelProgressEntity>();
     for (const record of progressRecords) {
-      progressMap.set(record.levelNumber, record);
+      if (record.mode === mode) {
+        progressMap.set(record.levelNumber, record);
+      }
     }
 
     const levels: DeckLevel[] = [];
@@ -999,15 +1009,16 @@ export class FlashcardService {
    * Save level progress after completing a study session
    */
   async saveLevelProgress(
-    deckId: string, 
-    levelNumber: number, 
-    correctCount: number, 
+    deckId: string,
+    mode: PracticeMode,
+    levelNumber: number,
+    correctCount: number,
     totalCards: number
   ): Promise<{ stars: number; isNewBest: boolean }> {
     const scorePercent = Math.round((correctCount / totalCards) * 100);
     const stars = this.calculateStars(scorePercent);
     
-    const progressId = `${deckId}-${levelNumber}`;
+    const progressId = this.levelProgressId(deckId, mode, levelNumber);
     const existing = await this.db.levelProgress.get(progressId);
     
     const isNewBest = !existing || scorePercent > existing.bestScore;
@@ -1015,6 +1026,7 @@ export class FlashcardService {
     const progress: LevelProgressEntity = {
       id: progressId,
       deckId,
+      mode,
       levelNumber,
       bestStars: isNewBest ? stars : (existing?.bestStars ?? stars),
       bestScore: isNewBest ? scorePercent : (existing?.bestScore ?? scorePercent),
@@ -1027,21 +1039,26 @@ export class FlashcardService {
     return { stars, isNewBest };
   }
 
+  /** Storage key for a level's progress, scoped to deck + mode + level. */
+  private levelProgressId(deckId: string, mode: PracticeMode, levelNumber: number): string {
+    return `${deckId}-${mode}-${levelNumber}`;
+  }
+
   /**
    * Get progress for a specific level
    */
-  async getLevelProgress(deckId: string, levelNumber: number): Promise<LevelProgressEntity | null> {
-    const progressId = `${deckId}-${levelNumber}`;
+  async getLevelProgress(deckId: string, mode: PracticeMode, levelNumber: number): Promise<LevelProgressEntity | null> {
+    const progressId = this.levelProgressId(deckId, mode, levelNumber);
     return await this.db.levelProgress.get(progressId) ?? null;
   }
 
   /**
    * Check if a level is unlocked
    */
-  async isLevelUnlocked(deckId: string, levelNumber: number): Promise<boolean> {
+  async isLevelUnlocked(deckId: string, mode: PracticeMode, levelNumber: number): Promise<boolean> {
     if (levelNumber === 1) return true;
     
-    const previousProgress = await this.getLevelProgress(deckId, levelNumber - 1);
+    const previousProgress = await this.getLevelProgress(deckId, mode, levelNumber - 1);
     return (previousProgress?.bestStars ?? 0) >= 1;
   }
 }

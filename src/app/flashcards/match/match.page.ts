@@ -78,7 +78,7 @@ export class MatchPage implements OnInit {
 
     let cards: Flashcard[];
     if (this.levelNumber > 0) {
-      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.levelNumber);
+      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, 'match', this.levelNumber);
       if (!isUnlocked) {
         this.router.navigate(['/flashcards']);
         return;
@@ -228,6 +228,7 @@ export class MatchPage implements OnInit {
     if (this.levelNumber > 0 && this.deck) {
       const result = await this.flashcardService.saveLevelProgress(
         this.deck.id,
+        'match',
         this.levelNumber,
         cleanPairs,
         total

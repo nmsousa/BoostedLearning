@@ -71,8 +71,9 @@ export interface FlashcardDeckEntity {
  * Level progress - tracks best star rating per level
  */
 export interface LevelProgressEntity {
-  id: string;           // Format: "deckId-levelNumber"
+  id: string;           // Format: "deckId-mode-levelNumber"
   deckId: string;
+  mode: string;         // Practice mode: 'flip' | 'write' | 'match' | 'quiz'
   levelNumber: number;
   bestStars: number;    // 0-3
   bestScore: number;    // Best percentage achieved
@@ -219,6 +220,32 @@ export class BoostedLearningDatabase extends Dexie {
       flashcardDecks: 'id, name, languageCode',
       flashcards: 'id, deckId, text, nextReview, isCustom',
       levelProgress: 'id, deckId, levelNumber, bestStars',
+    });
+
+    // Version 6: Track level progress PER practice mode. The id format changes
+    // from "deckId-levelNumber" to "deckId-mode-levelNumber" and a `mode`
+    // index is added. Legacy mode-less rows can't be attributed to a mode, so
+    // they are cleared on upgrade (level stars reset once; re-earned per mode).
+    this.version(6).stores({
+      languages: 'id, code, isValidationAsset',
+      modules: 'id, languageId, order',
+      lessons: 'id, moduleId, order',
+      learningItems: 'id, languageId, lessonId, contentState, kind',
+      vocabulary: 'id, learningItemId',
+      grammarInfo: 'id, learningItemId, partOfSpeech',
+      examples: 'id, learningItemId, contentState',
+      exercises: 'id, learningItemId, type, contentState',
+      reviewStates: 'id, learningItemId, repeatedlyForgotten',
+      attempts: 'id, learningItemId, exerciseId, sessionId, timestamp, skillDimension',
+      sessions: 'id, startedAt, endedAt',
+      achievements: 'id, code, earnedAt',
+      learnerProfile: 'id',
+      flashcardDecks: 'id, name, languageCode',
+      flashcards: 'id, deckId, text, nextReview, isCustom',
+      levelProgress: 'id, deckId, mode, levelNumber, bestStars',
+    }).upgrade(async tx => {
+      // Drop legacy records that predate per-mode tracking.
+      await tx.table('levelProgress').clear();
     });
   }
 }

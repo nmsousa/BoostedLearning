@@ -106,7 +106,7 @@ export class StudyPage implements OnInit, OnDestroy {
     let cards: Flashcard[];
     if (this.levelNumber > 0) {
       // Check if level is unlocked
-      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.levelNumber);
+      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, 'write', this.levelNumber);
       if (!isUnlocked) {
         this.router.navigate(['/flashcards']);
         return;
@@ -447,6 +447,7 @@ export class StudyPage implements OnInit, OnDestroy {
     if (this.levelNumber > 0 && this.deck) {
       const result = await this.flashcardService.saveLevelProgress(
         this.deck.id,
+        'write',
         this.levelNumber,
         firstTryCorrect,
         this.totalUnique

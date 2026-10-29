@@ -9,11 +9,8 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import { FlashcardService, FlashcardDeck, DeckLevel } from '../services/flashcard.service';
+import { FlashcardService, FlashcardDeck, DeckLevel, PracticeMode } from '../services/flashcard.service';
 import { I18nAngularService } from '../services/i18n.service';
-
-/** Practice modes selectable from the home page. */
-type PracticeMode = 'flip' | 'write' | 'match' | 'quiz';
 
 @Component({
   selector: 'app-flashcards',
@@ -70,7 +67,7 @@ export class FlashcardsPage implements OnInit {
     
     // Load levels for each deck
     for (const deck of this.decks) {
-      const levels = await this.flashcardService.getDeckLevels(deck.id);
+      const levels = await this.flashcardService.getDeckLevels(deck.id, this.mode);
       this.deckLevels.set(deck.id, levels);
     }
 

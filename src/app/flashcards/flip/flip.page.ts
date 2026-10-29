@@ -72,7 +72,7 @@ export class FlipPage implements OnInit {
 
     // Pull cards for this level if given, else an urgency-ordered queue.
     if (this.levelNumber > 0) {
-      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.levelNumber);
+      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, 'flip', this.levelNumber);
       if (!isUnlocked) {
         this.router.navigate(['/flashcards']);
         return;
@@ -173,6 +173,7 @@ export class FlipPage implements OnInit {
       const effectiveCorrect = Math.round((scorePercent / 100) * total);
       const result = await this.flashcardService.saveLevelProgress(
         this.deck.id,
+        'flip',
         this.levelNumber,
         effectiveCorrect,
         total
