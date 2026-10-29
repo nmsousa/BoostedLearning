@@ -158,19 +158,9 @@ export class FlashcardsPage implements OnInit {
         this.router.navigate(['/flashcards/match', deck.id], { queryParams });
         break;
       case 'quiz':
-        await this.showComingSoon(this.mode);
+        this.router.navigate(['/flashcards/quiz', deck.id], { queryParams });
         break;
     }
-  }
-
-  private async showComingSoon(mode: PracticeMode) {
-    const name = mode === 'quiz' ? 'Quiz' : 'This';
-    const alert = await this.alertController.create({
-      header: `${name} — coming soon`,
-      message: `The ${name} mode isn't ready yet. Try Flashcards, Write or Match in the meantime.`,
-      buttons: ['OK'],
-    });
-    await alert.present();
   }
 
   async confirmDeleteDeck(deck: FlashcardDeck) {

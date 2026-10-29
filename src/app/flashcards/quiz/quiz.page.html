@@ -1,0 +1,55 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="close()" aria-label="Close quiz">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      <span *ngIf="levelNumber > 0">Level {{ levelNumber }} · </span>
+      Quiz
+    </ion-title>
+  </ion-toolbar>
+  <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="quiz-content">
+  <!-- Play phase -->
+  <div *ngIf="phase === 'play'" class="quiz-container">
+    <p class="quiz-hint">Which translation is correct?</p>
+
+    <div class="quiz-prompt">{{ prompt }}</div>
+
+    <div class="quiz-options">
+      <button
+        *ngFor="let opt of options"
+        type="button"
+        class="quiz-option"
+        [class.correct]="opt.revealed && opt.correct"
+        [class.wrong]="opt.revealed && opt.chosen && !opt.correct"
+        [disabled]="opt.revealed"
+        (click)="choose(opt)">
+        {{ opt.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Complete phase -->
+  <div *ngIf="phase === 'complete'" class="complete-container">
+    <div *ngIf="levelNumber > 0" class="stars-display">
+      <ion-icon *ngFor="let s of [1,2,3]" [name]="s <= earnedStars ? 'star' : 'star-outline'"
+        class="star" [class.filled]="s <= earnedStars"></ion-icon>
+    </div>
+    <div *ngIf="levelNumber === 0" class="complete-emoji">🎉</div>
+
+    <h1>Quiz complete!</h1>
+    <p *ngIf="isNewBest" class="new-best">🎉 New best score!</p>
+    <p class="complete-sub">
+      {{ correctCount }} / {{ total }} correct
+    </p>
+
+    <ion-button expand="block" (click)="finish()" class="finish-button">
+      Done
+    </ion-button>
+  </div>
+</ion-content>

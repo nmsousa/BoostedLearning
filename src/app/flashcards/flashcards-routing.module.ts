@@ -27,6 +27,11 @@ const routes: Routes = [
     // Match mode (connect the pairs).
     path: 'match/:id',
     loadChildren: () => import('./match/match.module').then(m => m.MatchPageModule)
+  },
+  {
+    // Quiz mode (multiple choice).
+    path: 'quiz/:id',
+    loadChildren: () => import('./quiz/quiz.module').then(m => m.QuizPageModule)
   }
 ];
 
