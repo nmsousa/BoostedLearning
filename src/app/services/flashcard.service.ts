@@ -846,6 +846,88 @@ export class FlashcardService {
   }
 
   // ============================================
+  // Translation display helpers
+  // ============================================
+
+  /**
+   * Curated canonical English translations for high-frequency Dutch words
+   * whose imported translation list has a wrong or junk first entry (the
+   * Duolingo scrape often leads with contractions/possessives/odd senses).
+   * Keyed by the Dutch word (lowercased).
+   */
+  private readonly CURATED_TRANSLATIONS: Record<string, string> = {
+    hij: 'he',
+    zij: 'she',
+    zijn: 'are',        // plural/infinitive "to be"; also means "his" in other contexts
+    hebben: 'have',
+    is: 'is',
+    ben: 'am',
+    bent: 'are',
+    wij: 'we',
+    we: 'we',
+    jullie: 'you (plural)',
+    u: 'you (formal)',
+    jij: 'you',
+    jou: 'you',
+    ik: 'I',
+    het: 'the',
+    de: 'the',
+    een: 'a',
+    man: 'man',
+    mannen: 'men',
+    haar: 'her',
+    hun: 'their',
+    maken: 'make',
+    huis: 'house',
+    vriend: 'friend',
+    blijven: 'stay',
+    welke: 'which',
+    welk: 'which',
+    zoeken: 'search',
+    worden: 'become',
+  };
+
+  /**
+   * Choose the best English translation to DISPLAY for a card.
+   *
+   * The imported data often leads with contractions ("he'd"), possessives
+   * ("man's"), or fragments ("ve"), so translations[0] is unreliable. This:
+   *   1. uses a curated override when available,
+   *   2. otherwise filters out apostrophe forms and 1-2 char fragments,
+   *   3. deprioritizes "-ing" gerunds and negations ("didn't"),
+   *   4. prefers the shortest remaining clean form (usually the base word),
+   *   5. falls back to translations[0] if nothing clean remains.
+   */
+  bestTranslation(card: Flashcard): string {
+    const curated = this.CURATED_TRANSLATIONS[card.text.trim().toLowerCase()];
+    if (curated) return curated;
+
+    const all = card.translations ?? [];
+    if (all.length === 0) return '';
+
+    const clean = all.filter(t => {
+      const s = t.trim();
+      if (s.length <= 2) return false;        // "ve", "s", "th"
+      if (s.includes("'")) return false;        // contractions / possessives
+      if (/\(.*\)/.test(s)) return true;        // keep clarified forms like "you (plural)"
+      return true;
+    });
+
+    const pool = clean.length > 0 ? clean : all;
+
+    // Score: prefer non-gerund, non-negation, then shorter.
+    const score = (t: string): number => {
+      const s = t.trim().toLowerCase();
+      let penalty = 0;
+      if (s.endsWith('ing')) penalty += 5;                 // "having" < "have"
+      if (/n't$|^didn|^couldn|^wasn|^weren/.test(s)) penalty += 10;
+      return penalty + s.length * 0.1;
+    };
+
+    return [...pool].sort((a, b) => score(a) - score(b))[0] ?? all[0];
+  }
+
+  // ============================================
   // Level System Methods
   // ============================================
 

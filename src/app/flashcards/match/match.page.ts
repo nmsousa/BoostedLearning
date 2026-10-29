@@ -168,7 +168,7 @@ export class MatchPage implements OnInit, OnDestroy {
   private isIdenticalPair(card: Flashcard): boolean {
     const norm = (s: string) => s.trim().toLowerCase();
     const word = norm(card.text);
-    const translation = norm(card.translations[0] ?? '');
+    const translation = norm(this.flashcardService.bestTranslation(card));
     return word.length > 0 && word === translation;
   }
 
@@ -176,7 +176,7 @@ export class MatchPage implements OnInit, OnDestroy {
   private makePair(card: Flashcard): { left: MatchItem; right: MatchItem } {
     return {
       left: { id: card.id, label: card.text, side: 'left', matched: false, wrong: false },
-      right: { id: card.id, label: card.translations[0] ?? '', side: 'right', matched: false, wrong: false },
+      right: { id: card.id, label: this.flashcardService.bestTranslation(card), side: 'right', matched: false, wrong: false },
     };
   }
 
