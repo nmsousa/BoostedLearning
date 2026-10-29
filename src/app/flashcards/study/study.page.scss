@@ -3,6 +3,16 @@
   --padding-bottom: 16px;
   --padding-start: 16px;
   --padding-end: 16px;
+
+  // Make the scrollable host a full-height flex column so child containers
+  // using height:100% actually fill the viewport. Without this, ion-content's
+  // inner scroll area has auto height and height:100% collapses — which left
+  // the question-phase action area floating mid-screen instead of bottom-pinned.
+  &::part(scroll) {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
 }
 
 // Question phase.
@@ -12,10 +22,9 @@
 .question-container {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
-  // Guarantee the column fills the viewport so the bottom action band is
-  // actually pinned to the bottom in every phase (ion-content height).
-  height: 100%;
+  // Grow to fill the flex scroll host (see .study-content::part(scroll)) so
+  // the bottom action band is reliably pinned to the bottom in every phase.
+  flex: 1 1 auto;
   box-sizing: border-box;
   padding: 24px 16px;
 }
@@ -307,6 +316,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  flex: 1 1 auto;
   min-height: 100%;
   padding: 24px 16px;
   text-align: center;
