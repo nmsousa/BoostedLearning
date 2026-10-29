@@ -185,7 +185,7 @@
 
 .stats-section {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 12px;
   margin-bottom: 24px;
   
@@ -290,9 +290,10 @@
 
   .knowledge-empty {
     font-size: 0.85rem;
+    line-height: 1.4;
     color: var(--ion-color-medium);
     text-align: center;
-    margin: 4px 0 0;
+    margin: 16px 0 0;
   }
 }
 
