@@ -119,20 +119,14 @@ export class QuizPage implements OnInit {
     return this.cards[this.currentIndex] ?? null;
   }
 
-  /** The current card has a recorded clip. */
-  get hasRecorded(): boolean {
-    return !!this.currentCard?.audioUrl;
-  }
-
-  /** Play the recorded clip for the prompt word. */
-  playRecorded() {
-    void this.audio.playRecorded(this.currentCard?.audioUrl);
-  }
-
-  /** Speak the prompt word with device TTS. */
-  async playTts() {
+  /** Play the prompt word: recorded clip if available, else device TTS. */
+  async playWord() {
     if (!this.currentCard) return;
-    const res = await this.audio.playTts(this.currentCard.text, this.settings.learningLanguage());
+    const res = await this.audio.playWord(
+      this.currentCard.text,
+      this.currentCard.audioUrl,
+      this.settings.learningLanguage()
+    );
     if (!res.ok && res.reason) {
       const t = await this.toast.create({ message: res.reason, duration: 2500, position: 'bottom' });
       await t.present();

@@ -29,7 +29,12 @@
         <!-- Front: Dutch -->
         <div class="flip-card-face flip-card-front">
           <span class="lang-tag">Dutch</span>
-          <h1 class="card-word">{{ frontText }}</h1>
+          <div class="word-row">
+            <h1 class="card-word">{{ frontText }}</h1>
+            <button type="button" class="audio-icon" (click)="playWord($event)" aria-label="Play pronunciation">
+              <ion-icon name="volume-high-outline"></ion-icon>
+            </button>
+          </div>
           <span class="tap-hint">
             <ion-icon name="sync-outline"></ion-icon>
             Tap to flip
@@ -45,18 +50,6 @@
           </span>
         </div>
       </div>
-    </div>
-
-    <!-- Audio: temporary A/B of recorded clip vs device TTS -->
-    <div class="audio-row">
-      <button type="button" class="audio-btn" (click)="playRecorded($event)" [disabled]="!hasRecorded" aria-label="Play recorded audio">
-        <ion-icon name="volume-high-outline"></ion-icon>
-        <span>Recorded</span>
-      </button>
-      <button type="button" class="audio-btn" (click)="playTts($event)" aria-label="Play device voice">
-        <ion-icon name="mic-outline"></ion-icon>
-        <span>TTS</span>
-      </button>
     </div>
 
     <!-- Rating buttons: always available; flipping to check is optional -->

@@ -120,26 +120,19 @@ export class FlipPage implements OnInit {
     this.isFlipped = !this.isFlipped;
   }
 
-  /** Play the pre-recorded clip for the current word. */
-  playRecorded(event: Event) {
-    event.stopPropagation();
-    void this.audio.playRecorded(this.currentCard?.audioUrl);
-  }
-
-  /** Speak the current word with device TTS. */
-  async playTts(event: Event) {
+  /** Play the current word: recorded clip if available, else device TTS. */
+  async playWord(event: Event) {
     event.stopPropagation();
     if (!this.currentCard) return;
-    const res = await this.audio.playTts(this.currentCard.text, this.settings.learningLanguage());
+    const res = await this.audio.playWord(
+      this.currentCard.text,
+      this.currentCard.audioUrl,
+      this.settings.learningLanguage()
+    );
     if (!res.ok && res.reason) {
       const t = await this.toast.create({ message: res.reason, duration: 2500, position: 'bottom' });
       await t.present();
     }
-  }
-
-  /** Whether the current card has a recorded clip. */
-  get hasRecorded(): boolean {
-    return !!this.currentCard?.audioUrl;
   }
 
   async rate(rating: FlashcardRating) {

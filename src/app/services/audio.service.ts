@@ -89,4 +89,23 @@ export class AudioService {
     const lang = LANG_TO_BCP47[langCode] ?? langCode;
     return this.tts.hasVoiceFor(lang);
   }
+
+  /**
+   * Play a word's audio with the preferred source: the recorded clip when
+   * available, falling back to device TTS when there's no recording or the
+   * recording fails to play. Returns `{ ok, reason? }` so the UI can report a
+   * genuine failure (e.g. no recording AND no voice).
+   */
+  async playWord(
+    text: string,
+    audioUrl: string | undefined | null,
+    langCode: string
+  ): Promise<{ ok: boolean; reason?: string }> {
+    if (audioUrl) {
+      const played = await this.playRecorded(audioUrl);
+      if (played) return { ok: true };
+      // Recorded failed (network/expired URL) — fall through to TTS.
+    }
+    return this.playTts(text, langCode);
+  }
 }

@@ -332,29 +332,29 @@
   font-weight: 600;
 }
 
-// Temporary A/B audio buttons (recorded vs TTS)
-.audio-row {
+// Word + a single audio icon on the card face.
+.word-row {
   display: flex;
-  gap: 12px;
+  align-items: center;
   justify-content: center;
-  margin: 8px 0 16px;
+  gap: 20px;
 
-  .audio-btn {
+  .card-word { margin: 0; }
+
+  .audio-icon {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border: 1px solid var(--ion-color-step-200, #ccc);
-    border-radius: 10px;
-    background: var(--ion-color-light);
-    color: var(--ion-text-color);
-    font-size: 0.9rem;
-    font-weight: 600;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
     cursor: pointer;
+    flex-shrink: 0;
 
-    ion-icon { font-size: 18px; color: var(--ion-color-primary); }
+    ion-icon { font-size: 20px; color: #fff; }
 
-    &:active { transform: scale(0.97); }
-    &[disabled] { opacity: 0.4; cursor: default; }
+    &:active { transform: scale(0.94); }
   }
 }

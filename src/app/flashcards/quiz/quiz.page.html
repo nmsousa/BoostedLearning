@@ -18,17 +18,11 @@
   <div *ngIf="phase === 'play'" class="quiz-container">
     <p class="quiz-hint">Which translation is correct?</p>
 
-    <div class="quiz-prompt">{{ prompt }}</div>
-
-    <!-- Audio: temporary A/B of recorded clip vs device TTS -->
-    <div class="audio-row">
-      <button type="button" class="audio-btn" (click)="playRecorded()" [disabled]="!hasRecorded" aria-label="Play recorded audio">
+    <!-- Word + a single audio icon (recorded, with TTS fallback) -->
+    <div class="quiz-prompt-row">
+      <span class="quiz-prompt">{{ prompt }}</span>
+      <button type="button" class="audio-icon" (click)="playWord()" aria-label="Play pronunciation">
         <ion-icon name="volume-high-outline"></ion-icon>
-        <span>Recorded</span>
-      </button>
-      <button type="button" class="audio-btn" (click)="playTts()" aria-label="Play device voice">
-        <ion-icon name="mic-outline"></ion-icon>
-        <span>TTS</span>
       </button>
     </div>
 
