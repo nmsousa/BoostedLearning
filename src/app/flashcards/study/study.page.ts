@@ -14,6 +14,7 @@ import { AlertController, IonInput } from '@ionic/angular';
 import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { SettingsService } from '../../services/settings.service';
+import { AudioService } from '../../services/audio.service';
 
 type StudyPhase = 'question' | 'feedback' | 'complete';
 type FeedbackResult = 'correct' | 'almost' | 'incorrect';
@@ -46,6 +47,7 @@ export class StudyPage implements OnInit, OnDestroy {
   private flashcardService = inject(FlashcardService);
   private i18n = inject(I18nAngularService);
   private settings = inject(SettingsService);
+  private audio = inject(AudioService);
   private cdr = inject(ChangeDetectorRef);
 
   deck: FlashcardDeck | null = null;
@@ -210,6 +212,23 @@ export class StudyPage implements OnInit, OnDestroy {
     return this.currentDirection === 'en-to-target'
       ? 'Type in Dutch'
       : 'Type the English translation';
+  }
+
+  /** The current card has a recorded clip. */
+  get hasRecorded(): boolean {
+    return !!this.currentCard?.audioUrl;
+  }
+
+  /** Play the recorded clip of the target-language word. */
+  playRecorded() {
+    void this.audio.playRecorded(this.currentCard?.audioUrl);
+  }
+
+  /** Speak the target-language word with device TTS. */
+  playTts() {
+    if (this.currentCard) {
+      void this.audio.playTts(this.currentCard.text, this.settings.learningLanguage());
+    }
   }
 
   // What answers are valid

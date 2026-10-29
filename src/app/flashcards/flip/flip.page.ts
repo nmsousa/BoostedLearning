@@ -12,6 +12,8 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck, FlashcardRating } from '../../services/flashcard.service';
+import { AudioService } from '../../services/audio.service';
+import { SettingsService } from '../../services/settings.service';
 
 type FlipPhase = 'card' | 'complete';
 
@@ -25,6 +27,8 @@ export class FlipPage implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private flashcardService = inject(FlashcardService);
+  private audio = inject(AudioService);
+  private settings = inject(SettingsService);
   private cdr = inject(ChangeDetectorRef);
 
   deck: FlashcardDeck | null = null;
@@ -112,6 +116,25 @@ export class FlipPage implements OnInit {
 
   flip() {
     this.isFlipped = !this.isFlipped;
+  }
+
+  /** Play the pre-recorded clip for the current word. */
+  playRecorded(event: Event) {
+    event.stopPropagation();
+    void this.audio.playRecorded(this.currentCard?.audioUrl);
+  }
+
+  /** Speak the current word with device TTS. */
+  playTts(event: Event) {
+    event.stopPropagation();
+    if (this.currentCard) {
+      void this.audio.playTts(this.currentCard.text, this.settings.learningLanguage());
+    }
+  }
+
+  /** Whether the current card has a recorded clip. */
+  get hasRecorded(): boolean {
+    return !!this.currentCard?.audioUrl;
   }
 
   async rate(rating: FlashcardRating) {

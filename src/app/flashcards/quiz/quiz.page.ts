@@ -12,6 +12,8 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
+import { AudioService } from '../../services/audio.service';
+import { SettingsService } from '../../services/settings.service';
 
 type QuizPhase = 'play' | 'complete';
 
@@ -33,6 +35,8 @@ export class QuizPage implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private flashcardService = inject(FlashcardService);
+  private audio = inject(AudioService);
+  private settings = inject(SettingsService);
   private cdr = inject(ChangeDetectorRef);
 
   deck: FlashcardDeck | null = null;
@@ -107,6 +111,27 @@ export class QuizPage implements OnInit {
 
   get total(): number {
     return this.cards.length;
+  }
+
+  private get currentCard(): Flashcard | null {
+    return this.cards[this.currentIndex] ?? null;
+  }
+
+  /** The current card has a recorded clip. */
+  get hasRecorded(): boolean {
+    return !!this.currentCard?.audioUrl;
+  }
+
+  /** Play the recorded clip for the prompt word. */
+  playRecorded() {
+    void this.audio.playRecorded(this.currentCard?.audioUrl);
+  }
+
+  /** Speak the prompt word with device TTS. */
+  playTts() {
+    if (this.currentCard) {
+      void this.audio.playTts(this.currentCard.text, this.settings.learningLanguage());
+    }
   }
 
   /** Build the prompt + options for the current card. */

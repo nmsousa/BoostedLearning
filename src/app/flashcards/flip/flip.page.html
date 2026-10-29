@@ -47,6 +47,18 @@
       </div>
     </div>
 
+    <!-- Audio: temporary A/B of recorded clip vs device TTS -->
+    <div class="audio-row">
+      <button type="button" class="audio-btn" (click)="playRecorded($event)" [disabled]="!hasRecorded" aria-label="Play recorded audio">
+        <ion-icon name="volume-high-outline"></ion-icon>
+        <span>Recorded</span>
+      </button>
+      <button type="button" class="audio-btn" (click)="playTts($event)" aria-label="Play device voice">
+        <ion-icon name="mic-outline"></ion-icon>
+        <span>TTS</span>
+      </button>
+    </div>
+
     <!-- Rating buttons: always available; flipping to check is optional -->
     <div class="rating-area">
       <p class="rating-prompt">
