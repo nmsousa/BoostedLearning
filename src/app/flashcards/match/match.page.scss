@@ -15,6 +15,51 @@
   padding: 24px 16px 32px;
 }
 
+.match-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ion-color-medium);
+
+    ion-icon {
+      font-size: 1.25rem;
+    }
+  }
+
+  .stat.time ion-icon {
+    color: var(--ion-color-primary);
+  }
+
+  // Combo stays muted until it's meaningful (2+), then lights up.
+  .stat.combo {
+    color: var(--ion-color-medium);
+    transition: color 0.2s ease, transform 0.2s ease;
+
+    ion-icon { color: var(--ion-color-medium); }
+
+    &.active {
+      color: var(--ion-color-warning);
+      transform: scale(1.06);
+
+      ion-icon { color: var(--ion-color-warning); }
+    }
+
+    .combo-x {
+      margin-left: 2px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+  }
+}
+
 .match-hint {
   text-align: center;
   color: var(--ion-color-medium);
@@ -128,7 +173,39 @@
 
 .complete-sub {
   color: var(--ion-color-medium);
-  margin: 0 0 28px;
+  margin: 0 0 20px;
+}
+
+.complete-metrics {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 28px;
+
+  .metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+
+    ion-icon {
+      font-size: 1.5rem;
+      color: var(--ion-color-primary);
+      margin-bottom: 2px;
+    }
+
+    .metric-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--ion-text-color);
+    }
+
+    .metric-label {
+      font-size: 0.75rem;
+      color: var(--ion-color-medium);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
 }
 
 .finish-button {

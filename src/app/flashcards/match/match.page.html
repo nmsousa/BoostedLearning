@@ -16,6 +16,18 @@
 <ion-content [fullscreen]="true" class="match-content">
   <!-- Play phase -->
   <div *ngIf="phase === 'play'" class="match-container">
+    <!-- Timer + combo bar -->
+    <div class="match-stats">
+      <div class="stat time">
+        <ion-icon name="time-outline"></ion-icon>
+        <span>{{ formattedTime }}</span>
+      </div>
+      <div class="stat combo" [class.active]="combo >= 2">
+        <ion-icon name="flame"></ion-icon>
+        <span>{{ combo }}<span class="combo-x" *ngIf="combo >= 2">x combo</span></span>
+      </div>
+    </div>
+
     <p class="match-hint">Tap a word, then its translation.</p>
 
     <div class="match-board">
@@ -64,6 +76,19 @@
     <p class="complete-sub">
       {{ mistakes === 0 ? 'Flawless - no mistakes!' : mistakes + ' mistake' + (mistakes === 1 ? '' : 's') + ' along the way.' }}
     </p>
+
+    <div class="complete-metrics">
+      <div class="metric">
+        <ion-icon name="time-outline"></ion-icon>
+        <span class="metric-value">{{ formattedTime }}</span>
+        <span class="metric-label">Time</span>
+      </div>
+      <div class="metric">
+        <ion-icon name="flame"></ion-icon>
+        <span class="metric-value">{{ bestCombo }}</span>
+        <span class="metric-label">Best combo</span>
+      </div>
+    </div>
 
     <ion-button expand="block" (click)="finish()" class="finish-button">
       Done

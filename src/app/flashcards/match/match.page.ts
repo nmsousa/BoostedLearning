@@ -9,7 +9,7 @@
  * @module app/flashcards/match
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
 
@@ -30,7 +30,7 @@ interface MatchItem {
   styleUrls: ['./match.page.scss'],
   standalone: false,
 })
-export class MatchPage implements OnInit {
+export class MatchPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private flashcardService = inject(FlashcardService);
@@ -60,6 +60,15 @@ export class MatchPage implements OnInit {
   earnedStars = 0;
   isNewBest = false;
   private locked = false; // ignore taps during the wrong-flash animation
+
+  // Timer (counts up from the first board being shown).
+  elapsedSeconds = 0;
+  private timerStart = 0;
+  private timerHandle: ReturnType<typeof setInterval> | null = null;
+
+  // Combo: current streak of consecutive correct matches, and the best this run.
+  combo = 0;
+  bestCombo = 0;
 
   async ngOnInit() {
     await this.flashcardService.initialize();
@@ -103,9 +112,39 @@ export class MatchPage implements OnInit {
       this.phase = 'complete';
     } else {
       this.fillBoard();
+      this.startTimer();
     }
 
     this.cdr.detectChanges();
+  }
+
+  ngOnDestroy() {
+    this.stopTimer();
+  }
+
+  /** Start the count-up timer, ticking once a second. */
+  private startTimer() {
+    this.timerStart = Date.now();
+    this.elapsedSeconds = 0;
+    this.stopTimer();
+    this.timerHandle = setInterval(() => {
+      this.elapsedSeconds = Math.floor((Date.now() - this.timerStart) / 1000);
+      this.cdr.detectChanges();
+    }, 1000);
+  }
+
+  private stopTimer() {
+    if (this.timerHandle !== null) {
+      clearInterval(this.timerHandle);
+      this.timerHandle = null;
+    }
+  }
+
+  /** mm:ss display for the elapsed time. */
+  get formattedTime(): string {
+    const m = Math.floor(this.elapsedSeconds / 60);
+    const s = this.elapsedSeconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
   get progress(): number {
@@ -210,6 +249,10 @@ export class MatchPage implements OnInit {
       this.selectedRight = null;
       this.solvedPairs++;
 
+      // Combo: extend the current streak and track the best this run.
+      this.combo++;
+      if (this.combo > this.bestCombo) this.bestCombo = this.combo;
+
       // Record a positive attempt for scheduling.
       if (this.deck) {
         this.flashcardService.rateFlashcard(this.deck.id, matchedId, 'easy');
@@ -227,8 +270,9 @@ export class MatchPage implements OnInit {
         this.cdr.detectChanges();
       }, 250);
     } else {
-      // Wrong pair - flash red then reset.
+      // Wrong pair - flash red then reset. Breaks the combo.
       this.mistakes++;
+      this.combo = 0;
       left.wrong = true;
       right.wrong = true;
       this.locked = true;
@@ -257,23 +301,55 @@ export class MatchPage implements OnInit {
     return a;
   }
 
+  /** A comfortable pace, in seconds per pair, used as the no-penalty target. */
+  private readonly SECONDS_PER_PAIR = 2.5;
+  /** Lowest the time multiplier can drag the score (so a slow-but-perfect run
+   *  can still earn stars). */
+  private readonly MIN_TIME_FACTOR = 0.6;
+
   /**
-   * Finish: score by first-try accuracy (each mistake costs one pair's worth)
-   * and persist stars for level sessions.
+   * Final score combines accuracy and speed:
+   *   accuracy  = clean pairs / total
+   *   timeFactor= 1.0 at/under the target pace, easing down to MIN_TIME_FACTOR
+   *               the slower the run.
+   *   score%    = round(accuracy * timeFactor * 100)
+   * Stars come from the existing thresholds (90/70/50).
+   */
+  private computeScorePercent(total: number, cleanPairs: number): number {
+    if (total === 0) return 0;
+    const accuracy = cleanPairs / total;
+
+    const targetSeconds = total * this.SECONDS_PER_PAIR;
+    const elapsed = Math.max(1, this.elapsedSeconds);
+    const timeFactor = Math.min(
+      1,
+      Math.max(this.MIN_TIME_FACTOR, targetSeconds / elapsed)
+    );
+
+    return Math.round(accuracy * timeFactor * 100);
+  }
+
+  /**
+   * Finish: stop the timer, score by combined accuracy + speed, and persist
+   * stars for level sessions.
    */
   private async completeSession() {
     this.phase = 'complete';
+    this.stopTimer();
 
     const total = this.totalPairs;
     const cleanPairs = Math.max(0, total - this.mistakes);
-    const scorePercent = total > 0 ? Math.round((cleanPairs / total) * 100) : 0;
+    const scorePercent = this.computeScorePercent(total, cleanPairs);
 
     if (this.levelNumber > 0 && this.deck) {
+      // saveLevelProgress derives the percentage from correct/total, so pass an
+      // "effective correct" count that encodes the combined score.
+      const effectiveCorrect = Math.round((scorePercent / 100) * total);
       const result = await this.flashcardService.saveLevelProgress(
         this.deck.id,
         'match',
         this.levelNumber,
-        cleanPairs,
+        effectiveCorrect,
         total
       );
       this.earnedStars = result.stars;
