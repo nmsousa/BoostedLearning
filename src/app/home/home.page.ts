@@ -13,6 +13,7 @@ import { MemoryEngineService } from '../services/memory-engine.service';
 import { SessionService } from '../services/session.service';
 import { SettingsService } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
+import { KnowledgeBreakdown } from '../../core/knowledge-level';
 
 interface QuickAction {
   id: string;
@@ -41,6 +42,16 @@ export class HomePage implements OnInit {
   courseLanguages: { code: string; name: string }[] = [];
   dueCount = 0;
   recoveringCount = 0;
+
+  /** Three-bucket breakdown of how well the learner knows their words. */
+  knowledge: KnowledgeBreakdown = {
+    learning: 0,
+    familiar: 0,
+    known: 0,
+    neverStudied: 0,
+    total: 0,
+  };
+
   isLoading = false; // Start as false since load is synchronous
 
   // Languages the user can learn (flag image + name). Extend as more added.
@@ -71,7 +82,10 @@ export class HomePage implements OnInit {
     this.content.initialize();
   }
 
-  ngOnInit() {
+  async ngOnInit(): Promise<void> {
+    // Wait for saved progress to load from storage so the dashboard reflects
+    // past sessions on launch (resolves immediately if there's nothing saved).
+    await this.memory.ready;
     this.loadDashboardData();
   }
 
@@ -88,6 +102,9 @@ export class HomePage implements OnInit {
 
     // Get recovering items count
     this.recoveringCount = this.memory.getRecoveringItems().length;
+
+    // Knowledge breakdown (Learning / Familiar / Known)
+    this.knowledge = this.memory.getKnowledgeBreakdown();
 
     // Build quick actions
     this.quickActions = this.buildQuickActions();

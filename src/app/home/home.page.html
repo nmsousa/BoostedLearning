@@ -122,7 +122,7 @@
       </div>
     </section>
 
-    <!-- Quick stats -->
+    <!-- Quick stats: what to do now -->
     <section class="stats-section">
       <div class="stat-card">
         <ion-icon name="flame-outline" color="primary"></ion-icon>
@@ -130,10 +130,60 @@
         <div class="stat-label">Due today</div>
       </div>
       <div class="stat-card">
-        <ion-icon name="refresh-outline" color="warning"></ion-icon>
-        <div class="stat-value">{{ recoveringCount }}</div>
-        <div class="stat-label">Recovering</div>
+        <ion-icon name="library-outline" color="success"></ion-icon>
+        <div class="stat-value">{{ knowledge.known }}</div>
+        <div class="stat-label">Words known</div>
       </div>
+    </section>
+
+    <!-- Knowledge breakdown: how well you know your words -->
+    <section class="knowledge-section">
+      <div class="knowledge-header">
+        <h3 class="section-title">Your words</h3>
+        <span class="knowledge-total" *ngIf="knowledge.total > 0">
+          {{ knowledge.total }} studied
+        </span>
+      </div>
+
+      <!-- Proportional bar -->
+      <div class="knowledge-bar" *ngIf="knowledge.total > 0" aria-hidden="true">
+        <span
+          class="seg learning"
+          [style.flex]="knowledge.learning"
+          *ngIf="knowledge.learning > 0"></span>
+        <span
+          class="seg familiar"
+          [style.flex]="knowledge.familiar"
+          *ngIf="knowledge.familiar > 0"></span>
+        <span
+          class="seg known"
+          [style.flex]="knowledge.known"
+          *ngIf="knowledge.known > 0"></span>
+      </div>
+
+      <!-- Legend with counts -->
+      <div class="knowledge-legend">
+        <div class="legend-item">
+          <span class="dot learning"></span>
+          <span class="legend-count">{{ knowledge.learning }}</span>
+          <span class="legend-label">Learning</span>
+        </div>
+        <div class="legend-item">
+          <span class="dot familiar"></span>
+          <span class="legend-count">{{ knowledge.familiar }}</span>
+          <span class="legend-label">Familiar</span>
+        </div>
+        <div class="legend-item">
+          <span class="dot known"></span>
+          <span class="legend-count">{{ knowledge.known }}</span>
+          <span class="legend-label">Known</span>
+        </div>
+      </div>
+
+      <!-- Nothing studied yet -->
+      <p class="knowledge-empty" *ngIf="knowledge.total === 0">
+        Study some words and they'll show up here as Learning, Familiar, or Known.
+      </p>
     </section>
 
     <!-- Empty state -->

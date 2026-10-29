@@ -18,6 +18,9 @@
 // Types
 export * from './types';
 
+// Knowledge Level Classifier
+export * from './knowledge-level';
+
 // Recall-Quality Classifier
 export {
   classifyRecallQuality,
