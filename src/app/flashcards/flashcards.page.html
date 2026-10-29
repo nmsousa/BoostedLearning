@@ -63,7 +63,9 @@
               (click)="startLevel(deck, level)">
 
               <div class="level-info">
-                <span class="level-number">Level {{ level.levelNumber }}</span>
+                <span class="level-number">
+                  Level {{ level.levelNumber }}<span *ngIf="level.skill"> · {{ level.skill }}</span>
+                </span>
                 <span *ngIf="level.isUnlocked" class="level-cards">{{ level.cardCount }} cards</span>
                 <span *ngIf="!level.isUnlocked" class="level-cards level-locked-hint">
                   Score 70% on the previous level to unlock

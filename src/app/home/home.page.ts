@@ -57,6 +57,7 @@ export class HomePage implements OnInit {
   // emoji flags which Windows doesn't display.
   readonly availableLanguages: { code: string; name: string; flagUrl: string }[] = [
     { code: 'nl', name: 'Dutch', flagUrl: 'https://flagcdn.com/nl.svg' },
+    { code: 'fr', name: 'French', flagUrl: 'https://flagcdn.com/fr.svg' },
   ];
 
   /** Currently selected learning language code (persisted in settings). */

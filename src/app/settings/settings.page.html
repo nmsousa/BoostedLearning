@@ -226,6 +226,14 @@
         </ion-label>
       </ion-item>
 
+      <ion-item button (click)="openDuomeModal()" detail="true">
+        <ion-icon slot="start" name="globe-outline"></ion-icon>
+        <ion-label>
+          Add a language
+          <p>Import a full language from a duome.eu list</p>
+        </ion-label>
+      </ion-item>
+
       <ion-item button (click)="exportCustomCards()" detail="true" [disabled]="customCardCount === 0">
         <ion-icon slot="start" name="share-outline"></ion-icon>
         <ion-label>
@@ -377,6 +385,73 @@
         <p *ngIf="manualError" class="vocab-error">
           <ion-icon name="alert-circle"></ion-icon>
           {{ manualError }}
+        </p>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- Add a language from duome.eu -->
+  <ion-modal [isOpen]="showDuomeModal" (didDismiss)="closeDuomeModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button (click)="closeDuomeModal()">Cancel</ion-button>
+          </ion-buttons>
+          <ion-title>Add a Language</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="importFromDuome()" [strong]="true" [disabled]="duomeBusy">
+              {{ duomeBusy ? 'Importing…' : 'Import' }}
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="ion-padding">
+        <div class="vocab-instructions">
+          <h3>How to get the list:</h3>
+          <ol>
+            <li>Go to <strong>duome.eu/vocabulary/en</strong></li>
+            <li>Choose the language you're learning</li>
+            <li>Click <strong>“by skill”</strong></li>
+            <li>Copy that page's URL and paste it below</li>
+          </ol>
+          <p class="vocab-hint">Downloads the word list on your device (needs internet once).</p>
+        </div>
+
+        <ion-item>
+          <ion-input
+            [(ngModel)]="duomeUrl"
+            label="duome skills URL"
+            labelPlacement="floating"
+            placeholder="https://duome.eu/vocabulary/en/it/skills"
+            autocapitalize="off">
+          </ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-input
+            [(ngModel)]="duomeLang"
+            label="Language code (2 letters)"
+            labelPlacement="floating"
+            placeholder="it"
+            autocapitalize="off"
+            maxlength="2">
+          </ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-input
+            [(ngModel)]="duomeName"
+            label="Language name"
+            labelPlacement="floating"
+            placeholder="Italian">
+          </ion-input>
+        </ion-item>
+
+        <p *ngIf="duomeError" class="vocab-error">
+          <ion-icon name="alert-circle"></ion-icon>
+          {{ duomeError }}
         </p>
       </ion-content>
     </ng-template>

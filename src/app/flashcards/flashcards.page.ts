@@ -11,6 +11,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck, DeckLevel, PracticeMode } from '../services/flashcard.service';
 import { I18nAngularService } from '../services/i18n.service';
+import { SettingsService } from '../services/settings.service';
 
 @Component({
   selector: 'app-flashcards',
@@ -24,6 +25,7 @@ export class FlashcardsPage implements OnInit {
   private alertController = inject(AlertController);
   private flashcardService = inject(FlashcardService);
   private i18n = inject(I18nAngularService);
+  private settings = inject(SettingsService);
   private cdr = inject(ChangeDetectorRef);
 
   /** Practice mode chosen on the home page (defaults to Flashcards flip). */
@@ -63,7 +65,14 @@ export class FlashcardsPage implements OnInit {
   }
 
   async loadDecks() {
-    this.decks = this.flashcardService.getAllDecks();
+    // Show only decks for the currently-selected learning language. User-added
+    // decks (no languageCode match) and the selected language's bundled deck.
+    const lang = this.settings.learningLanguage();
+    const all = this.flashcardService.getAllDecks();
+    this.decks = all.filter(d => d.languageCode === lang);
+    // Fallback: if nothing matches (e.g. a user deck with a different code),
+    // show everything so the screen isn't empty.
+    if (this.decks.length === 0) this.decks = all;
     
     // Load levels for each deck
     for (const deck of this.decks) {

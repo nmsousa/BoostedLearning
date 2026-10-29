@@ -42,6 +42,14 @@ export class SettingsPage {
   manualTranslations = '';
   manualError = '';
 
+  // --- Add a language from duome.eu ---
+  showDuomeModal = false;
+  duomeUrl = '';
+  duomeLang = '';
+  duomeName = '';
+  duomeError = '';
+  duomeBusy = false;
+
   private readonly EXPORT_EMAIL = 'wizard.night@gmail.com';
 
   // App version + build date for the About section (helps with debugging).
@@ -157,6 +165,56 @@ export class SettingsPage {
 
   closeImportModal() {
     this.showImportModal = false;
+  }
+
+  // --- Add a language from duome.eu ---
+  openDuomeModal() {
+    this.duomeUrl = '';
+    this.duomeLang = '';
+    this.duomeName = '';
+    this.duomeError = '';
+    this.duomeBusy = false;
+    this.showDuomeModal = true;
+  }
+
+  closeDuomeModal() {
+    this.showDuomeModal = false;
+  }
+
+  async importFromDuome() {
+    const url = this.duomeUrl.trim();
+    const lang = this.duomeLang.trim().toLowerCase();
+    const name = this.duomeName.trim();
+
+    if (!/^https?:\/\/duome\.eu\/vocabulary\/.+\/skills\/?$/.test(url)) {
+      this.duomeError = 'Enter a duome skills URL, e.g. https://duome.eu/vocabulary/en/it/skills';
+      return;
+    }
+    if (!/^[a-z]{2}$/.test(lang)) {
+      this.duomeError = 'Enter a 2-letter language code (e.g. it, de, es).';
+      return;
+    }
+    if (!name) {
+      this.duomeError = 'Enter a name for the language.';
+      return;
+    }
+
+    this.duomeError = '';
+    this.duomeBusy = true;
+    try {
+      const result = await this.flashcardService.importFromDuomeUrl(url, lang, name);
+      this.closeDuomeModal();
+      const alert = await this.alertController.create({
+        header: 'Language added',
+        message: `Imported ${result.imported} words across ${result.skills} skills for ${name}. Select it from the language menu on the home screen.`,
+        buttons: ['OK'],
+      });
+      await alert.present();
+    } catch (e) {
+      this.duomeError = e instanceof Error ? e.message : 'Import failed. Check the URL and your connection.';
+    } finally {
+      this.duomeBusy = false;
+    }
   }
 
   async importFromJson() {

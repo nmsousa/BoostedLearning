@@ -36,6 +36,10 @@ export interface FlashcardEntity {
   text: string;
   translations: string[];
   audioUrl?: string;
+  /** Skill group (duome-imported decks). Optional. */
+  skill?: string;
+  /** 1-based skill order in the course. Optional. */
+  skillOrder?: number;
   correctCount: number;
   incorrectCount: number;
   lastSeen: string | null;

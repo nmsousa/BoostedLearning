@@ -14,8 +14,10 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { fsrs, createEmptyCard, Rating, State, type Card as FsrsCard } from 'ts-fsrs';
+import { CapacitorHttp } from '@capacitor/core';
 import { getDatabase, FlashcardDeckEntity, FlashcardEntity, LevelProgressEntity } from '../../persistence/database';
 import { KnowledgeBreakdown } from '../../core/knowledge-level';
+import { parseDuomeHtml } from './duome-parser';
 
 /** Self-rating options in Flashcards (flip) mode. */
 export type FlashcardRating = 'hard' | 'medium' | 'easy';
@@ -60,6 +62,11 @@ export interface Flashcard {
 
   /** Serialized FSRS state (JSON) for Flashcards flip mode. */
   fsrs?: string;
+
+  /** Skill/lesson group this card belongs to (duome decks). */
+  skill?: string;
+  /** 1-based order of the skill in the course. */
+  skillOrder?: number;
 }
 
 /**
@@ -88,6 +95,10 @@ interface BundledDeckJson {
     text: string;
     translations: string[];
     audioUrl?: string;
+    /** Skill/lesson group (duome decks). Optional. */
+    skill?: string;
+    /** 1-based order of the skill in the course. Optional. */
+    skillOrder?: number;
   }[];
 }
 
@@ -122,6 +133,8 @@ export interface DeckLevel {
   bestScore: number;
   attempts: number;
   isUnlocked: boolean;
+  /** Skill name for skill-based decks (French); undefined for chunked decks. */
+  skill?: string;
 }
 
 /**
@@ -129,6 +142,7 @@ export interface DeckLevel {
  */
 const BUNDLED_DECKS = [
   'assets/flashcards/duolingo-dutch.json',
+  'assets/flashcards/french.json',
 ];
 
 @Injectable({
@@ -207,6 +221,8 @@ export class FlashcardService {
             text: card.text,
             translations: card.translations,
             audioUrl: card.audioUrl,
+            skill: card.skill,
+            skillOrder: card.skillOrder,
             correctCount: 0,
             incorrectCount: 0,
             lastSeen: null,
@@ -250,6 +266,8 @@ export class FlashcardService {
           text: card.text,
           translations: card.translations,
           audioUrl: card.audioUrl,
+          skill: card.skill,
+          skillOrder: card.skillOrder,
           correctCount: card.correctCount,
           incorrectCount: card.incorrectCount,
           lastSeen: card.lastSeen,
@@ -299,6 +317,8 @@ export class FlashcardService {
       text: card.text,
       translations: card.translations,
       audioUrl: card.audioUrl,
+      skill: card.skill,
+      skillOrder: card.skillOrder,
       correctCount: card.correctCount,
       incorrectCount: card.incorrectCount,
       lastSeen: card.lastSeen,
@@ -405,6 +425,91 @@ export class FlashcardService {
     }
     
     return { imported, duplicates, deckId: deck.id };
+  }
+
+  /**
+   * Import a language by fetching a duome.eu "by skill" vocabulary page and
+   * parsing its words/skills/audio. Uses CapacitorHttp so the request runs at
+   * the native layer (avoids browser CORS) — works in the installed app, not
+   * the browser preview.
+   *
+   * @param url A duome skills URL, e.g. https://duome.eu/vocabulary/en/it/skills
+   * @param langCode Target language code to tag the deck with (e.g. 'it')
+   * @param deckName Display name for the deck
+   * @returns { imported, skills, deckId }
+   */
+  async importFromDuomeUrl(
+    url: string,
+    langCode: string,
+    deckName: string
+  ): Promise<{ imported: number; skills: number; deckId: string }> {
+    const response = await CapacitorHttp.get({ url, responseType: 'text' });
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(`Failed to fetch (HTTP ${response.status})`);
+    }
+    const html = typeof response.data === 'string' ? response.data : String(response.data);
+    const parsed = parseDuomeHtml(html);
+    if (parsed.words.length === 0) {
+      throw new Error('No words found at that URL. Make sure it is a duome "by skill" page.');
+    }
+
+    const now = new Date().toISOString();
+    const deckId = `deck-duome-${langCode}`;
+
+    const entities: FlashcardEntity[] = parsed.words.map((w, index) => ({
+      id: `${deckId}-card-${index}`,
+      deckId,
+      text: w.text,
+      translations: w.translations,
+      audioUrl: w.audioUrl,
+      skill: w.skill,
+      skillOrder: w.skillOrder,
+      correctCount: 0,
+      incorrectCount: 0,
+      lastSeen: null,
+      nextReview: null,
+      streak: 0,
+      updatedAt: now,
+    }));
+
+    await this.db.flashcards.bulkPut(entities);
+    await this.db.flashcardDecks.put({
+      id: deckId,
+      name: deckName,
+      languageCode: langCode,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const deck: FlashcardDeck = {
+      id: deckId,
+      name: deckName,
+      languageCode: langCode,
+      isBundled: false,
+      createdAt: now,
+      updatedAt: now,
+      cards: entities.map(e => ({
+        id: e.id,
+        deckId: e.deckId,
+        text: e.text,
+        translations: e.translations,
+        audioUrl: e.audioUrl,
+        skill: e.skill,
+        skillOrder: e.skillOrder,
+        correctCount: 0,
+        incorrectCount: 0,
+        lastSeen: null,
+        nextReview: null,
+        streak: 0,
+      })),
+    };
+
+    this.decksSignal.update(decks => {
+      const without = decks.filter(d => d.id !== deckId);
+      return [...without, deck];
+    });
+
+    return { imported: parsed.words.length, skills: parsed.skills.length, deckId };
   }
 
   /**
@@ -1079,6 +1184,36 @@ export class FlashcardService {
     return result;
   }
 
+  /** Whether a deck carries skill groupings (duome decks do). */
+  deckHasSkills(deckId: string): boolean {
+    const deck = this.getDeck(deckId);
+    return !!deck && deck.cards.some(c => !!c.skill);
+  }
+
+  /**
+   * Cards grouped into skill levels, in skill order. Each inner array is one
+   * level. Used when a deck has skills (e.g. French). Falls back to empty when
+   * the deck has no skills.
+   */
+  private getSkillLevels(deckId: string): Flashcard[][] {
+    const deck = this.getDeck(deckId);
+    if (!deck) return [];
+
+    // Group by skill, preserving skillOrder.
+    const groups = new Map<string, { order: number; cards: Flashcard[] }>();
+    for (const card of deck.cards) {
+      const skill = card.skill ?? 'Uncategorized';
+      const order = card.skillOrder ?? 9999;
+      const g = groups.get(skill) ?? { order, cards: [] };
+      g.cards.push(card);
+      groups.set(skill, g);
+    }
+
+    return [...groups.values()]
+      .sort((a, b) => a.order - b.order)
+      .map(g => g.cards);
+  }
+
   /**
    * Get all levels for a deck
    * Cards are ordered from oldest learned (Level 1) to newest
@@ -1087,11 +1222,12 @@ export class FlashcardService {
     const deck = this.getDeck(deckId);
     if (!deck) return [];
 
-    // Work over de-duplicated prompts so each level is a consistent pack of
-    // unique cards (collapsed forms like de/het count as one).
-    // Cards are in order (oldest first); Level 1 = oldest learned.
+    // Skill-based decks (French): one level per skill, in course order.
+    const skillLevels = this.deckHasSkills(deckId) ? this.getSkillLevels(deckId) : null;
+    const totalLevels = skillLevels
+      ? skillLevels.length
+      : Math.ceil(this.getDedupedCards(deckId).length / this.CARDS_PER_LEVEL);
     const totalCards = this.getDedupedCards(deckId).length;
-    const totalLevels = Math.ceil(totalCards / this.CARDS_PER_LEVEL);
     
     // Load this deck's level progress for the requested mode only, so stars
     // and unlock state are tracked independently per practice mode.
@@ -1111,9 +1247,20 @@ export class FlashcardService {
     
     for (let i = 0; i < totalLevels; i++) {
       const levelNumber = i + 1;
-      // Reverse order: Level 1 = last cards in array (oldest learned)
-      const startIndex = totalCards - ((i + 1) * this.CARDS_PER_LEVEL);
-      const endIndex = totalCards - (i * this.CARDS_PER_LEVEL);
+
+      let cardCount: number;
+      let skillName: string | undefined;
+      if (skillLevels) {
+        // Skill-based: level N = the Nth skill, in course order.
+        const group = skillLevels[i] ?? [];
+        cardCount = group.length;
+        skillName = group[0]?.skill;
+      } else {
+        // Chunked: Level 1 = last cards (oldest learned).
+        const startIndex = Math.max(0, totalCards - ((i + 1) * this.CARDS_PER_LEVEL));
+        const endIndex = Math.min(totalCards, totalCards - (i * this.CARDS_PER_LEVEL));
+        cardCount = endIndex - startIndex;
+      }
       
       const progress = progressMap.get(levelNumber);
       
@@ -1123,9 +1270,10 @@ export class FlashcardService {
       
       levels.push({
         levelNumber,
-        startIndex: Math.max(0, startIndex),
-        endIndex: Math.min(totalCards, endIndex),
-        cardCount: Math.min(this.CARDS_PER_LEVEL, endIndex - Math.max(0, startIndex)),
+        startIndex: 0,
+        endIndex: 0,
+        cardCount,
+        skill: skillName,
         bestStars: progress?.bestStars ?? 0,
         bestScore: progress?.bestScore ?? 0,
         attempts: progress?.attempts ?? 0,
@@ -1140,6 +1288,11 @@ export class FlashcardService {
    * Get cards for a specific level
    */
   getLevelCards(deckId: string, levelNumber: number): Flashcard[] {
+    // Skill-based decks: level N = the Nth skill's cards (course order).
+    if (this.deckHasSkills(deckId)) {
+      return this.getSkillLevels(deckId)[levelNumber - 1] ?? [];
+    }
+
     const deduped = this.getDedupedCards(deckId);
     if (deduped.length === 0) return [];
 
