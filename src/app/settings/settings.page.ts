@@ -16,6 +16,7 @@ import { SettingsService, Theme, TextSize, AudioSpeed, AppSettings, FlashcardDir
 import { I18nAngularService } from '../services/i18n.service';
 import { ExplanationLanguage } from '../../services/i18n';
 import { FlashcardService, DuolingoResponse } from '../services/flashcard.service';
+import { BUILD_INFO } from '../../build-info';
 
 @Component({
   selector: 'app-settings',
@@ -42,6 +43,10 @@ export class SettingsPage {
   manualError = '';
 
   private readonly EXPORT_EMAIL = 'wizard.night@gmail.com';
+
+  // App version + build date for the About section (helps with debugging).
+  readonly appVersion = BUILD_INFO.version;
+  readonly buildDate = new Date(BUILD_INFO.buildDate).toLocaleString();
 
   // Settings accessors
   get theme() { return this.settingsService.theme(); }

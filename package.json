@@ -1,10 +1,13 @@
 {
   "name": "boosted-learning",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "An Ionic project",
   "author": "BoostedLearning",
   "scripts": {
     "ng": "ng",
+    "gen:build-info": "node scripts/gen-build-info.mjs",
+    "prestart": "node scripts/gen-build-info.mjs",
+    "prebuild": "node scripts/gen-build-info.mjs",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",

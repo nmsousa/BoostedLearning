@@ -194,9 +194,24 @@
     transform: scale(0.94);
   }
 
-  &.hard:hover   { border-color: var(--ion-color-danger); }
-  &.medium:hover { border-color: var(--ion-color-warning); }
-  &.easy:hover   { border-color: var(--ion-color-success); }
+  // Remove the tap focus ring (it otherwise lingers on the tapped button after
+  // the card advances). Keep a visible ring for keyboard navigation only.
+  &:focus {
+    outline: none;
+  }
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: 2px;
+  }
+
+  // Only apply hover borders on devices that actually hover (mouse/trackpad).
+  // On touchscreens, :hover sticks after a tap and leaves the colored outline
+  // stuck on the button even after moving to the next card.
+  @media (hover: hover) {
+    &.hard:hover   { border-color: var(--ion-color-danger); }
+    &.medium:hover { border-color: var(--ion-color-warning); }
+    &.easy:hover   { border-color: var(--ion-color-success); }
+  }
 
   // Confirmation pulse while the card swipes away.
   &.pending {

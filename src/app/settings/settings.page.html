@@ -243,6 +243,29 @@
         <ion-label color="danger">Reset Settings</ion-label>
       </ion-item>
     </ion-item-group>
+
+    <!-- About Section -->
+    <ion-item-group>
+      <ion-item-divider>
+        <ion-label>About</ion-label>
+      </ion-item-divider>
+
+      <ion-item>
+        <ion-icon slot="start" name="information-circle-outline"></ion-icon>
+        <ion-label>
+          Version
+          <p>{{ appVersion }}</p>
+        </ion-label>
+      </ion-item>
+
+      <ion-item>
+        <ion-icon slot="start" name="calendar-outline"></ion-icon>
+        <ion-label>
+          Build date
+          <p>{{ buildDate }}</p>
+        </ion-label>
+      </ion-item>
+    </ion-item-group>
   </ion-list>
 
   <!-- Import Modal -->

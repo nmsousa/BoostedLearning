@@ -74,3 +74,6 @@ test-core-output.txt
 
 # OTA publish output (built locally, uploaded to GitHub Releases)
 scripts/ota-out/
+
+# Generated at build time (version + build date)
+src/build-info.ts
