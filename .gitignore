@@ -71,3 +71,6 @@ Thumbs.db
 
 # Stray local test output
 test-core-output.txt
+
+# OTA publish output (built locally, uploaded to GitHub Releases)
+scripts/ota-out/
