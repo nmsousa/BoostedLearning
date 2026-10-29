@@ -76,18 +76,18 @@
       </ion-card-content>
     </ion-card>
 
-    <!-- Continue learning (single entry for the selected language) -->
+    <!-- Continue learning (single entry for the selected language).
+         Temporarily disabled: the course/lesson flow isn't ready yet. -->
     <section class="continue-section" *ngIf="courseLanguages.length > 0">
       <ion-item
-        [button]="true"
-        (click)="navigateToLanguage(learningLanguage)"
-        detail="true"
+        detail="false"
         class="continue-item"
+        [disabled]="true"
       >
-        <ion-icon name="book-outline" slot="start" color="primary"></ion-icon>
+        <ion-icon name="construct-outline" slot="start" color="medium"></ion-icon>
         <ion-label>
           <h2>Continue learning</h2>
-          <p>Pick up where you left off</p>
+          <p>Coming soon</p>
         </ion-label>
       </ion-item>
     </section>
@@ -181,13 +181,14 @@
       </p>
     </section>
 
-    <!-- Empty state -->
+    <!-- Empty state. The guided course flow isn't ready yet, so the entry
+         point is shown disabled; use the Practice modes above for now. -->
     <div *ngIf="courseLanguages.length === 0 && !isLoading" class="empty-state">
       <ion-icon name="school-outline"></ion-icon>
       <h2>Welcome to BoostedLearning</h2>
-      <p>Start your language learning journey today.</p>
-      <ion-button expand="block" (click)="navigateToLanguage('nl')">
-        Start Learning Dutch
+      <p>The guided course is coming soon. Try the Practice modes above to get started.</p>
+      <ion-button expand="block" [disabled]="true">
+        Start Learning Dutch (coming soon)
       </ion-button>
     </div>
   </div>
