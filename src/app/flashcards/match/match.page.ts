@@ -39,9 +39,12 @@ export class MatchPage implements OnInit {
   deck: FlashcardDeck | null = null;
   levelNumber = 0;
 
-  private readonly BATCH_SIZE = 6;
+  // How many pairs are visible on the board at once. As each correct match is
+  // made, the cleared pair is immediately replaced with a fresh one (if any
+  // remain in the queue), so the board stays filled instead of draining.
+  private readonly VISIBLE_PAIRS = 5;
 
-  // All cards for the session, consumed batch by batch.
+  // Words not yet placed on the board.
   private queue: Flashcard[] = [];
   private totalPairs = 0;
   private solvedPairs = 0;
@@ -94,7 +97,7 @@ export class MatchPage implements OnInit {
     if (this.queue.length === 0) {
       this.phase = 'complete';
     } else {
-      this.loadNextBatch();
+      this.fillBoard();
     }
 
     this.cdr.detectChanges();
@@ -105,30 +108,55 @@ export class MatchPage implements OnInit {
     return (this.solvedPairs / this.totalPairs) * 100;
   }
 
-  /** Load the next batch of up to BATCH_SIZE pairs onto the board. */
-  private loadNextBatch() {
-    const batch = this.queue.splice(0, this.BATCH_SIZE);
+  /** Build the two tiles (left + right) for one card. */
+  private makePair(card: Flashcard): { left: MatchItem; right: MatchItem } {
+    return {
+      left: { id: card.id, label: card.text, side: 'left', matched: false, wrong: false },
+      right: { id: card.id, label: card.translations[0] ?? '', side: 'right', matched: false, wrong: false },
+    };
+  }
 
-    const left: MatchItem[] = batch.map(c => ({
-      id: c.id,
-      label: c.text,
-      side: 'left',
-      matched: false,
-      wrong: false,
-    }));
-
-    const right: MatchItem[] = batch.map(c => ({
-      id: c.id,
-      label: c.translations[0] ?? '',
-      side: 'right',
-      matched: false,
-      wrong: false,
-    }));
-
-    this.leftItems = left;
-    this.rightItems = this.shuffle(right);
+  /** Initial board fill: up to VISIBLE_PAIRS pairs from the queue. */
+  private fillBoard() {
+    const first = this.queue.splice(0, this.VISIBLE_PAIRS);
+    const lefts: MatchItem[] = [];
+    const rights: MatchItem[] = [];
+    for (const card of first) {
+      const { left, right } = this.makePair(card);
+      lefts.push(left);
+      rights.push(right);
+    }
+    this.leftItems = lefts;
+    this.rightItems = this.shuffle(rights);
     this.selectedLeft = null;
     this.selectedRight = null;
+  }
+
+  /**
+   * Replace a just-matched pair with a fresh one from the queue (if any),
+   * so the board stays full. The new left tile takes the matched left's slot;
+   * the new right tile is inserted at a random position so columns don't line
+   * up. If the queue is empty, the matched tiles are simply removed.
+   */
+  private refillAfterMatch(matchedId: string) {
+    const leftIndex = this.leftItems.findIndex(i => i.id === matchedId);
+    const rightIndex = this.rightItems.findIndex(i => i.id === matchedId);
+
+    const next = this.queue.shift();
+
+    if (next) {
+      const { left, right } = this.makePair(next);
+      // Swap the new left tile into the cleared left slot.
+      if (leftIndex >= 0) this.leftItems.splice(leftIndex, 1, left);
+      // Remove the cleared right tile and drop the new one in at a random spot.
+      if (rightIndex >= 0) this.rightItems.splice(rightIndex, 1);
+      const insertAt = Math.floor(Math.random() * (this.rightItems.length + 1));
+      this.rightItems.splice(insertAt, 0, right);
+    } else {
+      // No more words: remove the matched tiles from the board.
+      if (leftIndex >= 0) this.leftItems.splice(leftIndex, 1);
+      if (rightIndex >= 0) this.rightItems.splice(rightIndex, 1);
+    }
   }
 
   select(item: MatchItem) {
@@ -157,7 +185,9 @@ export class MatchPage implements OnInit {
     const right = this.selectedRight!;
 
     if (left.id === right.id) {
-      // Correct pair - lock both in.
+      // Correct pair - briefly mark it matched (fade), then swap in a fresh
+      // pair so the board stays filled.
+      const matchedId = left.id;
       left.matched = true;
       right.matched = true;
       this.selectedLeft = null;
@@ -166,23 +196,20 @@ export class MatchPage implements OnInit {
 
       // Record a positive attempt for scheduling.
       if (this.deck) {
-        this.flashcardService.rateFlashcard(this.deck.id, left.id, 'easy');
+        this.flashcardService.rateFlashcard(this.deck.id, matchedId, 'easy');
       }
 
-      // Batch cleared?
-      if (this.leftItems.every(i => i.matched)) {
-        if (this.queue.length > 0) {
-          // brief pause then next batch
-          this.locked = true;
-          setTimeout(() => {
-            this.loadNextBatch();
-            this.locked = false;
-            this.cdr.detectChanges();
-          }, 350);
-        } else {
+      this.locked = true;
+      setTimeout(() => {
+        this.refillAfterMatch(matchedId);
+        this.locked = false;
+
+        // Done when nothing is left on the board and the queue is drained.
+        if (this.leftItems.length === 0 && this.queue.length === 0) {
           this.completeSession();
         }
-      }
+        this.cdr.detectChanges();
+      }, 250);
     } else {
       // Wrong pair - flash red then reset.
       this.mistakes++;

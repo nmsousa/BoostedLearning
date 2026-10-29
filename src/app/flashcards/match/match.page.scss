@@ -6,32 +6,38 @@
 }
 
 .match-container {
-  padding: 16px;
+  // Center the board vertically in the available space and nudge it down from
+  // the top so the tiles sit nearer the middle of the screen.
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 24px 16px 32px;
 }
 
 .match-hint {
   text-align: center;
   color: var(--ion-color-medium);
   font-size: 0.95rem;
-  margin: 4px 0 20px;
+  margin: 0 0 28px;
 }
 
 .match-board {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 18px;
 }
 
 .match-col {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 18px;
 }
 
 .match-item {
   width: 100%;
-  min-height: 60px;
-  padding: 12px 14px;
+  min-height: 76px;
+  padding: 16px 16px;
   border: 2px solid transparent;
   border-radius: 14px;
   background: var(--ion-color-light);
