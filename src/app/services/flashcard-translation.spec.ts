@@ -65,3 +65,33 @@ describe('FlashcardService.bestTranslation', () => {
     expect(svc.bestTranslation(card('xyz', []))).toBe('');
   });
 });
+
+describe('FlashcardService.isSameInBothLanguages / playableCards', () => {
+  let svc: FlashcardService;
+
+  beforeEach(() => {
+    svc = new FlashcardService(null as never);
+  });
+
+  it('detects words identical in both languages (case/space insensitive)', () => {
+    expect(svc.isSameInBothLanguages(card('water', ['water']))).toBe(true);
+    expect(svc.isSameInBothLanguages(card('Man ', ['man']))).toBe(true);
+    expect(svc.isSameInBothLanguages(card('hond', ['dog']))).toBe(false);
+  });
+
+  it('respects the curated translation when checking identity', () => {
+    // "man" is curated to "man", so it counts as identical.
+    expect(svc.isSameInBothLanguages(card('man', ["guy's", 'husband', 'man']))).toBe(true);
+  });
+
+  it('playableCards filters out identical-in-both-languages cards', () => {
+    const cards = [
+      card('water', ['water']),
+      card('hond', ['dog']),
+      card('man', ["guy's", 'man']),
+      card('vrouw', ['woman']),
+    ];
+    const playable = svc.playableCards(cards);
+    expect(playable.map(c => c.text)).toEqual(['hond', 'vrouw']);
+  });
+});

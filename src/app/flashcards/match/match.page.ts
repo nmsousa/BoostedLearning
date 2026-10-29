@@ -109,10 +109,9 @@ export class MatchPage implements OnInit, OnDestroy {
       cards = this.flashcardService.getFlashcardQueue(deckId, 20);
     }
 
-    // Exclude cards whose Dutch word is identical to its English translation
-    // (e.g. "water" = "water"). They make a trivial/ambiguous match and look
-    // like duplicate tiles on the board.
-    cards = cards.filter(c => !this.isIdenticalPair(c));
+    // Exclude cards identical in both languages (e.g. "water" = "water"):
+    // they make a trivial/ambiguous match and look like duplicate tiles.
+    cards = this.flashcardService.playableCards(cards);
 
     this.queue = this.shuffle(cards);
     this.totalPairs = this.queue.length;
@@ -159,17 +158,6 @@ export class MatchPage implements OnInit, OnDestroy {
   get progress(): number {
     if (this.totalPairs === 0) return 0;
     return (this.solvedPairs / this.totalPairs) * 100;
-  }
-
-  /**
-   * True when the card's word equals its primary translation (case/space
-   * insensitive) — i.e. the same text would appear on both sides of the board.
-   */
-  private isIdenticalPair(card: Flashcard): boolean {
-    const norm = (s: string) => s.trim().toLowerCase();
-    const word = norm(card.text);
-    const translation = norm(this.flashcardService.bestTranslation(card));
-    return word.length > 0 && word === translation;
   }
 
   /** Build the two tiles (left + right) for one card. */

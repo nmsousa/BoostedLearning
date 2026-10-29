@@ -928,6 +928,27 @@ export class FlashcardService {
     return [...pool].sort((a, b) => score(a) - score(b))[0] ?? all[0];
   }
 
+  /**
+   * True when a card's word is identical to its displayed translation
+   * (e.g. Dutch "water" = English "water"). Such cards make trivial or
+   * ambiguous questions in the matching/quiz modes.
+   */
+  isSameInBothLanguages(card: Flashcard): boolean {
+    const norm = (s: string) => s.trim().toLowerCase();
+    const word = norm(card.text);
+    const translation = norm(this.bestTranslation(card));
+    return word.length > 0 && word === translation;
+  }
+
+  /**
+   * Filter a card list down to those suitable for the matching/quiz modes:
+   * excludes cards that are identical in both languages. Centralized here so
+   * every mode (and every future language) applies the same content rules.
+   */
+  playableCards(cards: Flashcard[]): Flashcard[] {
+    return cards.filter(c => !this.isSameInBothLanguages(c));
+  }
+
   // ============================================
   // Knowledge breakdown (home "Your words")
   // ============================================

@@ -85,6 +85,10 @@ export class QuizPage implements OnInit {
       cards = this.flashcardService.getFlashcardQueue(deckId, 20);
     }
 
+    // Exclude cards identical in both languages (the prompt word would also be
+    // one of the options, making the question trivial).
+    cards = this.flashcardService.playableCards(cards);
+
     this.cards = this.shuffle(cards);
 
     if (this.cards.length === 0) {
@@ -112,13 +116,17 @@ export class QuizPage implements OnInit {
     this.prompt = card.text;
 
     const correctLabel = this.flashcardService.bestTranslation(card);
+    const promptLower = card.text.trim().toLowerCase();
 
-    // Gather distractors from other cards in the deck (clean translations,
-    // excluding any that equal the correct answer).
+    // Gather distractors from other cards in the deck (clean translations),
+    // excluding any that equal the correct answer or the prompt word itself.
     const pool = (this.deck?.cards ?? [])
       .filter(c => c.id !== card.id)
       .map(c => this.flashcardService.bestTranslation(c))
-      .filter(t => t && t.toLowerCase() !== correctLabel.toLowerCase());
+      .filter(t => {
+        const tl = t.trim().toLowerCase();
+        return tl && tl !== correctLabel.toLowerCase() && tl !== promptLower;
+      });
 
     const distractors = this.shuffle([...new Set(pool)]).slice(0, this.OPTION_COUNT - 1);
 
