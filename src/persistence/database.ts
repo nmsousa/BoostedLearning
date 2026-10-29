@@ -79,6 +79,9 @@ export interface LevelProgressEntity {
   bestScore: number;    // Best percentage achieved
   attempts: number;     // How many times attempted
   lastAttempt: string;  // ISO timestamp
+  /** Fastest completion time in seconds (Match mode). Optional / undefined for
+   *  modes or records that don't track time. */
+  bestTimeSeconds?: number;
 }
 
 /**

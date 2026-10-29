@@ -1013,8 +1013,9 @@ export class FlashcardService {
     mode: PracticeMode,
     levelNumber: number,
     correctCount: number,
-    totalCards: number
-  ): Promise<{ stars: number; isNewBest: boolean }> {
+    totalCards: number,
+    timeSeconds?: number
+  ): Promise<{ stars: number; isNewBest: boolean; bestTimeSeconds?: number }> {
     const scorePercent = Math.round((correctCount / totalCards) * 100);
     const stars = this.calculateStars(scorePercent);
     
@@ -1022,6 +1023,13 @@ export class FlashcardService {
     const existing = await this.db.levelProgress.get(progressId);
     
     const isNewBest = !existing || scorePercent > existing.bestScore;
+
+    // Track the fastest completion time, when provided.
+    let bestTimeSeconds = existing?.bestTimeSeconds;
+    if (timeSeconds !== undefined) {
+      bestTimeSeconds =
+        bestTimeSeconds === undefined ? timeSeconds : Math.min(bestTimeSeconds, timeSeconds);
+    }
     
     const progress: LevelProgressEntity = {
       id: progressId,
@@ -1032,11 +1040,12 @@ export class FlashcardService {
       bestScore: isNewBest ? scorePercent : (existing?.bestScore ?? scorePercent),
       attempts: (existing?.attempts ?? 0) + 1,
       lastAttempt: new Date().toISOString(),
+      ...(bestTimeSeconds !== undefined ? { bestTimeSeconds } : {}),
     };
     
     await this.db.levelProgress.put(progress);
     
-    return { stars, isNewBest };
+    return { stars, isNewBest, bestTimeSeconds };
   }
 
   /** Storage key for a level's progress, scoped to deck + mode + level. */

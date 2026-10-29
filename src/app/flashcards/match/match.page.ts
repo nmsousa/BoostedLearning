@@ -59,6 +59,10 @@ export class MatchPage implements OnInit, OnDestroy {
   mistakes = 0;
   earnedStars = 0;
   isNewBest = false;
+  /** Best completion time for this level (seconds), across runs. */
+  bestTimeSeconds: number | null = null;
+  /** A hint like "Finish under 0:25 for 3 stars" shown when not yet 3 stars. */
+  nextStarHint = '';
   private locked = false; // ignore taps during the wrong-flash animation
 
   // Timer (counts up from the first board being shown).
@@ -69,6 +73,11 @@ export class MatchPage implements OnInit, OnDestroy {
   // Combo: current streak of consecutive correct matches, and the best this run.
   combo = 0;
   bestCombo = 0;
+
+  // The number of rows the board started with. Used to reserve a stable board
+  // height so the layout doesn't re-center (and the timer doesn't drift down)
+  // as tiles are removed near the end of the level.
+  private initialRows = 0;
 
   async ngOnInit() {
     await this.flashcardService.initialize();
@@ -183,8 +192,21 @@ export class MatchPage implements OnInit, OnDestroy {
     }
     this.leftItems = lefts;
     this.rightItems = this.shuffle(rights);
+    this.initialRows = lefts.length;
     this.selectedLeft = null;
     this.selectedRight = null;
+  }
+
+  /**
+   * Minimum height (px) to reserve for the board, based on the initial row
+   * count. Keeps the board (and the timer above it) anchored so it doesn't
+   * re-center as tiles are removed at the end of the level.
+   * Tile min-height is 76px with 18px gaps (see SCSS).
+   */
+  get boardMinHeight(): number {
+    const rows = this.initialRows;
+    if (rows <= 0) return 0;
+    return rows * 76 + (rows - 1) * 18;
   }
 
   /**
@@ -329,6 +351,33 @@ export class MatchPage implements OnInit, OnDestroy {
     return Math.round(accuracy * timeFactor * 100);
   }
 
+  /** Star thresholds (percent) matching FlashcardService.calculateStars. */
+  private readonly STAR_THRESHOLDS = { 3: 90, 2: 70, 1: 50 };
+
+  /** Format seconds as m:ss. */
+  private fmt(sec: number): string {
+    const m = Math.floor(sec / 60);
+    const s = Math.round(sec) % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * With a perfect run (no mistakes), the time needed to reach a star tier T%:
+   *   accuracy = 1, so score = timeFactor*100, need timeFactor >= T/100
+   *   targetSeconds / elapsed >= T/100  ->  elapsed <= targetSeconds * 100 / T
+   * Returns the seconds the user must beat to earn the next tier above their
+   * current stars, or '' if already at 3 stars.
+   */
+  private buildNextStarHint(total: number, stars: number): string {
+    if (stars >= 3) return '';
+    const nextTier = (stars + 1) as 1 | 2 | 3;
+    const thresholdPct = this.STAR_THRESHOLDS[nextTier];
+    const targetSeconds = total * this.SECONDS_PER_PAIR;
+    // Max time (with a flawless run) to still hit the next tier.
+    const maxSeconds = (targetSeconds * 100) / thresholdPct;
+    return `Finish under ${this.fmt(maxSeconds)} with no mistakes for ${nextTier} star${nextTier === 1 ? '' : 's'}.`;
+  }
+
   /**
    * Finish: stop the timer, score by combined accuracy + speed, and persist
    * stars for level sessions.
@@ -336,6 +385,8 @@ export class MatchPage implements OnInit, OnDestroy {
   private async completeSession() {
     this.phase = 'complete';
     this.stopTimer();
+    // Snap elapsed to the exact finishing moment (the interval ticks whole seconds).
+    this.elapsedSeconds = Math.max(this.elapsedSeconds, Math.floor((Date.now() - this.timerStart) / 1000));
 
     const total = this.totalPairs;
     const cleanPairs = Math.max(0, total - this.mistakes);
@@ -350,15 +401,25 @@ export class MatchPage implements OnInit, OnDestroy {
         'match',
         this.levelNumber,
         effectiveCorrect,
-        total
+        total,
+        this.elapsedSeconds
       );
       this.earnedStars = result.stars;
       this.isNewBest = result.isNewBest;
+      this.bestTimeSeconds = result.bestTimeSeconds ?? this.elapsedSeconds;
     } else {
       this.earnedStars = this.flashcardService.calculateStars(scorePercent);
+      this.bestTimeSeconds = this.elapsedSeconds;
     }
 
+    this.nextStarHint = this.buildNextStarHint(total, this.earnedStars);
+
     this.cdr.detectChanges();
+  }
+
+  /** Best time formatted for the complete screen. */
+  get bestTimeFormatted(): string {
+    return this.bestTimeSeconds === null ? '' : this.fmt(this.bestTimeSeconds);
   }
 
   finish() {

@@ -30,7 +30,7 @@
 
     <p class="match-hint">Tap a word, then its translation.</p>
 
-    <div class="match-board">
+    <div class="match-board" [style.min-height.px]="boardMinHeight">
       <!-- Left column: Dutch -->
       <div class="match-col">
         <button
@@ -88,7 +88,18 @@
         <span class="metric-value">{{ bestCombo }}</span>
         <span class="metric-label">Best combo</span>
       </div>
+      <div class="metric" *ngIf="bestTimeFormatted">
+        <ion-icon name="trophy-outline"></ion-icon>
+        <span class="metric-value">{{ bestTimeFormatted }}</span>
+        <span class="metric-label">Best time</span>
+      </div>
     </div>
+
+    <!-- Encouragement toward the next star tier -->
+    <p *ngIf="nextStarHint" class="next-star-hint">
+      <ion-icon name="sparkles-outline"></ion-icon>
+      {{ nextStarHint }}
+    </p>
 
     <ion-button expand="block" (click)="finish()" class="finish-button">
       Done

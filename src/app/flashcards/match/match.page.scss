@@ -71,6 +71,9 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
+  // Columns start at the top of the reserved board height so removing tiles
+  // near the end leaves space at the bottom rather than re-centering.
+  align-items: start;
 }
 
 .match-col {
@@ -176,10 +179,26 @@
   margin: 0 0 20px;
 }
 
+.next-star-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  color: var(--ion-color-warning);
+  font-size: 0.9rem;
+  margin: 0 0 24px;
+  max-width: 320px;
+
+  ion-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+}
+
 .complete-metrics {
   display: flex;
-  gap: 32px;
-  margin-bottom: 28px;
+  gap: 28px;
+  margin-bottom: 24px;
 
   .metric {
     display: flex;
