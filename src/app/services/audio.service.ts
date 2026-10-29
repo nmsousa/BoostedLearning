@@ -57,10 +57,21 @@ export class AudioService {
     }
   }
 
-  /** Speak text with device TTS in the given app language. */
-  async playTts(text: string, langCode: string): Promise<boolean> {
-    if (!text) return false;
+  /**
+   * Speak text with device TTS in the given app language.
+   * Returns `{ ok, reason? }` so the UI can explain a failure (e.g. no voice).
+   */
+  async playTts(text: string, langCode: string): Promise<{ ok: boolean; reason?: string }> {
+    if (!text) return { ok: false, reason: 'No text' };
     const lang = LANG_TO_BCP47[langCode] ?? langCode;
+
+    if (!this.tts.isSupported()) {
+      return { ok: false, reason: 'Speech is not supported on this device.' };
+    }
+    if (!this.tts.hasVoiceFor(lang)) {
+      return { ok: false, reason: `No voice installed for ${lang} on this device.` };
+    }
+
     if (this.audioEl) this.audioEl.pause(); // don't overlap with recorded
     const result = await this.tts.speak(text, {
       lang,
@@ -68,8 +79,9 @@ export class AudioService {
     });
     if (!result.success) {
       console.warn('AudioService: TTS failed', result.error);
+      return { ok: false, reason: result.error };
     }
-    return result.success;
+    return { ok: true };
   }
 
   /** Whether device TTS has a voice for the given app language. */

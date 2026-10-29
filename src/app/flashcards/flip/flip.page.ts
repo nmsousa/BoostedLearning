@@ -12,6 +12,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck, FlashcardRating } from '../../services/flashcard.service';
+import { ToastController } from '@ionic/angular';
 import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
 
@@ -29,6 +30,7 @@ export class FlipPage implements OnInit {
   private flashcardService = inject(FlashcardService);
   private audio = inject(AudioService);
   private settings = inject(SettingsService);
+  private toast = inject(ToastController);
   private cdr = inject(ChangeDetectorRef);
 
   deck: FlashcardDeck | null = null;
@@ -125,10 +127,13 @@ export class FlipPage implements OnInit {
   }
 
   /** Speak the current word with device TTS. */
-  playTts(event: Event) {
+  async playTts(event: Event) {
     event.stopPropagation();
-    if (this.currentCard) {
-      void this.audio.playTts(this.currentCard.text, this.settings.learningLanguage());
+    if (!this.currentCard) return;
+    const res = await this.audio.playTts(this.currentCard.text, this.settings.learningLanguage());
+    if (!res.ok && res.reason) {
+      const t = await this.toast.create({ message: res.reason, duration: 2500, position: 'bottom' });
+      await t.present();
     }
   }
 

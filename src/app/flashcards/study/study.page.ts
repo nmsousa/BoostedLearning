@@ -10,7 +10,7 @@
 
 import { Component, OnInit, OnDestroy, inject, ViewChild, HostListener, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AlertController, IonInput } from '@ionic/angular';
+import { AlertController, IonInput, ToastController } from '@ionic/angular';
 import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { SettingsService } from '../../services/settings.service';
@@ -48,6 +48,7 @@ export class StudyPage implements OnInit, OnDestroy {
   private i18n = inject(I18nAngularService);
   private settings = inject(SettingsService);
   private audio = inject(AudioService);
+  private toast = inject(ToastController);
   private cdr = inject(ChangeDetectorRef);
 
   deck: FlashcardDeck | null = null;
@@ -225,9 +226,12 @@ export class StudyPage implements OnInit, OnDestroy {
   }
 
   /** Speak the target-language word with device TTS. */
-  playTts() {
-    if (this.currentCard) {
-      void this.audio.playTts(this.currentCard.text, this.settings.learningLanguage());
+  async playTts() {
+    if (!this.currentCard) return;
+    const res = await this.audio.playTts(this.currentCard.text, this.settings.learningLanguage());
+    if (!res.ok && res.reason) {
+      const t = await this.toast.create({ message: res.reason, duration: 2500, position: 'bottom' });
+      await t.present();
     }
   }
 
