@@ -5,20 +5,27 @@
   --padding-end: 16px;
 }
 
-// Question phase
+// Question phase.
+// Full-height flex column: fixed card band at top, flexible spacer, fixed
+// action band pinned to the bottom. Identical across question/feedback phases
+// so nothing jumps when switching between "type" and "continue".
 .question-container {
   display: flex;
   flex-direction: column;
   min-height: 100%;
+  // Guarantee the column fills the viewport so the bottom action band is
+  // actually pinned to the bottom in every phase (ion-content height).
+  height: 100%;
+  box-sizing: border-box;
   padding: 24px 16px;
 }
 
 .card-section {
-  // Fixed height region so the word stays in the SAME place
-  // regardless of how much content is in the answer section below.
+  // Fixed-height band so the word stays in the SAME place regardless of how
+  // much content the answer section below holds.
   flex: 0 0 auto;
-  height: 45vh;
-  min-height: 220px;
+  height: 38vh;
+  min-height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -47,8 +54,15 @@
 }
 
 .answer-section {
+  // Pin the action area to the bottom and reserve a consistent height so the
+  // input+Check (question) and answer+Continue (feedback) blocks occupy the
+  // same vertical band — no jumping between phases.
   margin-top: auto;
   padding-top: 24px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .answer-input {
