@@ -374,11 +374,24 @@ describe('TTS Service', () => {
       const service = createTTSService(provider);
       
       const speakPromise = service.speak('Test', { lang: 'nl-NL' });
-      provider.simulateSpeechError('interrupted');
+      provider.simulateSpeechError('synthesis-failed');
       
       const result = await speakPromise;
       expect(result.success).toBe(false);
       expect(result.error).toContain('Speech error');
+    });
+
+    it('treats interrupted/canceled as success (expected when replaced)', async () => {
+      for (const reason of ['interrupted', 'canceled']) {
+        const provider = createMockProvider([createMockVoice('nl-NL')]);
+        const service = createTTSService(provider);
+
+        const speakPromise = service.speak('Test', { lang: 'nl-NL' });
+        provider.simulateSpeechError(reason);
+
+        const result = await speakPromise;
+        expect(result.success).toBe(true);
+      }
     });
   });
   

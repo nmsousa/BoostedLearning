@@ -195,8 +195,15 @@ export function createTTSService(provider?: SpeechSynthesisProvider): TTSService
           };
           
           utterance.onerror = (event) => {
-            // Graceful degradation for mid-utterance errors (R13.6)
             const errorMessage = event.error || 'Unknown speech synthesis error';
+            // 'interrupted'/'canceled' happen when a new utterance cancels this
+            // one (e.g. the user taps play again). That's expected, not a real
+            // failure — report success so callers don't surface an error.
+            if (errorMessage === 'interrupted' || errorMessage === 'canceled') {
+              resolve({ success: true });
+              return;
+            }
+            // Graceful degradation for genuine mid-utterance errors (R13.6)
             resolve({ success: false, error: `Speech error: ${errorMessage}` });
           };
           
