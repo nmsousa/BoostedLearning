@@ -20,7 +20,13 @@
       <div class="word-display">
         <div class="word-row">
           <h1 class="target-word">{{ promptText }}</h1>
-          <button type="button" class="audio-icon" (click)="playWord()" aria-label="Play pronunciation">
+          <!-- Audio only after answering, so it doesn't reveal the answer. -->
+          <button
+            *ngIf="phase === 'feedback'"
+            type="button"
+            class="audio-icon"
+            (click)="playWord()"
+            aria-label="Play pronunciation">
             <ion-icon name="volume-high-outline"></ion-icon>
           </button>
         </div>
