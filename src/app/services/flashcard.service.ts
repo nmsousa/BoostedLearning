@@ -135,6 +135,8 @@ export interface DeckLevel {
   isUnlocked: boolean;
   /** Skill name for skill-based decks (French); undefined for chunked decks. */
   skill?: string;
+  /** Best completion time in seconds (Match mode); undefined if never timed. */
+  bestTimeSeconds?: number;
 }
 
 /**
@@ -1322,6 +1324,7 @@ export class FlashcardService {
         bestScore: progress?.bestScore ?? 0,
         attempts: progress?.attempts ?? 0,
         isUnlocked,
+        bestTimeSeconds: progress?.bestTimeSeconds,
       });
     }
     

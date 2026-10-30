@@ -74,6 +74,12 @@
               </div>
 
               <div class="level-stars">
+                <span
+                  *ngIf="level.isUnlocked && isMatchMode && level.bestTimeSeconds !== undefined"
+                  class="level-time gamification">
+                  <ion-icon name="time-outline"></ion-icon>
+                  {{ formatBestTime(level.bestTimeSeconds) }}
+                </span>
                 <span *ngIf="level.isUnlocked" class="gamification">
                   <ion-icon *ngFor="let s of getStarArray(level.bestStars)" name="star" class="star filled"></ion-icon>
                   <ion-icon *ngFor="let s of getEmptyStarArray(level.bestStars)" name="star-outline" class="star empty"></ion-icon>

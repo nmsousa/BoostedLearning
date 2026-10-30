@@ -96,6 +96,19 @@ export class FlashcardsPage implements OnInit {
     return this.decks.some(d => !d.isBundled);
   }
 
+  /** Format a best-time (seconds) as m:ss for the level cards (Match only). */
+  formatBestTime(seconds: number | undefined): string {
+    if (seconds === undefined) return '';
+    const m = Math.floor(seconds / 60);
+    const s = Math.round(seconds) % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  /** The level list currently belongs to the timed (Match) mode. */
+  get isMatchMode(): boolean {
+    return this.mode === 'match';
+  }
+
   getLevels(deckId: string): DeckLevel[] {
     return this.deckLevels.get(deckId) ?? [];
   }
