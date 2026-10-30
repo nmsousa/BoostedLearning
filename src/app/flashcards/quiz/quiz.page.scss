@@ -22,12 +22,17 @@
 
 // Prompt word with a single audio icon beside it.
 .quiz-prompt-row {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   margin: 0 0 24px;
+
+  .word-anchor {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
 }
 
 .quiz-prompt {
@@ -37,12 +42,13 @@
   color: var(--ion-text-color);
 }
 
-// Audio buttons float to the right so the prompt stays centered.
+// Audio buttons sit just right of the prompt; the prompt stays centered.
 .audio-actions {
   position: absolute;
-  right: 0;
+  left: 100%;
   top: 50%;
   transform: translateY(-50%);
+  margin-left: 12px;
   display: flex;
   align-items: center;
   gap: 8px;

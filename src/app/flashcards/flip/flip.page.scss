@@ -344,22 +344,29 @@
 }
 
 // Word + a single audio icon on the card face.
-// The word stays centered on the card; the audio buttons float to the right
-// (absolutely positioned) so they don't shift the word off-center.
+// The word stays centered on the card; the audio buttons sit just to the
+// right of the word (anchored to the word's right edge) so they're near the
+// word without shifting it off-center.
 .word-row {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
 
+  .word-anchor {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
   .card-word { margin: 0; }
 
   .audio-actions {
     position: absolute;
-    right: 0;
+    left: 100%;
     top: 50%;
     transform: translateY(-50%);
+    margin-left: 12px;
     display: flex;
     align-items: center;
     gap: 8px;

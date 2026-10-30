@@ -414,22 +414,28 @@
 }
 
 // Word + a single audio icon beside it.
-// The word stays centered; audio buttons float to the right so they don't
-// shift the word off-center.
+// The word stays centered; audio buttons sit just to its right (anchored to
+// the word's right edge) so they're near the word without shifting it.
 .word-row {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
 
+  .word-anchor {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
   .target-word { margin: 0; }
 
   .audio-actions {
     position: absolute;
-    right: 0;
+    left: 100%;
     top: 50%;
     transform: translateY(-50%);
+    margin-left: 12px;
     display: flex;
     align-items: center;
     gap: 8px;

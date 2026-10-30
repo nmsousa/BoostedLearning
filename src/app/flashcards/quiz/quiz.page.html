@@ -25,15 +25,17 @@
 
     <!-- Word + a single audio icon (recorded, with TTS fallback) -->
     <div class="quiz-prompt-row">
-      <span class="quiz-prompt">{{ prompt }}</span>
-      <div class="audio-actions">
-        <button type="button" class="audio-icon" (click)="playWord()" [attr.aria-label]="t('mode.playPronunciation')">
-          <ion-icon name="volume-high-outline"></ion-icon>
-        </button>
-        <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="t('mode.playSlower')">
-          <ion-icon name="volume-low-outline"></ion-icon>
-        </button>
-      </div>
+      <span class="word-anchor">
+        <span class="quiz-prompt">{{ prompt }}</span>
+        <span class="audio-actions">
+          <button type="button" class="audio-icon" (click)="playWord()" [attr.aria-label]="t('mode.playPronunciation')">
+            <ion-icon name="volume-high-outline"></ion-icon>
+          </button>
+          <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="t('mode.playSlower')">
+            <ion-icon name="volume-low-outline"></ion-icon>
+          </button>
+        </span>
+      </span>
     </div>
 
     <div class="quiz-options">
