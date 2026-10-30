@@ -119,6 +119,12 @@
   padding-top: 0;
 }
 
+// Prominent quick-study action at the top of an expanded deck.
+.quick-study-top {
+  margin: 4px 0 14px;
+  --border-radius: 10px;
+}
+
 .levels-list {
   display: flex;
   flex-direction: column;
