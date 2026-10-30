@@ -69,6 +69,34 @@ export interface Flashcard {
   skill?: string;
   /** 1-based order of the skill in the course. */
   skillOrder?: number;
+
+  /**
+   * User override for how often this word appears in practice:
+   * - 'boost': surface more often (weighted up in queues),
+   * - 'hide': never show in practice,
+   * - undefined/'normal': default behaviour.
+   */
+  priority?: WordPriority;
+}
+
+/** Per-word user priority override for practice queues. */
+export type WordPriority = 'boost' | 'normal' | 'hide';
+
+/** A practiced word row for the "Your words" screen. */
+export interface StudiedWord {
+  text: string;
+  translation: string;
+  correct: number;
+  incorrect: number;
+  medium: number;
+  /** Total attempts across all modes (correct + incorrect + so-so). */
+  attempts: number;
+  /** Fraction correct over correct+incorrect (0..1). */
+  accuracy: number;
+  /** Fraction incorrect over correct+incorrect (0..1). */
+  missRate: number;
+  level: KnowledgeLevel;
+  priority: WordPriority;
 }
 
 /**
@@ -291,6 +319,7 @@ export class FlashcardService {
           streak: card.streak,
           isCustom: card.isCustom,
           fsrs: card.fsrs,
+          priority: card.priority,
         })),
       });
     }
@@ -315,6 +344,7 @@ export class FlashcardService {
           card.nextReview = savedProgress.nextReview;
           card.streak = savedProgress.streak;
           card.fsrs = savedProgress.fsrs;
+          card.priority = savedProgress.priority;
         }
       }
     }
@@ -346,6 +376,7 @@ export class FlashcardService {
       isCustom: card.isCustom ?? existing?.isCustom,
       createdAt: existing?.createdAt,
       fsrs: card.fsrs ?? existing?.fsrs,
+      priority: card.priority ?? existing?.priority,
     };
     
     await this.db.flashcards.put(entity);
@@ -720,6 +751,14 @@ export class FlashcardService {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  /** Drop words the user chose to hide from practice. */
+  private excludeHidden(cards: Flashcard[]): Flashcard[] {
+    return cards.filter(c => c.priority !== 'hide');
+  }
+
+  /** Extra score added to 'boost' words so they surface sooner. */
+  private readonly BOOST_SCORE = 600;
+
   /**
    * Get cards for a study session, prioritizing cards that need practice
    */
@@ -729,11 +768,17 @@ export class FlashcardService {
     
     const now = new Date();
     // Use de-duplicated prompts so Quick Study never repeats the same prompt.
-    const cards = [...this.getDedupedCards(deckId)];
+    // Hidden words are excluded entirely.
+    const cards = this.excludeHidden([...this.getDedupedCards(deckId)]);
     
     // Calculate priority score for each card
     const scored = cards.map(card => {
       let score = 0;
+
+      // User "boost" override surfaces the word sooner.
+      if (card.priority === 'boost') {
+        score += this.BOOST_SCORE;
+      }
       
       // Never seen - highest priority
       if (!card.lastSeen) {
@@ -929,7 +974,8 @@ export class FlashcardService {
    * (hard) gives it a near-immediate due date via FSRS.
    */
   getFlashcardQueue(deckId: string, maxCards: number = 20): Flashcard[] {
-    const cards = this.getDedupedCards(deckId);
+    // Hidden words never appear in the queue.
+    const cards = this.excludeHidden(this.getDedupedCards(deckId));
     if (cards.length === 0) return [];
 
     const now = Date.now();
@@ -938,10 +984,13 @@ export class FlashcardService {
       const state = this.getFsrsState(card);
       const due = state.due instanceof Date ? state.due.getTime() : new Date(state.due).getTime();
       const isNew = !card.fsrs;
-      return { card, due, isNew };
+      const boosted = card.priority === 'boost';
+      return { card, due, isNew, boosted };
     });
 
     scored.sort((a, b) => {
+      // Boosted words come first regardless of schedule.
+      if (a.boosted !== b.boosted) return a.boosted ? -1 : 1;
       const aDue = a.due <= now;
       const bDue = b.due <= now;
       // Due/new cards before not-due ones.
@@ -951,6 +1000,44 @@ export class FlashcardService {
     });
 
     return scored.slice(0, maxCards).map(s => s.card);
+  }
+
+  /**
+   * Set the user's practice-priority override for a word, identified by its
+   * target-language text (optionally scoped to a language). Persists the
+   * change and refreshes the in-memory decks.
+   *
+   * Because shared prompts are de-duplicated into a representative card, we
+   * apply the flag to every real deck card whose text matches, so the override
+   * is consistent regardless of which form was shown.
+   */
+  async setWordPriority(
+    text: string,
+    priority: WordPriority,
+    languageCode?: string
+  ): Promise<void> {
+    await this.initialize();
+    const key = this.normalizeKey(text);
+    const decks = this.decksSignal().filter(
+      d => !languageCode || d.languageCode === languageCode
+    );
+
+    const toSave: Flashcard[] = [];
+    for (const deck of decks) {
+      for (const card of deck.cards) {
+        if (this.normalizeKey(card.text) === key) {
+          card.priority = priority;
+          toSave.push(card);
+        }
+      }
+    }
+
+    for (const card of toSave) {
+      await this.saveCardProgress(card);
+    }
+
+    // Trigger reactive consumers (Words page, breakdown, queues).
+    this.decksSignal.update(d => [...d]);
   }
 
   /**
@@ -1130,23 +1217,12 @@ export class FlashcardService {
    * screen. Returns per-word stats sorted by miss rate (worst first) so early
    * levels (seen more often) don't dominate by absolute counts.
    */
-  getStudiedWords(languageCode?: string): {
-    text: string;
-    translation: string;
-    correct: number;
-    incorrect: number;
-    medium: number;
-    missRate: number;
-    level: KnowledgeLevel;
-  }[] {
+  getStudiedWords(languageCode?: string): StudiedWord[] {
     const decks = languageCode
       ? this.getAllDecks().filter(d => d.languageCode === languageCode)
       : this.getAllDecks();
 
-    const rows: {
-      text: string; translation: string; correct: number; incorrect: number;
-      medium: number; missRate: number; level: KnowledgeLevel;
-    }[] = [];
+    const rows: StudiedWord[] = [];
 
     for (const deck of decks) {
       for (const card of this.getDedupedCards(deck.id)) {
@@ -1169,8 +1245,11 @@ export class FlashcardService {
           correct,
           incorrect,
           medium,
+          attempts: correct + incorrect + medium,
+          accuracy: seen > 0 ? correct / seen : 0,
           missRate,
           level,
+          priority: card.priority ?? 'normal',
         });
       }
     }
@@ -1178,7 +1257,7 @@ export class FlashcardService {
     // Worst (highest miss rate) first; tie-break by more attempts.
     return rows.sort((a, b) =>
       b.missRate - a.missRate ||
-      (b.correct + b.incorrect) - (a.correct + a.incorrect)
+      b.attempts - a.attempts
     );
   }
 

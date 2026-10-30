@@ -63,6 +63,11 @@ export interface FlashcardEntity {
    * mode's correct/incorrect counters above. Undefined until first reviewed.
    */
   fsrs?: string;
+  /**
+   * User override for practice frequency: 'boost' (more often), 'hide'
+   * (never shown), or undefined/'normal' (default). Not indexed.
+   */
+  priority?: 'boost' | 'normal' | 'hide';
 }
 
 export interface FlashcardDeckEntity {

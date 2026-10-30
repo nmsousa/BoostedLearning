@@ -2,11 +2,27 @@
   --padding-top: 8px;
 }
 
+.words-search {
+  padding: 8px 8px 0;
+}
+
+.sort-row {
+  --background: transparent;
+  --min-height: 40px;
+  --padding-start: 12px;
+  font-size: 0.9rem;
+
+  ion-icon {
+    color: var(--ion-color-medium);
+    margin-inline-end: 8px;
+  }
+}
+
 .filter-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 12px 12px 12px;
+  padding: 8px 12px 12px;
   margin-bottom: 4px;
 
   ion-chip {
@@ -71,7 +87,18 @@ ion-list {
     display: flex;
     flex-direction: column;
 
-    .word-target { font-weight: 600; }
+    .word-target {
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+
+      .priority-flag {
+        font-size: 15px;
+        &.boost { color: var(--ion-color-primary); }
+        &.hide { color: var(--ion-color-medium); }
+      }
+    }
     .word-translation {
       font-size: 0.85rem;
       color: var(--ion-color-medium);
@@ -89,5 +116,26 @@ ion-list {
     .stat.medium { color: var(--ion-color-warning); }
     .stat.wrong { color: var(--ion-color-danger); }
     .stat.acc { color: var(--ion-text-color); min-width: 36px; text-align: right; }
+
+    .priority-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--ion-color-medium);
+
+      ion-icon { font-size: 18px; }
+      &:active { transform: scale(0.92); }
+    }
+  }
+
+  // Dim words the user has hidden from practice.
+  &.hidden-word {
+    opacity: 0.55;
   }
 }
