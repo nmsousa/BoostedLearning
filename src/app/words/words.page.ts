@@ -21,6 +21,7 @@ import { I18nAngularService } from '../services/i18n.service';
 import { KnowledgeLevel } from '../../core/knowledge-level';
 
 type Filter = 'all' | KnowledgeLevel;
+type StatusFilter = 'all' | 'enabled' | 'hidden';
 type SortKey = 'needsPractice' | 'mostSeen' | 'leastSeen' | 'accuracyHigh' | 'accuracyLow' | 'alpha';
 
 @Component({
@@ -39,6 +40,7 @@ export class WordsPage implements OnInit {
 
   allWords: StudiedWord[] = [];
   filter: Filter = 'all';
+  statusFilter: StatusFilter = 'all';
   search = '';
   sortKey: SortKey = 'needsPractice';
 
@@ -61,11 +63,21 @@ export class WordsPage implements OnInit {
     this.cdr.detectChanges();
   }
 
-  /** Words after filter + search + sort. */
+  /** True when at least one word is hidden (drives the status filter row). */
+  get hasHiddenWords(): boolean {
+    return this.allWords.some(w => w.priority === 'hide');
+  }
+
+  /** Words after status + level filter + search + sort. */
   get words(): StudiedWord[] {
     const q = this.search.trim().toLowerCase();
     let list = this.allWords;
 
+    if (this.statusFilter === 'enabled') {
+      list = list.filter(w => w.priority !== 'hide');
+    } else if (this.statusFilter === 'hidden') {
+      list = list.filter(w => w.priority === 'hide');
+    }
     if (this.filter !== 'all') {
       list = list.filter(w => w.level === this.filter);
     }
@@ -76,6 +88,18 @@ export class WordsPage implements OnInit {
     }
 
     return [...list].sort((a, b) => this.compare(a, b));
+  }
+
+  setStatusFilter(s: StatusFilter) {
+    this.statusFilter = s;
+  }
+
+  countHidden(): number {
+    return this.allWords.filter(w => w.priority === 'hide').length;
+  }
+
+  countEnabled(): number {
+    return this.allWords.filter(w => w.priority !== 'hide').length;
   }
 
   private compare(a: StudiedWord, b: StudiedWord): number {

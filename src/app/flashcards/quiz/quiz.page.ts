@@ -49,9 +49,24 @@ export class QuizPage implements OnInit {
     return this.i18n.t(key, params);
   }
 
-  /** Open the add-word prompt for this deck's language. */
-  async addWord(): Promise<void> {
-    await this.addWordService.promptAddWord(this.deck?.languageCode);
+  /** Open the header menu: add a word, or hide the current word. */
+  async openMenu(): Promise<void> {
+    await this.addWordService.openModeMenu({
+      languageCode: this.deck?.languageCode,
+      currentWord: this.currentCard?.text ?? null,
+      onHidden: () => this.skipHiddenCard(),
+    });
+  }
+
+  /** After hiding the current word, move to the next question. */
+  private skipHiddenCard(): void {
+    this.currentIndex++;
+    if (this.currentIndex >= this.cards.length) {
+      this.completeSession();
+    } else {
+      this.loadQuestion();
+    }
+    this.cdr.detectChanges();
   }
 
   deck: FlashcardDeck | null = null;

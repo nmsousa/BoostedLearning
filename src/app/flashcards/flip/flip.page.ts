@@ -41,9 +41,24 @@ export class FlipPage implements OnInit {
     return this.i18n.t(key, params);
   }
 
-  /** Open the add-word prompt for this deck's language. */
-  async addWord(): Promise<void> {
-    await this.addWordService.promptAddWord(this.deck?.languageCode);
+  /** Open the header menu: add a word, or hide the current word. */
+  async openMenu(): Promise<void> {
+    await this.addWordService.openModeMenu({
+      languageCode: this.deck?.languageCode,
+      currentWord: this.currentCard?.text ?? null,
+      onHidden: () => this.skipHiddenCard(),
+    });
+  }
+
+  /** After hiding the current word, advance to the next card. */
+  private skipHiddenCard(): void {
+    this.currentIndex++;
+    this.isFlipped = false;
+    this.playCount = 0;
+    if (this.currentIndex >= this.cards.length) {
+      this.completeSession();
+    }
+    this.cdr.detectChanges();
   }
 
   deck: FlashcardDeck | null = null;

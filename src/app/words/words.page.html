@@ -32,19 +32,36 @@
     </ion-select>
   </ion-item>
 
-  <!-- Filter chips -->
+  <!-- Level filter chips (with the same colour dots as the home breakdown) -->
   <div class="filter-row">
     <ion-chip [class.active]="filter === 'all'" (click)="setFilter('all')">
       {{ t('words.all') }} ({{ count('all') }})
     </ion-chip>
     <ion-chip class="learning" [class.active]="filter === 'learning'" (click)="setFilter('learning')">
+      <span class="chip-dot learning"></span>
       {{ t('home.level.learning') }} ({{ count('learning') }})
     </ion-chip>
     <ion-chip class="familiar" [class.active]="filter === 'familiar'" (click)="setFilter('familiar')">
+      <span class="chip-dot familiar"></span>
       {{ t('home.level.familiar') }} ({{ count('familiar') }})
     </ion-chip>
     <ion-chip class="known" [class.active]="filter === 'known'" (click)="setFilter('known')">
+      <span class="chip-dot known"></span>
       {{ t('home.level.known') }} ({{ count('known') }})
+    </ion-chip>
+  </div>
+
+  <!-- Status filter: only shown once the user has hidden at least one word. -->
+  <div class="filter-row status-row" *ngIf="hasHiddenWords">
+    <ion-chip [class.active]="statusFilter === 'all'" (click)="setStatusFilter('all')">
+      {{ t('words.all') }}
+    </ion-chip>
+    <ion-chip [class.active]="statusFilter === 'enabled'" (click)="setStatusFilter('enabled')">
+      {{ t('words.status.enabled') }} ({{ countEnabled() }})
+    </ion-chip>
+    <ion-chip [class.active]="statusFilter === 'hidden'" (click)="setStatusFilter('hidden')">
+      <ion-icon name="eye-off-outline"></ion-icon>
+      {{ t('words.status.hidden') }} ({{ countHidden() }})
     </ion-chip>
   </div>
 

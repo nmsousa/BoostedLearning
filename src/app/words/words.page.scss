@@ -33,7 +33,29 @@
       background: var(--ion-color-primary);
       color: var(--ion-color-primary-contrast);
     }
+
+    ion-icon {
+      font-size: 14px;
+      margin-inline-end: 4px;
+    }
   }
+
+  // Colour dots mirror the home-screen knowledge breakdown.
+  .chip-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-inline-end: 6px;
+    flex-shrink: 0;
+
+    &.learning { background: var(--ion-color-danger); }
+    &.familiar { background: var(--ion-color-warning); }
+    &.known { background: var(--ion-color-success); }
+  }
+}
+
+.status-row {
+  padding-top: 0;
 }
 
 .empty {

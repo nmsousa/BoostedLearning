@@ -53,9 +53,13 @@ export class StudyPage implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private addWordService = inject(AddWordService);
 
-  /** Open the add-word prompt for this deck's language. */
-  async addWord(): Promise<void> {
-    await this.addWordService.promptAddWord(this.deck?.languageCode);
+  /** Open the header menu: add a word, or hide the current word. */
+  async openMenu(): Promise<void> {
+    await this.addWordService.openModeMenu({
+      languageCode: this.deck?.languageCode,
+      currentWord: this.currentCard?.text ?? null,
+      onHidden: () => this.nextCard(),
+    });
   }
 
   deck: FlashcardDeck | null = null;

@@ -9,10 +9,20 @@
  */
 
 import { Injectable, inject } from '@angular/core';
-import { AlertController, ToastController } from '@ionic/angular';
+import { ActionSheetController, AlertController, ToastController } from '@ionic/angular';
 import { FlashcardService } from './flashcard.service';
 import { SettingsService } from './settings.service';
 import { I18nAngularService } from './i18n.service';
+
+/** Options for the practice-page header menu. */
+export interface ModeMenuOptions {
+  /** Target language code for adding words. */
+  languageCode?: string;
+  /** The word currently shown, enabling the "hide this word" action. */
+  currentWord?: string | null;
+  /** Called after the current word was hidden (e.g. to advance the card). */
+  onHidden?: () => void;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -20,9 +30,46 @@ import { I18nAngularService } from './i18n.service';
 export class AddWordService {
   private alertCtrl = inject(AlertController);
   private toastCtrl = inject(ToastController);
+  private actionSheet = inject(ActionSheetController);
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
+
+  /**
+   * Open the practice-page header menu (the 3-dots / "+" action): add a word,
+   * and — when a current word is provided — hide that word from future
+   * practice.
+   */
+  async openModeMenu(opts: ModeMenuOptions = {}): Promise<void> {
+    const lang = opts.languageCode ?? this.settings.learningLanguage();
+    const t = (k: string, p?: Record<string, string | number>) => this.i18n.t(k, p);
+
+    const buttons: any[] = [
+      {
+        text: t('mode.addWord'),
+        icon: 'add-circle-outline',
+        handler: () => { this.promptAddWord(lang); },
+      },
+    ];
+
+    if (opts.currentWord) {
+      buttons.push({
+        text: t('mode.hideThisWord'),
+        icon: 'eye-off-outline',
+        role: 'destructive',
+        handler: async () => {
+          await this.flashcards.setWordPriority(opts.currentWord as string, 'hide', lang);
+          await this.toast(t('mode.hiddenToast'));
+          opts.onHidden?.();
+        },
+      });
+    }
+
+    buttons.push({ text: t('common.cancel'), role: 'cancel' });
+
+    const sheet = await this.actionSheet.create({ buttons });
+    await sheet.present();
+  }
 
   /**
    * Open a two-field prompt to add a word + translation(s) to the given

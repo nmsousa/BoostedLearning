@@ -44,9 +44,12 @@ export class MatchPage implements OnInit, OnDestroy {
     return this.i18n.t(key, params);
   }
 
-  /** Open the add-word prompt for this deck's language. */
-  async addWord(): Promise<void> {
-    await this.addWordService.promptAddWord(this.deck?.languageCode);
+  /** Open the header menu. Match has no single "current word", so only the
+   *  add-word action is offered. */
+  async openMenu(): Promise<void> {
+    await this.addWordService.openModeMenu({
+      languageCode: this.deck?.languageCode,
+    });
   }
 
   deck: FlashcardDeck | null = null;

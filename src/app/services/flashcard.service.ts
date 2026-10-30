@@ -1182,11 +1182,12 @@ export class FlashcardService {
 
   /**
    * Filter a card list down to those suitable for the matching/quiz modes:
-   * excludes cards that are identical in both languages. Centralized here so
-   * every mode (and every future language) applies the same content rules.
+   * excludes cards identical in both languages, and words the user has chosen
+   * to hide from practice. Centralized here so every mode (and every future
+   * language) applies the same content rules.
    */
   playableCards(cards: Flashcard[]): Flashcard[] {
-    return cards.filter(c => !this.isSameInBothLanguages(c));
+    return cards.filter(c => !this.isSameInBothLanguages(c) && c.priority !== 'hide');
   }
 
   // ============================================

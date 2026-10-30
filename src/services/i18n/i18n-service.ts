@@ -279,6 +279,8 @@ const PT_MESSAGES: MessageCatalog = {
   'mode.addedToast': 'Palavra adicionada.',
   'mode.duplicateToast': 'Essa palavra já existe.',
   'mode.addFailedToast': 'Não foi possível adicionar a palavra.',
+  'mode.hideThisWord': 'Não voltar a mostrar esta palavra',
+  'mode.hiddenToast': 'Palavra ocultada da prática.',
   'mode.endStudyHeader': 'Terminar sessão de estudo',
   'mode.endStudyMessage': 'Tens a certeza de que queres terminar esta sessão? O progresso não será guardado.',
   'mode.end': 'Terminar',
@@ -343,6 +345,8 @@ const PT_MESSAGES: MessageCatalog = {
   'words.priority.normal': 'Frequência normal',
   'words.priority.hide': 'Ocultar da prática',
   'words.hiddenNote': 'Oculta da prática',
+  'words.status.enabled': 'Ativas',
+  'words.status.hidden': 'Ocultas',
 
   // Practice (level list)
   'practice.loading': 'A carregar...',
@@ -573,6 +577,8 @@ const FR_MESSAGES: MessageCatalog = {
   'mode.addedToast': 'Mot ajouté.',
   'mode.duplicateToast': 'Ce mot existe déjà.',
   'mode.addFailedToast': "Impossible d'ajouter le mot.",
+  'mode.hideThisWord': 'Ne plus afficher ce mot',
+  'mode.hiddenToast': 'Mot masqué de la pratique.',
   'mode.endStudyHeader': "Terminer la session d'étude",
   'mode.endStudyMessage': 'Veux-tu vraiment terminer cette session ? La progression ne sera pas enregistrée.',
   'mode.end': 'Terminer',
@@ -637,6 +643,8 @@ const FR_MESSAGES: MessageCatalog = {
   'words.priority.normal': 'Fréquence normale',
   'words.priority.hide': 'Masquer de la pratique',
   'words.hiddenNote': 'Masqué de la pratique',
+  'words.status.enabled': 'Actifs',
+  'words.status.hidden': 'Masqués',
 
   // Practice (level list)
   'practice.loading': 'Chargement...',
@@ -867,6 +875,8 @@ const EN_MESSAGES: MessageCatalog = {
   'mode.addedToast': 'Word added.',
   'mode.duplicateToast': 'That word already exists.',
   'mode.addFailedToast': 'Could not add the word.',
+  'mode.hideThisWord': "Don't show this word again",
+  'mode.hiddenToast': 'Word hidden from practice.',
   'mode.endStudyHeader': 'End Study Session',
   'mode.endStudyMessage': 'Are you sure you want to end this study session? Progress will not be saved.',
   'mode.end': 'End',
@@ -931,6 +941,8 @@ const EN_MESSAGES: MessageCatalog = {
   'words.priority.normal': 'Normal frequency',
   'words.priority.hide': 'Hide from practice',
   'words.hiddenNote': 'Hidden from practice',
+  'words.status.enabled': 'Enabled',
+  'words.status.hidden': 'Hidden',
 
   // Practice (level list)
   'practice.loading': 'Loading decks...',
@@ -1131,6 +1143,8 @@ const ES_MESSAGES: MessageCatalog = {
   'mode.addedToast': 'Palabra añadida.',
   'mode.duplicateToast': 'Esa palabra ya existe.',
   'mode.addFailedToast': 'No se pudo añadir la palabra.',
+  'mode.hideThisWord': 'No volver a mostrar esta palabra',
+  'mode.hiddenToast': 'Palabra ocultada de la práctica.',
   'mode.endStudyHeader': 'Terminar sesión de estudio',
   'mode.endStudyMessage': '¿Seguro que quieres terminar esta sesión? El progreso no se guardará.',
   'mode.end': 'Terminar',
@@ -1195,6 +1209,8 @@ const ES_MESSAGES: MessageCatalog = {
   'words.priority.normal': 'Frecuencia normal',
   'words.priority.hide': 'Ocultar de la práctica',
   'words.hiddenNote': 'Oculta de la práctica',
+  'words.status.enabled': 'Activas',
+  'words.status.hidden': 'Ocultas',
 
   // Practice (level list)
   'practice.loading': 'Cargando...',
