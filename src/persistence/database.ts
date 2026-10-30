@@ -42,6 +42,8 @@ export interface FlashcardEntity {
   skillOrder?: number;
   correctCount: number;
   incorrectCount: number;
+  /** "So-so" (medium) self-ratings. Optional. */
+  mediumCount?: number;
   lastSeen: string | null;
   nextReview: string | null;
   streak: number;

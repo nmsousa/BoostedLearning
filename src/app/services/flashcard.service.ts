@@ -42,6 +42,8 @@ export interface Flashcard {
   // Learning stats (persisted)
   correctCount: number;
   incorrectCount: number;
+  /** "So-so" (medium) self-ratings — flashcards flip mode only. Optional. */
+  mediumCount?: number;
   lastSeen: string | null;
   nextReview: string | null;
   streak: number;
@@ -283,6 +285,7 @@ export class FlashcardService {
           skillOrder: card.skillOrder,
           correctCount: card.correctCount,
           incorrectCount: card.incorrectCount,
+          mediumCount: card.mediumCount ?? 0,
           lastSeen: card.lastSeen,
           nextReview: card.nextReview,
           streak: card.streak,
@@ -307,6 +310,7 @@ export class FlashcardService {
         if (savedProgress) {
           card.correctCount = savedProgress.correctCount;
           card.incorrectCount = savedProgress.incorrectCount;
+          card.mediumCount = savedProgress.mediumCount ?? 0;
           card.lastSeen = savedProgress.lastSeen;
           card.nextReview = savedProgress.nextReview;
           card.streak = savedProgress.streak;
@@ -334,6 +338,7 @@ export class FlashcardService {
       skillOrder: card.skillOrder,
       correctCount: card.correctCount,
       incorrectCount: card.incorrectCount,
+      mediumCount: card.mediumCount ?? 0,
       lastSeen: card.lastSeen,
       nextReview: card.nextReview,
       streak: card.streak,
@@ -982,6 +987,9 @@ export class FlashcardService {
     } else if (rating === 'hard') {
       card.incorrectCount += 1;
       card.streak = 0;
+    } else {
+      // 'medium' = so-so: track separately; doesn't extend or reset the streak.
+      card.mediumCount = (card.mediumCount ?? 0) + 1;
     }
     card.lastSeen = now.toISOString();
     card.nextReview =
@@ -1349,6 +1357,48 @@ export class FlashcardService {
     const endIndex = Math.min(totalCards, totalCards - ((levelNumber - 1) * this.CARDS_PER_LEVEL));
     
     return deduped.slice(startIndex, endIndex);
+  }
+
+  /** Cap on how many words a single Match session can hold. */
+  private readonly MATCH_SESSION_CAP = 50;
+
+  /**
+   * Build the word set for a Match session (solution B): the level's own words
+   * plus review words pulled from earlier levels, prioritizing the weakest
+   * (lowest success ratio / most-missed). This makes Match sessions longer —
+   * so bigger combos are possible — and reinforces shaky words, without
+   * changing the level/star system (the level's own words are always included,
+   * so passing stays as easy as before).
+   */
+  getMatchSessionCards(deckId: string, levelNumber: number): Flashcard[] {
+    const levelCards = this.getLevelCards(deckId, levelNumber);
+    if (levelNumber <= 1) return levelCards; // no earlier levels to review
+
+    const levelIds = new Set(levelCards.map(c => c.id));
+
+    // Gather words from all earlier levels.
+    const earlier: Flashcard[] = [];
+    for (let n = 1; n < levelNumber; n++) {
+      for (const c of this.getLevelCards(deckId, n)) {
+        if (!levelIds.has(c.id)) earlier.push(c);
+      }
+    }
+
+    // Weakness score: higher = weaker (prioritized). Unseen words are neutral.
+    const weakness = (c: Flashcard): number => {
+      const correct = c.correctCount ?? 0;
+      const wrong = c.incorrectCount ?? 0;
+      const seen = correct + wrong;
+      if (seen === 0) return 0.5; // never practiced: medium priority
+      return wrong / seen; // 0 (always right) .. 1 (always wrong)
+    };
+
+    const reviewSlots = Math.max(0, this.MATCH_SESSION_CAP - levelCards.length);
+    const review = earlier
+      .sort((a, b) => weakness(b) - weakness(a))
+      .slice(0, reviewSlots);
+
+    return [...levelCards, ...review];
   }
 
   /**

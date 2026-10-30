@@ -106,7 +106,9 @@ export class MatchPage implements OnInit, OnDestroy {
         this.router.navigate(['/practice']);
         return;
       }
-      cards = this.flashcardService.getLevelCards(deckId, this.levelNumber);
+      // Match uses a longer session: the level's words + weak words from
+      // earlier levels (for bigger combos and review).
+      cards = this.flashcardService.getMatchSessionCards(deckId, this.levelNumber);
     } else {
       cards = this.flashcardService.getFlashcardQueue(deckId, 20);
     }
