@@ -414,13 +414,26 @@
 }
 
 // Word + a single audio icon beside it.
+// The word stays centered; audio buttons float to the right so they don't
+// shift the word off-center.
 .word-row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  width: 100%;
 
   .target-word { margin: 0; }
+
+  .audio-actions {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 
   .audio-icon {
     display: inline-flex;
@@ -438,9 +451,11 @@
 
     &:active { transform: scale(0.94); }
   }
-}
 
-.audio-icon.slow {
-  font-size: 18px;
-  line-height: 1;
+  .audio-icon.slow {
+    width: 34px;
+    height: 34px;
+
+    ion-icon { font-size: 17px; }
+  }
 }

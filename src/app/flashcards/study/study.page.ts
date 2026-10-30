@@ -231,13 +231,18 @@ export class StudyPage implements OnInit, OnDestroy {
       : this.t('mode.typeInEnglish');
   }
 
-  /** True once the word audio has played (shows the slow button). */
-  audioPlayed = false;
+  /** How many times the (normal-speed) word audio has been played this card. */
+  playCount = 0;
+
+  /** Show the slow-replay button only after the word was played twice. */
+  get showSlowButton(): boolean {
+    return this.playCount >= 2;
+  }
 
   /** Play the target-language word: recorded clip if available, else TTS. */
   async playWord(slow = false) {
     if (!this.currentCard) return;
-    this.audioPlayed = true;
+    if (!slow) this.playCount++;
     const res = await this.audio.playWord(
       this.currentCard.text,
       this.currentCard.audioUrl,
@@ -462,7 +467,7 @@ export class StudyPage implements OnInit, OnDestroy {
     this.hintText = '';
     this.usedHint = false;
     this.revealedViaHint = false;
-    this.audioPlayed = false;
+    this.playCount = 0;
 
     // The session ends only when every unique card has been answered
     // correctly. Failed cards were appended to the queue, so we keep going

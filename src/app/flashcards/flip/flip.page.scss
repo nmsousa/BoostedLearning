@@ -344,13 +344,26 @@
 }
 
 // Word + a single audio icon on the card face.
+// The word stays centered on the card; the audio buttons float to the right
+// (absolutely positioned) so they don't shift the word off-center.
 .word-row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  width: 100%;
 
   .card-word { margin: 0; }
+
+  .audio-actions {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 
   .audio-icon {
     display: inline-flex;
@@ -368,10 +381,13 @@
 
     &:active { transform: scale(0.94); }
   }
-}
 
-// Slow-playback (turtle) button next to the audio icon.
-.audio-icon.slow {
-  font-size: 18px;
-  line-height: 1;
+  // Slow-replay button: same shape as the main audio icon, slightly subtler.
+  .audio-icon.slow {
+    width: 34px;
+    height: 34px;
+    background: rgba(255, 255, 255, 0.12);
+
+    ion-icon { font-size: 17px; }
+  }
 }

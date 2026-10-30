@@ -26,22 +26,23 @@
         <div class="word-row">
           <h1 class="target-word">{{ promptText }}</h1>
           <!-- Audio only after answering, so it doesn't reveal the answer. -->
-          <button
-            *ngIf="phase === 'feedback'"
-            type="button"
-            class="audio-icon"
-            (click)="playWord()"
-            [attr.aria-label]="t('mode.playPronunciation')">
-            <ion-icon name="volume-high-outline"></ion-icon>
-          </button>
-          <button
-            *ngIf="phase === 'feedback' && audioPlayed"
-            type="button"
-            class="audio-icon slow"
-            (click)="playWord(true)"
-            [attr.aria-label]="t('mode.playSlower')">
-            🐢
-          </button>
+          <div class="audio-actions" *ngIf="phase === 'feedback'">
+            <button
+              type="button"
+              class="audio-icon"
+              (click)="playWord()"
+              [attr.aria-label]="t('mode.playPronunciation')">
+              <ion-icon name="volume-high-outline"></ion-icon>
+            </button>
+            <button
+              *ngIf="showSlowButton"
+              type="button"
+              class="audio-icon slow"
+              (click)="playWord(true)"
+              [attr.aria-label]="t('mode.playSlower')">
+              <ion-icon name="volume-low-outline"></ion-icon>
+            </button>
+          </div>
         </div>
         <p class="instruction">{{ instructionText }}</p>
 

@@ -132,13 +132,18 @@ export class QuizPage implements OnInit {
     return this.cards[this.currentIndex] ?? null;
   }
 
-  /** True once the word audio has played (shows the slow button). */
-  audioPlayed = false;
+  /** How many times the (normal-speed) word audio has been played this card. */
+  playCount = 0;
+
+  /** Show the slow-replay button only after the word was played twice. */
+  get showSlowButton(): boolean {
+    return this.playCount >= 2;
+  }
 
   /** Play the prompt word: recorded clip if available, else device TTS. */
   async playWord(slow = false) {
     if (!this.currentCard) return;
-    this.audioPlayed = true;
+    if (!slow) this.playCount++;
     const res = await this.audio.playWord(
       this.currentCard.text,
       this.currentCard.audioUrl,
@@ -154,7 +159,7 @@ export class QuizPage implements OnInit {
   /** Build the prompt + options for the current card. */
   private loadQuestion() {
     this.answered = false;
-    this.audioPlayed = false;
+    this.playCount = 0;
     const card = this.cards[this.currentIndex];
     this.prompt = card.text;
 

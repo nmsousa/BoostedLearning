@@ -36,12 +36,14 @@
           <span class="lang-tag">{{ targetLangName }}</span>
           <div class="word-row">
             <h1 class="card-word">{{ frontText }}</h1>
-            <button type="button" class="audio-icon" (click)="playWord($event)" [attr.aria-label]="t('mode.playPronunciation')">
-              <ion-icon name="volume-high-outline"></ion-icon>
-            </button>
-            <button type="button" class="audio-icon slow" *ngIf="audioPlayed" (click)="playWord($event, true)" [attr.aria-label]="t('mode.playSlower')">
-              🐢
-            </button>
+            <div class="audio-actions">
+              <button type="button" class="audio-icon" (click)="playWord($event)" [attr.aria-label]="t('mode.playPronunciation')">
+                <ion-icon name="volume-high-outline"></ion-icon>
+              </button>
+              <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord($event, true)" [attr.aria-label]="t('mode.playSlower')">
+                <ion-icon name="volume-low-outline"></ion-icon>
+              </button>
+            </div>
           </div>
           <span class="tap-hint">
             <ion-icon name="sync-outline"></ion-icon>

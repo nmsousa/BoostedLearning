@@ -143,14 +143,19 @@ export class FlipPage implements OnInit {
     this.isFlipped = !this.isFlipped;
   }
 
-  /** True once the word audio has played at least once (shows the slow button). */
-  audioPlayed = false;
+  /** How many times the (normal-speed) word audio has been played this card. */
+  playCount = 0;
+
+  /** Show the slow-replay button only after the word was played twice. */
+  get showSlowButton(): boolean {
+    return this.playCount >= 2;
+  }
 
   /** Play the current word: recorded clip if available, else device TTS. */
   async playWord(event: Event, slow = false) {
     event.stopPropagation();
     if (!this.currentCard) return;
-    this.audioPlayed = true;
+    if (!slow) this.playCount++;
     const res = await this.audio.playWord(
       this.currentCard.text,
       this.currentCard.audioUrl,
@@ -187,7 +192,7 @@ export class FlipPage implements OnInit {
       this.isFlipped = false;
       this.exitDirection = '';
       this.pendingRating = null;
-      this.audioPlayed = false;
+      this.playCount = 0;
 
       if (this.currentIndex >= this.cards.length) {
         this.completeSession();
