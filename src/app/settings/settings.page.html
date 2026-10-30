@@ -296,6 +296,7 @@
 
       <ion-content class="ion-padding">
         <div class="vocab-instructions">
+          <p class="vocab-intro">{{ t('settings.importIntro') }}</p>
           <h3>{{ t('settings.howToExport') }}</h3>
           <ol>
             <li>{{ t('settings.exportStep1') }}</li>
@@ -306,7 +307,25 @@
             <li>{{ t('settings.exportStep6') }}</li>
             <li>{{ t('settings.exportStep7') }}</li>
           </ol>
+          <div class="vocab-notice">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            <span>{{ t('settings.importPagingNote') }}</span>
+          </div>
         </div>
+
+        <ion-item>
+          <ion-select
+            [value]="importLanguage"
+            (ionChange)="onImportLanguageChange($event)"
+            [label]="t('settings.importLanguage')"
+            labelPlacement="floating"
+            interface="action-sheet"
+            [placeholder]="t('settings.chooseLanguage')">
+            <ion-select-option *ngFor="let opt of importLanguageOptions" [value]="opt.code">
+              {{ opt.name }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
 
         <ion-item>
           <ion-input

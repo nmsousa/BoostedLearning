@@ -16,7 +16,7 @@ import { Capacitor } from '@capacitor/core';
 import { SettingsService, Theme, ColorTheme, AppLanguage, TextSize, AudioSpeed, AppSettings, FlashcardDirection } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { ExplanationLanguage } from '../../services/i18n';
-import { FlashcardService, DuolingoResponse } from '../services/flashcard.service';
+import { FlashcardService, DuolingoResponse, DuolingoLexeme } from '../services/flashcard.service';
 import { DUOME_COURSES } from '../services/duome-courses';
 import { BUILD_INFO } from '../../build-info';
 
@@ -38,7 +38,11 @@ export class SettingsPage {
   showImportModal = false;
   importJson = '';
   importDeckName = 'Duolingo Import';
+  importLanguage = 'nl';
   importError = '';
+
+  /** Languages offered in the import picker (built from the duome course list). */
+  importLanguageOptions = DUOME_COURSES.map(c => ({ code: c.code, name: c.name }));
 
   showManualModal = false;
   manualText = '';
@@ -187,7 +191,14 @@ export class SettingsPage {
   openImportModal() {
     this.importJson = '';
     this.importError = '';
+    // Default to the language the user is currently learning, so the imported
+    // deck shows up for that language.
+    this.importLanguage = this.settingsService.learningLanguage();
     this.showImportModal = true;
+  }
+
+  onImportLanguageChange(event: CustomEvent) {
+    this.importLanguage = event.detail.value;
   }
 
   closeImportModal() {
@@ -279,12 +290,18 @@ export class SettingsPage {
       return;
     }
     try {
-      const data = JSON.parse(this.importJson) as DuolingoResponse;
-      if (!data.learnedLexemes && !Array.isArray(data)) {
-        this.importError = 'Invalid format. Expected Duolingo API response with learnedLexemes.';
+      // Accept one OR several pasted "learned-lexemes" responses (Duolingo
+      // paginates ~50 words per request). Merge all their lexemes.
+      const lexemes = this.parseLearnedLexemes(this.importJson);
+      if (lexemes.length === 0) {
+        this.importError = 'Invalid format. Expected Duolingo "learned-lexemes" response(s) with a learnedLexemes list.';
         return;
       }
-      const result = await this.flashcardService.importFromDuolingo(data, this.importDeckName, 'nl');
+      const result = await this.flashcardService.importFromDuolingo(
+        lexemes,
+        this.importDeckName,
+        this.importLanguage
+      );
       this.closeImportModal();
       const alert = await this.alertController.create({
         header: 'Import Complete',
@@ -296,6 +313,56 @@ export class SettingsPage {
       this.importError = 'Invalid JSON. Please check the format and try again.';
       console.error('Import error:', e);
     }
+  }
+
+  /**
+   * Parse the pasted text into a flat list of lexemes. Accepts:
+   *  - a single Duolingo response object with `learnedLexemes`,
+   *  - a bare array of lexemes,
+   *  - OR several of the above pasted one after another (Duolingo paginates
+   *    ~50 words per "learned-lexemes" request, so users collect multiple).
+   * Multiple top-level JSON values are split and parsed individually.
+   */
+  private parseLearnedLexemes(raw: string): DuolingoLexeme[] {
+    const text = raw.trim();
+    const out: DuolingoLexeme[] = [];
+
+    const collect = (parsed: unknown) => {
+      if (Array.isArray(parsed)) {
+        out.push(...(parsed as DuolingoLexeme[]));
+      } else if (parsed && typeof parsed === 'object' && Array.isArray((parsed as DuolingoResponse).learnedLexemes)) {
+        out.push(...(parsed as DuolingoResponse).learnedLexemes);
+      }
+    };
+
+    // Fast path: the whole paste is one valid JSON value.
+    try {
+      collect(JSON.parse(text));
+      if (out.length > 0) return out;
+    } catch {
+      // Fall through to multi-block parsing.
+    }
+
+    // Multi-block: split on the boundary between a closing and the next opening
+    // brace/bracket ("}{", "}[", "][", "]{"), tolerating whitespace/commas.
+    const blocks = text
+      .replace(/}\s*,?\s*{/g, '}\u0000{')
+      .replace(/]\s*,?\s*\[/g, ']\u0000[')
+      .replace(/}\s*,?\s*\[/g, '}\u0000[')
+      .replace(/]\s*,?\s*{/g, ']\u0000{')
+      .split('\u0000');
+
+    for (const block of blocks) {
+      const b = block.trim();
+      if (!b) continue;
+      try {
+        collect(JSON.parse(b));
+      } catch {
+        // Skip unparseable fragments; other blocks may still be valid.
+      }
+    }
+
+    return out;
   }
 
   // --- Add a card manually ---
