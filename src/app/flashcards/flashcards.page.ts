@@ -38,8 +38,35 @@ export class FlashcardsPage implements OnInit {
 
   decks: FlashcardDeck[] = [];
   deckLevels: Map<string, DeckLevel[]> = new Map();
-  expandedDecks: Set<string> = new Set();
+  /**
+   * Deck ids the user has explicitly collapsed. Decks default to OPEN, so we
+   * only need to remember which ones were closed. Persisted in localStorage.
+   */
+  private collapsedDecks: Set<string> = this.loadCollapsed();
   isLoading = true;
+
+  private static readonly COLLAPSED_KEY = 'boosted-learning-collapsed-decks';
+
+  private loadCollapsed(): Set<string> {
+    try {
+      const raw = localStorage.getItem(FlashcardsPage.COLLAPSED_KEY);
+      if (raw) return new Set(JSON.parse(raw) as string[]);
+    } catch {
+      // Ignore malformed/unavailable storage.
+    }
+    return new Set();
+  }
+
+  private saveCollapsed(): void {
+    try {
+      localStorage.setItem(
+        FlashcardsPage.COLLAPSED_KEY,
+        JSON.stringify([...this.collapsedDecks])
+      );
+    } catch {
+      // Ignore storage errors.
+    }
+  }
 
   async ngOnInit() {
     // Mode chosen on the home page; defaults to Flashcards (flip).
@@ -79,12 +106,6 @@ export class FlashcardsPage implements OnInit {
       const levels = await this.flashcardService.getDeckLevels(deck.id, this.mode);
       this.deckLevels.set(deck.id, levels);
     }
-
-    // With a single deck there's no reason to keep it collapsed - open it so
-    // the levels are visible immediately.
-    if (this.decks.length === 1) {
-      this.expandedDecks.add(this.decks[0].id);
-    }
   }
 
   getDeckStats(deck: FlashcardDeck) {
@@ -114,15 +135,18 @@ export class FlashcardsPage implements OnInit {
   }
 
   toggleDeckExpand(deckId: string) {
-    if (this.expandedDecks.has(deckId)) {
-      this.expandedDecks.delete(deckId);
+    // Decks default to open; the set tracks the ones explicitly collapsed.
+    if (this.collapsedDecks.has(deckId)) {
+      this.collapsedDecks.delete(deckId);
     } else {
-      this.expandedDecks.add(deckId);
+      this.collapsedDecks.add(deckId);
     }
+    this.saveCollapsed();
   }
 
   isDeckExpanded(deckId: string): boolean {
-    return this.expandedDecks.has(deckId);
+    // Open unless the user explicitly collapsed this deck.
+    return !this.collapsedDecks.has(deckId);
   }
 
   getStarArray(count: number): number[] {
