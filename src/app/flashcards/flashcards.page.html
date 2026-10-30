@@ -38,7 +38,7 @@
         <ion-card-header (click)="toggleDeckExpand(deck.id)" class="deck-header">
           <ion-card-title>{{ deck.name }}</ion-card-title>
           <ion-card-subtitle>
-            {{ getUniqueCardCount(deck) }} cards · {{ getLevels(deck.id).length }} levels
+            {{ getUniqueCardCount(deck) }} words · {{ getLevels(deck.id).length }} levels
             <ion-badge *ngIf="deck.isBundled && hasCustomDecks()" color="primary" style="margin-left: 8px;">Built-in</ion-badge>
                 <ion-badge *ngIf="!deck.isBundled" color="tertiary" style="margin-left: 8px;">Custom</ion-badge>
             <ion-badge *ngIf="getCustomCardCount(deck) > 0" color="tertiary" style="margin-left: 8px;">
@@ -67,7 +67,7 @@
                 <span class="level-number">
                   Level {{ level.levelNumber }}<span *ngIf="level.skill"> · {{ level.skill }}</span>
                 </span>
-                <span *ngIf="level.isUnlocked" class="level-cards">{{ level.cardCount }} cards</span>
+                <span *ngIf="level.isUnlocked" class="level-cards">{{ level.cardCount }} words</span>
                 <span *ngIf="!level.isUnlocked" class="level-cards level-locked-hint">
                   Score 70% on the previous level to unlock
                 </span>
