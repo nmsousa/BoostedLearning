@@ -17,7 +17,7 @@
   <!-- Loading state -->
   <div *ngIf="isLoading" class="loading-state">
     <ion-spinner name="crescent"></ion-spinner>
-    <p>Loading decks...</p>
+    <p>{{ t('practice.loading') }}</p>
   </div>
 
   <div *ngIf="!isLoading" class="flashcards-container">
@@ -25,7 +25,7 @@
     <div *ngIf="decks.length === 0" class="empty-state">
       <ion-icon name="layers-outline"></ion-icon>
       <h2>No Words Yet</h2>
-      <p>Add vocabulary from Settings → Vocabulary to start practicing.</p>
+      <p>{{ t('practice.addVocab') }}</p>
       <ion-button (click)="goToVocabularySettings()" expand="block">
         <ion-icon slot="start" name="settings-outline"></ion-icon>
         Open Settings
@@ -38,11 +38,11 @@
         <ion-card-header (click)="toggleDeckExpand(deck.id)" class="deck-header">
           <ion-card-title>{{ deck.name }}</ion-card-title>
           <ion-card-subtitle>
-            {{ getUniqueCardCount(deck) }} words · {{ getLevels(deck.id).length }} levels
-            <ion-badge *ngIf="deck.isBundled && hasCustomDecks()" color="primary" style="margin-left: 8px;">Built-in</ion-badge>
-                <ion-badge *ngIf="!deck.isBundled" color="tertiary" style="margin-left: 8px;">Custom</ion-badge>
+            {{ t('practice.countSummary', { words: getUniqueCardCount(deck), levels: getLevels(deck.id).length }) }}
+            <ion-badge *ngIf="deck.isBundled && hasCustomDecks()" color="primary" style="margin-left: 8px;">{{ t('practice.builtin') }}</ion-badge>
+                <ion-badge *ngIf="!deck.isBundled" color="tertiary" style="margin-left: 8px;">{{ t('practice.custom') }}</ion-badge>
             <ion-badge *ngIf="getCustomCardCount(deck) > 0" color="tertiary" style="margin-left: 8px;">
-              {{ getCustomCardCount(deck) }} custom
+              {{ t('practice.customCards', { count: getCustomCardCount(deck) }) }}
             </ion-badge>
           </ion-card-subtitle>
           <div class="deck-stars">
@@ -65,11 +65,11 @@
 
               <div class="level-info">
                 <span class="level-number">
-                  Level {{ level.levelNumber }}<span *ngIf="level.skill"> · {{ level.skill }}</span>
+                  {{ t('practice.level', { n: level.levelNumber }) }}<span *ngIf="level.skill"> · {{ level.skill }}</span>
                 </span>
-                <span *ngIf="level.isUnlocked" class="level-cards">{{ level.cardCount }} words</span>
+                <span *ngIf="level.isUnlocked" class="level-cards">{{ t('practice.levelWords', { count: level.cardCount }) }}</span>
                 <span *ngIf="!level.isUnlocked" class="level-cards level-locked-hint">
-                  Score 70% on the previous level to unlock
+                  {{ t('practice.unlockHint') }}
                 </span>
               </div>
 
@@ -92,7 +92,7 @@
           <div class="deck-actions">
             <ion-button fill="outline" size="small" (click)="startQuickStudy(deck)">
               <ion-icon slot="start" name="shuffle-outline"></ion-icon>
-              Quick Study
+              {{ t('practice.quickStudy') }}
             </ion-button>
             <ion-button fill="clear" size="small" (click)="confirmResetProgress(deck)">
               <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>

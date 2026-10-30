@@ -193,6 +193,18 @@ const PT_MESSAGES: MessageCatalog = {
   'words.title': 'As tuas palavras',
   'words.all': 'Todas',
   'words.empty': 'Ainda não há palavras praticadas. Joga um modo e as tuas palavras aparecem aqui.',
+
+  // Practice (level list)
+  'practice.loading': 'A carregar...',
+  'practice.addVocab': 'Adiciona vocabulário em Definições → Vocabulário para começar a praticar.',
+  'practice.builtin': 'Incluído',
+  'practice.custom': 'Personalizado',
+  'practice.customCards': '{count} personalizadas',
+  'practice.countSummary': '{words} palavras · {levels} níveis',
+  'practice.level': 'Nível {n}',
+  'practice.levelWords': '{count} palavras',
+  'practice.unlockHint': 'Faz 70% no nível anterior para desbloquear',
+  'practice.quickStudy': 'Estudo rápido',
 };
 
 /**
@@ -324,6 +336,18 @@ const FR_MESSAGES: MessageCatalog = {
   'words.title': 'Tes mots',
   'words.all': 'Tous',
   'words.empty': "Aucun mot pratiqué pour l'instant. Joue à un mode et tes mots apparaîtront ici.",
+
+  // Practice (level list)
+  'practice.loading': 'Chargement...',
+  'practice.addVocab': 'Ajoute du vocabulaire dans Paramètres → Vocabulaire pour commencer.',
+  'practice.builtin': 'Intégré',
+  'practice.custom': 'Personnalisé',
+  'practice.customCards': '{count} personnalisés',
+  'practice.countSummary': '{words} mots · {levels} niveaux',
+  'practice.level': 'Niveau {n}',
+  'practice.levelWords': '{count} mots',
+  'practice.unlockHint': 'Obtiens 70% au niveau précédent pour débloquer',
+  'practice.quickStudy': 'Étude rapide',
 };
 
 /**
@@ -455,6 +479,18 @@ const EN_MESSAGES: MessageCatalog = {
   'words.title': 'Your words',
   'words.all': 'All',
   'words.empty': 'No practiced words yet. Play a mode and your words will show up here.',
+
+  // Practice (level list)
+  'practice.loading': 'Loading decks...',
+  'practice.addVocab': 'Add vocabulary from Settings → Vocabulary to start practicing.',
+  'practice.builtin': 'Built-in',
+  'practice.custom': 'Custom',
+  'practice.customCards': '{count} custom',
+  'practice.countSummary': '{words} words · {levels} levels',
+  'practice.level': 'Level {n}',
+  'practice.levelWords': '{count} words',
+  'practice.unlockHint': 'Score 70% on the previous level to unlock',
+  'practice.quickStudy': 'Quick Study',
 };
 
 /**
@@ -556,6 +592,18 @@ const ES_MESSAGES: MessageCatalog = {
   'words.title': 'Tus palabras',
   'words.all': 'Todas',
   'words.empty': 'Aún no hay palabras practicadas. Juega un modo y tus palabras aparecerán aquí.',
+
+  // Practice (level list)
+  'practice.loading': 'Cargando...',
+  'practice.addVocab': 'Añade vocabulario en Ajustes → Vocabulario para empezar a practicar.',
+  'practice.builtin': 'Incluido',
+  'practice.custom': 'Personalizado',
+  'practice.customCards': '{count} personalizadas',
+  'practice.countSummary': '{words} palabras · {levels} niveles',
+  'practice.level': 'Nivel {n}',
+  'practice.levelWords': '{count} palabras',
+  'practice.unlockHint': 'Consigue 70% en el nivel anterior para desbloquear',
+  'practice.quickStudy': 'Estudio rápido',
 };
 
 /**
