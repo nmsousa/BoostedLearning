@@ -74,6 +74,8 @@ export class HomePage implements OnInit {
 
   selectLanguage(code: string): void {
     this.settings.updateSetting('learningLanguage', code);
+    // Refresh the breakdown so it reflects the newly-selected language.
+    this.knowledge = this.flashcards.getKnowledgeBreakdown(code);
   }
 
   constructor() {
@@ -90,7 +92,7 @@ export class HomePage implements OnInit {
   /** Recompute the breakdown when returning to the home tab (e.g. after play). */
   async ionViewWillEnter(): Promise<void> {
     await this.flashcards.initialize();
-    this.knowledge = this.flashcards.getKnowledgeBreakdown();
+    this.knowledge = this.flashcards.getKnowledgeBreakdown(this.settings.learningLanguage());
   }
 
   private loadDashboardData(): void {
@@ -100,8 +102,8 @@ export class HomePage implements OnInit {
       name: lang.name,
     }));
 
-    // Knowledge breakdown (Learning / Familiar / Known) from real flashcard play.
-    this.knowledge = this.flashcards.getKnowledgeBreakdown();
+    // Knowledge breakdown (Learning / Familiar / Known) for the selected language.
+    this.knowledge = this.flashcards.getKnowledgeBreakdown(this.settings.learningLanguage());
 
     // Build quick actions
     this.quickActions = this.buildQuickActions();

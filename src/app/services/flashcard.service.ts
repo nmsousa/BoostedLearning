@@ -1077,7 +1077,7 @@ export class FlashcardService {
    *   - neverStudied: never practiced
    * Counts over de-duplicated prompts so shared forms (de/het) count once.
    */
-  getKnowledgeBreakdown(): KnowledgeBreakdown {
+  getKnowledgeBreakdown(languageCode?: string): KnowledgeBreakdown {
     const breakdown: KnowledgeBreakdown = {
       learning: 0,
       familiar: 0,
@@ -1086,7 +1086,13 @@ export class FlashcardService {
       total: 0,
     };
 
-    for (const deck of this.getAllDecks()) {
+    // Scope to the given language (e.g. the one selected on the home screen)
+    // so switching languages shows that language's progress, not all decks.
+    const decks = languageCode
+      ? this.getAllDecks().filter(d => d.languageCode === languageCode)
+      : this.getAllDecks();
+
+    for (const deck of decks) {
       for (const card of this.getDedupedCards(deck.id)) {
         if (!this.hasBeenStudied(card)) {
           breakdown.neverStudied++;
