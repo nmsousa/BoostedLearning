@@ -1,13 +1,13 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button (click)="close()" aria-label="Close match">
+      <ion-button (click)="close()" [attr.aria-label]="t('mode.close')">
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
     <ion-title>
-      <span *ngIf="levelNumber > 0">Level {{ levelNumber }} · </span>
-      Match
+      <span *ngIf="levelNumber > 0">{{ t('mode.levelPrefix', { n: levelNumber }) }}</span>
+      {{ t('mode.titleMatch') }}
     </ion-title>
   </ion-toolbar>
   <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
@@ -25,13 +25,13 @@
         </div>
         <div class="stat combo" [class.active]="combo >= 2">
           <ion-icon name="flame"></ion-icon>
-          <span>{{ combo }}<span class="combo-x" *ngIf="combo >= 2">x combo</span></span>
+          <span>{{ combo }}<span class="combo-x" *ngIf="combo >= 2">{{ t('mode.comboX') }}</span></span>
         </div>
       </div>
     </div>
 
     <div class="match-board-wrap">
-    <p class="match-hint">Tap a word, then its translation.</p>
+    <p class="match-hint">{{ t('mode.tapWordThenTranslation') }}</p>
     <div class="match-board" [style.min-height.px]="boardMinHeight">
       <!-- Left column: Dutch -->
       <div class="match-col">
@@ -74,32 +74,32 @@
     </div>
     <div *ngIf="levelNumber === 0" class="complete-emoji gamification">🎉</div>
 
-    <h1>All matched!</h1>
-    <p *ngIf="isNewBest" class="new-best gamification">🎉 New best score!</p>
+    <h1>{{ t('mode.allMatched') }}</h1>
+    <p *ngIf="isNewBest" class="new-best gamification">{{ t('mode.newBest') }}</p>
     <p class="complete-sub">
-      {{ mistakes === 0 ? 'Flawless - no mistakes!' : mistakes + ' mistake' + (mistakes === 1 ? '' : 's') + ' along the way.' }}
+      {{ mistakes === 0 ? t('mode.flawless') : (mistakes === 1 ? t('mode.oneMistake') : t('mode.manyMistakes', { n: mistakes })) }}
     </p>
 
     <div class="complete-metrics gamification">
       <div class="metric">
         <ion-icon name="time-outline"></ion-icon>
         <span class="metric-value">{{ formattedTime }}</span>
-        <span class="metric-label">Time</span>
+        <span class="metric-label">{{ t('mode.time') }}</span>
       </div>
       <div class="metric">
         <ion-icon name="flame"></ion-icon>
         <span class="metric-value">{{ bestCombo }}</span>
-        <span class="metric-label">Combo</span>
+        <span class="metric-label">{{ t('mode.combo') }}</span>
       </div>
       <div class="metric" *ngIf="bestComboSaved > bestCombo">
         <ion-icon name="trophy-outline"></ion-icon>
         <span class="metric-value">{{ bestComboSaved }}</span>
-        <span class="metric-label">Best combo</span>
+        <span class="metric-label">{{ t('mode.bestCombo') }}</span>
       </div>
       <div class="metric" *ngIf="bestTimeFormatted">
         <ion-icon name="trophy-outline"></ion-icon>
         <span class="metric-value">{{ bestTimeFormatted }}</span>
-        <span class="metric-label">Best time</span>
+        <span class="metric-label">{{ t('mode.bestTime') }}</span>
       </div>
     </div>
 
@@ -110,7 +110,7 @@
     </p>
 
     <ion-button expand="block" (click)="finish()" class="finish-button">
-      Done
+      {{ t('mode.done') }}
     </ion-button>
   </div>
 </ion-content>

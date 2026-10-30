@@ -15,6 +15,7 @@ import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flash
 import { ToastController } from '@ionic/angular';
 import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
+import { I18nAngularService } from '../../services/i18n.service';
 
 type QuizPhase = 'play' | 'complete';
 
@@ -40,6 +41,11 @@ export class QuizPage implements OnInit {
   private settings = inject(SettingsService);
   private toast = inject(ToastController);
   private cdr = inject(ChangeDetectorRef);
+  private i18n = inject(I18nAngularService);
+
+  t(key: string, params?: Record<string, string | number>): string {
+    return this.i18n.t(key, params);
+  }
 
   deck: FlashcardDeck | null = null;
   levelNumber = 0;

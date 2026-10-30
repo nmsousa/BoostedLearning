@@ -1,13 +1,13 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button (click)="endStudy()" aria-label="End study">
+      <ion-button (click)="endStudy()" [attr.aria-label]="t('mode.close')">
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
     <ion-title>
-      <span *ngIf="levelNumber > 0">Level {{ levelNumber }} · </span>
-      Write
+      <span *ngIf="levelNumber > 0">{{ t('mode.levelPrefix', { n: levelNumber }) }}</span>
+      {{ t('mode.titleWrite') }}
     </ion-title>
   </ion-toolbar>
   <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
@@ -26,7 +26,7 @@
             type="button"
             class="audio-icon"
             (click)="playWord()"
-            aria-label="Play pronunciation">
+            [attr.aria-label]="t('mode.playPronunciation')">
             <ion-icon name="volume-high-outline"></ion-icon>
           </button>
           <button
@@ -34,7 +34,7 @@
             type="button"
             class="audio-icon slow"
             (click)="playWord(true)"
-            aria-label="Play slower">
+            [attr.aria-label]="t('mode.playSlower')">
             🐢
           </button>
         </div>
@@ -55,9 +55,9 @@
             #answerInput
             [(ngModel)]="userAnswer"
             type="text"
-            placeholder="Type your answer..."
+            [placeholder]="t('mode.typeYourAnswer')"
             (keyup.enter)="submitAnswer()"
-            aria-label="Your answer">
+            [attr.aria-label]="t('mode.typeYourAnswer')">
           </ion-input>
         </ion-item>
 
@@ -67,7 +67,7 @@
             (click)="submitAnswer()"
             [disabled]="!userAnswer.trim()"
             class="submit-button">
-            Check
+            {{ t('mode.check') }}
           </ion-button>
           
           <ion-button
@@ -76,7 +76,7 @@
             (click)="showHint()"
             class="hint-button"
             [disabled]="hintExhausted"
-            aria-label="Show a hint">
+            [attr.aria-label]="t('mode.showHint')">
             <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
           </ion-button>
         </div>
@@ -90,7 +90,7 @@
         </ion-item>
 
         <ion-button expand="block" color="success" (click)="nextCard()" class="submit-button">
-          Continue
+          {{ t('mode.continue') }}
         </ion-button>
       </ng-container>
     </div>
@@ -109,7 +109,7 @@
       <!-- Almost: encouragement + a hint of the correct answer -->
       <ng-container *ngIf="feedbackResult === 'almost'">
         <div class="almost-hint">
-          <p class="hint-text">Almost! Small typo in your answer:</p>
+          <p class="hint-text">{{ t('mode.almostTypo') }}</p>
           <span class="user-attempt">
             <ion-icon name="alert-circle-outline"></ion-icon>
             {{ submittedAnswer }}
@@ -119,7 +119,7 @@
 
         <div class="button-row">
           <ion-button expand="block" color="warning" (click)="tryAgain()" class="submit-button">
-            Try Again
+            {{ t('mode.tryAgain') }}
           </ion-button>
           <ion-button
             fill="outline"
@@ -127,12 +127,12 @@
             (click)="showHintInAlmost()"
             class="hint-button"
             [disabled]="hintExhausted"
-            aria-label="Show a hint">
+            [attr.aria-label]="t('mode.showHint')">
             <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
           </ion-button>
         </div>
         <ion-button expand="block" fill="outline" (click)="acceptAlmost()" class="skip-button">
-          Skip
+          {{ t('mode.skip') }}
         </ion-button>
       </ng-container>
 
@@ -142,7 +142,7 @@
         <ng-container *ngIf="revealedViaHint">
           <div class="revealed-label">
             <ion-icon name="bulb"></ion-icon>
-            <span>{{ revealedForms.length > 1 ? 'Accepted answers' : 'The answer is' }}</span>
+            <span>{{ revealedForms.length > 1 ? t('mode.acceptedAnswers') : t('mode.theAnswerIs') }}</span>
           </div>
 
           <div class="answer-reveal">
@@ -154,7 +154,7 @@
         <ng-container *ngIf="!revealedViaHint">
           <div class="incorrect-label">
             <ion-icon name="close-circle"></ion-icon>
-            <span>Incorrect</span>
+            <span>{{ t('mode.incorrectLabel') }}</span>
           </div>
 
           <div class="answer-comparison">
@@ -166,12 +166,12 @@
 
         <!-- Alternatives if any -->
         <p *ngIf="alternativeAnswers.length > 0" class="alternatives">
-          Also: {{ alternativeAnswers.join(', ') }}
+          {{ t('mode.alsoAccepted', { answers: alternativeAnswers.join(', ') }) }}
         </p>
 
         <ion-button expand="block" [color]="revealedViaHint ? 'warning' : 'danger'" (click)="nextCard()" class="submit-button">
           <ion-icon name="arrow-forward" slot="end"></ion-icon>
-          Continue
+          {{ t('mode.continue') }}
         </ion-button>
       </ng-container>
     </div>
@@ -187,36 +187,36 @@
 
     <h1>
       <ng-container *ngIf="earnedStars >= 1">
-        {{ levelNumber > 0 ? 'Level Complete!' : 'Study Complete!' }}
+        {{ levelNumber > 0 ? t('mode.levelComplete') : t('mode.studyComplete') }}
       </ng-container>
       <ng-container *ngIf="earnedStars === 0">
-        Keep Practicing!
+        {{ t('mode.keepPracticing') }}
       </ng-container>
     </h1>
     
-    <p *ngIf="isNewBest" class="new-best gamification">🎉 New best score!</p>
+    <p *ngIf="isNewBest" class="new-best gamification">{{ t('mode.newBest') }}</p>
 
     <div class="summary-card">
       <div class="summary-stat">
         <span class="stat-value">{{ totalUnique }}</span>
-        <span class="stat-label">Cards</span>
+        <span class="stat-label">{{ t('mode.cards') }}</span>
       </div>
       <div class="summary-stat">
         <span class="stat-value correct">{{ correctCount }}</span>
-        <span class="stat-label">Correct</span>
+        <span class="stat-label">{{ t('mode.correct') }}</span>
       </div>
       <div class="summary-stat">
         <span class="stat-value incorrect">{{ incorrectCount }}</span>
-        <span class="stat-label">Incorrect</span>
+        <span class="stat-label">{{ t('mode.incorrect') }}</span>
       </div>
       <div class="summary-stat">
         <span class="stat-value">{{ accuracy }}%</span>
-        <span class="stat-label">Accuracy</span>
+        <span class="stat-label">{{ t('mode.accuracy') }}</span>
       </div>
     </div>
 
     <ion-button expand="block" (click)="finishStudy()" class="finish-button">
-      Done
+      {{ t('mode.done') }}
     </ion-button>
   </div>
 </ion-content>

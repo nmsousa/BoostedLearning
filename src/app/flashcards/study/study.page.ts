@@ -208,11 +208,20 @@ export class StudyPage implements OnInit, OnDestroy {
       : this.currentCard.text;             // Show Dutch
   }
 
+  /** Localized name of the learning language (for the instruction text). */
+  get targetLangName(): string {
+    const code = this.deck?.languageCode ?? '';
+    const key = `langName.${code}`;
+    const name = this.i18n.t(key);
+    // Fall back to the deck name / code if there's no catalog entry.
+    return name === key ? (this.deck?.name || code.toUpperCase() || '') : name;
+  }
+
   // Instruction text
   get instructionText(): string {
     return this.currentDirection === 'en-to-target'
-      ? 'Type in Dutch'
-      : 'Type the English translation';
+      ? this.t('mode.typeInTarget', { lang: this.targetLangName })
+      : this.t('mode.typeInEnglish');
   }
 
   /** True once the word audio has played (shows the slow button). */
@@ -489,15 +498,15 @@ export class StudyPage implements OnInit, OnDestroy {
 
   async endStudy(): Promise<void> {
     const alert = await this.alertController.create({
-      header: 'End Study Session',
-      message: 'Are you sure you want to end this study session? Progress will not be saved.',
+      header: this.t('mode.endStudyHeader'),
+      message: this.t('mode.endStudyMessage'),
       buttons: [
         {
-          text: 'Cancel',
+          text: this.t('common.cancel'),
           role: 'cancel',
         },
         {
-          text: 'End',
+          text: this.t('mode.end'),
           role: 'confirm',
           handler: () => {
             this.router.navigate(['/practice'], { replaceUrl: true });

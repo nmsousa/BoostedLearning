@@ -1,13 +1,13 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button (click)="close()" aria-label="Close quiz">
+      <ion-button (click)="close()" [attr.aria-label]="t('mode.close')">
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
     <ion-title>
-      <span *ngIf="levelNumber > 0">Level {{ levelNumber }} · </span>
-      Quiz
+      <span *ngIf="levelNumber > 0">{{ t('mode.levelPrefix', { n: levelNumber }) }}</span>
+      {{ t('mode.titleQuiz') }}
     </ion-title>
   </ion-toolbar>
   <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
@@ -16,15 +16,15 @@
 <ion-content [fullscreen]="true" class="quiz-content">
   <!-- Play phase -->
   <div *ngIf="phase === 'play'" class="quiz-container">
-    <p class="quiz-hint">Which translation is correct?</p>
+    <p class="quiz-hint">{{ t('mode.whichTranslation') }}</p>
 
     <!-- Word + a single audio icon (recorded, with TTS fallback) -->
     <div class="quiz-prompt-row">
       <span class="quiz-prompt">{{ prompt }}</span>
-      <button type="button" class="audio-icon" (click)="playWord()" aria-label="Play pronunciation">
+      <button type="button" class="audio-icon" (click)="playWord()" [attr.aria-label]="t('mode.playPronunciation')">
         <ion-icon name="volume-high-outline"></ion-icon>
       </button>
-      <button type="button" class="audio-icon slow" *ngIf="audioPlayed" (click)="playWord(true)" aria-label="Play slower">
+      <button type="button" class="audio-icon slow" *ngIf="audioPlayed" (click)="playWord(true)" [attr.aria-label]="t('mode.playSlower')">
         🐢
       </button>
     </div>
@@ -51,14 +51,14 @@
     </div>
     <div *ngIf="levelNumber === 0" class="complete-emoji gamification">🎉</div>
 
-    <h1>Quiz complete!</h1>
-    <p *ngIf="isNewBest" class="new-best gamification">🎉 New best score!</p>
+    <h1>{{ t('mode.quizComplete') }}</h1>
+    <p *ngIf="isNewBest" class="new-best gamification">{{ t('mode.newBest') }}</p>
     <p class="complete-sub">
-      {{ correctCount }} / {{ total }} correct
+      {{ t('mode.correctOfTotal', { correct: correctCount, total: total }) }}
     </p>
 
     <ion-button expand="block" (click)="finish()" class="finish-button">
-      Done
+      {{ t('mode.done') }}
     </ion-button>
   </div>
 </ion-content>

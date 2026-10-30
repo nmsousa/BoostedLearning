@@ -12,6 +12,7 @@
 import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
+import { I18nAngularService } from '../../services/i18n.service';
 
 type Side = 'left' | 'right';
 type MatchPhase = 'play' | 'complete';
@@ -35,6 +36,11 @@ export class MatchPage implements OnInit, OnDestroy {
   private router = inject(Router);
   private flashcardService = inject(FlashcardService);
   private cdr = inject(ChangeDetectorRef);
+  private i18n = inject(I18nAngularService);
+
+  t(key: string, params?: Record<string, string | number>): string {
+    return this.i18n.t(key, params);
+  }
 
   deck: FlashcardDeck | null = null;
   levelNumber = 0;
@@ -383,7 +389,10 @@ export class MatchPage implements OnInit, OnDestroy {
     const targetSeconds = total * this.SECONDS_PER_PAIR;
     // Max time (with a flawless run) to still hit the next tier.
     const maxSeconds = (targetSeconds * 100) / thresholdPct;
-    return `Finish under ${this.fmt(maxSeconds)} with no mistakes for ${nextTier} star${nextTier === 1 ? '' : 's'}.`;
+    return this.t(nextTier === 1 ? 'mode.nextStarHint1' : 'mode.nextStarHintN', {
+      time: this.fmt(maxSeconds),
+      stars: nextTier,
+    });
   }
 
   /**
