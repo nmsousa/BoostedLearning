@@ -13,10 +13,10 @@
   <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="match-content">
+<ion-content class="match-content">
   <!-- Play phase -->
   <div *ngIf="phase === 'play'" class="match-play">
-    <!-- Top bar: timer + combo + hint (combo/time hidden in reduced-distraction) -->
+    <!-- Top bar: timer + combo (hidden in reduced-distraction) -->
     <div class="match-top">
       <div class="match-stats gamification">
         <div class="stat time">
@@ -28,10 +28,10 @@
           <span>{{ combo }}<span class="combo-x" *ngIf="combo >= 2">x combo</span></span>
         </div>
       </div>
-      <p class="match-hint">Tap a word, then its translation.</p>
     </div>
 
     <div class="match-board-wrap">
+    <p class="match-hint">Tap a word, then its translation.</p>
     <div class="match-board" [style.min-height.px]="boardMinHeight">
       <!-- Left column: Dutch -->
       <div class="match-col">
