@@ -208,10 +208,22 @@
 
 .deck-actions {
   display: flex;
-  gap: 8px;
-  align-items: center;
-  padding-top: 8px;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+  padding-top: 12px;
+  margin-top: 4px;
   border-top: 1px solid var(--ion-color-light-shade);
+
+  // Labeled, comfortably-sized tap targets (icon-only buttons were too small
+  // to hit reliably on mobile).
+  .deck-action {
+    flex: 1 1 auto;
+    min-width: 150px;
+    --padding-top: 14px;
+    --padding-bottom: 14px;
+    font-size: 0.85rem;
+  }
 }
 
 .add-deck-button {

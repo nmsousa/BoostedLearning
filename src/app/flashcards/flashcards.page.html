@@ -100,11 +100,13 @@
           </div>
 
           <div class="deck-actions">
-            <ion-button fill="clear" size="small" (click)="confirmResetProgress(deck)">
-              <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+            <ion-button fill="outline" size="default" class="deck-action" (click)="confirmResetProgress(deck)">
+              <ion-icon slot="start" name="refresh-outline"></ion-icon>
+              {{ t('practice.resetProgress') }}
             </ion-button>
-            <ion-button *ngIf="!deck.isBundled" fill="clear" size="small" color="danger" (click)="confirmDeleteDeck(deck)">
-              <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            <ion-button *ngIf="!deck.isBundled" fill="outline" size="default" color="danger" class="deck-action" (click)="confirmDeleteDeck(deck)">
+              <ion-icon slot="start" name="trash-outline"></ion-icon>
+              {{ t('practice.deleteDeck') }}
             </ion-button>
           </div>
         </ion-card-content>

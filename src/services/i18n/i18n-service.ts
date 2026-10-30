@@ -321,6 +321,7 @@ const PT_MESSAGES: MessageCatalog = {
   'home.mode.quiz.desc': 'Escolha múltipla',
   'home.yourWords': 'As tuas palavras',
   'home.studied': '{count} estudadas',
+  'home.wordsPracticed': 'palavras praticadas',
   'home.level.learning': 'A aprender',
   'home.level.familiar': 'Familiar',
   'home.level.known': 'Sabida',
@@ -360,6 +361,8 @@ const PT_MESSAGES: MessageCatalog = {
   'practice.unlockHint': 'Faz 70% no nível anterior para desbloquear',
   'practice.quickStudy': 'Estudo rápido (sem níveis)',
   'practice.levelsTitle': 'Níveis',
+  'practice.resetProgress': 'Repor progresso',
+  'practice.deleteDeck': 'Apagar baralho',
 };
 
 /**
@@ -619,6 +622,7 @@ const FR_MESSAGES: MessageCatalog = {
   'home.mode.quiz.desc': 'Choix multiple',
   'home.yourWords': 'Tes mots',
   'home.studied': '{count} étudiés',
+  'home.wordsPracticed': 'mots pratiqués',
   'home.level.learning': 'En cours',
   'home.level.familiar': 'Familier',
   'home.level.known': 'Maîtrisé',
@@ -658,6 +662,8 @@ const FR_MESSAGES: MessageCatalog = {
   'practice.unlockHint': 'Obtiens 70% au niveau précédent pour débloquer',
   'practice.quickStudy': 'Étude rapide (sans niveaux)',
   'practice.levelsTitle': 'Niveaux',
+  'practice.resetProgress': 'Réinitialiser la progression',
+  'practice.deleteDeck': 'Supprimer le paquet',
 };
 
 /**
@@ -917,6 +923,7 @@ const EN_MESSAGES: MessageCatalog = {
   'home.mode.quiz.desc': 'Multiple choice',
   'home.yourWords': 'Your words',
   'home.studied': '{count} studied',
+  'home.wordsPracticed': 'words practiced',
   'home.level.learning': 'Learning',
   'home.level.familiar': 'Familiar',
   'home.level.known': 'Known',
@@ -956,6 +963,8 @@ const EN_MESSAGES: MessageCatalog = {
   'practice.unlockHint': 'Score 70% on the previous level to unlock',
   'practice.quickStudy': 'Quick Study (no levels)',
   'practice.levelsTitle': 'Levels',
+  'practice.resetProgress': 'Reset progress',
+  'practice.deleteDeck': 'Delete deck',
 };
 
 /**
@@ -1185,6 +1194,7 @@ const ES_MESSAGES: MessageCatalog = {
   'home.mode.quiz.desc': 'Opción múltiple',
   'home.yourWords': 'Tus palabras',
   'home.studied': '{count} estudiadas',
+  'home.wordsPracticed': 'palabras practicadas',
   'home.level.learning': 'Aprendiendo',
   'home.level.familiar': 'Familiar',
   'home.level.known': 'Dominada',
@@ -1224,6 +1234,8 @@ const ES_MESSAGES: MessageCatalog = {
   'practice.unlockHint': 'Consigue 70% en el nivel anterior para desbloquear',
   'practice.quickStudy': 'Estudio rápido (sin niveles)',
   'practice.levelsTitle': 'Niveles',
+  'practice.resetProgress': 'Restablecer progreso',
+  'practice.deleteDeck': 'Eliminar mazo',
 };
 
 /**

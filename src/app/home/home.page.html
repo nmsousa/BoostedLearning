@@ -84,57 +84,52 @@
       </div>
     </section>
 
-    <!-- Knowledge breakdown: how well you know your words
+    <!-- Your words: hero banner showing the knowledge breakdown
          (gamification: hidden in reduced-distraction mode) -->
-    <section class="knowledge-section gamification" (click)="openWords()"
-      [class.tappable]="knowledge.total > 0">
-      <div class="knowledge-header">
-        <h3 class="section-title">{{ t('home.yourWords') }}</h3>
-        <span class="knowledge-total" *ngIf="knowledge.total > 0">
-          {{ t('home.studied', { count: knowledge.total }) }}
-          <ion-icon name="chevron-forward"></ion-icon>
-        </span>
-      </div>
-
-      <!-- Proportional bar -->
-      <div class="knowledge-bar" *ngIf="knowledge.total > 0" aria-hidden="true">
-        <span
-          class="seg learning"
-          [style.flex]="knowledge.learning"
-          *ngIf="knowledge.learning > 0"></span>
-        <span
-          class="seg familiar"
-          [style.flex]="knowledge.familiar"
-          *ngIf="knowledge.familiar > 0"></span>
-        <span
-          class="seg known"
-          [style.flex]="knowledge.known"
-          *ngIf="knowledge.known > 0"></span>
-      </div>
-
-      <!-- Legend with counts -->
-      <div class="knowledge-legend">
-        <div class="legend-item">
-          <span class="dot learning"></span>
-          <span class="legend-count">{{ knowledge.learning }}</span>
-          <span class="legend-label">{{ t('home.level.learning') }}</span>
+    <section class="knowledge-section gamification">
+      <div class="words-hero" (click)="openWords()" [class.tappable]="knowledge.total > 0">
+        <div class="hero-top">
+          <h3 class="hero-title">{{ t('home.yourWords') }}</h3>
+          <ion-icon *ngIf="knowledge.total > 0" name="chevron-forward" class="hero-chevron"></ion-icon>
         </div>
-        <div class="legend-item">
-          <span class="dot familiar"></span>
-          <span class="legend-count">{{ knowledge.familiar }}</span>
-          <span class="legend-label">{{ t('home.level.familiar') }}</span>
-        </div>
-        <div class="legend-item">
-          <span class="dot known"></span>
-          <span class="legend-count">{{ knowledge.known }}</span>
-          <span class="legend-label">{{ t('home.level.known') }}</span>
-        </div>
-      </div>
 
-      <!-- Nothing studied yet -->
-      <p class="knowledge-empty" *ngIf="knowledge.total === 0">
-        {{ t('home.wordsEmpty') }}
-      </p>
+        <!-- Studied: big total -->
+        <div class="hero-total" *ngIf="knowledge.total > 0">
+          <span class="hero-count">{{ knowledge.total }}</span>
+          <span class="hero-count-label">{{ t('home.wordsPracticed') }}</span>
+        </div>
+
+        <!-- Proportional bar -->
+        <div class="hero-bar" *ngIf="knowledge.total > 0" aria-hidden="true">
+          <span class="seg learning" *ngIf="knowledge.learning > 0" [style.flex]="knowledge.learning"></span>
+          <span class="seg familiar" *ngIf="knowledge.familiar > 0" [style.flex]="knowledge.familiar"></span>
+          <span class="seg known" *ngIf="knowledge.known > 0" [style.flex]="knowledge.known"></span>
+        </div>
+
+        <!-- Legend with counts -->
+        <div class="hero-legend" *ngIf="knowledge.total > 0">
+          <span class="legend-item">
+            <span class="swatch learning"></span>
+            <span class="legend-count">{{ knowledge.learning }}</span>
+            <span class="legend-label">{{ t('home.level.learning') }}</span>
+          </span>
+          <span class="legend-item">
+            <span class="swatch familiar"></span>
+            <span class="legend-count">{{ knowledge.familiar }}</span>
+            <span class="legend-label">{{ t('home.level.familiar') }}</span>
+          </span>
+          <span class="legend-item">
+            <span class="swatch known"></span>
+            <span class="legend-count">{{ knowledge.known }}</span>
+            <span class="legend-label">{{ t('home.level.known') }}</span>
+          </span>
+        </div>
+
+        <!-- Nothing studied yet -->
+        <p class="hero-empty" *ngIf="knowledge.total === 0">
+          {{ t('home.wordsEmpty') }}
+        </p>
+      </div>
     </section>
 
   </div>
