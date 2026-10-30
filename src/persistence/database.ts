@@ -86,6 +86,8 @@ export interface LevelProgressEntity {
   /** Fastest completion time in seconds (Match mode). Optional / undefined for
    *  modes or records that don't track time. */
   bestTimeSeconds?: number;
+  /** Best combo streak achieved (Match mode). Optional. */
+  bestCombo?: number;
 }
 
 /**

@@ -1367,8 +1367,9 @@ export class FlashcardService {
     levelNumber: number,
     correctCount: number,
     totalCards: number,
-    timeSeconds?: number
-  ): Promise<{ stars: number; isNewBest: boolean; bestTimeSeconds?: number }> {
+    timeSeconds?: number,
+    combo?: number
+  ): Promise<{ stars: number; isNewBest: boolean; bestTimeSeconds?: number; bestCombo?: number }> {
     const scorePercent = Math.round((correctCount / totalCards) * 100);
     const stars = this.calculateStars(scorePercent);
     
@@ -1383,6 +1384,12 @@ export class FlashcardService {
       bestTimeSeconds =
         bestTimeSeconds === undefined ? timeSeconds : Math.min(bestTimeSeconds, timeSeconds);
     }
+
+    // Track the best combo, when provided.
+    let bestCombo = existing?.bestCombo;
+    if (combo !== undefined) {
+      bestCombo = bestCombo === undefined ? combo : Math.max(bestCombo, combo);
+    }
     
     const progress: LevelProgressEntity = {
       id: progressId,
@@ -1394,11 +1401,12 @@ export class FlashcardService {
       attempts: (existing?.attempts ?? 0) + 1,
       lastAttempt: new Date().toISOString(),
       ...(bestTimeSeconds !== undefined ? { bestTimeSeconds } : {}),
+      ...(bestCombo !== undefined ? { bestCombo } : {}),
     };
     
     await this.db.levelProgress.put(progress);
     
-    return { stars, isNewBest, bestTimeSeconds };
+    return { stars, isNewBest, bestTimeSeconds, bestCombo };
   }
 
   /** Storage key for a level's progress, scoped to deck + mode + level. */

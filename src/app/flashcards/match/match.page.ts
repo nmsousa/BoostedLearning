@@ -73,6 +73,8 @@ export class MatchPage implements OnInit, OnDestroy {
   // Combo: current streak of consecutive correct matches, and the best this run.
   combo = 0;
   bestCombo = 0;
+  /** Best combo across runs for this level (persisted). */
+  bestComboSaved = 0;
 
   // The number of rows the board started with. Used to reserve a stable board
   // height so the layout doesn't re-center (and the timer doesn't drift down)
@@ -197,29 +199,45 @@ export class MatchPage implements OnInit, OnDestroy {
     return rows * 76 + (rows - 1) * 18;
   }
 
+  /** How many matched slots must accumulate before refilling (in a batch). */
+  private readonly REFILL_BATCH = 2;
+
   /**
-   * Replace a just-matched pair with a fresh one from the queue (if any),
-   * so the board stays full. The new left tile takes the matched left's slot;
-   * the new right tile is inserted at a random position so columns don't line
-   * up. If the queue is empty, the matched tiles are simply removed.
+   * Refill matched (gray) slots in batches so positions are unpredictable.
+   *
+   * Matched tiles stay in place as gray placeholders — nothing ever shifts
+   * under the finger. Once at least REFILL_BATCH slots are free (and words
+   * remain), we fill those freed slots with new words, SHUFFLING which new
+   * word lands in which freed slot on each side independently. This prevents
+   * the "keep tapping the same two spots" exploit while never moving the tiles
+   * the player is currently looking at.
    */
-  private refillAfterMatch(matchedId: string) {
-    const leftIndex = this.leftItems.findIndex(i => i.id === matchedId);
-    const rightIndex = this.rightItems.findIndex(i => i.id === matchedId);
+  private tryRefill() {
+    const freeLeft = this.leftItems
+      .map((it, idx) => ({ it, idx }))
+      .filter(x => x.it.matched);
+    const freeRight = this.rightItems
+      .map((it, idx) => ({ it, idx }))
+      .filter(x => x.it.matched);
 
-    const next = this.queue.shift();
+    const available = this.queue.length;
+    // Only refill in full batches; near the end (queue smaller than a batch)
+    // fill whatever remains so the level can finish.
+    const batch = Math.min(freeLeft.length, freeRight.length, available);
+    if (batch < this.REFILL_BATCH && batch < available) return;
+    if (batch === 0) return;
 
-    if (next) {
-      const { left, right } = this.makePair(next);
-      // Replace each cleared tile IN PLACE so no other tile moves — otherwise
-      // a tile you were about to tap could shift under your finger.
-      if (leftIndex >= 0) this.leftItems.splice(leftIndex, 1, left);
-      if (rightIndex >= 0) this.rightItems.splice(rightIndex, 1, right);
-    } else {
-      // No more words: remove the matched tiles from the board.
-      if (leftIndex >= 0) this.leftItems.splice(leftIndex, 1);
-      if (rightIndex >= 0) this.rightItems.splice(rightIndex, 1);
-    }
+    const cards = this.queue.splice(0, batch);
+    const lefts = cards.map(c => this.makePair(c).left);
+    const rights = cards.map(c => this.makePair(c).right);
+
+    // Shuffle which new tile goes into which freed slot (per side), so the new
+    // word's position is not predictable from where the last one was.
+    const leftSlots = this.shuffle(freeLeft.slice(0, batch).map(x => x.idx));
+    const rightSlots = this.shuffle(freeRight.slice(0, batch).map(x => x.idx));
+
+    leftSlots.forEach((slot, i) => (this.leftItems[slot] = lefts[i]));
+    rightSlots.forEach((slot, i) => (this.rightItems[slot] = rights[i]));
   }
 
   select(item: MatchItem) {
@@ -266,13 +284,15 @@ export class MatchPage implements OnInit, OnDestroy {
         this.flashcardService.rateFlashcard(this.deck.id, matchedId, 'easy');
       }
 
+      // Matched tiles stay in place as gray placeholders (positions never
+      // shift). After a short beat, try to batch-refill freed slots.
       this.locked = true;
       setTimeout(() => {
-        this.refillAfterMatch(matchedId);
+        this.tryRefill();
         this.locked = false;
 
-        // Done when nothing is left on the board and the queue is drained.
-        if (this.leftItems.length === 0 && this.queue.length === 0) {
+        // Done when every tile is matched and the queue is drained.
+        if (this.queue.length === 0 && this.leftItems.every(i => i.matched)) {
           this.completeSession();
         }
         this.cdr.detectChanges();
@@ -388,14 +408,17 @@ export class MatchPage implements OnInit, OnDestroy {
         this.levelNumber,
         effectiveCorrect,
         total,
-        this.elapsedSeconds
+        this.elapsedSeconds,
+        this.bestCombo
       );
       this.earnedStars = result.stars;
       this.isNewBest = result.isNewBest;
       this.bestTimeSeconds = result.bestTimeSeconds ?? this.elapsedSeconds;
+      this.bestComboSaved = result.bestCombo ?? this.bestCombo;
     } else {
       this.earnedStars = this.flashcardService.calculateStars(scorePercent);
       this.bestTimeSeconds = this.elapsedSeconds;
+      this.bestComboSaved = this.bestCombo;
     }
 
     this.nextStarHint = this.buildNextStarHint(total, this.earnedStars);

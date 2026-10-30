@@ -34,6 +34,9 @@
             <button type="button" class="audio-icon" (click)="playWord($event)" aria-label="Play pronunciation">
               <ion-icon name="volume-high-outline"></ion-icon>
             </button>
+            <button type="button" class="audio-icon slow" *ngIf="audioPlayed" (click)="playWord($event, true)" aria-label="Play slower">
+              🐢
+            </button>
           </div>
           <span class="tap-hint">
             <ion-icon name="sync-outline"></ion-icon>

@@ -130,14 +130,19 @@ export class FlipPage implements OnInit {
     this.isFlipped = !this.isFlipped;
   }
 
+  /** True once the word audio has played at least once (shows the slow button). */
+  audioPlayed = false;
+
   /** Play the current word: recorded clip if available, else device TTS. */
-  async playWord(event: Event) {
+  async playWord(event: Event, slow = false) {
     event.stopPropagation();
     if (!this.currentCard) return;
+    this.audioPlayed = true;
     const res = await this.audio.playWord(
       this.currentCard.text,
       this.currentCard.audioUrl,
-      this.settings.learningLanguage()
+      this.settings.learningLanguage(),
+      slow
     );
     if (!res.ok && res.reason) {
       const t = await this.toast.create({ message: res.reason, duration: 2500, position: 'bottom' });
@@ -169,6 +174,7 @@ export class FlipPage implements OnInit {
       this.isFlipped = false;
       this.exitDirection = '';
       this.pendingRating = null;
+      this.audioPlayed = false;
 
       if (this.currentIndex >= this.cards.length) {
         this.completeSession();

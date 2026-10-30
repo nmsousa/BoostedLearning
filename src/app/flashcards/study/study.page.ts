@@ -215,13 +215,18 @@ export class StudyPage implements OnInit, OnDestroy {
       : 'Type the English translation';
   }
 
+  /** True once the word audio has played (shows the slow button). */
+  audioPlayed = false;
+
   /** Play the target-language word: recorded clip if available, else TTS. */
-  async playWord() {
+  async playWord(slow = false) {
     if (!this.currentCard) return;
+    this.audioPlayed = true;
     const res = await this.audio.playWord(
       this.currentCard.text,
       this.currentCard.audioUrl,
-      this.settings.learningLanguage()
+      this.settings.learningLanguage(),
+      slow
     );
     if (!res.ok && res.reason) {
       const t = await this.toast.create({ message: res.reason, duration: 2500, position: 'bottom' });
@@ -441,6 +446,7 @@ export class StudyPage implements OnInit, OnDestroy {
     this.hintText = '';
     this.usedHint = false;
     this.revealedViaHint = false;
+    this.audioPlayed = false;
 
     // The session ends only when every unique card has been answered
     // correctly. Failed cards were appended to the queue, so we keep going

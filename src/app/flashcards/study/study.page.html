@@ -29,6 +29,14 @@
             aria-label="Play pronunciation">
             <ion-icon name="volume-high-outline"></ion-icon>
           </button>
+          <button
+            *ngIf="phase === 'feedback' && audioPlayed"
+            type="button"
+            class="audio-icon slow"
+            (click)="playWord(true)"
+            aria-label="Play slower">
+            🐢
+          </button>
         </div>
         <p class="instruction">{{ instructionText }}</p>
 

@@ -24,6 +24,9 @@
       <button type="button" class="audio-icon" (click)="playWord()" aria-label="Play pronunciation">
         <ion-icon name="volume-high-outline"></ion-icon>
       </button>
+      <button type="button" class="audio-icon slow" *ngIf="audioPlayed" (click)="playWord(true)" aria-label="Play slower">
+        🐢
+      </button>
     </div>
 
     <div class="quiz-options">

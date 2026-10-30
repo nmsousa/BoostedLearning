@@ -369,3 +369,9 @@
     &:active { transform: scale(0.94); }
   }
 }
+
+// Slow-playback (turtle) button next to the audio icon.
+.audio-icon.slow {
+  font-size: 18px;
+  line-height: 1;
+}

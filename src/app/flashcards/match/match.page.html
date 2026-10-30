@@ -89,6 +89,11 @@
       <div class="metric">
         <ion-icon name="flame"></ion-icon>
         <span class="metric-value">{{ bestCombo }}</span>
+        <span class="metric-label">Combo</span>
+      </div>
+      <div class="metric" *ngIf="bestComboSaved > bestCombo">
+        <ion-icon name="trophy-outline"></ion-icon>
+        <span class="metric-value">{{ bestComboSaved }}</span>
         <span class="metric-label">Best combo</span>
       </div>
       <div class="metric" *ngIf="bestTimeFormatted">

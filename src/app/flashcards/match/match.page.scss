@@ -125,10 +125,12 @@
   }
 
   // Correct pair - fades out of the way
+  // Matched pair: grayed out but kept in place (so positions never shift).
   &.matched {
-    opacity: 0;
+    opacity: 0.35;
     pointer-events: none;
-    transform: scale(0.9);
+    border-color: var(--ion-color-success);
+    background: rgba(var(--ion-color-success-rgb), 0.12);
   }
 
   // Wrong pair - red flash

@@ -119,13 +119,18 @@ export class QuizPage implements OnInit {
     return this.cards[this.currentIndex] ?? null;
   }
 
+  /** True once the word audio has played (shows the slow button). */
+  audioPlayed = false;
+
   /** Play the prompt word: recorded clip if available, else device TTS. */
-  async playWord() {
+  async playWord(slow = false) {
     if (!this.currentCard) return;
+    this.audioPlayed = true;
     const res = await this.audio.playWord(
       this.currentCard.text,
       this.currentCard.audioUrl,
-      this.settings.learningLanguage()
+      this.settings.learningLanguage(),
+      slow
     );
     if (!res.ok && res.reason) {
       const t = await this.toast.create({ message: res.reason, duration: 2500, position: 'bottom' });
@@ -136,6 +141,7 @@ export class QuizPage implements OnInit {
   /** Build the prompt + options for the current card. */
   private loadQuestion() {
     this.answered = false;
+    this.audioPlayed = false;
     const card = this.cards[this.currentIndex];
     this.prompt = card.text;
 

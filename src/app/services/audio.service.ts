@@ -35,8 +35,11 @@ export class AudioService {
   private tts: TTSService = createTTSService();
   private audioEl: HTMLAudioElement | null = null;
 
+  /** A deliberately slow rate for the "turtle" (repeat slower) button. */
+  private readonly SLOW_RATE = 0.6;
+
   /** Play a pre-recorded clip from a URL. Returns true if playback started. */
-  async playRecorded(url: string | undefined | null): Promise<boolean> {
+  async playRecorded(url: string | undefined | null, rate?: number): Promise<boolean> {
     if (!url) return false;
     try {
       // Reuse a single element so a new play cancels the previous.
@@ -48,7 +51,7 @@ export class AudioService {
       this.tts.stop(); // don't overlap with TTS
       this.audioEl.pause();
       this.audioEl.src = url;
-      this.audioEl.playbackRate = this.settings.audioSpeed();
+      this.audioEl.playbackRate = rate ?? this.settings.audioSpeed();
       await this.audioEl.play();
       return true;
     } catch (err) {
@@ -61,7 +64,7 @@ export class AudioService {
    * Speak text with device TTS in the given app language.
    * Returns `{ ok, reason? }` so the UI can explain a failure (e.g. no voice).
    */
-  async playTts(text: string, langCode: string): Promise<{ ok: boolean; reason?: string }> {
+  async playTts(text: string, langCode: string, rate?: number): Promise<{ ok: boolean; reason?: string }> {
     if (!text) return { ok: false, reason: 'No text' };
     const lang = LANG_TO_BCP47[langCode] ?? langCode;
 
@@ -75,7 +78,7 @@ export class AudioService {
     if (this.audioEl) this.audioEl.pause(); // don't overlap with recorded
     const result = await this.tts.speak(text, {
       lang,
-      rate: this.settings.audioSpeed(),
+      rate: rate ?? this.settings.audioSpeed(),
     });
     if (!result.success) {
       console.warn('AudioService: TTS failed', result.error);
@@ -99,13 +102,15 @@ export class AudioService {
   async playWord(
     text: string,
     audioUrl: string | undefined | null,
-    langCode: string
+    langCode: string,
+    slow = false
   ): Promise<{ ok: boolean; reason?: string }> {
+    const rate = slow ? this.SLOW_RATE : undefined;
     if (audioUrl) {
-      const played = await this.playRecorded(audioUrl);
+      const played = await this.playRecorded(audioUrl, rate);
       if (played) return { ok: true };
       // Recorded failed (network/expired URL) — fall through to TTS.
     }
-    return this.playTts(text, langCode);
+    return this.playTts(text, langCode, rate);
   }
 }
