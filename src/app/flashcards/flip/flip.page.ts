@@ -116,6 +116,16 @@ export class FlipPage implements OnInit {
     return c.translations.slice(0, 4).join(', ');
   }
 
+  /** Display name of the learning language (front-of-card tag). */
+  get targetLangName(): string {
+    const names: Record<string, string> = {
+      nl: 'Dutch', dn: 'Dutch', fr: 'French', es: 'Spanish', it: 'Italian',
+      de: 'German', pt: 'Portuguese', en: 'English',
+    };
+    const code = this.deck?.languageCode ?? '';
+    return names[code] ?? (this.deck?.name || code.toUpperCase() || 'Word');
+  }
+
   flip() {
     this.isFlipped = !this.isFlipped;
   }

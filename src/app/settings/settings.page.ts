@@ -80,10 +80,11 @@ export class SettingsPage {
   ];
 
   colorThemeOptions: { value: ColorTheme; label: string }[] = [
-    { value: 'ocean', label: 'Ocean (navy)' },
-    { value: 'slate', label: 'Slate (grey)' },
-    { value: 'forest', label: 'Forest (green)' },
-    { value: 'default', label: 'Midnight (black)' },
+    { value: 'ocean', label: 'Ocean (dark navy)' },
+    { value: 'slate', label: 'Slate (dark grey)' },
+    { value: 'forest', label: 'Forest (dark green)' },
+    { value: 'default', label: 'Midnight (dark black)' },
+    { value: 'light', label: 'Light' },
   ];
 
   textSizeOptions: { value: TextSize; label: string }[] = [
@@ -109,8 +110,8 @@ export class SettingsPage {
   dailyGoalOptions: number[] = [10, 15, 20, 30, 50];
 
   flashcardDirectionOptions: { value: FlashcardDirection; label: string }[] = [
-    { value: 'target-only', label: 'Dutch only' },
-    { value: 'mixed', label: 'Mixed (Dutch & English)' },
+    { value: 'target-only', label: 'Learning language only' },
+    { value: 'mixed', label: 'Mixed (learning + your language)' },
   ];
 
   goBack(): void {

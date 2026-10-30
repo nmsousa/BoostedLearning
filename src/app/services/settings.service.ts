@@ -13,7 +13,7 @@ import { ExplanationLanguage } from '../../services/i18n';
 
 export type Theme = 'light' | 'dark' | 'system';
 /** Named colour palettes (applied via data-theme on <html>). */
-export type ColorTheme = 'default' | 'ocean' | 'slate' | 'forest';
+export type ColorTheme = 'default' | 'ocean' | 'slate' | 'forest' | 'light';
 export type TextSize = 'small' | 'medium' | 'large';
 export type AudioSpeed = 0.5 | 0.75 | 1.0 | 1.25;
 
@@ -79,6 +79,10 @@ export class SettingsService {
 
   // Computed effective theme (resolves 'system')
   readonly effectiveTheme = computed<'light' | 'dark'>(() => {
+    // The 'light' colour theme forces light mode regardless of the dark/system
+    // setting; all other named palettes are dark.
+    if (this.settingsSignal().colorTheme === 'light') return 'light';
+
     const theme = this.settingsSignal().theme;
     if (theme === 'system') {
       return this.getSystemTheme();

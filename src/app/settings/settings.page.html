@@ -21,26 +21,10 @@
         <ion-label>Appearance</ion-label>
       </ion-item-divider>
 
-      <!-- Theme -->
-      <ion-item>
-        <ion-icon slot="start" name="contrast-outline"></ion-icon>
-        <ion-label>{{ t('settings.theme') }}</ion-label>
-        <ion-select 
-          [value]="theme" 
-          (ionChange)="onThemeChange($event)"
-          interface="popover"
-          aria-label="Select theme"
-        >
-          <ion-select-option *ngFor="let opt of themeOptions" [value]="opt.value">
-            {{ opt.label }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
-
-      <!-- Color theme -->
+      <!-- Theme (single appearance control: Light + dark palettes) -->
       <ion-item>
         <ion-icon slot="start" name="color-palette-outline"></ion-icon>
-        <ion-label>Color theme</ion-label>
+        <ion-label>Theme</ion-label>
         <ion-select
           [value]="colorTheme"
           (ionChange)="onColorThemeChange($event)"

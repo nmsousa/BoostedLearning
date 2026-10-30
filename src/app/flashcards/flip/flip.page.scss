@@ -3,13 +3,23 @@
   --padding-bottom: 0;
   --padding-start: 12px;
   --padding-end: 12px;
+
+  // Full-height scroll host so the container can fill the viewport and center
+  // its content (otherwise the card overflows past the top).
+  &::part(scroll) {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
 }
 
 .flip-container {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
-  padding: 24px 0;
+  flex: 1 1 auto;
+  // Center the card + ratings as a group within the available height.
+  justify-content: center;
+  padding: 16px 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -141,8 +151,9 @@
 // Rating area
 // ---------------------------------------------------------------------------
 .rating-area {
-  margin-top: auto;
-  padding-top: 24px;
+  // Sit just below the card (container centers the whole group) instead of
+  // being pushed to the bottom of the screen.
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
