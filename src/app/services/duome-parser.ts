@@ -36,6 +36,8 @@ export interface ParsedDeck {
   words: ParsedWord[];
   /** Skill names in course order. */
   skills: string[];
+  /** Learning-language display name parsed from the page header, if found. */
+  languageName?: string;
 }
 
 const SKILL_DELIMITER = /<div class="path-section-delimiter">([\s\S]*?)<\/div>/g;
@@ -128,5 +130,18 @@ export function parseDuomeHtml(html: string): ParsedDeck {
     words.push({ text, translations, audioUrl, skill: name, skillOrder: order });
   }
 
-  return { words, skills };
+  return { words, skills, languageName: parseLanguageName(html) };
+}
+
+/**
+ * Extract the learning-language name from the duome header, e.g.
+ * `<h3 ...> French <span class="cCCC">from English</span> </h3>` -> "French".
+ */
+function parseLanguageName(html: string): string | undefined {
+  const h3 = /<h3[^>]*class="_zero[^"]*"[^>]*>([\s\S]*?)<\/h3>/.exec(html);
+  if (!h3) return undefined;
+  // Drop the "from English" span and flag spans, keep the leading name.
+  const withoutFrom = h3[1].replace(/<span class="cCCC">[\s\S]*?<\/span>/g, '');
+  const name = clean(withoutFrom).replace(/\s+/g, ' ').trim();
+  return name || undefined;
 }

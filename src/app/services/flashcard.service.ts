@@ -145,6 +145,17 @@ const BUNDLED_DECKS = [
   'assets/flashcards/french.json',
 ];
 
+/** Friendly display names for known language codes (home selector). */
+const LANGUAGE_NAMES: Record<string, string> = {
+  nl: 'Dutch',
+  fr: 'French',
+  es: 'Spanish',
+  it: 'Italian',
+  de: 'German',
+  pt: 'Portuguese',
+  en: 'English',
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -441,8 +452,8 @@ export class FlashcardService {
   async importFromDuomeUrl(
     url: string,
     langCode: string,
-    deckName: string
-  ): Promise<{ imported: number; skills: number; deckId: string }> {
+    deckName?: string
+  ): Promise<{ imported: number; skills: number; deckId: string; name: string }> {
     const response = await CapacitorHttp.get({ url, responseType: 'text' });
     if (response.status < 200 || response.status >= 300) {
       throw new Error(`Failed to fetch (HTTP ${response.status})`);
@@ -452,6 +463,14 @@ export class FlashcardService {
     if (parsed.words.length === 0) {
       throw new Error('No words found at that URL. Make sure it is a duome "by skill" page.');
     }
+
+    // Prefer an explicit name, else the name parsed from the page, else known
+    // map, else the uppercased code.
+    const name =
+      deckName?.trim() ||
+      parsed.languageName ||
+      LANGUAGE_NAMES[langCode] ||
+      langCode.toUpperCase();
 
     const now = new Date().toISOString();
     const deckId = `deck-duome-${langCode}`;
@@ -475,7 +494,7 @@ export class FlashcardService {
     await this.db.flashcards.bulkPut(entities);
     await this.db.flashcardDecks.put({
       id: deckId,
-      name: deckName,
+      name,
       languageCode: langCode,
       createdAt: now,
       updatedAt: now,
@@ -483,7 +502,7 @@ export class FlashcardService {
 
     const deck: FlashcardDeck = {
       id: deckId,
-      name: deckName,
+      name,
       languageCode: langCode,
       isBundled: false,
       createdAt: now,
@@ -509,7 +528,7 @@ export class FlashcardService {
       return [...without, deck];
     });
 
-    return { imported: parsed.words.length, skills: parsed.skills.length, deckId };
+    return { imported: parsed.words.length, skills: parsed.skills.length, deckId, name };
   }
 
   /**
@@ -673,6 +692,25 @@ export class FlashcardService {
    */
   getAllDecks(): FlashcardDeck[] {
     return this.decksSignal();
+  }
+
+  /**
+   * Distinct learning languages that currently have a deck (bundled or
+   * imported). Drives the home language selector so imported languages show up.
+   */
+  getAvailableLanguages(): { code: string; name: string }[] {
+    const seen = new Map<string, string>();
+    for (const deck of this.decksSignal()) {
+      const code = deck.languageCode;
+      if (!code) continue;
+      // Prefer a friendly display name; fall back to the deck name or code.
+      if (!seen.has(code)) {
+        seen.set(code, LANGUAGE_NAMES[code] ?? deck.name ?? code.toUpperCase());
+      }
+    }
+    return [...seen.entries()]
+      .map(([code, name]) => ({ code, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**

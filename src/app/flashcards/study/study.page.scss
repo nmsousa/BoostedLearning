@@ -1,8 +1,10 @@
 .study-content {
-  --padding-top: 16px;
-  --padding-bottom: 16px;
-  --padding-start: 16px;
-  --padding-end: 16px;
+  // Horizontal padding comes from .question-container; keep content vars at 0
+  // so it isn't doubled.
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 0;
+  --padding-end: 0;
 
   // Make the scrollable host a full-height flex column so child containers
   // using height:100% actually fill the viewport. Without this, ion-content's
@@ -26,7 +28,7 @@
   // the bottom action band is reliably pinned to the bottom in every phase.
   flex: 1 1 auto;
   box-sizing: border-box;
-  padding: 24px 16px;
+  padding: 24px 12px;
 }
 
 .card-section {

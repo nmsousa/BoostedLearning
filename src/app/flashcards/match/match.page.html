@@ -15,21 +15,23 @@
 
 <ion-content [fullscreen]="true" class="match-content">
   <!-- Play phase -->
-  <div *ngIf="phase === 'play'" class="match-container">
-    <!-- Timer + combo bar (gamification: hidden in reduced-distraction mode) -->
-    <div class="match-stats gamification">
-      <div class="stat time">
-        <ion-icon name="time-outline"></ion-icon>
-        <span>{{ formattedTime }}</span>
+  <div *ngIf="phase === 'play'" class="match-play">
+    <!-- Top bar: timer + combo + hint (combo/time hidden in reduced-distraction) -->
+    <div class="match-top">
+      <div class="match-stats gamification">
+        <div class="stat time">
+          <ion-icon name="time-outline"></ion-icon>
+          <span>{{ formattedTime }}</span>
+        </div>
+        <div class="stat combo" [class.active]="combo >= 2">
+          <ion-icon name="flame"></ion-icon>
+          <span>{{ combo }}<span class="combo-x" *ngIf="combo >= 2">x combo</span></span>
+        </div>
       </div>
-      <div class="stat combo" [class.active]="combo >= 2">
-        <ion-icon name="flame"></ion-icon>
-        <span>{{ combo }}<span class="combo-x" *ngIf="combo >= 2">x combo</span></span>
-      </div>
+      <p class="match-hint">Tap a word, then its translation.</p>
     </div>
 
-    <p class="match-hint">Tap a word, then its translation.</p>
-
+    <div class="match-board-wrap">
     <div class="match-board" [style.min-height.px]="boardMinHeight">
       <!-- Left column: Dutch -->
       <div class="match-col">
@@ -60,6 +62,7 @@
           {{ item.label }}
         </button>
       </div>
+    </div>
     </div>
   </div>
 

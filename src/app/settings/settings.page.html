@@ -409,30 +409,30 @@
 
       <ion-content class="ion-padding">
         <div class="vocab-instructions">
-          <h3>How to get the list:</h3>
-          <ol>
-            <li>Go to <strong>duome.eu/vocabulary/en</strong></li>
-            <li>Choose the language you're learning</li>
-            <li>Click <strong>“by skill”</strong></li>
-            <li>Copy that page's URL and paste it below</li>
-          </ol>
-          <p class="vocab-hint">Downloads the word list on your device (needs internet once).</p>
+          <p class="vocab-intro">
+            Enter the language you already know and the one you want to learn
+            (2-letter codes). The list is fetched from duome.eu.
+          </p>
+          <p class="vocab-hint">Needs internet once; the words are then stored on your device.</p>
         </div>
 
         <ion-item>
           <ion-input
-            [(ngModel)]="duomeUrl"
-            label="duome skills URL"
+            [(ngModel)]="duomeBase"
+            (ionInput)="syncDuomeUrl()"
+            label="I know (base language)"
             labelPlacement="floating"
-            placeholder="https://duome.eu/vocabulary/en/it/skills"
-            autocapitalize="off">
+            placeholder="en"
+            autocapitalize="off"
+            maxlength="2">
           </ion-input>
         </ion-item>
 
         <ion-item>
           <ion-input
-            [(ngModel)]="duomeLang"
-            label="Language code (2 letters)"
+            [(ngModel)]="duomeTarget"
+            (ionInput)="syncDuomeUrl()"
+            label="I'm learning (target language)"
             labelPlacement="floating"
             placeholder="it"
             autocapitalize="off"
@@ -442,10 +442,11 @@
 
         <ion-item>
           <ion-input
-            [(ngModel)]="duomeName"
-            label="Language name"
+            [(ngModel)]="duomeUrl"
+            label="URL (auto-built, editable)"
             labelPlacement="floating"
-            placeholder="Italian">
+            placeholder="https://duome.eu/vocabulary/en/it/skills"
+            autocapitalize="off">
           </ion-input>
         </ion-item>
 

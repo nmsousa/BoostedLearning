@@ -1,25 +1,43 @@
 .match-content {
-  --padding-top: 16px;
-  --padding-bottom: 16px;
-  --padding-start: 16px;
-  --padding-end: 16px;
+  // Single source of horizontal padding (was doubled with the container).
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 12px;
+  --padding-end: 12px;
+
+  // Full-height scroll host so .match-play fills the viewport and the board
+  // can center in the space below the fixed top bar.
+  &::part(scroll) {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
 }
 
-.match-container {
-  // Center the board vertically in the available space and nudge it down from
-  // the top so the tiles sit nearer the middle of the screen.
+// Full-height column: fixed top bar, then the board centered in the rest.
+.match-play {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.match-top {
+  padding-top: 12px;
+}
+
+.match-board-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
-  padding: 24px 16px 32px;
+  padding-bottom: 24px;
 }
 
 .match-stats {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 
   .stat {
     display: flex;

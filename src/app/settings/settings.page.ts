@@ -44,9 +44,9 @@ export class SettingsPage {
 
   // --- Add a language from duome.eu ---
   showDuomeModal = false;
-  duomeUrl = '';
-  duomeLang = '';
-  duomeName = '';
+  duomeBase = 'en';   // language you already know (base)
+  duomeTarget = '';   // language you're learning
+  duomeUrl = '';      // auto-built, editable
   duomeError = '';
   duomeBusy = false;
 
@@ -169,11 +169,11 @@ export class SettingsPage {
 
   // --- Add a language from duome.eu ---
   openDuomeModal() {
-    this.duomeUrl = '';
-    this.duomeLang = '';
-    this.duomeName = '';
+    this.duomeBase = 'en';
+    this.duomeTarget = '';
     this.duomeError = '';
     this.duomeBusy = false;
+    this.syncDuomeUrl();
     this.showDuomeModal = true;
   }
 
@@ -181,37 +181,44 @@ export class SettingsPage {
     this.showDuomeModal = false;
   }
 
+  /** Rebuild the duome URL from the base + target codes (editable after). */
+  syncDuomeUrl() {
+    const base = this.duomeBase.trim().toLowerCase();
+    const target = this.duomeTarget.trim().toLowerCase();
+    if (/^[a-z]{2}$/.test(base) && /^[a-z]{2}$/.test(target)) {
+      this.duomeUrl = `https://duome.eu/vocabulary/${base}/${target}/skills`;
+    }
+  }
+
   async importFromDuome() {
     const url = this.duomeUrl.trim();
-    const lang = this.duomeLang.trim().toLowerCase();
-    const name = this.duomeName.trim();
+    const target = this.duomeTarget.trim().toLowerCase();
 
+    if (!/^[a-z]{2}$/.test(target)) {
+      this.duomeError = 'Enter the 2-letter code of the language you are learning (e.g. it).';
+      return;
+    }
     if (!/^https?:\/\/duome\.eu\/vocabulary\/.+\/skills\/?$/.test(url)) {
-      this.duomeError = 'Enter a duome skills URL, e.g. https://duome.eu/vocabulary/en/it/skills';
-      return;
-    }
-    if (!/^[a-z]{2}$/.test(lang)) {
-      this.duomeError = 'Enter a 2-letter language code (e.g. it, de, es).';
-      return;
-    }
-    if (!name) {
-      this.duomeError = 'Enter a name for the language.';
+      this.duomeError = 'The URL looks wrong. It should be like https://duome.eu/vocabulary/en/it/skills';
       return;
     }
 
     this.duomeError = '';
     this.duomeBusy = true;
     try {
-      const result = await this.flashcardService.importFromDuomeUrl(url, lang, name);
+      // The language name is deduced from the page automatically.
+      const result = await this.flashcardService.importFromDuomeUrl(url, target);
+      // Switch to the newly-imported language so it shows immediately.
+      this.settingsService.updateSetting('learningLanguage', target);
       this.closeDuomeModal();
       const alert = await this.alertController.create({
         header: 'Language added',
-        message: `Imported ${result.imported} words across ${result.skills} skills for ${name}. Select it from the language menu on the home screen.`,
+        message: `Imported ${result.imported} words across ${result.skills} skills for ${result.name}. It's now your selected language.`,
         buttons: ['OK'],
       });
       await alert.present();
     } catch (e) {
-      this.duomeError = e instanceof Error ? e.message : 'Import failed. Check the URL and your connection.';
+      this.duomeError = e instanceof Error ? e.message : 'Import failed. Check the codes and your connection.';
     } finally {
       this.duomeBusy = false;
     }

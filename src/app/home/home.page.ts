@@ -52,13 +52,23 @@ export class HomePage implements OnInit {
 
   isLoading = false; // Start as false since load is synchronous
 
-  // Languages the user can learn (flag image + name). Extend as more added.
-  // flagUrl uses flagcdn (SVG) so flags render on every platform, unlike
-  // emoji flags which Windows doesn't display.
-  readonly availableLanguages: { code: string; name: string; flagUrl: string }[] = [
-    { code: 'nl', name: 'Dutch', flagUrl: 'https://flagcdn.com/nl.svg' },
-    { code: 'fr', name: 'French', flagUrl: 'https://flagcdn.com/fr.svg' },
-  ];
+  // Languages the user can learn, derived from available decks (bundled +
+  // imported) so imported languages appear here too. Populated on load.
+  availableLanguages: { code: string; name: string; flagUrl: string }[] = [];
+
+  /** Flag image for a language code (maps language -> country where needed). */
+  private flagUrl(code: string): string {
+    const toCountry: Record<string, string> = {
+      nl: 'nl', fr: 'fr', es: 'es', it: 'it', de: 'de', pt: 'pt', en: 'gb',
+    };
+    return `https://flagcdn.com/${toCountry[code] ?? code}.svg`;
+  }
+
+  private refreshLanguages(): void {
+    this.availableLanguages = this.flashcards
+      .getAvailableLanguages()
+      .map(l => ({ ...l, flagUrl: this.flagUrl(l.code) }));
+  }
 
   /** Currently selected learning language code (persisted in settings). */
   get learningLanguage(): string {
@@ -68,7 +78,11 @@ export class HomePage implements OnInit {
   get currentLanguage(): { code: string; name: string; flagUrl: string } {
     return (
       this.availableLanguages.find(l => l.code === this.learningLanguage) ??
-      this.availableLanguages[0]
+      this.availableLanguages[0] ?? {
+        code: this.learningLanguage,
+        name: this.learningLanguage.toUpperCase(),
+        flagUrl: this.flagUrl(this.learningLanguage),
+      }
     );
   }
 
@@ -86,12 +100,14 @@ export class HomePage implements OnInit {
   async ngOnInit(): Promise<void> {
     // Flashcard data drives the "Your words" breakdown; load it before reading.
     await this.flashcards.initialize();
+    this.refreshLanguages();
     this.loadDashboardData();
   }
 
-  /** Recompute the breakdown when returning to the home tab (e.g. after play). */
+  /** Recompute when returning to the home tab (e.g. after play or an import). */
   async ionViewWillEnter(): Promise<void> {
     await this.flashcards.initialize();
+    this.refreshLanguages();
     this.knowledge = this.flashcards.getKnowledgeBreakdown(this.settings.learningLanguage());
   }
 
