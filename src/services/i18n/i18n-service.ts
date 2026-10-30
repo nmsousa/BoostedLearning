@@ -341,7 +341,7 @@ const PT_MESSAGES: MessageCatalog = {
   'practice.level': 'Nível {n}',
   'practice.levelWords': '{count} palavras',
   'practice.unlockHint': 'Faz 70% no nível anterior para desbloquear',
-  'practice.quickStudy': 'Estudo rápido',
+  'practice.quickStudy': 'Estudo rápido (sem níveis)',
   'practice.levelsTitle': 'Níveis',
 };
 
@@ -622,7 +622,7 @@ const FR_MESSAGES: MessageCatalog = {
   'practice.level': 'Niveau {n}',
   'practice.levelWords': '{count} mots',
   'practice.unlockHint': 'Obtiens 70% au niveau précédent pour débloquer',
-  'practice.quickStudy': 'Étude rapide',
+  'practice.quickStudy': 'Étude rapide (sans niveaux)',
   'practice.levelsTitle': 'Niveaux',
 };
 
@@ -903,7 +903,7 @@ const EN_MESSAGES: MessageCatalog = {
   'practice.level': 'Level {n}',
   'practice.levelWords': '{count} words',
   'practice.unlockHint': 'Score 70% on the previous level to unlock',
-  'practice.quickStudy': 'Quick Study',
+  'practice.quickStudy': 'Quick Study (no levels)',
   'practice.levelsTitle': 'Levels',
 };
 
@@ -1154,7 +1154,7 @@ const ES_MESSAGES: MessageCatalog = {
   'practice.level': 'Nivel {n}',
   'practice.levelWords': '{count} palabras',
   'practice.unlockHint': 'Consigue 70% en el nivel anterior para desbloquear',
-  'practice.quickStudy': 'Estudio rápido',
+  'practice.quickStudy': 'Estudio rápido (sin niveles)',
   'practice.levelsTitle': 'Niveles',
 };
 

@@ -18,6 +18,7 @@
               *ngFor="let lang of availableLanguages"
               button
               detail="false"
+              lines="none"
               [class.active]="lang.code === learningLanguage"
               (click)="selectLanguage(lang.code)">
               <img class="flag" slot="start" [src]="lang.flagUrl" [alt]="lang.name" />

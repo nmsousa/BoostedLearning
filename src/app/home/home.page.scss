@@ -376,12 +376,28 @@ ion-button {
 
 // Flags inside the language popover list
 .lang-list {
+  // No outer list padding so item highlights reach the popover edges and
+  // there's no uncovered gap between rows.
+  padding: 0;
+
   .flag {
     width: 26px;
     height: 18px;
     border-radius: 3px;
     object-fit: cover;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  }
+
+  ion-item {
+    // Remove per-item divider lines and keep each row a solid, full-height
+    // tap target so the hover/active highlight covers the whole rectangle.
+    --inner-border-width: 0;
+    --border-width: 0;
+    --min-height: 48px;
+    --background-hover: rgba(var(--ion-color-primary-rgb), 0.12);
+    --background-hover-opacity: 1;
+    --background-focused: rgba(var(--ion-color-primary-rgb), 0.12);
+    --background-activated: rgba(var(--ion-color-primary-rgb), 0.16);
   }
 
   ion-item.active {
