@@ -363,6 +363,8 @@ const PT_MESSAGES: MessageCatalog = {
   'practice.levelsTitle': 'Níveis',
   'practice.resetProgress': 'Repor progresso',
   'practice.deleteDeck': 'Apagar baralho',
+  'practice.order.builtinFirst': 'Incluídos primeiro',
+  'practice.order.customFirst': 'Personalizados primeiro',
 };
 
 /**
@@ -664,6 +666,8 @@ const FR_MESSAGES: MessageCatalog = {
   'practice.levelsTitle': 'Niveaux',
   'practice.resetProgress': 'Réinitialiser la progression',
   'practice.deleteDeck': 'Supprimer le paquet',
+  'practice.order.builtinFirst': "Intégrés d'abord",
+  'practice.order.customFirst': "Personnalisés d'abord",
 };
 
 /**
@@ -965,6 +969,8 @@ const EN_MESSAGES: MessageCatalog = {
   'practice.levelsTitle': 'Levels',
   'practice.resetProgress': 'Reset progress',
   'practice.deleteDeck': 'Delete deck',
+  'practice.order.builtinFirst': 'Built-in first',
+  'practice.order.customFirst': 'Custom first',
 };
 
 /**
@@ -1236,6 +1242,8 @@ const ES_MESSAGES: MessageCatalog = {
   'practice.levelsTitle': 'Niveles',
   'practice.resetProgress': 'Restablecer progreso',
   'practice.deleteDeck': 'Eliminar mazo',
+  'practice.order.builtinFirst': 'Incluidos primero',
+  'practice.order.customFirst': 'Personalizados primero',
 };
 
 /**

@@ -13,6 +13,9 @@ import { FlashcardService, FlashcardDeck, DeckLevel, PracticeMode } from '../ser
 import { I18nAngularService } from '../services/i18n.service';
 import { SettingsService } from '../services/settings.service';
 
+/** Deck list ordering preference. */
+type DeckOrder = 'builtinFirst' | 'customFirst';
+
 @Component({
   selector: 'app-flashcards',
   templateUrl: './flashcards.page.html',
@@ -45,7 +48,40 @@ export class FlashcardsPage implements OnInit {
   private collapsedDecks: Set<string> = this.loadCollapsed();
   isLoading = true;
 
+  /** How decks are ordered in the list; persisted in localStorage. */
+  deckOrder: DeckOrder = this.loadDeckOrder();
+
   private static readonly COLLAPSED_KEY = 'boosted-learning-collapsed-decks';
+  private static readonly ORDER_KEY = 'boosted-learning-deck-order';
+
+  private loadDeckOrder(): DeckOrder {
+    try {
+      const raw = localStorage.getItem(FlashcardsPage.ORDER_KEY);
+      if (raw === 'customFirst' || raw === 'builtinFirst') return raw;
+    } catch {
+      // Ignore unavailable storage.
+    }
+    return 'builtinFirst';
+  }
+
+  setDeckOrder(order: DeckOrder): void {
+    this.deckOrder = order;
+    try {
+      localStorage.setItem(FlashcardsPage.ORDER_KEY, order);
+    } catch {
+      // Ignore storage errors.
+    }
+    this.sortDecks();
+  }
+
+  /** Order decks by the current preference (stable within each group). */
+  private sortDecks(): void {
+    const rank = (d: FlashcardDeck) =>
+      this.deckOrder === 'customFirst'
+        ? (d.isBundled ? 1 : 0)
+        : (d.isBundled ? 0 : 1);
+    this.decks = [...this.decks].sort((a, b) => rank(a) - rank(b));
+  }
 
   private loadCollapsed(): Set<string> {
     try {
@@ -101,6 +137,9 @@ export class FlashcardsPage implements OnInit {
     // show everything so the screen isn't empty.
     if (this.decks.length === 0) this.decks = all;
     
+    // Apply the user's deck-order preference.
+    this.sortDecks();
+
     // Load levels for each deck
     for (const deck of this.decks) {
       const levels = await this.flashcardService.getDeckLevels(deck.id, this.mode);

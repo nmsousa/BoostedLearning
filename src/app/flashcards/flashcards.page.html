@@ -32,6 +32,20 @@
       </ion-button>
     </div>
 
+    <!-- Deck order toggle: only relevant once there's a custom deck. -->
+    <ion-segment
+      *ngIf="decks.length > 0 && hasCustomDecks()"
+      class="deck-order"
+      [value]="deckOrder"
+      (ionChange)="setDeckOrder($any($event).detail.value)">
+      <ion-segment-button value="builtinFirst">
+        <ion-label>{{ t('practice.order.builtinFirst') }}</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="customFirst">
+        <ion-label>{{ t('practice.order.customFirst') }}</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
     <!-- Deck list -->
     <div *ngIf="decks.length > 0" class="deck-list">
       <ion-card *ngFor="let deck of decks" class="deck-card">
