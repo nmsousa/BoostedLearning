@@ -25,6 +25,15 @@ Portuguese, Spanish, French. Default to the system language if it's one of
 those, else English. User can change it in Settings. This app language is also
 the default **base language** when importing a new learning language (editable).
 
+Progress: `appLanguage` setting added (en/pt/es/fr, system default). UI now
+translated via the `t()` helper + catalogs in `i18n-service.ts`:
+- [x] Home page
+- [x] Practice list (deck/level cards)
+- [x] Settings page (all sections + import/manual/duome modals)
+- [x] Flip / Match / Quiz / Write mode pages (titles, ratings, feedback, summaries)
+- [ ] Remaining: Your Words screen strings (spot-check), toasts/alerts in
+  flashcard.service & settings import flow, any leftover hardcoded error messages.
+
 ### Audio speed — #4
 Default speed in Settings, plus: on a second tap of a word's audio, show a
 "slow" (turtle) button that replays at 0.5x–0.75x.
