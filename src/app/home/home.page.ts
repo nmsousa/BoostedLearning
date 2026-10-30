@@ -58,8 +58,13 @@ export class HomePage implements OnInit {
 
   /** Flag image for a language code (maps language -> country where needed). */
   private flagUrl(code: string): string {
+    // Map language/course codes to flag country codes where they differ
+    // (incl. duome's non-standard codes like dn=Dutch, nb=Norwegian, zs=Chinese).
     const toCountry: Record<string, string> = {
-      nl: 'nl', fr: 'fr', es: 'es', it: 'it', de: 'de', pt: 'pt', en: 'gb',
+      nl: 'nl', dn: 'nl', fr: 'fr', es: 'es', it: 'it', de: 'de', pt: 'pt',
+      en: 'gb', da: 'dk', el: 'gr', ja: 'jp', ko: 'kr', zs: 'cn', uk: 'ua',
+      nb: 'no', he: 'il', hi: 'in', vi: 'vn', cs: 'cz', sv: 'se', ga: 'ie',
+      gd: 'gb', cy: 'gb', hw: 'us', ht: 'ht', zu: 'za', sw: 'ke',
     };
     return `https://flagcdn.com/${toCountry[code] ?? code}.svg`;
   }

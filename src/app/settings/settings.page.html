@@ -410,34 +410,24 @@
       <ion-content class="ion-padding">
         <div class="vocab-instructions">
           <p class="vocab-intro">
-            Enter the language you already know and the one you want to learn
-            (2-letter codes). The list is fetched from duome.eu.
+            Pick the language you want to learn (courses from English). The word
+            list is downloaded from duome.eu.
           </p>
-          <p class="vocab-hint">Needs internet once; the words are then stored on your device.</p>
+          <p class="vocab-hint">Needs internet once; the words are then stored on your device. Works in the installed app only.</p>
         </div>
 
         <ion-item>
-          <ion-input
-            [(ngModel)]="duomeBase"
-            (ionInput)="syncDuomeUrl()"
-            label="I know (base language)"
-            labelPlacement="floating"
-            placeholder="en"
-            autocapitalize="off"
-            maxlength="2">
-          </ion-input>
-        </ion-item>
-
-        <ion-item>
-          <ion-input
+          <ion-select
             [(ngModel)]="duomeTarget"
-            (ionInput)="syncDuomeUrl()"
-            label="I'm learning (target language)"
+            (ionChange)="onDuomeCourseChange()"
+            label="Language to learn"
             labelPlacement="floating"
-            placeholder="it"
-            autocapitalize="off"
-            maxlength="2">
-          </ion-input>
+            interface="action-sheet"
+            placeholder="Choose a language">
+            <ion-select-option *ngFor="let c of duomeCourses" [value]="c.code">
+              {{ c.name }} ({{ c.words }} words)
+            </ion-select-option>
+          </ion-select>
         </ion-item>
 
         <ion-item>

@@ -9,13 +9,15 @@
  * @module app/settings
  */
 
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
+import { Capacitor } from '@capacitor/core';
 import { SettingsService, Theme, TextSize, AudioSpeed, AppSettings, FlashcardDirection } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { ExplanationLanguage } from '../../services/i18n';
 import { FlashcardService, DuolingoResponse } from '../services/flashcard.service';
+import { DUOME_COURSES } from '../services/duome-courses';
 import { BUILD_INFO } from '../../build-info';
 
 @Component({
@@ -30,6 +32,7 @@ export class SettingsPage {
   private settingsService = inject(SettingsService);
   private i18n = inject(I18nAngularService);
   private flashcardService = inject(FlashcardService);
+  private cdr = inject(ChangeDetectorRef);
 
   // --- Vocabulary management (import / manual add / export) ---
   showImportModal = false;
@@ -44,8 +47,8 @@ export class SettingsPage {
 
   // --- Add a language from duome.eu ---
   showDuomeModal = false;
-  duomeBase = 'en';   // language you already know (base)
-  duomeTarget = '';   // language you're learning
+  readonly duomeCourses = DUOME_COURSES;
+  duomeTarget = '';   // selected target language code (from dropdown)
   duomeUrl = '';      // auto-built, editable
   duomeError = '';
   duomeBusy = false;
@@ -169,11 +172,10 @@ export class SettingsPage {
 
   // --- Add a language from duome.eu ---
   openDuomeModal() {
-    this.duomeBase = 'en';
     this.duomeTarget = '';
+    this.duomeUrl = '';
     this.duomeError = '';
     this.duomeBusy = false;
-    this.syncDuomeUrl();
     this.showDuomeModal = true;
   }
 
@@ -181,12 +183,11 @@ export class SettingsPage {
     this.showDuomeModal = false;
   }
 
-  /** Rebuild the duome URL from the base + target codes (editable after). */
-  syncDuomeUrl() {
-    const base = this.duomeBase.trim().toLowerCase();
-    const target = this.duomeTarget.trim().toLowerCase();
-    if (/^[a-z]{2}$/.test(base) && /^[a-z]{2}$/.test(target)) {
-      this.duomeUrl = `https://duome.eu/vocabulary/${base}/${target}/skills`;
+  /** When a course is picked from the dropdown, build the skills URL. */
+  onDuomeCourseChange() {
+    const course = this.duomeCourses.find(c => c.code === this.duomeTarget);
+    if (course) {
+      this.duomeUrl = `https://duome.eu/vocabulary/${course.base}/${course.code}/skills`;
     }
   }
 
@@ -194,8 +195,8 @@ export class SettingsPage {
     const url = this.duomeUrl.trim();
     const target = this.duomeTarget.trim().toLowerCase();
 
-    if (!/^[a-z]{2}$/.test(target)) {
-      this.duomeError = 'Enter the 2-letter code of the language you are learning (e.g. it).';
+    if (!target) {
+      this.duomeError = 'Pick a language to learn.';
       return;
     }
     if (!/^https?:\/\/duome\.eu\/vocabulary\/.+\/skills\/?$/.test(url)) {
@@ -203,11 +204,23 @@ export class SettingsPage {
       return;
     }
 
+    // In a web browser, cross-origin requests to duome are blocked by CORS, so
+    // the import only works in the installed app. Warn instead of hanging.
+    if (!Capacitor.isNativePlatform()) {
+      this.duomeError =
+        'Importing a language only works in the installed app (the browser blocks the download). Please try it on your phone.';
+      return;
+    }
+
     this.duomeError = '';
     this.duomeBusy = true;
     try {
-      // The language name is deduced from the page automatically.
-      const result = await this.flashcardService.importFromDuomeUrl(url, target);
+      // The language name is deduced from the page automatically. Guard with a
+      // timeout so a stuck request fails with a clear message.
+      const result = await this.withTimeout(
+        this.flashcardService.importFromDuomeUrl(url, target),
+        30000
+      );
       // Switch to the newly-imported language so it shows immediately.
       this.settingsService.updateSetting('learningLanguage', target);
       this.closeDuomeModal();
@@ -218,10 +231,22 @@ export class SettingsPage {
       });
       await alert.present();
     } catch (e) {
-      this.duomeError = e instanceof Error ? e.message : 'Import failed. Check the codes and your connection.';
+      this.duomeError =
+        e instanceof Error ? e.message : 'Import failed. Check the codes and your connection.';
     } finally {
       this.duomeBusy = false;
+      this.cdr.detectChanges();
     }
+  }
+
+  /** Reject if a promise doesn't settle within `ms`. */
+  private withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+    return Promise.race([
+      p,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error('Timed out. Check your connection and try again.')), ms)
+      ),
+    ]);
   }
 
   async importFromJson() {
