@@ -50,21 +50,9 @@
 
   <!-- Main content -->
   <div *ngIf="!isLoading" class="home-content">
-    <!-- Continue learning (single entry for the selected language).
-         Temporarily disabled: the course/lesson flow isn't ready yet. -->
-    <section class="continue-section" *ngIf="courseLanguages.length > 0">
-      <ion-item
-        detail="false"
-        class="continue-item"
-        [disabled]="true"
-      >
-        <ion-icon name="construct-outline" slot="start" color="medium"></ion-icon>
-        <ion-label>
-          <h2>{{ t('home.continueLearning') }}</h2>
-          <p>{{ t('home.comingSoon') }}</p>
-        </ion-label>
-      </ion-item>
-    </section>
+    <!-- The guided course / "Continue learning" flow isn't ready yet, so it's
+         intentionally not shown. Practice modes + Your words are the entry
+         points for now. -->
 
     <!-- Practice modes section -->
     <section class="practice-section">
@@ -149,15 +137,5 @@
       </p>
     </section>
 
-    <!-- Empty state. The guided course flow isn't ready yet, so the entry
-         point is shown disabled; use the Practice modes above for now. -->
-    <div *ngIf="courseLanguages.length === 0 && !isLoading" class="empty-state">
-      <ion-icon name="school-outline"></ion-icon>
-      <h2>{{ t('home.welcome') }}</h2>
-      <p>{{ t('home.courseComingSoon') }}</p>
-      <ion-button expand="block" [disabled]="true">
-        Start Learning Dutch (coming soon)
-      </ion-button>
-    </div>
   </div>
 </ion-content>
