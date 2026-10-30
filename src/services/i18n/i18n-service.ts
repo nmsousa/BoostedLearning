@@ -14,7 +14,7 @@
 /**
  * Supported explanation languages
  */
-export type ExplanationLanguage = 'pt' | 'fr' | 'en';
+export type ExplanationLanguage = 'pt' | 'fr' | 'en' | 'es';
 
 /**
  * Default explanation language (Portuguese as per requirements)
@@ -380,12 +380,88 @@ const EN_MESSAGES: MessageCatalog = {
 };
 
 /**
+ * Spanish message catalog
+ */
+const ES_MESSAGES: MessageCatalog = {
+  // Common UI
+  'common.continue': 'Continuar',
+  'common.back': 'Atrás',
+  'common.next': 'Siguiente',
+  'common.submit': 'Enviar',
+  'common.skip': 'Saltar',
+  'common.cancel': 'Cancelar',
+  'common.save': 'Guardar',
+  'common.delete': 'Eliminar',
+  'common.edit': 'Editar',
+  'common.close': 'Cerrar',
+  'common.loading': 'Cargando...',
+  'common.error': 'Error',
+  'common.success': 'Éxito',
+  'common.retry': 'Reintentar',
+
+  // Exercise feedback
+  'feedback.correct': '¡Correcto!',
+  'feedback.incorrect': 'Incorrecto',
+  'feedback.almost': '¡Casi correcto!',
+  'feedback.tryAgain': 'Intentar de nuevo',
+  'feedback.showAnswer': 'Ver respuesta',
+  'feedback.correctAnswer': 'La respuesta correcta es: {answer}',
+  'feedback.almostCorrect': '¡Casi! La respuesta correcta es: {answer}',
+  'feedback.youTyped': 'Escribiste:',
+
+  // Session
+  'session.start': 'Iniciar sesión',
+  'session.end': 'Terminar sesión',
+  'session.pause': 'Pausar',
+  'session.resume': 'Reanudar',
+  'session.complete': '¡Sesión completada!',
+  'session.itemsStudied': '{count} elementos estudiados',
+  'session.accuracy': '{percent}% de precisión',
+
+  // Progress
+  'progress.title': 'Tu progreso',
+  'progress.itemsLearned': 'Elementos aprendidos',
+  'progress.dueToday': 'Para repasar hoy',
+  'progress.streak': 'Racha actual',
+  'progress.totalTime': 'Tiempo total de estudio',
+
+  // Recovery
+  'recovery.title': 'Recuperación',
+  'recovery.forgottenItems': 'Elementos que necesitan más práctica',
+  'recovery.inRecovery': 'En recuperación',
+
+  // Settings
+  'settings.title': 'Ajustes',
+  'settings.language': 'Idioma de la app',
+  'settings.theme': 'Tema',
+  'settings.theme.light': 'Claro',
+  'settings.theme.dark': 'Oscuro',
+  'settings.audioSpeed': 'Velocidad del audio',
+  'settings.textSize': 'Tamaño del texto',
+
+  // Audio
+  'audio.play': 'Reproducir audio',
+  'audio.slowDown': 'Reproducir más lento',
+  'audio.unavailable': 'Audio no disponible para este idioma',
+
+  // Hints
+  'hint.show': 'Mostrar pista',
+  'hint.available': 'Pista disponible',
+
+  // Review reasons
+  'review.reason.new': 'Elemento nuevo',
+  'review.reason.due': 'Repaso programado',
+  'review.reason.recovery': 'En recuperación',
+};
+
+/**
  * All message catalogs indexed by language
  */
 const CATALOGS: Record<ExplanationLanguage, MessageCatalog> = {
   pt: PT_MESSAGES,
   fr: FR_MESSAGES,
   en: EN_MESSAGES,
+  es: ES_MESSAGES,
 };
 
 /**

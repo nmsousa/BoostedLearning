@@ -223,7 +223,8 @@ describe('i18n Service', () => {
       expect(languages).toContain('pt');
       expect(languages).toContain('fr');
       expect(languages).toContain('en');
-      expect(languages).toHaveLength(3);
+      expect(languages).toContain('es');
+      expect(languages).toHaveLength(4);
     });
   });
   

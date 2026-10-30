@@ -13,7 +13,7 @@ import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
-import { SettingsService, Theme, ColorTheme, TextSize, AudioSpeed, AppSettings, FlashcardDirection } from '../services/settings.service';
+import { SettingsService, Theme, ColorTheme, AppLanguage, TextSize, AudioSpeed, AppSettings, FlashcardDirection } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { ExplanationLanguage } from '../../services/i18n';
 import { FlashcardService, DuolingoResponse } from '../services/flashcard.service';
@@ -66,6 +66,7 @@ export class SettingsPage {
   get audioSpeed() { return this.settingsService.audioSpeed(); }
   get reducedMotion() { return this.settingsService.reducedMotion(); }
   get explanationLanguage() { return this.settingsService.explanationLanguage(); }
+  get appLanguage() { return this.settingsService.appLanguage(); }
   get sessionLength() { return this.settingsService.sessionLength(); }
   get dailyGoal() { return this.settingsService.dailyGoal(); }
   get notificationsEnabled() { return this.settingsService.notificationsEnabled(); }
@@ -101,9 +102,17 @@ export class SettingsPage {
   ];
 
   languageOptions: { value: ExplanationLanguage; label: string }[] = [
-    { value: 'pt', label: 'Português' },
-    { value: 'fr', label: 'Français' },
     { value: 'en', label: 'English' },
+    { value: 'pt', label: 'Português' },
+    { value: 'es', label: 'Español' },
+    { value: 'fr', label: 'Français' },
+  ];
+
+  appLanguageOptions: { value: AppLanguage; label: string }[] = [
+    { value: 'en', label: 'English' },
+    { value: 'pt', label: 'Português' },
+    { value: 'es', label: 'Español' },
+    { value: 'fr', label: 'Français' },
   ];
 
   sessionLengthOptions: number[] = [5, 10, 15, 20, 30];
@@ -137,6 +146,12 @@ export class SettingsPage {
 
   onReducedMotionChange(event: CustomEvent): void {
     this.settingsService.updateSetting('reducedMotion', event.detail.checked);
+  }
+
+  onAppLanguageChange(event: CustomEvent): void {
+    // Keep both the app UI language and the explanation language in sync.
+    this.settingsService.updateSetting('appLanguage', event.detail.value as AppLanguage);
+    this.settingsService.updateSetting('explanationLanguage', event.detail.value);
   }
 
   onLanguageChange(event: CustomEvent): void {

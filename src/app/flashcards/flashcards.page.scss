@@ -63,6 +63,11 @@
 
 .deck-card {
   margin: 0;
+  // Transparent so the deck header sits directly on the page background
+  // (one background level); only the level items below are raised cards.
+  --background: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 .deck-header {

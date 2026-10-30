@@ -24,9 +24,13 @@ export type AudioSpeed = 0.5 | 0.75 | 1.0 | 1.25;
  */
 export type FlashcardDirection = 'target-only' | 'mixed';
 
+/** App UI language (distinct from the language being learned). */
+export type AppLanguage = 'en' | 'pt' | 'es' | 'fr';
+
 export interface AppSettings {
   theme: Theme;
   colorTheme: ColorTheme;
+  appLanguage: AppLanguage;
   textSize: TextSize;
   audioSpeed: AudioSpeed;
   reducedMotion: boolean;
@@ -42,6 +46,7 @@ export interface AppSettings {
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   colorTheme: 'ocean',
+  appLanguage: 'en',
   textSize: 'medium',
   audioSpeed: 1.0,
   reducedMotion: false,
@@ -66,6 +71,7 @@ export class SettingsService {
   // Computed values for individual settings
   readonly theme = computed(() => this.settingsSignal().theme);
   readonly colorTheme = computed(() => this.settingsSignal().colorTheme);
+  readonly appLanguage = computed(() => this.settingsSignal().appLanguage);
   readonly textSize = computed(() => this.settingsSignal().textSize);
   readonly audioSpeed = computed(() => this.settingsSignal().audioSpeed);
   readonly reducedMotion = computed(() => this.settingsSignal().reducedMotion);
@@ -238,8 +244,19 @@ export class SettingsService {
     } catch {
       // Ignore parse errors
     }
-    
-    return { ...DEFAULT_SETTINGS };
+
+    // No saved settings yet: default the app language to the system language
+    // if it's one we support, else English.
+    return { ...DEFAULT_SETTINGS, appLanguage: this.getSystemAppLanguage() };
+  }
+
+  /** System UI language if supported (en/pt/es/fr), else English. */
+  private getSystemAppLanguage(): AppLanguage {
+    if (typeof navigator === 'undefined' || !navigator.language) return 'en';
+    const code = navigator.language.slice(0, 2).toLowerCase();
+    return (['en', 'pt', 'es', 'fr'] as const).includes(code as AppLanguage)
+      ? (code as AppLanguage)
+      : 'en';
   }
 
   private saveSettings(settings: AppSettings): void {

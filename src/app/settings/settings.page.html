@@ -139,14 +139,14 @@
 
       <ion-item>
         <ion-icon slot="start" name="language-outline"></ion-icon>
-        <ion-label>{{ t('settings.language') }}</ion-label>
-        <ion-select 
-          [value]="explanationLanguage" 
-          (ionChange)="onLanguageChange($event)"
+        <ion-label>App language</ion-label>
+        <ion-select
+          [value]="appLanguage"
+          (ionChange)="onAppLanguageChange($event)"
           interface="popover"
-          aria-label="Select explanation language"
+          aria-label="Select app language"
         >
-          <ion-select-option *ngFor="let opt of languageOptions" [value]="opt.value">
+          <ion-select-option *ngFor="let opt of appLanguageOptions" [value]="opt.value">
             {{ opt.label }}
           </ion-select-option>
         </ion-select>
