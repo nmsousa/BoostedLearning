@@ -13,6 +13,7 @@ import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
 import { I18nAngularService } from '../../services/i18n.service';
+import { AddWordService } from '../../services/add-word.service';
 
 type Side = 'left' | 'right';
 type MatchPhase = 'play' | 'complete';
@@ -37,9 +38,15 @@ export class MatchPage implements OnInit, OnDestroy {
   private flashcardService = inject(FlashcardService);
   private cdr = inject(ChangeDetectorRef);
   private i18n = inject(I18nAngularService);
+  private addWordService = inject(AddWordService);
 
   t(key: string, params?: Record<string, string | number>): string {
     return this.i18n.t(key, params);
+  }
+
+  /** Open the add-word prompt for this deck's language. */
+  async addWord(): Promise<void> {
+    await this.addWordService.promptAddWord(this.deck?.languageCode);
   }
 
   deck: FlashcardDeck | null = null;

@@ -9,6 +9,11 @@
       <span *ngIf="levelNumber > 0">{{ t('mode.levelPrefix', { n: levelNumber }) }}</span>
       {{ t('mode.titleFlip') }}
     </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="addWord()" [attr.aria-label]="t('mode.addWord')">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
   <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
 </ion-header>

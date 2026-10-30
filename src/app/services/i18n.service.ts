@@ -6,7 +6,7 @@
  * @module app/services
  */
 
-import { Injectable, inject, effect } from '@angular/core';
+import { Injectable, inject, computed } from '@angular/core';
 import {
   createI18nService,
   I18nService,
@@ -22,32 +22,40 @@ export class I18nAngularService {
   private i18n: I18nService;
   private settings = inject(SettingsService);
 
+  /**
+   * The active UI language, driven solely by the app-language setting.
+   * Exposed as a computed signal so every `t()` call reads it and therefore
+   * participates in change detection: when the setting changes, all bound
+   * `t(...)` expressions re-evaluate in the same tick.
+   */
+  readonly lang = computed<ExplanationLanguage>(() => this.settings.appLanguage());
+
   constructor() {
     this.i18n = createI18nService();
-    // Keep the UI language in sync with the app-language setting.
-    effect(() => {
-      this.i18n.setLanguage(this.settings.appLanguage());
-    });
   }
 
   /**
    * Get current language
    */
   getLanguage(): ExplanationLanguage {
-    return this.i18n.getLanguage();
+    return this.lang();
   }
 
   /**
-   * Set language
+   * Set language. Kept for API compatibility; the real source of truth is the
+   * app-language setting, so this just updates that setting.
    */
   setLanguage(lang: ExplanationLanguage): void {
-    this.i18n.setLanguage(lang);
+    this.settings.updateSetting('appLanguage', lang);
   }
 
   /**
-   * Translate a key
+   * Translate a key. Reads the `lang` signal first so the current language is
+   * always in sync with the setting and so the call is reactive.
    */
   t(key: string, params?: Record<string, string | number>): string {
+    const lang = this.lang();
+    this.i18n.setLanguage(lang);
     return this.i18n.t(key, params);
   }
 
@@ -55,6 +63,7 @@ export class I18nAngularService {
    * Check if a key exists
    */
   hasKey(key: string): boolean {
+    this.i18n.setLanguage(this.lang());
     return this.i18n.hasKey(key);
   }
 

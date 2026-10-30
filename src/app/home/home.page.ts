@@ -6,7 +6,7 @@
  * @module app/home
  */
 
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { ContentService } from '../services/content.service';
 import { SessionService } from '../services/session.service';
@@ -37,6 +37,7 @@ export class HomePage implements OnInit {
   private i18n = inject(I18nAngularService);
   private flashcards = inject(FlashcardService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   quickActions: QuickAction[] = [];
   courseLanguages: { code: string; name: string }[] = [];
@@ -107,6 +108,8 @@ export class HomePage implements OnInit {
     await this.flashcards.initialize();
     this.refreshLanguages();
     this.loadDashboardData();
+    // Data loads after an await, so render the breakdown/count right away.
+    this.cdr.detectChanges();
   }
 
   /** Recompute when returning to the home tab (e.g. after play or an import). */
@@ -114,6 +117,7 @@ export class HomePage implements OnInit {
     await this.flashcards.initialize();
     this.refreshLanguages();
     this.knowledge = this.flashcards.getKnowledgeBreakdown(this.settings.learningLanguage());
+    this.cdr.detectChanges();
   }
 
   private loadDashboardData(): void {

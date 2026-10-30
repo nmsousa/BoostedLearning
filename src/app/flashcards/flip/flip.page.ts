@@ -16,6 +16,7 @@ import { ToastController } from '@ionic/angular';
 import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
+import { AddWordService } from '../../services/add-word.service';
 
 type FlipPhase = 'card' | 'complete';
 
@@ -34,9 +35,15 @@ export class FlipPage implements OnInit {
   private toast = inject(ToastController);
   private cdr = inject(ChangeDetectorRef);
   private i18n = inject(I18nAngularService);
+  private addWordService = inject(AddWordService);
 
   t(key: string, params?: Record<string, string | number>): string {
     return this.i18n.t(key, params);
+  }
+
+  /** Open the add-word prompt for this deck's language. */
+  async addWord(): Promise<void> {
+    await this.addWordService.promptAddWord(this.deck?.languageCode);
   }
 
   deck: FlashcardDeck | null = null;

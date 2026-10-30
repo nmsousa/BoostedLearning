@@ -6,7 +6,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 12px 12px 4px;
+  padding: 12px 12px 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--ion-color-step-150, rgba(255, 255, 255, 0.08));
 
   ion-chip {
     margin: 0;

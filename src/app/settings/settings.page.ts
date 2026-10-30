@@ -150,13 +150,9 @@ export class SettingsPage {
 
   onAppLanguageChange(event: CustomEvent): void {
     // Keep both the app UI language and the explanation language in sync.
+    // appLanguage is the single source of truth the i18n service reads from.
     this.settingsService.updateSetting('appLanguage', event.detail.value as AppLanguage);
     this.settingsService.updateSetting('explanationLanguage', event.detail.value);
-  }
-
-  onLanguageChange(event: CustomEvent): void {
-    this.settingsService.updateSetting('explanationLanguage', event.detail.value);
-    this.i18n.setLanguage(event.detail.value);
   }
 
   onSessionLengthChange(event: CustomEvent): void {

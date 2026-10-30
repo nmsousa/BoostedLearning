@@ -8,7 +8,7 @@
  * @module app/words
  */
 
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { FlashcardService } from '../services/flashcard.service';
 import { SettingsService } from '../services/settings.service';
@@ -38,6 +38,7 @@ export class WordsPage implements OnInit {
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
+  private cdr = inject(ChangeDetectorRef);
 
   allWords: WordRow[] = [];
   filter: Filter = 'all';
@@ -45,6 +46,9 @@ export class WordsPage implements OnInit {
   async ngOnInit() {
     await this.flashcards.initialize();
     this.allWords = this.flashcards.getStudiedWords(this.settings.learningLanguage());
+    // The data loads after an await, so nudge change detection to render the
+    // counts/list immediately (otherwise they stay at 0 until the next tick).
+    this.cdr.detectChanges();
   }
 
   get words(): WordRow[] {

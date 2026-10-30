@@ -15,6 +15,7 @@ import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flash
 import { I18nAngularService } from '../../services/i18n.service';
 import { SettingsService } from '../../services/settings.service';
 import { AudioService } from '../../services/audio.service';
+import { AddWordService } from '../../services/add-word.service';
 
 type StudyPhase = 'question' | 'feedback' | 'complete';
 type FeedbackResult = 'correct' | 'almost' | 'incorrect';
@@ -50,6 +51,12 @@ export class StudyPage implements OnInit, OnDestroy {
   private audio = inject(AudioService);
   private toast = inject(ToastController);
   private cdr = inject(ChangeDetectorRef);
+  private addWordService = inject(AddWordService);
+
+  /** Open the add-word prompt for this deck's language. */
+  async addWord(): Promise<void> {
+    await this.addWordService.promptAddWord(this.deck?.languageCode);
+  }
 
   deck: FlashcardDeck | null = null;
   studyCards: StudyCard[] = [];
