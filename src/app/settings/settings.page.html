@@ -153,56 +153,8 @@
       </ion-item>
     </ion-item-group>
 
-    <!-- Session Section -->
-    <ion-item-group>
-      <ion-item-divider>
-        <ion-label>{{ t('settings.secSessions') }}</ion-label>
-      </ion-item-divider>
-
-      <ion-item>
-        <ion-icon slot="start" name="timer-outline"></ion-icon>
-        <ion-label>{{ t('settings.sessionLength') }}</ion-label>
-        <ion-select 
-          [value]="sessionLength" 
-          (ionChange)="onSessionLengthChange($event)"
-          interface="popover"
-          aria-label="Select session length"
-        >
-          <ion-select-option *ngFor="let len of sessionLengthOptions" [value]="len">
-            {{ t('settings.sessionMinutes', { n: len }) }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
-
-      <ion-item>
-        <ion-icon slot="start" name="flag-outline"></ion-icon>
-        <ion-label>{{ t('settings.dailyGoal') }}</ion-label>
-        <ion-select 
-          [value]="dailyGoal" 
-          (ionChange)="onDailyGoalChange($event)"
-          interface="popover"
-          aria-label="Select daily goal"
-        >
-          <ion-select-option *ngFor="let goal of dailyGoalOptions" [value]="goal">
-            {{ t('settings.dailyGoalItems', { n: goal }) }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
-
-      <ion-item>
-        <ion-icon slot="start" name="notifications-outline"></ion-icon>
-        <ion-label>
-          {{ t('settings.reminders') }}
-          <p>{{ t('settings.remindersDesc') }}</p>
-        </ion-label>
-        <ion-toggle 
-          mode="ios"
-          [checked]="notificationsEnabled"
-          (ionChange)="onNotificationsChange($event)"
-          aria-label="Enable reminders"
-        ></ion-toggle>
-      </ion-item>
-    </ion-item-group>
+    <!-- Session Section (Session Length / Daily Goal / Reminders) is hidden
+         until those settings actually drive behavior. Tracked in TODO.md. -->
 
     <!-- Vocabulary Section -->
     <ion-item-group>

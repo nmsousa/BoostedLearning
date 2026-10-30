@@ -5,17 +5,27 @@ Tracked tasks that are deferred or in progress.
 ## Deferred (on standby)
 
 ### Daily goal, session length, reminders & push notifications
-Status: **not implemented** — standby, to pick up later.
+Status: **not implemented — Settings "Sessions" section is HIDDEN for now.**
 
-- `dailyGoal` and `sessionLength` settings exist in the UI but currently do
-  nothing. Wire them to real behavior:
-  - Daily goal: track words/attempts completed today vs the goal; show progress.
-  - Session length: cap a session's duration/number of items by the setting.
+The whole "Sessions" group was removed from the Settings UI
+(`settings.page.html`) because none of it changes app behavior yet. The pieces
+left in place so re-enabling is a one-line template change:
+- `SettingsService` still stores `sessionLength`, `dailyGoal`,
+  `notificationsEnabled` (with defaults).
+- `SettingsPage` still has `onSessionLengthChange` / `onDailyGoalChange` /
+  `onNotificationsChange` handlers + `sessionLengthOptions` / `dailyGoalOptions`.
+- i18n keys still exist: `settings.secSessions`, `settings.sessionLength`,
+  `settings.sessionMinutes`, `settings.dailyGoal`, `settings.dailyGoalItems`,
+  `settings.reminders`, `settings.remindersDesc`.
+
+To finish and un-hide:
+- Daily goal: track words/attempts completed today vs the goal; show progress.
+- Session length: cap a session's duration / number of items by the setting.
 - Reminders / push notifications:
   - Local notifications via Capacitor (e.g. `@capacitor/local-notifications`).
-  - Schedule a daily practice reminder; respect the `notificationsEnabled`
-    toggle already in Settings.
+  - Schedule a daily practice reminder; respect the `notificationsEnabled` toggle.
   - Handle Android 13+ notification permission request.
+- Then restore the "Session Section" `ion-item-group` in `settings.page.html`.
 
 ## In progress / recently decided
 
