@@ -97,8 +97,9 @@
 
     <!-- Knowledge breakdown: how well you know your words
          (gamification: hidden in reduced-distraction mode) -->
-    <section class="knowledge-section gamification">
-      <div class="knowledge-header" (click)="openWords()" [class.tappable]="knowledge.total > 0">
+    <section class="knowledge-section gamification" (click)="openWords()"
+      [class.tappable]="knowledge.total > 0">
+      <div class="knowledge-header">
         <h3 class="section-title">{{ t('home.yourWords') }}</h3>
         <span class="knowledge-total" *ngIf="knowledge.total > 0">
           {{ t('home.studied', { count: knowledge.total }) }}

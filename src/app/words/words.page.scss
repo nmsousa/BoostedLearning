@@ -7,8 +7,7 @@
   flex-wrap: wrap;
   gap: 6px;
   padding: 12px 12px 12px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--ion-color-step-150, rgba(255, 255, 255, 0.08));
+  margin-bottom: 4px;
 
   ion-chip {
     margin: 0;
@@ -35,8 +34,20 @@
   }
 }
 
+// The word list: no outer top/bottom border lines, just the per-row dividers.
+ion-list {
+  background: transparent;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 .word-row {
   --padding-start: 12px;
+  // Hide the divider on the last row so there's no trailing line at the end.
+  &:last-of-type {
+    --inner-border-width: 0;
+    --border-width: 0;
+  }
 
   .word-main {
     display: flex;

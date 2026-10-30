@@ -184,8 +184,9 @@ export class HomePage implements OnInit {
     this.router.navigate(['/settings']);
   }
 
-  /** Open the detailed "Your words" list. */
+  /** Open the detailed "Your words" list (only when there are words). */
   openWords(): void {
+    if (this.knowledge.total === 0) return;
     this.router.navigate(['/words']);
   }
 

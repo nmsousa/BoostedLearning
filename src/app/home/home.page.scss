@@ -218,6 +218,12 @@
 .knowledge-section {
   margin-bottom: 24px;
 
+  &.tappable {
+    cursor: pointer;
+
+    &:active { opacity: 0.85; }
+  }
+
   .knowledge-header {
     display: flex;
     align-items: baseline;
