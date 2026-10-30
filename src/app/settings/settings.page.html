@@ -18,13 +18,13 @@
     <!-- Appearance Section -->
     <ion-item-group>
       <ion-item-divider>
-        <ion-label>Appearance</ion-label>
+        <ion-label>{{ t('settings.secAppearance') }}</ion-label>
       </ion-item-divider>
 
       <!-- Theme (single appearance control: Light + dark palettes) -->
       <ion-item>
         <ion-icon slot="start" name="color-palette-outline"></ion-icon>
-        <ion-label>Theme</ion-label>
+        <ion-label>{{ t('settings.theme') }}</ion-label>
         <ion-select
           [value]="colorTheme"
           (ionChange)="onColorThemeChange($event)"
@@ -57,8 +57,8 @@
       <ion-item>
         <ion-icon slot="start" name="sparkles-outline"></ion-icon>
         <ion-label>
-          Reduced Motion
-          <p>Minimize animations</p>
+          {{ t('settings.reducedMotion') }}
+          <p>{{ t('settings.reducedMotionDesc') }}</p>
         </ion-label>
         <ion-toggle 
           mode="ios"
@@ -72,8 +72,8 @@
       <ion-item>
         <ion-icon slot="start" name="eye-off-outline"></ion-icon>
         <ion-label>
-          Reduced Distraction
-          <p>Hide non-essential gamification</p>
+          {{ t('settings.reducedDistraction') }}
+          <p>{{ t('settings.reducedDistractionDesc') }}</p>
         </ion-label>
         <ion-toggle 
           mode="ios"
@@ -87,14 +87,14 @@
     <!-- Flashcards Section -->
     <ion-item-group>
       <ion-item-divider>
-        <ion-label>Flashcards</ion-label>
+        <ion-label>{{ t('settings.secFlashcards') }}</ion-label>
       </ion-item-divider>
 
       <ion-item>
         <ion-icon slot="start" name="swap-horizontal-outline"></ion-icon>
         <ion-label>
-          Typing Direction
-          <p>Which language you type during study</p>
+          {{ t('settings.typingDirection') }}
+          <p>{{ t('settings.typingDirectionDesc') }}</p>
         </ion-label>
         <ion-select
           [value]="flashcardDirection"
@@ -112,7 +112,7 @@
     <!-- Audio Section -->
     <ion-item-group>
       <ion-item-divider>
-        <ion-label>Audio</ion-label>
+        <ion-label>{{ t('settings.secAudio') }}</ion-label>
       </ion-item-divider>
 
       <ion-item>
@@ -134,12 +134,12 @@
     <!-- Language Section -->
     <ion-item-group>
       <ion-item-divider>
-        <ion-label>Language</ion-label>
+        <ion-label>{{ t('settings.secLanguage') }}</ion-label>
       </ion-item-divider>
 
       <ion-item>
         <ion-icon slot="start" name="language-outline"></ion-icon>
-        <ion-label>App language</ion-label>
+        <ion-label>{{ t('settings.appLanguage') }}</ion-label>
         <ion-select
           [value]="appLanguage"
           (ionChange)="onAppLanguageChange($event)"
@@ -156,12 +156,12 @@
     <!-- Session Section -->
     <ion-item-group>
       <ion-item-divider>
-        <ion-label>Sessions</ion-label>
+        <ion-label>{{ t('settings.secSessions') }}</ion-label>
       </ion-item-divider>
 
       <ion-item>
         <ion-icon slot="start" name="timer-outline"></ion-icon>
-        <ion-label>Session Length</ion-label>
+        <ion-label>{{ t('settings.sessionLength') }}</ion-label>
         <ion-select 
           [value]="sessionLength" 
           (ionChange)="onSessionLengthChange($event)"
@@ -169,14 +169,14 @@
           aria-label="Select session length"
         >
           <ion-select-option *ngFor="let len of sessionLengthOptions" [value]="len">
-            {{ len }} minutes
+            {{ t('settings.sessionMinutes', { n: len }) }}
           </ion-select-option>
         </ion-select>
       </ion-item>
 
       <ion-item>
         <ion-icon slot="start" name="flag-outline"></ion-icon>
-        <ion-label>Daily Goal</ion-label>
+        <ion-label>{{ t('settings.dailyGoal') }}</ion-label>
         <ion-select 
           [value]="dailyGoal" 
           (ionChange)="onDailyGoalChange($event)"
@@ -184,7 +184,7 @@
           aria-label="Select daily goal"
         >
           <ion-select-option *ngFor="let goal of dailyGoalOptions" [value]="goal">
-            {{ goal }} items
+            {{ t('settings.dailyGoalItems', { n: goal }) }}
           </ion-select-option>
         </ion-select>
       </ion-item>
@@ -192,8 +192,8 @@
       <ion-item>
         <ion-icon slot="start" name="notifications-outline"></ion-icon>
         <ion-label>
-          Reminders
-          <p>Daily practice reminders</p>
+          {{ t('settings.reminders') }}
+          <p>{{ t('settings.remindersDesc') }}</p>
         </ion-label>
         <ion-toggle 
           mode="ios"
@@ -207,38 +207,38 @@
     <!-- Vocabulary Section -->
     <ion-item-group>
       <ion-item-divider>
-        <ion-label>Vocabulary</ion-label>
+        <ion-label>{{ t('settings.secVocabulary') }}</ion-label>
       </ion-item-divider>
 
       <ion-item button (click)="openImportModal()" detail="true">
         <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
         <ion-label>
-          Import from Duolingo
-          <p>Add words from your Duolingo export</p>
+          {{ t('settings.importDuolingo') }}
+          <p>{{ t('settings.importDuolingoDesc') }}</p>
         </ion-label>
       </ion-item>
 
       <ion-item button (click)="openManualModal()" detail="true">
         <ion-icon slot="start" name="create-outline"></ion-icon>
         <ion-label>
-          Add a word manually
-          <p>Create a single word + translation</p>
+          {{ t('settings.addWordManually') }}
+          <p>{{ t('settings.addWordManuallyDesc') }}</p>
         </ion-label>
       </ion-item>
 
       <ion-item button (click)="openDuomeModal()" detail="true">
         <ion-icon slot="start" name="globe-outline"></ion-icon>
         <ion-label>
-          Add a language
-          <p>Import a full language from a duome.eu list</p>
+          {{ t('settings.addLanguage') }}
+          <p>{{ t('settings.addLanguageDesc') }}</p>
         </ion-label>
       </ion-item>
 
       <ion-item button (click)="exportCustomCards()" detail="true" [disabled]="customCardCount === 0">
         <ion-icon slot="start" name="share-outline"></ion-icon>
         <ion-label>
-          Export my cards
-          <p>{{ customCardCount }} custom card(s) to email/backup</p>
+          {{ t('settings.exportCards') }}
+          <p>{{ t('settings.exportCardsDesc', { n: customCardCount }) }}</p>
         </ion-label>
       </ion-item>
     </ion-item-group>
@@ -246,25 +246,25 @@
     <!-- Data Section -->
     <ion-item-group>
       <ion-item-divider>
-        <ion-label>Data</ion-label>
+        <ion-label>{{ t('settings.secData') }}</ion-label>
       </ion-item-divider>
 
       <ion-item button (click)="resetSettings()" detail="false">
         <ion-icon slot="start" name="refresh-outline" color="danger"></ion-icon>
-        <ion-label color="danger">Reset Settings</ion-label>
+        <ion-label color="danger">{{ t('settings.resetSettings') }}</ion-label>
       </ion-item>
     </ion-item-group>
 
     <!-- About Section -->
     <ion-item-group>
       <ion-item-divider>
-        <ion-label>About</ion-label>
+        <ion-label>{{ t('settings.secAbout') }}</ion-label>
       </ion-item-divider>
 
       <ion-item>
         <ion-icon slot="start" name="information-circle-outline"></ion-icon>
         <ion-label>
-          Version
+          {{ t('settings.version') }}
           <p>{{ appVersion }}</p>
         </ion-label>
       </ion-item>
@@ -272,7 +272,7 @@
       <ion-item>
         <ion-icon slot="start" name="calendar-outline"></ion-icon>
         <ion-label>
-          Build date
+          {{ t('settings.buildDate') }}
           <p>{{ buildDate }}</p>
         </ion-label>
       </ion-item>
@@ -285,42 +285,42 @@
       <ion-header>
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-button (click)="closeImportModal()">Cancel</ion-button>
+            <ion-button (click)="closeImportModal()">{{ t('common.cancel') }}</ion-button>
           </ion-buttons>
-          <ion-title>Import from Duolingo</ion-title>
+          <ion-title>{{ t('settings.importDuolingo') }}</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="importFromJson()" [strong]="true">Import</ion-button>
+            <ion-button (click)="importFromJson()" [strong]="true">{{ t('settings.import') }}</ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
 
       <ion-content class="ion-padding">
         <div class="vocab-instructions">
-          <h3>How to export from Duolingo:</h3>
+          <h3>{{ t('settings.howToExport') }}</h3>
           <ol>
-            <li>Open Duolingo in your browser</li>
-            <li>Go to your learned words (Practice → Words)</li>
-            <li>Open Developer Tools (F12)</li>
-            <li>Go to Network tab</li>
-            <li>Look for "learned-lexemes" request</li>
-            <li>Copy the response JSON</li>
-            <li>Paste it below</li>
+            <li>{{ t('settings.exportStep1') }}</li>
+            <li>{{ t('settings.exportStep2') }}</li>
+            <li>{{ t('settings.exportStep3') }}</li>
+            <li>{{ t('settings.exportStep4') }}</li>
+            <li>{{ t('settings.exportStep5') }}</li>
+            <li>{{ t('settings.exportStep6') }}</li>
+            <li>{{ t('settings.exportStep7') }}</li>
           </ol>
         </div>
 
         <ion-item>
           <ion-input
             [(ngModel)]="importDeckName"
-            label="Deck Name"
+            [label]="t('settings.deckName')"
             labelPlacement="floating"
-            placeholder="e.g., Duolingo Dutch">
+            [placeholder]="t('settings.deckNamePlaceholder')">
           </ion-input>
         </ion-item>
 
         <ion-item>
           <ion-textarea
             [(ngModel)]="importJson"
-            label="Paste JSON here"
+            [label]="t('settings.pasteJson')"
             labelPlacement="floating"
             placeholder='{&quot;learnedLexemes&quot;: [...]}'
             [rows]="10"
@@ -342,24 +342,24 @@
       <ion-header>
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-button (click)="closeManualModal()">Cancel</ion-button>
+            <ion-button (click)="closeManualModal()">{{ t('common.cancel') }}</ion-button>
           </ion-buttons>
-          <ion-title>Add a Word</ion-title>
+          <ion-title>{{ t('settings.addAWord') }}</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="saveManualCard()" [strong]="true">Save</ion-button>
+            <ion-button (click)="saveManualCard()" [strong]="true">{{ t('common.save') }}</ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
 
       <ion-content class="ion-padding">
-        <p class="vocab-intro">Add one word and its translation. This creates a new flashcard.</p>
+        <p class="vocab-intro">{{ t('settings.manualIntro') }}</p>
 
         <ion-item>
           <ion-input
             [(ngModel)]="manualText"
-            label="Word (Dutch)"
+            [label]="t('settings.wordField')"
             labelPlacement="floating"
-            placeholder="e.g., hond"
+            [placeholder]="t('settings.wordPlaceholder')"
             autocapitalize="off">
           </ion-input>
         </ion-item>
@@ -367,19 +367,16 @@
         <ion-item>
           <ion-input
             [(ngModel)]="manualTranslations"
-            label="Translation(s)"
+            [label]="t('settings.translationsField')"
             labelPlacement="floating"
-            placeholder="e.g., dog, hound">
+            [placeholder]="t('settings.translationsPlaceholder')">
           </ion-input>
         </ion-item>
-        <p class="vocab-hint">Separate multiple translations with commas.</p>
+        <p class="vocab-hint">{{ t('settings.translationsHint') }}</p>
 
         <div class="vocab-notice">
           <ion-icon name="information-circle-outline"></ion-icon>
-          <span>
-            Cards you add are stored only on this device and are lost on reinstall or when
-            switching phones. Export them to be included in a future app version.
-          </span>
+          <span>{{ t('settings.manualNotice') }}</span>
         </div>
 
         <p *ngIf="manualError" class="vocab-error">
@@ -396,12 +393,12 @@
       <ion-header>
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-button (click)="closeDuomeModal()">Cancel</ion-button>
+            <ion-button (click)="closeDuomeModal()">{{ t('common.cancel') }}</ion-button>
           </ion-buttons>
-          <ion-title>Add a Language</ion-title>
+          <ion-title>{{ t('settings.addLanguage') }}</ion-title>
           <ion-buttons slot="end">
             <ion-button (click)="importFromDuome()" [strong]="true" [disabled]="duomeBusy">
-              {{ duomeBusy ? 'Importing…' : 'Import' }}
+              {{ duomeBusy ? t('settings.importing') : t('settings.import') }}
             </ion-button>
           </ion-buttons>
         </ion-toolbar>
@@ -409,23 +406,20 @@
 
       <ion-content class="ion-padding">
         <div class="vocab-instructions">
-          <p class="vocab-intro">
-            Pick the language you want to learn (courses from English). The word
-            list is downloaded from duome.eu.
-          </p>
-          <p class="vocab-hint">Needs internet once; the words are then stored on your device. Works in the installed app only.</p>
+          <p class="vocab-intro">{{ t('settings.pickLanguageIntro') }}</p>
+          <p class="vocab-hint">{{ t('settings.pickLanguageHint') }}</p>
         </div>
 
         <ion-item>
           <ion-select
             [(ngModel)]="duomeTarget"
             (ionChange)="onDuomeCourseChange()"
-            label="Language to learn"
+            [label]="t('settings.languageToLearn')"
             labelPlacement="floating"
             interface="action-sheet"
-            placeholder="Choose a language">
+            [placeholder]="t('settings.chooseLanguage')">
             <ion-select-option *ngFor="let c of duomeCourses" [value]="c.code">
-              {{ c.name }} ({{ c.words }} words)
+              {{ t('settings.courseWords', { name: c.name, words: c.words }) }}
             </ion-select-option>
           </ion-select>
         </ion-item>
@@ -433,7 +427,7 @@
         <ion-item>
           <ion-input
             [(ngModel)]="duomeUrl"
-            label="URL (auto-built, editable)"
+            [label]="t('settings.urlField')"
             labelPlacement="floating"
             placeholder="https://duome.eu/vocabulary/en/it/skills"
             autocapitalize="off">
