@@ -144,14 +144,13 @@ export class FlipPage implements OnInit {
     return c.translations.slice(0, 4).join(', ');
   }
 
-  /** Display name of the learning language (front-of-card tag). */
+  /** Localized display name of the learning language (front-of-card tag). */
   get targetLangName(): string {
-    const names: Record<string, string> = {
-      nl: 'Dutch', dn: 'Dutch', fr: 'French', es: 'Spanish', it: 'Italian',
-      de: 'German', pt: 'Portuguese', en: 'English',
-    };
     const code = this.deck?.languageCode ?? '';
-    return names[code] ?? (this.deck?.name || code.toUpperCase() || 'Word');
+    const key = `langName.${code}`;
+    const name = this.i18n.t(key);
+    // Fall back to the deck name / code if there's no catalog entry.
+    return name === key ? (this.deck?.name || code.toUpperCase() || '') : name;
   }
 
   flip() {
