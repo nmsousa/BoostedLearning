@@ -94,12 +94,32 @@ export class WordsPage implements OnInit {
     this.statusFilter = s;
   }
 
+  /**
+   * Words matching the current SEARCH only (ignores level + status filters).
+   * Used as the base for the chip counters so they reflect what the user typed.
+   */
+  private get searchMatched(): StudiedWord[] {
+    const q = this.search.trim().toLowerCase();
+    if (!q) return this.allWords;
+    return this.allWords.filter(
+      w => w.text.toLowerCase().includes(q) || w.translation.toLowerCase().includes(q)
+    );
+  }
+
+  /** Base list for the LEVEL chip counts: search + status filter applied. */
+  private get levelCountBase(): StudiedWord[] {
+    let list = this.searchMatched;
+    if (this.statusFilter === 'enabled') list = list.filter(w => w.priority !== 'hide');
+    else if (this.statusFilter === 'hidden') list = list.filter(w => w.priority === 'hide');
+    return list;
+  }
+
   countHidden(): number {
-    return this.allWords.filter(w => w.priority === 'hide').length;
+    return this.searchMatched.filter(w => w.priority === 'hide').length;
   }
 
   countEnabled(): number {
-    return this.allWords.filter(w => w.priority !== 'hide').length;
+    return this.searchMatched.filter(w => w.priority !== 'hide').length;
   }
 
   private compare(a: StudiedWord, b: StudiedWord): number {
@@ -115,8 +135,9 @@ export class WordsPage implements OnInit {
   }
 
   count(level: Filter): number {
-    if (level === 'all') return this.allWords.length;
-    return this.allWords.filter(w => w.level === level).length;
+    const base = this.levelCountBase;
+    if (level === 'all') return base.length;
+    return base.filter(w => w.level === level).length;
   }
 
   setFilter(f: Filter) {
