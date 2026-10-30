@@ -95,13 +95,13 @@ export class StudyPage implements OnInit, OnDestroy {
     this.levelNumber = levelParam ? parseInt(levelParam, 10) : 0;
     
     if (!deckId) {
-      this.router.navigate(['/flashcards']);
+      this.router.navigate(['/practice']);
       return;
     }
 
     this.deck = this.flashcardService.getDeck(deckId);
     if (!this.deck) {
-      this.router.navigate(['/flashcards']);
+      this.router.navigate(['/practice']);
       return;
     }
 
@@ -111,7 +111,7 @@ export class StudyPage implements OnInit, OnDestroy {
       // Check if level is unlocked
       const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, 'write', this.levelNumber);
       if (!isUnlocked) {
-        this.router.navigate(['/flashcards']);
+        this.router.navigate(['/practice']);
         return;
       }
       cards = this.flashcardService.getLevelCards(deckId, this.levelNumber);
@@ -500,7 +500,7 @@ export class StudyPage implements OnInit, OnDestroy {
           text: 'End',
           role: 'confirm',
           handler: () => {
-            this.router.navigate(['/flashcards'], { replaceUrl: true });
+            this.router.navigate(['/practice'], { replaceUrl: true });
           },
         },
       ],
@@ -509,7 +509,7 @@ export class StudyPage implements OnInit, OnDestroy {
   }
 
   finishStudy(): void {
-    this.router.navigate(['/flashcards'], { replaceUrl: true });
+    this.router.navigate(['/practice'], { replaceUrl: true });
   }
 
   get accuracy(): number {

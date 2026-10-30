@@ -181,7 +181,7 @@ export class HomePage implements OnInit {
   }
 
   navigateToFlashcards(): void {
-    this.router.navigate(['/flashcards']);
+    this.router.navigate(['/practice']);
   }
 
   /**
@@ -189,7 +189,7 @@ export class HomePage implements OnInit {
    * reads the mode and launches each level directly in that mode.
    */
   startMode(mode: 'flip' | 'write' | 'match' | 'quiz'): void {
-    this.router.navigate(['/flashcards'], { queryParams: { mode } });
+    this.router.navigate(['/practice'], { queryParams: { mode } });
   }
 
   t(key: string, params?: Record<string, string | number>): string {

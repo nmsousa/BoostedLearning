@@ -32,7 +32,7 @@ const routes: Routes = [
     loadChildren: () => import('./course/course.module').then( m => m.CoursePageModule)
   },
   {
-    path: 'flashcards',
+    path: 'practice',
     loadChildren: () => import('./flashcards/flashcards.module').then( m => m.FlashcardsPageModule)
   },
 ];

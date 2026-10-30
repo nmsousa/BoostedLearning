@@ -69,13 +69,13 @@ export class QuizPage implements OnInit {
     this.levelNumber = levelParam ? parseInt(levelParam, 10) : 0;
 
     if (!deckId) {
-      this.router.navigate(['/flashcards']);
+      this.router.navigate(['/practice']);
       return;
     }
 
     this.deck = this.flashcardService.getDeck(deckId);
     if (!this.deck) {
-      this.router.navigate(['/flashcards']);
+      this.router.navigate(['/practice']);
       return;
     }
 
@@ -83,7 +83,7 @@ export class QuizPage implements OnInit {
     if (this.levelNumber > 0) {
       const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, 'quiz', this.levelNumber);
       if (!isUnlocked) {
-        this.router.navigate(['/flashcards']);
+        this.router.navigate(['/practice']);
         return;
       }
       cards = this.flashcardService.getLevelCards(deckId, this.levelNumber);
@@ -236,10 +236,10 @@ export class QuizPage implements OnInit {
   }
 
   finish() {
-    this.router.navigate(['/flashcards'], { replaceUrl: true });
+    this.router.navigate(['/practice'], { replaceUrl: true });
   }
 
   close() {
-    this.router.navigate(['/flashcards'], { replaceUrl: true });
+    this.router.navigate(['/practice'], { replaceUrl: true });
   }
 }

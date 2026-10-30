@@ -163,16 +163,16 @@ export class FlashcardsPage implements OnInit {
 
     switch (this.mode) {
       case 'flip':
-        this.router.navigate(['/flashcards/flip', deck.id], { queryParams });
+        this.router.navigate(['/practice/flip', deck.id], { queryParams });
         break;
       case 'write':
-        this.router.navigate(['/flashcards/write', deck.id], { queryParams });
+        this.router.navigate(['/practice/write', deck.id], { queryParams });
         break;
       case 'match':
-        this.router.navigate(['/flashcards/match', deck.id], { queryParams });
+        this.router.navigate(['/practice/match', deck.id], { queryParams });
         break;
       case 'quiz':
-        this.router.navigate(['/flashcards/quiz', deck.id], { queryParams });
+        this.router.navigate(['/practice/quiz', deck.id], { queryParams });
         break;
     }
   }
