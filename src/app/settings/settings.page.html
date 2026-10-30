@@ -37,6 +37,22 @@
         </ion-select>
       </ion-item>
 
+      <!-- Color theme -->
+      <ion-item>
+        <ion-icon slot="start" name="color-palette-outline"></ion-icon>
+        <ion-label>Color theme</ion-label>
+        <ion-select
+          [value]="colorTheme"
+          (ionChange)="onColorThemeChange($event)"
+          interface="popover"
+          aria-label="Select color theme"
+        >
+          <ion-select-option *ngFor="let opt of colorThemeOptions" [value]="opt.value">
+            {{ opt.label }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
       <!-- Text Size -->
       <ion-item>
         <ion-icon slot="start" name="text-outline"></ion-icon>

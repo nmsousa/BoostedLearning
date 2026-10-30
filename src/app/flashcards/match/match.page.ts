@@ -211,12 +211,10 @@ export class MatchPage implements OnInit, OnDestroy {
 
     if (next) {
       const { left, right } = this.makePair(next);
-      // Swap the new left tile into the cleared left slot.
+      // Replace each cleared tile IN PLACE so no other tile moves — otherwise
+      // a tile you were about to tap could shift under your finger.
       if (leftIndex >= 0) this.leftItems.splice(leftIndex, 1, left);
-      // Remove the cleared right tile and drop the new one in at a random spot.
-      if (rightIndex >= 0) this.rightItems.splice(rightIndex, 1);
-      const insertAt = Math.floor(Math.random() * (this.rightItems.length + 1));
-      this.rightItems.splice(insertAt, 0, right);
+      if (rightIndex >= 0) this.rightItems.splice(rightIndex, 1, right);
     } else {
       // No more words: remove the matched tiles from the board.
       if (leftIndex >= 0) this.leftItems.splice(leftIndex, 1);

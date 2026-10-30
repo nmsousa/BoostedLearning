@@ -91,6 +91,11 @@ export class FlashcardsPage implements OnInit {
     return this.flashcardService.getDeckStats(deck.id);
   }
 
+  /** True if any shown deck is user-added (so the Built-in badge is meaningful). */
+  hasCustomDecks(): boolean {
+    return this.decks.some(d => !d.isBundled);
+  }
+
   getLevels(deckId: string): DeckLevel[] {
     return this.deckLevels.get(deckId) ?? [];
   }

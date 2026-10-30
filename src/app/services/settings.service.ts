@@ -12,6 +12,8 @@ import { Injectable, signal, computed, effect } from '@angular/core';
 import { ExplanationLanguage } from '../../services/i18n';
 
 export type Theme = 'light' | 'dark' | 'system';
+/** Named colour palettes (applied via data-theme on <html>). */
+export type ColorTheme = 'default' | 'ocean' | 'slate' | 'forest';
 export type TextSize = 'small' | 'medium' | 'large';
 export type AudioSpeed = 0.5 | 0.75 | 1.0 | 1.25;
 
@@ -24,6 +26,7 @@ export type FlashcardDirection = 'target-only' | 'mixed';
 
 export interface AppSettings {
   theme: Theme;
+  colorTheme: ColorTheme;
   textSize: TextSize;
   audioSpeed: AudioSpeed;
   reducedMotion: boolean;
@@ -38,6 +41,7 @@ export interface AppSettings {
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
+  colorTheme: 'ocean',
   textSize: 'medium',
   audioSpeed: 1.0,
   reducedMotion: false,
@@ -61,6 +65,7 @@ export class SettingsService {
 
   // Computed values for individual settings
   readonly theme = computed(() => this.settingsSignal().theme);
+  readonly colorTheme = computed(() => this.settingsSignal().colorTheme);
   readonly textSize = computed(() => this.settingsSignal().textSize);
   readonly audioSpeed = computed(() => this.settingsSignal().audioSpeed);
   readonly reducedMotion = computed(() => this.settingsSignal().reducedMotion);
@@ -87,6 +92,13 @@ export class SettingsService {
     // on 'system'). Keeps theming logic in one place.
     effect(() => {
       this.applyThemeToDom(this.effectiveTheme());
+    });
+
+    // Apply the named colour palette via a data-theme attribute on <html>.
+    effect(() => {
+      if (typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-theme', this.settingsSignal().colorTheme);
+      }
     });
 
     // Apply text size, reduced-motion, and reduced-distraction to the DOM root

@@ -13,7 +13,7 @@ import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
-import { SettingsService, Theme, TextSize, AudioSpeed, AppSettings, FlashcardDirection } from '../services/settings.service';
+import { SettingsService, Theme, ColorTheme, TextSize, AudioSpeed, AppSettings, FlashcardDirection } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { ExplanationLanguage } from '../../services/i18n';
 import { FlashcardService, DuolingoResponse } from '../services/flashcard.service';
@@ -61,6 +61,7 @@ export class SettingsPage {
 
   // Settings accessors
   get theme() { return this.settingsService.theme(); }
+  get colorTheme() { return this.settingsService.colorTheme(); }
   get textSize() { return this.settingsService.textSize(); }
   get audioSpeed() { return this.settingsService.audioSpeed(); }
   get reducedMotion() { return this.settingsService.reducedMotion(); }
@@ -76,6 +77,13 @@ export class SettingsPage {
     { value: 'system', label: 'System' },
     { value: 'light', label: 'Light' },
     { value: 'dark', label: 'Dark' },
+  ];
+
+  colorThemeOptions: { value: ColorTheme; label: string }[] = [
+    { value: 'ocean', label: 'Ocean (navy)' },
+    { value: 'slate', label: 'Slate (grey)' },
+    { value: 'forest', label: 'Forest (green)' },
+    { value: 'default', label: 'Midnight (black)' },
   ];
 
   textSizeOptions: { value: TextSize; label: string }[] = [
@@ -112,6 +120,10 @@ export class SettingsPage {
   onThemeChange(event: CustomEvent): void {
     // The SettingsService applies the palette reactively via an effect.
     this.settingsService.updateSetting('theme', event.detail.value);
+  }
+
+  onColorThemeChange(event: CustomEvent): void {
+    this.settingsService.updateSetting('colorTheme', event.detail.value as ColorTheme);
   }
 
   onTextSizeChange(event: CustomEvent): void {

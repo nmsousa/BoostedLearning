@@ -160,3 +160,80 @@
   --ion-color-medium: #9a9da8;
   --ion-color-medium-rgb: 154, 157, 168;
 }
+
+// ============================================================================
+// NAMED COLOUR THEMES
+// ----------------------------------------------------------------------------
+// Applied via `data-theme="..."` on <html> (set by SettingsService). Each
+// theme tunes the dark-mode background + card surface for better contrast and
+// a distinct accent. They layer on top of .ion-palette-dark.
+// ============================================================================
+
+// --- Ocean: navy background, lighter blue-grey cards, cyan accent ---
+.ion-palette-dark[data-theme='ocean'] {
+  --ion-background-color: #0f1b2d;
+  --ion-background-color-rgb: 15, 27, 45;
+  --ion-toolbar-background: #16263d;
+  --ion-item-background: #16263d;
+
+  --ion-color-light: #22334d;
+  --ion-color-light-rgb: 34, 51, 77;
+  --ion-color-light-contrast: #eaf2ff;
+  --ion-color-light-contrast-rgb: 234, 242, 255;
+  --ion-color-light-shade: #1e2e45;
+  --ion-color-light-tint: #2b3e5c;
+
+  --ion-text-color: #eaf2ff;
+  --ion-text-color-rgb: 234, 242, 255;
+
+  --ion-color-primary: #38bdf8;
+  --ion-color-primary-rgb: 56, 189, 248;
+  --ion-color-primary-contrast: #04141f;
+  --ion-color-primary-contrast-rgb: 4, 20, 31;
+}
+
+// --- Slate: neutral dark grey with clearly lifted cards, violet accent ---
+.ion-palette-dark[data-theme='slate'] {
+  --ion-background-color: #15171c;
+  --ion-background-color-rgb: 21, 23, 28;
+  --ion-toolbar-background: #1d2027;
+  --ion-item-background: #1d2027;
+
+  --ion-color-light: #2a2e37;
+  --ion-color-light-rgb: 42, 46, 55;
+  --ion-color-light-contrast: #f2f4f8;
+  --ion-color-light-contrast-rgb: 242, 244, 248;
+  --ion-color-light-shade: #24272f;
+  --ion-color-light-tint: #343842;
+
+  --ion-text-color: #f2f4f8;
+  --ion-text-color-rgb: 242, 244, 248;
+
+  --ion-color-primary: #a78bfa;
+  --ion-color-primary-rgb: 167, 139, 250;
+  --ion-color-primary-contrast: #130a26;
+  --ion-color-primary-contrast-rgb: 19, 10, 38;
+}
+
+// --- Forest: deep green-grey background, teal accent ---
+.ion-palette-dark[data-theme='forest'] {
+  --ion-background-color: #0f1915;
+  --ion-background-color-rgb: 15, 25, 21;
+  --ion-toolbar-background: #16241e;
+  --ion-item-background: #16241e;
+
+  --ion-color-light: #1f3328;
+  --ion-color-light-rgb: 31, 51, 40;
+  --ion-color-light-contrast: #e9f5ee;
+  --ion-color-light-contrast-rgb: 233, 245, 238;
+  --ion-color-light-shade: #1a2c22;
+  --ion-color-light-tint: #294234;
+
+  --ion-text-color: #e9f5ee;
+  --ion-text-color-rgb: 233, 245, 238;
+
+  --ion-color-primary: #2dd4bf;
+  --ion-color-primary-rgb: 45, 212, 191;
+  --ion-color-primary-contrast: #042420;
+  --ion-color-primary-contrast-rgb: 4, 36, 32;
+}

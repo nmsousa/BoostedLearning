@@ -39,7 +39,8 @@
           <ion-card-title>{{ deck.name }}</ion-card-title>
           <ion-card-subtitle>
             {{ getUniqueCardCount(deck) }} cards · {{ getLevels(deck.id).length }} levels
-            <ion-badge *ngIf="deck.isBundled" color="primary" style="margin-left: 8px;">Built-in</ion-badge>
+            <ion-badge *ngIf="deck.isBundled && hasCustomDecks()" color="primary" style="margin-left: 8px;">Built-in</ion-badge>
+                <ion-badge *ngIf="!deck.isBundled" color="tertiary" style="margin-left: 8px;">Custom</ion-badge>
             <ion-badge *ngIf="getCustomCardCount(deck) > 0" color="tertiary" style="margin-left: 8px;">
               {{ getCustomCardCount(deck) }} custom
             </ion-badge>
