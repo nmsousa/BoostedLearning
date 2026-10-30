@@ -167,6 +167,27 @@ const PT_MESSAGES: MessageCatalog = {
   'review.reason.new': 'Novo item',
   'review.reason.due': 'Revisão programada',
   'review.reason.recovery': 'Em recuperação',
+
+  // Home / practice modes
+  'home.continueLearning': 'Continuar a aprender',
+  'home.comingSoon': 'Brevemente',
+  'home.practice': 'Praticar',
+  'home.mode.flashcards': 'Cartões',
+  'home.mode.flashcards.desc': 'Vira e autoavalia-te',
+  'home.mode.write': 'Escrever',
+  'home.mode.write.desc': 'Escreve a tradução',
+  'home.mode.match': 'Associar',
+  'home.mode.match.desc': 'Liga os pares',
+  'home.mode.quiz': 'Quiz',
+  'home.mode.quiz.desc': 'Escolha múltipla',
+  'home.yourWords': 'As tuas palavras',
+  'home.studied': '{count} estudadas',
+  'home.level.learning': 'A aprender',
+  'home.level.familiar': 'Familiar',
+  'home.level.known': 'Sabida',
+  'home.wordsEmpty': 'Estuda algumas palavras e aparecerão aqui como A aprender, Familiar ou Sabida.',
+  'home.welcome': 'Bem-vindo ao BoostedLearning',
+  'home.courseComingSoon': 'O curso guiado chega em breve. Experimenta os modos de prática acima para começar.',
 };
 
 /**
@@ -272,6 +293,27 @@ const FR_MESSAGES: MessageCatalog = {
   'review.reason.new': 'Nouvel élément',
   'review.reason.due': 'Révision programmée',
   'review.reason.recovery': 'En récupération',
+
+  // Home / practice modes
+  'home.continueLearning': 'Continuer à apprendre',
+  'home.comingSoon': 'Bientôt disponible',
+  'home.practice': 'Pratiquer',
+  'home.mode.flashcards': 'Cartes',
+  'home.mode.flashcards.desc': 'Retourne et auto-évalue-toi',
+  'home.mode.write': 'Écrire',
+  'home.mode.write.desc': 'Tape la traduction',
+  'home.mode.match': 'Associer',
+  'home.mode.match.desc': 'Relie les paires',
+  'home.mode.quiz': 'Quiz',
+  'home.mode.quiz.desc': 'Choix multiple',
+  'home.yourWords': 'Tes mots',
+  'home.studied': '{count} étudiés',
+  'home.level.learning': 'En cours',
+  'home.level.familiar': 'Familier',
+  'home.level.known': 'Maîtrisé',
+  'home.wordsEmpty': 'Étudie quelques mots et ils apparaîtront ici en En cours, Familier ou Maîtrisé.',
+  'home.welcome': 'Bienvenue sur BoostedLearning',
+  'home.courseComingSoon': 'Le cours guidé arrive bientôt. Essaie les modes de pratique ci-dessus pour commencer.',
 };
 
 /**
@@ -377,6 +419,27 @@ const EN_MESSAGES: MessageCatalog = {
   'review.reason.new': 'New item',
   'review.reason.due': 'Scheduled review',
   'review.reason.recovery': 'In recovery',
+
+  // Home / practice modes
+  'home.continueLearning': 'Continue learning',
+  'home.comingSoon': 'Coming soon',
+  'home.practice': 'Practice',
+  'home.mode.flashcards': 'Flashcards',
+  'home.mode.flashcards.desc': 'Flip & rate yourself',
+  'home.mode.write': 'Write',
+  'home.mode.write.desc': 'Type the translation',
+  'home.mode.match': 'Match',
+  'home.mode.match.desc': 'Connect the pairs',
+  'home.mode.quiz': 'Quiz',
+  'home.mode.quiz.desc': 'Multiple choice',
+  'home.yourWords': 'Your words',
+  'home.studied': '{count} studied',
+  'home.level.learning': 'Learning',
+  'home.level.familiar': 'Familiar',
+  'home.level.known': 'Known',
+  'home.wordsEmpty': "Study some words and they'll show up here as Learning, Familiar, or Known.",
+  'home.welcome': 'Welcome to BoostedLearning',
+  'home.courseComingSoon': 'The guided course is coming soon. Try the Practice modes above to get started.',
 };
 
 /**
@@ -452,6 +515,27 @@ const ES_MESSAGES: MessageCatalog = {
   'review.reason.new': 'Elemento nuevo',
   'review.reason.due': 'Repaso programado',
   'review.reason.recovery': 'En recuperación',
+
+  // Home / practice modes
+  'home.continueLearning': 'Seguir aprendiendo',
+  'home.comingSoon': 'Próximamente',
+  'home.practice': 'Practicar',
+  'home.mode.flashcards': 'Tarjetas',
+  'home.mode.flashcards.desc': 'Voltea y autoevalúate',
+  'home.mode.write': 'Escribir',
+  'home.mode.write.desc': 'Escribe la traducción',
+  'home.mode.match': 'Emparejar',
+  'home.mode.match.desc': 'Une las parejas',
+  'home.mode.quiz': 'Quiz',
+  'home.mode.quiz.desc': 'Opción múltiple',
+  'home.yourWords': 'Tus palabras',
+  'home.studied': '{count} estudiadas',
+  'home.level.learning': 'Aprendiendo',
+  'home.level.familiar': 'Familiar',
+  'home.level.known': 'Dominada',
+  'home.wordsEmpty': 'Estudia algunas palabras y aparecerán aquí como Aprendiendo, Familiar o Dominada.',
+  'home.welcome': 'Bienvenido a BoostedLearning',
+  'home.courseComingSoon': 'El curso guiado llegará pronto. Prueba los modos de práctica de arriba para empezar.',
 };
 
 /**

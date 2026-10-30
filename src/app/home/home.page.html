@@ -59,38 +59,38 @@
       >
         <ion-icon name="construct-outline" slot="start" color="medium"></ion-icon>
         <ion-label>
-          <h2>Continue learning</h2>
-          <p>Coming soon</p>
+          <h2>{{ t('home.continueLearning') }}</h2>
+          <p>{{ t('home.comingSoon') }}</p>
         </ion-label>
       </ion-item>
     </section>
 
     <!-- Practice modes section -->
     <section class="practice-section">
-      <h3 class="section-title">Practice</h3>
+      <h3 class="section-title">{{ t('home.practice') }}</h3>
       <div class="mode-grid">
         <button type="button" class="mode-card flip" (click)="startMode('flip')">
           <ion-icon name="albums-outline"></ion-icon>
-          <span class="mode-name">Flashcards</span>
-          <span class="mode-desc">Flip &amp; rate yourself</span>
+          <span class="mode-name">{{ t('home.mode.flashcards') }}</span>
+          <span class="mode-desc">{{ t('home.mode.flashcards.desc') }}</span>
         </button>
 
         <button type="button" class="mode-card write" (click)="startMode('write')">
           <ion-icon name="create-outline"></ion-icon>
-          <span class="mode-name">Write</span>
-          <span class="mode-desc">Type the translation</span>
+          <span class="mode-name">{{ t('home.mode.write') }}</span>
+          <span class="mode-desc">{{ t('home.mode.write.desc') }}</span>
         </button>
 
         <button type="button" class="mode-card match" (click)="startMode('match')">
           <ion-icon name="git-compare-outline"></ion-icon>
-          <span class="mode-name">Match</span>
-          <span class="mode-desc">Connect the pairs</span>
+          <span class="mode-name">{{ t('home.mode.match') }}</span>
+          <span class="mode-desc">{{ t('home.mode.match.desc') }}</span>
         </button>
 
         <button type="button" class="mode-card quiz" (click)="startMode('quiz')">
           <ion-icon name="help-circle-outline"></ion-icon>
-          <span class="mode-name">Quiz</span>
-          <span class="mode-desc">Multiple choice</span>
+          <span class="mode-name">{{ t('home.mode.quiz') }}</span>
+          <span class="mode-desc">{{ t('home.mode.quiz.desc') }}</span>
         </button>
       </div>
     </section>
@@ -99,9 +99,9 @@
          (gamification: hidden in reduced-distraction mode) -->
     <section class="knowledge-section gamification">
       <div class="knowledge-header">
-        <h3 class="section-title">Your words</h3>
+        <h3 class="section-title">{{ t('home.yourWords') }}</h3>
         <span class="knowledge-total" *ngIf="knowledge.total > 0">
-          {{ knowledge.total }} studied
+          {{ t('home.studied', { count: knowledge.total }) }}
         </span>
       </div>
 
@@ -126,23 +126,23 @@
         <div class="legend-item">
           <span class="dot learning"></span>
           <span class="legend-count">{{ knowledge.learning }}</span>
-          <span class="legend-label">Learning</span>
+          <span class="legend-label">{{ t('home.level.learning') }}</span>
         </div>
         <div class="legend-item">
           <span class="dot familiar"></span>
           <span class="legend-count">{{ knowledge.familiar }}</span>
-          <span class="legend-label">Familiar</span>
+          <span class="legend-label">{{ t('home.level.familiar') }}</span>
         </div>
         <div class="legend-item">
           <span class="dot known"></span>
           <span class="legend-count">{{ knowledge.known }}</span>
-          <span class="legend-label">Known</span>
+          <span class="legend-label">{{ t('home.level.known') }}</span>
         </div>
       </div>
 
       <!-- Nothing studied yet -->
       <p class="knowledge-empty" *ngIf="knowledge.total === 0">
-        Study some words and they'll show up here as Learning, Familiar, or Known.
+        {{ t('home.wordsEmpty') }}
       </p>
     </section>
 
@@ -150,8 +150,8 @@
          point is shown disabled; use the Practice modes above for now. -->
     <div *ngIf="courseLanguages.length === 0 && !isLoading" class="empty-state">
       <ion-icon name="school-outline"></ion-icon>
-      <h2>Welcome to BoostedLearning</h2>
-      <p>The guided course is coming soon. Try the Practice modes above to get started.</p>
+      <h2>{{ t('home.welcome') }}</h2>
+      <p>{{ t('home.courseComingSoon') }}</p>
       <ion-button expand="block" [disabled]="true">
         Start Learning Dutch (coming soon)
       </ion-button>
