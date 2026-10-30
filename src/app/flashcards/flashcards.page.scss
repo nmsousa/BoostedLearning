@@ -18,7 +18,7 @@
 }
 
 .flashcards-container {
-  padding: 16px;
+  padding: 12px;
 }
 
 // Empty state
@@ -68,6 +68,18 @@
   --background: transparent;
   background: transparent;
   box-shadow: none;
+}
+
+// Pull the header/content in line with the container edge (remove the
+// default ion-card inner padding so the level items span the full width).
+.deck-header {
+  padding-inline: 4px;
+}
+
+.levels-content {
+  --padding-start: 4px;
+  --padding-end: 4px;
+  padding-inline: 4px;
 }
 
 .deck-header {
