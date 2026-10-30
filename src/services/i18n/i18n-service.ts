@@ -342,6 +342,7 @@ const PT_MESSAGES: MessageCatalog = {
   'practice.levelWords': '{count} palavras',
   'practice.unlockHint': 'Faz 70% no nível anterior para desbloquear',
   'practice.quickStudy': 'Estudo rápido',
+  'practice.levelsTitle': 'Níveis',
 };
 
 /**
@@ -622,6 +623,7 @@ const FR_MESSAGES: MessageCatalog = {
   'practice.levelWords': '{count} mots',
   'practice.unlockHint': 'Obtiens 70% au niveau précédent pour débloquer',
   'practice.quickStudy': 'Étude rapide',
+  'practice.levelsTitle': 'Niveaux',
 };
 
 /**
@@ -902,6 +904,7 @@ const EN_MESSAGES: MessageCatalog = {
   'practice.levelWords': '{count} words',
   'practice.unlockHint': 'Score 70% on the previous level to unlock',
   'practice.quickStudy': 'Quick Study',
+  'practice.levelsTitle': 'Levels',
 };
 
 /**
@@ -1152,6 +1155,7 @@ const ES_MESSAGES: MessageCatalog = {
   'practice.levelWords': '{count} palabras',
   'practice.unlockHint': 'Consigue 70% en el nivel anterior para desbloquear',
   'practice.quickStudy': 'Estudio rápido',
+  'practice.levelsTitle': 'Niveles',
 };
 
 /**

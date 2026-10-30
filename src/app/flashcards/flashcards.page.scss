@@ -119,10 +119,21 @@
   padding-top: 0;
 }
 
-// Prominent quick-study action at the top of an expanded deck.
+// Secondary quick-study action at the top of an expanded deck: reachable but
+// subtle, so the levels below stay the primary path.
 .quick-study-top {
-  margin: 4px 0 14px;
+  margin: 4px 0 16px;
   --border-radius: 10px;
+}
+
+// "Levels" heading to separate the guided path from quick study.
+.levels-title {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ion-color-medium);
 }
 
 .levels-list {

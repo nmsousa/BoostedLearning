@@ -57,11 +57,14 @@
         <!-- Levels list (expandable) -->
         <ion-card-content *ngIf="isDeckExpanded(deck.id)" class="levels-content">
           <!-- Quick study: practice the whole deck (no level/stars). Kept at
-               the top so it stays reachable even with many levels. -->
-          <ion-button expand="block" fill="solid" class="quick-study-top" (click)="startQuickStudy(deck)">
+               the top so it stays reachable even with many levels, but styled
+               as a secondary action so the levels remain the main path. -->
+          <ion-button expand="block" fill="outline" size="small" class="quick-study-top" (click)="startQuickStudy(deck)">
             <ion-icon slot="start" name="flash-outline"></ion-icon>
             {{ t('practice.quickStudy') }}
           </ion-button>
+
+          <h4 class="levels-title">{{ t('practice.levelsTitle') }}</h4>
 
           <div class="levels-list">
             <div
