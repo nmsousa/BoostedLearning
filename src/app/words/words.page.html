@@ -1,0 +1,52 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ t('words.title') }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="words-content">
+  <!-- Filter chips -->
+  <div class="filter-row">
+    <ion-chip [class.active]="filter === 'all'" (click)="setFilter('all')">
+      {{ t('words.all') }} ({{ count('all') }})
+    </ion-chip>
+    <ion-chip class="learning" [class.active]="filter === 'learning'" (click)="setFilter('learning')">
+      {{ t('home.level.learning') }} ({{ count('learning') }})
+    </ion-chip>
+    <ion-chip class="familiar" [class.active]="filter === 'familiar'" (click)="setFilter('familiar')">
+      {{ t('home.level.familiar') }} ({{ count('familiar') }})
+    </ion-chip>
+    <ion-chip class="known" [class.active]="filter === 'known'" (click)="setFilter('known')">
+      {{ t('home.level.known') }} ({{ count('known') }})
+    </ion-chip>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="words.length === 0" class="empty">
+    <ion-icon name="book-outline"></ion-icon>
+    <p>{{ t('words.empty') }}</p>
+  </div>
+
+  <!-- Word list -->
+  <ion-list *ngIf="words.length > 0">
+    <ion-item *ngFor="let w of words" class="word-row" lines="full">
+      <div class="word-main">
+        <span class="word-dot" [class.learning]="w.level === 'learning'"
+          [class.familiar]="w.level === 'familiar'" [class.known]="w.level === 'known'"></span>
+        <div class="word-text">
+          <span class="word-target">{{ w.text }}</span>
+          <span class="word-translation">{{ w.translation }}</span>
+        </div>
+      </div>
+      <div class="word-stats" slot="end">
+        <span class="stat correct" title="Correct">✓ {{ w.correct }}</span>
+        <span class="stat medium" *ngIf="w.medium > 0" title="So-so">~ {{ w.medium }}</span>
+        <span class="stat wrong" title="Incorrect">✗ {{ w.incorrect }}</span>
+        <span class="stat acc">{{ accuracy(w) }}%</span>
+      </div>
+    </ion-item>
+  </ion-list>
+</ion-content>

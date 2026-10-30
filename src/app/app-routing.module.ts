@@ -35,6 +35,10 @@ const routes: Routes = [
     path: 'practice',
     loadChildren: () => import('./flashcards/flashcards.module').then( m => m.FlashcardsPageModule)
   },
+  {
+    path: 'words',
+    loadChildren: () => import('./words/words.module').then( m => m.WordsPageModule)
+  },
 ];
 
 @NgModule({

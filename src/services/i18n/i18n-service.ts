@@ -188,6 +188,11 @@ const PT_MESSAGES: MessageCatalog = {
   'home.wordsEmpty': 'Estuda algumas palavras e aparecerão aqui como A aprender, Familiar ou Sabida.',
   'home.welcome': 'Bem-vindo ao BoostedLearning',
   'home.courseComingSoon': 'O curso guiado chega em breve. Experimenta os modos de prática acima para começar.',
+
+  // Your words detail screen
+  'words.title': 'As tuas palavras',
+  'words.all': 'Todas',
+  'words.empty': 'Ainda não há palavras praticadas. Joga um modo e as tuas palavras aparecem aqui.',
 };
 
 /**
@@ -314,6 +319,11 @@ const FR_MESSAGES: MessageCatalog = {
   'home.wordsEmpty': 'Étudie quelques mots et ils apparaîtront ici en En cours, Familier ou Maîtrisé.',
   'home.welcome': 'Bienvenue sur BoostedLearning',
   'home.courseComingSoon': 'Le cours guidé arrive bientôt. Essaie les modes de pratique ci-dessus pour commencer.',
+
+  // Your words detail screen
+  'words.title': 'Tes mots',
+  'words.all': 'Tous',
+  'words.empty': "Aucun mot pratiqué pour l'instant. Joue à un mode et tes mots apparaîtront ici.",
 };
 
 /**
@@ -440,6 +450,11 @@ const EN_MESSAGES: MessageCatalog = {
   'home.wordsEmpty': "Study some words and they'll show up here as Learning, Familiar, or Known.",
   'home.welcome': 'Welcome to BoostedLearning',
   'home.courseComingSoon': 'The guided course is coming soon. Try the Practice modes above to get started.',
+
+  // Your words detail screen
+  'words.title': 'Your words',
+  'words.all': 'All',
+  'words.empty': 'No practiced words yet. Play a mode and your words will show up here.',
 };
 
 /**
@@ -536,6 +551,11 @@ const ES_MESSAGES: MessageCatalog = {
   'home.wordsEmpty': 'Estudia algunas palabras y aparecerán aquí como Aprendiendo, Familiar o Dominada.',
   'home.welcome': 'Bienvenido a BoostedLearning',
   'home.courseComingSoon': 'El curso guiado llegará pronto. Prueba los modos de práctica de arriba para empezar.',
+
+  // Your words detail screen
+  'words.title': 'Tus palabras',
+  'words.all': 'Todas',
+  'words.empty': 'Aún no hay palabras practicadas. Juega un modo y tus palabras aparecerán aquí.',
 };
 
 /**

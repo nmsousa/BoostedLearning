@@ -16,7 +16,7 @@ import { firstValueFrom } from 'rxjs';
 import { fsrs, createEmptyCard, Rating, State, type Card as FsrsCard } from 'ts-fsrs';
 import { CapacitorHttp } from '@capacitor/core';
 import { getDatabase, FlashcardDeckEntity, FlashcardEntity, LevelProgressEntity } from '../../persistence/database';
-import { KnowledgeBreakdown } from '../../core/knowledge-level';
+import { KnowledgeBreakdown, KnowledgeLevel } from '../../core/knowledge-level';
 import { parseDuomeHtml } from './duome-parser';
 
 /** Self-rating options in Flashcards (flip) mode. */
@@ -1125,6 +1125,63 @@ export class FlashcardService {
    *   - neverStudied: never practiced
    * Counts over de-duplicated prompts so shared forms (de/het) count once.
    */
+  /**
+   * Words the learner has practiced (any mode), for the "Your words" detail
+   * screen. Returns per-word stats sorted by miss rate (worst first) so early
+   * levels (seen more often) don't dominate by absolute counts.
+   */
+  getStudiedWords(languageCode?: string): {
+    text: string;
+    translation: string;
+    correct: number;
+    incorrect: number;
+    medium: number;
+    missRate: number;
+    level: KnowledgeLevel;
+  }[] {
+    const decks = languageCode
+      ? this.getAllDecks().filter(d => d.languageCode === languageCode)
+      : this.getAllDecks();
+
+    const rows: {
+      text: string; translation: string; correct: number; incorrect: number;
+      medium: number; missRate: number; level: KnowledgeLevel;
+    }[] = [];
+
+    for (const deck of decks) {
+      for (const card of this.getDedupedCards(deck.id)) {
+        const correct = card.correctCount ?? 0;
+        const incorrect = card.incorrectCount ?? 0;
+        const medium = card.mediumCount ?? 0;
+        const seen = correct + incorrect;
+        if (seen === 0 && medium === 0) continue; // never practiced
+
+        const missRate = seen > 0 ? incorrect / seen : 0;
+        // Reuse the same streak-based bucket as the home breakdown.
+        let level: KnowledgeLevel;
+        if (card.streak >= 4) level = 'known';
+        else if (card.streak >= 2) level = 'familiar';
+        else level = 'learning';
+
+        rows.push({
+          text: card.text,
+          translation: this.bestTranslation(card),
+          correct,
+          incorrect,
+          medium,
+          missRate,
+          level,
+        });
+      }
+    }
+
+    // Worst (highest miss rate) first; tie-break by more attempts.
+    return rows.sort((a, b) =>
+      b.missRate - a.missRate ||
+      (b.correct + b.incorrect) - (a.correct + a.incorrect)
+    );
+  }
+
   getKnowledgeBreakdown(languageCode?: string): KnowledgeBreakdown {
     const breakdown: KnowledgeBreakdown = {
       learning: 0,

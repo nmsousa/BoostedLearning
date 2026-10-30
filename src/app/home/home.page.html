@@ -98,10 +98,11 @@
     <!-- Knowledge breakdown: how well you know your words
          (gamification: hidden in reduced-distraction mode) -->
     <section class="knowledge-section gamification">
-      <div class="knowledge-header">
+      <div class="knowledge-header" (click)="openWords()" [class.tappable]="knowledge.total > 0">
         <h3 class="section-title">{{ t('home.yourWords') }}</h3>
         <span class="knowledge-total" *ngIf="knowledge.total > 0">
           {{ t('home.studied', { count: knowledge.total }) }}
+          <ion-icon name="chevron-forward"></ion-icon>
         </span>
       </div>
 

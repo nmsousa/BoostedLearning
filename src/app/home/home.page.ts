@@ -180,6 +180,11 @@ export class HomePage implements OnInit {
     this.router.navigate(['/settings']);
   }
 
+  /** Open the detailed "Your words" list. */
+  openWords(): void {
+    this.router.navigate(['/words']);
+  }
+
   navigateToFlashcards(): void {
     this.router.navigate(['/practice']);
   }
