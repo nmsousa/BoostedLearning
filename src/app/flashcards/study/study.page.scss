@@ -17,26 +17,39 @@
   }
 }
 
-// Question phase.
-// The prompt card sits in the upper area and the answer group (input +
-// buttons) is anchored to the BOTTOM. This way, when the mobile keyboard opens
-// and the scroll host shrinks, the answer group stays pinned just above the
-// keyboard with no large empty gap between the CHECK button and the keys.
-.question-container {
+// Question / feedback stage: the prompt or result card is centred in the
+// scrollable content. The action controls live in <ion-footer> (outside
+// ion-content), so they stay pinned to the bottom on desktop and ride above
+// the keyboard on mobile — the content here just scrolls if it's ever taller
+// than the available space.
+.study-stage {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;  // card -> top, answer group -> bottom
+  justify-content: center;   // centre the single card vertically
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   flex: 1 1 auto;
+  min-height: 100%;
   box-sizing: border-box;
-  padding: 24px 12px;
+  padding: 20px 12px;
 }
 
-// Centre the prompt card within the free space above the answer group, so on a
-// tall screen (no keyboard) it doesn't cling to the very top.
-.question-container > .card-section {
-  flex: 1 1 auto;
+// ── Footer action bar ──────────────────────────────────────────────────────
+// Ionic keeps <ion-footer> pinned below <ion-content>; on mobile the keyboard
+// pushes it up, so the input + buttons always sit just above the keys.
+.study-footer {
+  // Match the app background so the bar doesn't look like a separate toolbar.
+  background: var(--ion-background-color);
+
+  // Remove Ionic's default top shadow line for a cleaner, seamless look.
+  &::before { display: none; }
+
+  .footer-inner {
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 8px 12px calc(8px + var(--ion-safe-area-bottom, 0px));
+    box-sizing: border-box;
+  }
 }
 
 .card-section {
@@ -78,24 +91,19 @@
   margin: 0;
 }
 
-.answer-section {
-  // Sits directly under the word, centred as part of the group.
-  width: 100%;
-  max-width: 440px;
-  display: flex;
-  flex-direction: column;
-}
-
 .answer-input {
   --background: var(--ion-color-light);
-  --border-radius: 8px;
+  --border-radius: 10px;
   --padding-start: 16px;
   --padding-end: 16px;
-  margin-bottom: 16px;
+  --inner-padding-end: 0;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  overflow: hidden;
 
   ion-input {
-    --padding-top: 16px;
-    --padding-bottom: 16px;
+    --padding-top: 14px;
+    --padding-bottom: 14px;
     font-size: 1.125rem;
   }
 }

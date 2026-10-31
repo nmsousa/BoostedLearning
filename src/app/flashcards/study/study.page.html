@@ -24,137 +24,57 @@
     <ion-spinner name="crescent"></ion-spinner>
   </div>
 
-  <!-- Question Phase (also shown when correct) -->
-  <div *ngIf="!isLoading && (phase === 'question' || (phase === 'feedback' && feedbackResult === 'correct')) && currentCard" class="question-container">
-    <!-- Prompt card: only while typing. After answering, the result card below
-         already shows both languages, so this is hidden to avoid duplication. -->
-    <div class="card-section" *ngIf="phase === 'question'">
+  <!-- Question / feedback phases share one centred scroll area. The action
+       controls (input + buttons) live in the <ion-footer> below so they stay
+       pinned to the bottom on desktop AND ride just above the keyboard on
+       mobile, consistently on both platforms. -->
+  <div *ngIf="!isLoading && phase !== 'complete' && currentCard" class="study-stage">
+    <!-- Prompt card: only while typing. After answering, the result card
+         already shows both languages, so this is hidden to avoid duplication.
+         Still shown for the "almost" case (which has no result card). -->
+    <div class="card-section"
+         *ngIf="phase === 'question' || (phase === 'feedback' && feedbackResult === 'almost')">
       <div class="word-display">
         <div class="word-row">
           <h1 class="target-word">{{ promptText }}</h1>
         </div>
-        <p class="instruction">{{ instructionText }}</p>
-
-        <!-- Hint display -->
+        <p class="instruction" *ngIf="phase === 'question'">{{ instructionText }}</p>
         <p *ngIf="hintText && phase === 'question'" class="hint-display">
           💡 {{ hintText }}
         </p>
       </div>
     </div>
 
-    <div class="answer-section">
-      <!-- Input shown during question phase -->
-      <ng-container *ngIf="phase === 'question'">
-        <ion-item class="answer-input">
-          <ion-input
-            #answerInput
-            [(ngModel)]="userAnswer"
-            type="text"
-            [placeholder]="'mode.typeYourAnswer' | translate"
-            (keyup.enter)="submitAnswer()"
-            [attr.aria-label]="'mode.typeYourAnswer' | translate">
-          </ion-input>
-        </ion-item>
-
-        <div class="button-row">
-          <ion-button
-            expand="block"
-            (click)="submitAnswer()"
-            [disabled]="!userAnswer.trim()"
-            class="submit-button">
-            {{ 'mode.check' | translate }}
-          </ion-button>
-          
-          <ion-button
-            fill="outline"
-            color="medium"
-            (click)="showHint()"
-            class="hint-button"
-            [disabled]="hintExhausted"
-            [attr.aria-label]="'mode.showHint' | translate">
-            <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
-          </ion-button>
-        </div>
-      </ng-container>
-
-      <!-- Correct: show the full two-language answer card (green). -->
-      <ng-container *ngIf="phase === 'feedback' && feedbackResult === 'correct'">
-        <div class="result-card correct">
-          <div class="result-badge">
-            <ion-icon name="checkmark-circle"></ion-icon>
-            <span>{{ 'mode.correctLabel' | translate }}</span>
-          </div>
-          <ng-container *ngTemplateOutlet="answerPair"></ng-container>
-        </div>
-
-        <ion-button expand="block" color="success" (click)="nextCard()" class="submit-button">
-          {{ 'mode.continue' | translate }}
-        </ion-button>
-      </ng-container>
-    </div>
-  </div>
-
-  <!-- Feedback Phase (only for almost/incorrect) -->
-  <div *ngIf="!isLoading && phase === 'feedback' && feedbackResult !== 'correct'" class="question-container">
-    <!-- Prompt card kept only for the "almost" case (which has no result
-         card). For "incorrect", the result card below shows both languages. -->
-    <div class="card-section" *ngIf="feedbackResult === 'almost'">
-      <div class="word-display">
-        <h1 class="target-word">{{ promptText }}</h1>
+    <!-- Correct: two-language answer card (green). -->
+    <div class="result-card correct" *ngIf="phase === 'feedback' && feedbackResult === 'correct'">
+      <div class="result-badge">
+        <ion-icon name="checkmark-circle"></ion-icon>
+        <span>{{ 'mode.correctLabel' | translate }}</span>
       </div>
+      <ng-container *ngTemplateOutlet="answerPair"></ng-container>
     </div>
 
-    <div class="answer-section">
-      <!-- Almost: encouragement + a hint of the correct answer -->
-      <ng-container *ngIf="feedbackResult === 'almost'">
-        <div class="almost-hint">
-          <p class="hint-text">{{ 'mode.almostTypo' | translate }}</p>
-          <span class="user-attempt">
-            <ion-icon name="alert-circle-outline"></ion-icon>
-            {{ submittedAnswer }}
-          </span>
-          <p *ngIf="hintText" class="almost-hint-reveal">💡 {{ hintText }}</p>
-        </div>
+    <!-- Almost: encouragement + a hint of the correct answer. -->
+    <div class="almost-hint" *ngIf="phase === 'feedback' && feedbackResult === 'almost'">
+      <p class="hint-text">{{ 'mode.almostTypo' | translate }}</p>
+      <span class="user-attempt">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        {{ submittedAnswer }}
+      </span>
+      <p *ngIf="hintText" class="almost-hint-reveal">💡 {{ hintText }}</p>
+    </div>
 
-        <div class="button-row">
-          <ion-button expand="block" color="warning" (click)="tryAgain()" class="submit-button">
-            {{ 'mode.tryAgain' | translate }}
-          </ion-button>
-          <ion-button
-            fill="outline"
-            color="medium"
-            (click)="showHintInAlmost()"
-            class="hint-button"
-            [disabled]="hintExhausted"
-            [attr.aria-label]="'mode.showHint' | translate">
-            <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
-          </ion-button>
-        </div>
-        <ion-button expand="block" fill="outline" (click)="acceptAlmost()" class="skip-button">
-          {{ 'mode.skip' | translate }}
-        </ion-button>
-      </ng-container>
-
-      <!-- Incorrect: show the full two-language answer card (red), plus what
-           the user typed for comparison. -->
-      <ng-container *ngIf="feedbackResult === 'incorrect'">
-        <div class="result-card incorrect">
-          <div class="result-badge">
-            <ion-icon name="close-circle"></ion-icon>
-            <span>{{ revealedViaHint ? ('mode.theAnswerIs' | translate) : ('mode.incorrectLabel' | translate) }}</span>
-          </div>
-          <ng-container *ngTemplateOutlet="answerPair"></ng-container>
-          <!-- What you typed (only when it wasn't a hint reveal) -->
-          <p *ngIf="!revealedViaHint && submittedAnswer" class="you-typed">
-            <ion-icon name="arrow-forward"></ion-icon>
-            <span class="wrong-answer">{{ submittedAnswer }}</span>
-          </p>
-        </div>
-
-        <ion-button expand="block" color="danger" (click)="nextCard()" class="submit-button">
-          {{ 'mode.continue' | translate }}
-        </ion-button>
-      </ng-container>
+    <!-- Incorrect: two-language answer card (red) + what the user typed. -->
+    <div class="result-card incorrect" *ngIf="phase === 'feedback' && feedbackResult === 'incorrect'">
+      <div class="result-badge">
+        <ion-icon name="close-circle"></ion-icon>
+        <span>{{ revealedViaHint ? ('mode.theAnswerIs' | translate) : ('mode.incorrectLabel' | translate) }}</span>
+      </div>
+      <ng-container *ngTemplateOutlet="answerPair"></ng-container>
+      <p *ngIf="!revealedViaHint && submittedAnswer" class="you-typed">
+        <ion-icon name="arrow-forward"></ion-icon>
+        <span class="wrong-answer">{{ submittedAnswer }}</span>
+      </p>
     </div>
   </div>
 
@@ -225,3 +145,59 @@
     </ion-button>
   </div>
 </ion-content>
+
+<!-- Action bar: pinned to the bottom (desktop) / rides above the keyboard
+     (mobile). Holds the input + buttons for the question/feedback phases. -->
+<ion-footer *ngIf="!isLoading && phase !== 'complete' && currentCard" class="study-footer">
+  <div class="footer-inner">
+    <!-- Question: input + CHECK + hint. -->
+    <ng-container *ngIf="phase === 'question'">
+      <ion-item class="answer-input" lines="none">
+        <ion-input
+          #answerInput
+          [(ngModel)]="userAnswer"
+          type="text"
+          [placeholder]="'mode.typeYourAnswer' | translate"
+          (keyup.enter)="submitAnswer()"
+          [attr.aria-label]="'mode.typeYourAnswer' | translate">
+        </ion-input>
+      </ion-item>
+
+      <div class="button-row">
+        <ion-button expand="block" (click)="submitAnswer()" [disabled]="!userAnswer.trim()" class="submit-button">
+          {{ 'mode.check' | translate }}
+        </ion-button>
+        <ion-button fill="outline" color="medium" (click)="showHint()" class="hint-button"
+          [disabled]="hintExhausted" [attr.aria-label]="'mode.showHint' | translate">
+          <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </ng-container>
+
+    <!-- Correct / Incorrect: a single Continue button. -->
+    <ion-button *ngIf="phase === 'feedback' && feedbackResult === 'correct'"
+      expand="block" color="success" (click)="nextCard()" class="submit-button">
+      {{ 'mode.continue' | translate }}
+    </ion-button>
+    <ion-button *ngIf="phase === 'feedback' && feedbackResult === 'incorrect'"
+      expand="block" color="danger" (click)="nextCard()" class="submit-button">
+      {{ 'mode.continue' | translate }}
+    </ion-button>
+
+    <!-- Almost: Try again + hint, then Skip. -->
+    <ng-container *ngIf="phase === 'feedback' && feedbackResult === 'almost'">
+      <div class="button-row">
+        <ion-button expand="block" color="warning" (click)="tryAgain()" class="submit-button">
+          {{ 'mode.tryAgain' | translate }}
+        </ion-button>
+        <ion-button fill="outline" color="medium" (click)="showHintInAlmost()" class="hint-button"
+          [disabled]="hintExhausted" [attr.aria-label]="'mode.showHint' | translate">
+          <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
+        </ion-button>
+      </div>
+      <ion-button expand="block" fill="outline" (click)="acceptAlmost()" class="skip-button">
+        {{ 'mode.skip' | translate }}
+      </ion-button>
+    </ng-container>
+  </div>
+</ion-footer>

@@ -8,6 +8,13 @@ const config: CapacitorConfig = {
     androidScheme: 'https',
   },
   plugins: {
+    Keyboard: {
+      // Resize the WebView (not just the content) when the keyboard opens, so
+      // Ionic's <ion-footer> rides up and sits just above the keys. 'native'
+      // uses Android's windowSoftInputMode=adjustResize behaviour.
+      resize: 'native',
+      resizeOnFullScreen: true,
+    },
     CapacitorUpdater: {
       // Self-hosted over-the-air updates. On launch the app checks this URL;
       // if it advertises a newer bundle than the installed one, the new web
