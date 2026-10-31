@@ -11,6 +11,10 @@
   flex-direction: column;
   justify-content: center;
   padding: 24px 0 32px;
+  // Constrain + centre so options don't sprawl across a wide desktop window.
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 .quiz-hint {

@@ -92,6 +92,10 @@
   // Columns start at the top of the reserved board height so removing tiles
   // near the end leaves space at the bottom rather than re-centering.
   align-items: start;
+  // Constrain + centre so tiles don't stretch across a wide desktop window.
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
 }
 
 .match-col {

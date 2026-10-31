@@ -41,32 +41,41 @@
   justify-content: center;
 }
 
+// Prompt card: same teal look and width as the Flashcards (flip) front, so
+// the modes feel consistent. Reasonable min-height so it isn't a thin strip.
 .word-display {
   text-align: center;
-  padding: 32px 24px;
-  background: var(--ion-color-light);
-  border-radius: 16px;
+  padding: 36px 24px;
+  background: linear-gradient(145deg, var(--ion-color-primary), var(--ion-color-primary-shade));
+  border-radius: 20px;
   width: 100%;
-  max-width: 400px;
+  max-width: 440px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
 }
 
 .target-word {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0 0 12px;
-  color: var(--ion-color-primary);
+  font-size: 2.4rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--ion-color-primary-contrast);
 }
 
 .instruction {
-  font-size: 1rem;
-  color: var(--ion-color-medium);
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
   margin: 0;
 }
 
 .answer-section {
   // Sits directly under the word, centred as part of the group.
   width: 100%;
-  max-width: 400px;
+  max-width: 440px;
   display: flex;
   flex-direction: column;
 }
