@@ -9,7 +9,9 @@
 .sort-row {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  // Keep the control inline near the left (under the search), not pushed to
+  // the far right edge (which looked detached on wide/desktop screens).
+  justify-content: flex-start;
   gap: 6px;
   padding: 6px 12px 4px;
   font-size: 0.9rem;
@@ -25,19 +27,18 @@
     flex-shrink: 0;
   }
 
-  // Let the select shrink to just its selected value, flush to the right edge.
+  // Size the select to just its selected value, right after the prefix.
   .sort-select {
-    --padding-start: 0;
+    --padding-start: 4px;
     --padding-end: 0;
     width: auto;
     min-width: 0;
-    max-width: 55vw;
+    max-width: 60%;
     flex: 0 1 auto;
     color: var(--ion-text-color);
     font-weight: 600;
   }
 
-  // Trim Ionic's internal min-width so the value sits right next to the caret.
   .sort-select::part(container) {
     flex: 0 1 auto;
   }

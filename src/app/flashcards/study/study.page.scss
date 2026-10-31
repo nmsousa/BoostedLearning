@@ -18,26 +18,24 @@
 }
 
 // Question phase.
-// Full-height flex column: fixed card band at top, flexible spacer, fixed
-// action band pinned to the bottom. Identical across question/feedback phases
-// so nothing jumps when switching between "type" and "continue".
+// Centered column (like the flip card): the word + the answer area sit
+// together in the vertical middle, not pinned top/bottom. This looks right on
+// desktop (no huge empty gap) and on mobile the content simply shifts up a
+// little when the keyboard opens because the scroll host shrinks.
 .question-container {
   display: flex;
   flex-direction: column;
-  // Grow to fill the flex scroll host (see .study-content::part(scroll)) so
-  // the bottom action band is reliably pinned to the bottom in every phase.
+  justify-content: center;   // centre the word + answer group vertically
+  align-items: center;
+  gap: 20px;
   flex: 1 1 auto;
   box-sizing: border-box;
-  padding: 24px 8px;
+  padding: 24px 12px;
 }
 
 .card-section {
-  // Word band. Uses max-height (not a fixed height) and can shrink so that
-  // when the on-screen keyboard reduces the viewport, the input + action
-  // buttons stay visible instead of being pushed off-screen.
-  flex: 0 1 auto;
-  max-height: 38vh;
-  min-height: 120px;
+  flex: 0 0 auto;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,7 +43,7 @@
 
 .word-display {
   text-align: center;
-  padding: 48px 24px;
+  padding: 32px 24px;
   background: var(--ion-color-light);
   border-radius: 16px;
   width: 100%;
@@ -55,7 +53,7 @@
 .target-word {
   font-size: 2.5rem;
   font-weight: 700;
-  margin: 0 0 16px;
+  margin: 0 0 12px;
   color: var(--ion-color-primary);
 }
 
@@ -66,15 +64,11 @@
 }
 
 .answer-section {
-  // Pin the action area to the bottom and reserve a consistent height so the
-  // input+Check (question) and answer+Continue (feedback) blocks occupy the
-  // same vertical band — no jumping between phases.
-  margin-top: auto;
-  padding-top: 24px;
-  min-height: 160px;
+  // Sits directly under the word, centred as part of the group.
+  width: 100%;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
 }
 
 .answer-input {
