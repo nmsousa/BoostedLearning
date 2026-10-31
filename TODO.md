@@ -54,6 +54,17 @@ To finish and un-hide:
   - Handle Android 13+ notification permission request.
 - Then restore the "Session Section" `ion-item-group` in `settings.page.html`.
 
+### French translation review (validate the audit list)
+Status: **not implemented** — list ready, awaiting validation.
+
+An audit of ALL French translations was generated at
+`scripts/french-translation-audit.md` (256 entries flagged, 4 with no good
+option). Each flagged entry shows the current translation vs. a suggested one.
+
+To do: go through the list, confirm/correct the suggestions using real French
+knowledge, then fold the agreed fixes into the language-scoped
+`CURATED_TRANSLATIONS.fr` map in `flashcard.service.ts`. Re-run `npm test` after.
+
 ## In progress / recently decided
 
 ### App UI language (i18n) — #3
