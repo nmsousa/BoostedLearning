@@ -137,11 +137,12 @@ export class FlipPage implements OnInit {
     return this.currentCard?.text ?? '';
   }
 
-  /** English translations (back of the card). */
+  /** English translations (back of the card) — all meaningful senses, cleaned
+   *  of junk possessives (e.g. "copain" -> "friend, boyfriend"). */
   get backText(): string {
     const c = this.currentCard;
     if (!c) return '';
-    return c.translations.slice(0, 4).join(', ');
+    return this.flashcardService.displayTranslations(c, 4).join(', ');
   }
 
   /** Localized display name of the learning language (front-of-card tag). */

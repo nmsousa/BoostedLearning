@@ -1241,6 +1241,38 @@ export class FlashcardService {
   }
 
   /**
+   * All meaningful translations to show on a flashcard (the "learn" view),
+   * so the user sees every valid sense — e.g. "copain" -> "friend, boyfriend"
+   * — not just one. Drops junk (possessives like "friend's", bare "'s",
+   * abbreviations) and de-duplicates case-insensitively, keeping source order.
+   * If a curated override exists it is placed first. Capped at `max`.
+   */
+  displayTranslations(card: Flashcard, max = 4): string[] {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    const add = (s: string) => {
+      const key = s.trim().toLowerCase();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push(s.trim());
+    };
+
+    const langCode = this.getDeck(card.deckId)?.languageCode ?? '';
+    const curated = this.CURATED_TRANSLATIONS[langCode]?.[card.text.trim().toLowerCase()];
+    if (curated) add(curated);
+
+    for (const t of card.translations ?? []) {
+      if (!this.isJunkTranslation(t)) add(t);
+    }
+    // If everything was junk, fall back to the single best pick.
+    if (out.length === 0) {
+      const best = this.bestTranslation(card);
+      if (best) add(best);
+    }
+    return out.slice(0, max);
+  }
+
+  /**
    * True when a card's word is identical to its displayed translation
    * (e.g. Dutch "water" = English "water"). Such cards make trivial or
    * ambiguous questions in the matching/quiz modes.
