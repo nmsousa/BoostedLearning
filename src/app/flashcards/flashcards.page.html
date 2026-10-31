@@ -41,22 +41,22 @@
 
     <!-- Deck list -->
     <div *ngIf="decks.length > 0" class="deck-list">
-      <ion-card *ngFor="let deck of decks" class="deck-card">
+      <ion-card *ngFor="let deck of decks; trackBy: trackByDeckId" class="deck-card">
         <ion-card-header (click)="decks.length > 1 && toggleDeckExpand(deck.id)" class="deck-header"
           [class.not-collapsible]="decks.length === 1">
           <ion-card-title>{{ deck.name }}</ion-card-title>
           <ion-card-subtitle>
-            {{ t('practice.countSummary', { words: getUniqueCardCount(deck), levels: getLevels(deck.id).length }) }}
+            {{ t('practice.countSummary', { words: deckStats.get(deck.id)?.uniqueCount || 0, levels: deckStats.get(deck.id)?.levelCount || 0 }) }}
             <ion-badge *ngIf="deck.isBundled && hasCustomDecks()" color="primary" style="margin-left: 8px;">{{ t('practice.builtin') }}</ion-badge>
                 <ion-badge *ngIf="!deck.isBundled" color="tertiary" style="margin-left: 8px;">{{ t('practice.custom') }}</ion-badge>
-            <ion-badge *ngIf="getCustomCardCount(deck) > 0" color="tertiary" style="margin-left: 8px;">
-              {{ t('practice.customCards', { count: getCustomCardCount(deck) }) }}
+            <ion-badge *ngIf="(deckStats.get(deck.id)?.customCount || 0) > 0" color="tertiary" style="margin-left: 8px;">
+              {{ t('practice.customCards', { count: deckStats.get(deck.id)?.customCount || 0 }) }}
             </ion-badge>
           </ion-card-subtitle>
           <div class="deck-stars">
             <span class="deck-star-count gamification">
               <ion-icon name="star" color="warning"></ion-icon>
-              <span>{{ getTotalStars(deck.id) }} / {{ getMaxStars(deck.id) }}</span>
+              <span>{{ deckStats.get(deck.id)?.totalStars || 0 }} / {{ deckStats.get(deck.id)?.maxStars || 0 }}</span>
             </span>
             <ion-icon *ngIf="decks.length > 1" [name]="isDeckExpanded(deck.id) ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
           </div>
@@ -76,7 +76,7 @@
 
           <div class="levels-list">
             <div
-              *ngFor="let level of getLevels(deck.id)"
+              *ngFor="let level of getLevels(deck.id); trackBy: trackByLevelNumber"
               class="level-item"
               [class.locked]="!level.isUnlocked"
               (click)="startLevel(deck, level)">

@@ -4,6 +4,18 @@ Tracked tasks that are deferred or in progress.
 
 ## Deferred (on standby)
 
+### Learn mode for beginners (teach before testing)
+Status: **not implemented** — planned.
+
+Real beginners can't start with Match/Quiz; they need to SEE and learn words
+first. Add a "Learn" mode (on the Home grid) that introduces each word with its
+translation + audio (and later an example sentence), swiping through with no
+scoring, before the games unlock.
+
+Later extension: **grammar and phrases**. Once words are learned, add grammar
+explanations and example phrases/sentences that reuse the learned words, so the
+user practises words in real context (not just isolated vocabulary).
+
 ### Base / origin (source) language — not yet defined
 Status: **not implemented** — currently hardcoded to English.
 

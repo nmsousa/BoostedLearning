@@ -88,7 +88,7 @@
 
   <!-- Word list -->
   <ion-list *ngIf="words.length > 0">
-    <ion-item *ngFor="let w of words" class="word-row" lines="full" [class.hidden-word]="w.priority === 'hide'">
+    <ion-item *ngFor="let w of words; trackBy: trackByWord" class="word-row" lines="full" [class.hidden-word]="w.priority === 'hide'">
       <div class="word-main">
         <span class="word-dot" [class.learning]="w.level === 'learning'"
           [class.familiar]="w.level === 'familiar'" [class.known]="w.level === 'known'"></span>

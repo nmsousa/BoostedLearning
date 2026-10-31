@@ -1104,81 +1104,140 @@ export class FlashcardService {
   // ============================================
 
   /**
-   * Curated canonical English translations for high-frequency Dutch words
-   * whose imported translation list has a wrong or junk first entry (the
-   * Duolingo scrape often leads with contractions/possessives/odd senses).
-   * Keyed by the Dutch word (lowercased).
+   * Curated canonical English translations for high-frequency words whose
+   * scraped translation list has a wrong/junk/arbitrary leading entry.
+   * Scoped BY LANGUAGE (keyed by the lowercased source word) because the same
+   * spelling can mean different things per language (e.g. "de" = "the" in
+   * Dutch but "of" in French).
    */
-  private readonly CURATED_TRANSLATIONS: Record<string, string> = {
-    hij: 'he',
-    zij: 'she',
-    zijn: 'are',        // plural/infinitive "to be"; also means "his" in other contexts
-    hebben: 'have',
-    is: 'is',
-    ben: 'am',
-    bent: 'are',
-    wij: 'we',
-    we: 'we',
-    jullie: 'you (plural)',
-    u: 'you (formal)',
-    jij: 'you',
-    jou: 'you',
-    ik: 'I',
-    het: 'the',
-    de: 'the',
-    een: 'a',
-    man: 'man',
-    mannen: 'men',
-    haar: 'her',
-    hun: 'their',
-    maken: 'make',
-    huis: 'house',
-    vriend: 'friend',
-    blijven: 'stay',
-    welke: 'which',
-    welk: 'which',
-    zoeken: 'search',
-    worden: 'become',
+  private readonly CURATED_TRANSLATIONS: Record<string, Record<string, string>> = {
+    nl: {
+      hij: 'he',
+      zij: 'she',
+      zijn: 'are',        // plural/infinitive "to be"; also means "his" in other contexts
+      hebben: 'have',
+      is: 'is',
+      ben: 'am',
+      bent: 'are',
+      wij: 'we',
+      we: 'we',
+      jullie: 'you (plural)',
+      u: 'you (formal)',
+      jij: 'you',
+      jou: 'you',
+      ik: 'I',
+      het: 'the',
+      de: 'the',
+      een: 'a',
+      man: 'man',
+      mannen: 'men',
+      haar: 'her',
+      hun: 'their',
+      maken: 'make',
+      huis: 'house',
+      vriend: 'friend',
+      blijven: 'stay',
+      welke: 'which',
+      welk: 'which',
+      zoeken: 'search',
+      worden: 'become',
+    },
+    fr: {
+      // Words whose scraped data is wrong, arbitrary, or confusing.
+      // (The heuristic handles most French words; these are the exceptions.)
+      de: 'of',
+      'à': 'to',
+      es: 'are',               // tu es = you are (data leads with "feel")
+      'tu parles': 'you talk', // data has only "Yeah"/"right"
+      master: "master's degree",
+      maternel: 'maternal',
+      'nouvel an': 'New Year',
+      chambre: 'bedroom',   // data leads with "rooms'"
+      des: 'some',          // partitive/plural article; data leads with "city's"
+      du: 'of the',
+      ma: 'my',
+      salle: 'room',
+      spectacle: 'show',
+      professionnel: 'professional',
+      marque: 'brand',
+      'musée': 'museum',
+      national: 'national',
+      actuel: 'current',
+      local: 'local',
+    },
   };
+
+  /**
+   * Contractions that are legitimate standalone meanings (not junk).
+   * e.g. "il est" -> "he's", "peux plus" -> "can't".
+   */
+  private readonly OK_CONTRACTIONS = new Set([
+    "he's", "she's", "it's", "that's", "there's", "here's", "what's", "who's",
+    "let's", "i'm", "you're", "we're", "they're", "i've", "i'd", "i'll",
+    "can't", "won't", "don't", "doesn't", "didn't", "isn't", "aren't",
+    "wasn't", "weren't", "couldn't", "wouldn't", "shouldn't", "haven't",
+    "hasn't", "o'clock",
+  ]);
+
+  /** True when a translation is junk: a noun possessive ("book's"), bare "'s",
+   *  a single letter other than I/a, or an abbreviation like "f.". Real
+   *  contractions ("he's", "can't") are NOT junk. */
+  private isJunkTranslation(raw: string): boolean {
+    const s = raw.trim();
+    const low = s.toLowerCase().replace('\u2019', "'");
+    if (s.length === 0) return true;
+    if (low === "'s") return true;
+    if (s.length === 1 && low !== 'i' && low !== 'a') return true;
+    if (/^[a-z]\.$/i.test(s)) return true;
+    if (/['\u2019]s$/i.test(s) && !this.OK_CONTRACTIONS.has(low)) return true;
+    return false;
+  }
+
+  /** True for English gerunds ("talking") — deprioritized when a non-gerund
+   *  option exists, but never excluded (some words only have an -ing form).
+   *  A few -ing words that are NOT gerunds are excluded from this test. */
+  private isGerund(s: string): boolean {
+    const t = s.trim();
+    if (/^(.?ring|thing|spring|string|king|wing|ceiling|evening|morning|building|meeting|feeling|boarding|landing|wedding|something|nothing|everything)$/i.test(t)) {
+      return false;
+    }
+    return /\w+ing$/i.test(t);
+  }
 
   /**
    * Choose the best English translation to DISPLAY for a card.
    *
-   * The imported data often leads with contractions ("he'd"), possessives
-   * ("man's"), or fragments ("ve"), so translations[0] is unreliable. This:
-   *   1. uses a curated override when available,
-   *   2. otherwise filters out apostrophe forms and 1-2 char fragments,
-   *   3. deprioritizes "-ing" gerunds and negations ("didn't"),
-   *   4. prefers the shortest remaining clean form (usually the base word),
-   *   5. falls back to translations[0] if nothing clean remains.
+   *   1. Curated override wins (fixes words whose data is wrong/arbitrary).
+   *   2. Otherwise trust translations[0] (duome lists the primary sense first)
+   *      unless it's junk, a gerund, or a negation.
+   *   3. Else pick the first non-junk, non-gerund, non-negation option.
+   *   4. Else the first non-junk option (an -ing/"'t" word that IS the meaning).
+   *   5. Else the shortest raw option.
    */
   bestTranslation(card: Flashcard): string {
-    const curated = this.CURATED_TRANSLATIONS[card.text.trim().toLowerCase()];
+    const langCode = this.getDeck(card.deckId)?.languageCode ?? '';
+    const curated = this.CURATED_TRANSLATIONS[langCode]?.[card.text.trim().toLowerCase()];
     if (curated) return curated;
 
-    const all = card.translations ?? [];
+    const all = (card.translations ?? []).map(s => s.trim()).filter(Boolean);
     if (all.length === 0) return '';
 
-    const clean = all.filter(t => {
-      const s = t.trim();
-      if (s.length <= 2) return false;        // "ve", "s", "th"
-      if (s.includes("'")) return false;        // contractions / possessives
-      if (/\(.*\)/.test(s)) return true;        // keep clarified forms like "you (plural)"
-      return true;
-    });
+    const isNegation = (s: string) => /n['\u2019]t$/i.test(s.trim());
 
-    const pool = clean.length > 0 ? clean : all;
+    // Trust the primary sense unless it's clearly unusable.
+    if (!this.isJunkTranslation(all[0]) && !this.isGerund(all[0]) && !isNegation(all[0])) {
+      return all[0];
+    }
 
-    // Score: prefer non-gerund, non-negation, then shorter.
-    const score = (t: string): number => {
-      const s = t.trim().toLowerCase();
-      let penalty = 0;
-      if (s.endsWith('ing')) penalty += 5;                 // "having" < "have"
-      if (/n't$|^didn|^couldn|^wasn|^weren/.test(s)) penalty += 10;
-      return penalty + s.length * 0.1;
-    };
+    const nonJunk = all.filter(s => !this.isJunkTranslation(s));
+    if (nonJunk.length === 0) {
+      return [...all].sort((a, b) => a.length - b.length)[0];
+    }
 
-    return [...pool].sort((a, b) => score(a) - score(b))[0] ?? all[0];
+    const preferred = nonJunk.filter(s => !this.isGerund(s) && !isNegation(s));
+    if (preferred.length > 0) return preferred[0];
+
+    return nonJunk[0];
   }
 
   /**

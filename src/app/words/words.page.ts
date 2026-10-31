@@ -58,8 +58,13 @@ export class WordsPage implements OnInit {
     this.reload();
   }
 
+  /** Bumped on each reload so the memoized `words` list recomputes even when
+   *  the list length is unchanged (e.g. after toggling a word's priority). */
+  private dataVersion = 0;
+
   private reload(): void {
     this.allWords = this.flashcards.getStudiedWords(this.settings.learningLanguage());
+    this.dataVersion++;
     this.cdr.detectChanges();
   }
 
@@ -68,8 +73,17 @@ export class WordsPage implements OnInit {
     return this.allWords.some(w => w.priority === 'hide');
   }
 
+  // Memoized filtered+sorted list: recomputed only when the inputs change, so
+  // the template's *ngFor doesn't re-filter/re-sort a large list every change
+  // detection tick.
+  private wordsCacheKey = '';
+  private wordsCache: StudiedWord[] = [];
+
   /** Words after status + level filter + search + sort. */
   get words(): StudiedWord[] {
+    const key = `${this.dataVersion}|${this.statusFilter}|${this.filter}|${this.sortKey}|${this.search.trim().toLowerCase()}`;
+    if (key === this.wordsCacheKey) return this.wordsCache;
+
     const q = this.search.trim().toLowerCase();
     let list = this.allWords;
 
@@ -87,8 +101,13 @@ export class WordsPage implements OnInit {
       );
     }
 
-    return [...list].sort((a, b) => this.compare(a, b));
+    this.wordsCache = [...list].sort((a, b) => this.compare(a, b));
+    this.wordsCacheKey = key;
+    return this.wordsCache;
   }
+
+  /** Stable identity for the word list *ngFor. */
+  trackByWord = (_: number, w: StudiedWord) => w.text;
 
   setStatusFilter(s: StatusFilter) {
     this.statusFilter = s;

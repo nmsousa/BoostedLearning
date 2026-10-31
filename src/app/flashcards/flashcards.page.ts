@@ -186,12 +186,38 @@ export class FlashcardsPage implements OnInit {
     // Apply the user's deck-order preference.
     this.sortDecks();
 
-    // Load levels for each deck
+    // Load levels for each deck, and precompute the header stats ONCE so the
+    // template binds to plain data instead of calling methods every change
+    // detection cycle (which was recomputing deduped cards / star totals per
+    // tick for every deck).
+    this.deckStats.clear();
     for (const deck of this.decks) {
       const levels = await this.flashcardService.getDeckLevels(deck.id, this.mode);
       this.deckLevels.set(deck.id, levels);
+
+      const totalStars = levels.reduce((sum, l) => sum + l.bestStars, 0);
+      this.deckStats.set(deck.id, {
+        uniqueCount: this.flashcardService.getDedupedCards(deck.id).length,
+        levelCount: levels.length,
+        customCount: deck.cards.filter(c => c.isCustom).length,
+        totalStars,
+        maxStars: levels.length * 3,
+      });
     }
   }
+
+  /** Precomputed per-deck header stats (filled in loadDecks). */
+  deckStats = new Map<string, {
+    uniqueCount: number;
+    levelCount: number;
+    customCount: number;
+    totalStars: number;
+    maxStars: number;
+  }>();
+
+  /** Stable identity for *ngFor so Angular doesn't rebuild rows each tick. */
+  trackByDeckId = (_: number, deck: FlashcardDeck) => deck.id;
+  trackByLevelNumber = (_: number, level: DeckLevel) => level.levelNumber;
 
   getDeckStats(deck: FlashcardDeck) {
     return this.flashcardService.getDeckStats(deck.id);
@@ -230,7 +256,9 @@ export class FlashcardsPage implements OnInit {
   }
 
   isDeckExpanded(deckId: string): boolean {
-    // Open unless the user explicitly collapsed this deck.
+    // With a single deck there's nothing to gain from collapsing, so it's
+    // always open. Otherwise: open unless the user explicitly collapsed it.
+    if (this.decks.length <= 1) return true;
     return !this.collapsedDecks.has(deckId);
   }
 
