@@ -155,27 +155,28 @@ ion-popover .lang-list {
 
 // Coloured dots for each knowledge level in the Levels popover, mirroring the
 // old filter badges (red = learning, amber = familiar, green = known). The
-// options render in a fixed order, so target the items by position. The dot is
-// a leading pseudo-element on each ion-item's native part.
+// options render in a fixed order, so target the items by position. The dot
+// sits at the END of the row (AFTER the checkbox), as a trailing pseudo-
+// element on each ion-item's native part.
 .levels-popover {
   ion-item::part(native) {
     position: relative;
-    padding-inline-start: 26px;
+    padding-inline-end: 24px;
   }
 
-  ion-item::part(native)::before {
+  ion-item::part(native)::after {
     content: "";
     position: absolute;
-    inset-inline-start: 8px;
+    inset-inline-end: 8px;
     top: 50%;
     transform: translateY(-50%);
     width: 10px;
     height: 10px;
     border-radius: 50%;
   }
-  ion-item:nth-of-type(1)::part(native)::before { background: var(--ion-color-danger); }  // Learning
-  ion-item:nth-of-type(2)::part(native)::before { background: var(--ion-color-warning); } // Familiar
-  ion-item:nth-of-type(3)::part(native)::before { background: var(--ion-color-success); } // Known
+  ion-item:nth-of-type(1)::part(native)::after { background: var(--ion-color-danger); }  // Learning
+  ion-item:nth-of-type(2)::part(native)::after { background: var(--ion-color-warning); } // Familiar
+  ion-item:nth-of-type(3)::part(native)::after { background: var(--ion-color-success); } // Known
 }
 
 // --------------------------------------------------------------------------

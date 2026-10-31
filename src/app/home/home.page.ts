@@ -6,7 +6,7 @@
  * @module app/home
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, effect } from '@angular/core';
 import { Router } from '@angular/router';
 import { ContentService } from '../services/content.service';
 import { SessionService } from '../services/session.service';
@@ -107,6 +107,22 @@ export class HomePage implements OnInit {
   constructor() {
     // Initialize content immediately in constructor
     this.content.initialize();
+
+    // Keep the "Your words" breakdown reactive: recompute whenever the deck
+    // data changes (e.g. after an exercise writes progress via
+    // decksSignal.update) OR the learning language changes. This removes the
+    // reliance on lifecycle-hook timing, which could leave the widget stale
+    // until an app restart.
+    effect(() => {
+      // Depend on the decks signal + the learning-language signal.
+      this.flashcards.decks();
+      const lang = this.settings.learningLanguage();
+      this.knowledge = this.flashcards.getKnowledgeBreakdown(lang);
+      this.wordsReady = true;
+      // markForCheck (not detectChanges) is safe to call at any point in the
+      // lifecycle, including before the first render.
+      this.cdr.markForCheck();
+    });
   }
 
   async ngOnInit(): Promise<void> {

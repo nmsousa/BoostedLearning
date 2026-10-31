@@ -16,10 +16,10 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
     CapacitorUpdater: {
-      // Self-hosted over-the-air updates. On launch the app checks this URL;
-      // if it advertises a newer bundle than the installed one, the new web
-      // bundle is downloaded and applied on the next app start. This lets you
-      // ship updates to testers without distributing a new APK.
+      // Self-hosted over-the-air updates. The plugin checks this URL in the
+      // BACKGROUND; if it advertises a newer bundle, it downloads it and
+      // applies it on the NEXT cold start. This lets you ship updates to
+      // testers without distributing a new APK.
       // Served as a "latest release" asset on this GitHub repo. The
       // `releases/latest/download/<asset>` URL always resolves to the newest
       // published (non-pre-release) release, so publishing a new release with
@@ -27,8 +27,11 @@ const config: CapacitorConfig = {
       autoUpdate: true,
       updateUrl:
         'https://github.com/nmsousa/BoostedLearning/releases/latest/download/updates.json',
-      // Apply the downloaded update when the app returns to the foreground.
-      directUpdate: true,
+      // NOTE: `directUpdate` is intentionally OFF. With it on, the plugin tried
+      // to apply a pending update DURING launch, which made a blocking network
+      // call to the update URL — so starting the app OFFLINE hung on the splash
+      // until the request timed out. Background download + apply-on-next-start
+      // keeps startup instant and fully functional offline.
     },
   },
   android: {

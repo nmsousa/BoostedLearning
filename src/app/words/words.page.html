@@ -5,62 +5,61 @@
     </ion-buttons>
     <ion-title>{{ 'words.title' | translate }}</ion-title>
   </ion-toolbar>
+
+  <!-- Search + filter + sort live in the HEADER so they stay fixed while the
+       word list scrolls beneath them. -->
+  <ion-toolbar class="search-toolbar">
+    <div class="toolbar-row">
+      <ion-searchbar
+        class="words-search"
+        [value]="search"
+        [placeholder]="'words.search' | translate"
+        [debounce]="150"
+        (ionInput)="onSearch($event)"
+        (ionClear)="onSearch($event)">
+      </ion-searchbar>
+
+      <!-- Level filter: a labelled button that opens a checkbox popover. The
+           label + our own caret are drawn in the button; the ion-select is
+           stretched invisibly behind it and owns the tap/interaction. -->
+      <div class="filter-ctl" [class.active]="hasLevelFilter">
+        <span class="filter-label">{{ levelFilterLabel }}</span>
+        <ion-icon name="chevron-down" class="ctl-caret" aria-hidden="true"></ion-icon>
+        <ion-select
+          class="filter-select"
+          [value]="selectedLevels"
+          [multiple]="true"
+          interface="popover"
+          [interfaceOptions]="{ cssClass: 'levels-popover', header: ('words.filterLevels' | translate) }"
+          [attr.aria-label]="'words.filterLevels' | translate"
+          (ionChange)="onLevelsChange($event)">
+          <ion-select-option *ngFor="let lvl of levelOptions" [value]="lvl">
+            {{ ('home.level.' + lvl) | translate }} ({{ count(lvl) }})
+          </ion-select-option>
+        </ion-select>
+      </div>
+
+      <!-- Compact sort: swap icon + our own caret; whole control opens popover. -->
+      <div class="sort-row">
+        <ion-icon name="swap-vertical-outline" class="sort-icon" aria-hidden="true"></ion-icon>
+        <ion-icon name="chevron-down" class="ctl-caret" aria-hidden="true"></ion-icon>
+        <ion-select
+          class="sort-select"
+          [value]="sortKey"
+          interface="popover"
+          [interfaceOptions]="{ cssClass: 'sort-popover', header: ('words.sortBy' | translate) }"
+          [attr.aria-label]="'words.sortBy' | translate"
+          (ionChange)="onSortChange($event)">
+          <ion-select-option *ngFor="let opt of sortOptions" [value]="opt.value">
+            {{ opt.labelKey | translate }}
+          </ion-select-option>
+        </ion-select>
+      </div>
+    </div>
+  </ion-toolbar>
 </ion-header>
 
 <ion-content class="words-content">
-  <!-- Everything on a single row: search + level filter + sort.
-       - Search flexes to fill the free space.
-       - Level filter is a MULTI-select dropdown (checkboxes) with a coloured
-         dot, level name and count per option; empty selection means "All".
-       - Sort is the compact icon + caret (whole control is tappable). -->
-  <div class="toolbar-row">
-    <ion-searchbar
-      class="words-search"
-      [value]="search"
-      [placeholder]="'words.search' | translate"
-      [debounce]="150"
-      (ionInput)="onSearch($event)"
-      (ionClear)="onSearch($event)">
-    </ion-searchbar>
-
-    <!-- Level filter: a labelled button that opens a checkbox popover. The
-         label + our own caret are drawn in the button; the ion-select is
-         stretched invisibly behind it and owns the tap/interaction. -->
-    <div class="filter-ctl" [class.active]="hasLevelFilter">
-      <span class="filter-label">{{ levelFilterLabel }}</span>
-      <ion-icon name="chevron-down" class="ctl-caret" aria-hidden="true"></ion-icon>
-      <ion-select
-        class="filter-select"
-        [value]="selectedLevels"
-        [multiple]="true"
-        interface="popover"
-        [interfaceOptions]="{ cssClass: 'levels-popover', header: ('words.filterLevels' | translate) }"
-        [attr.aria-label]="'words.filterLevels' | translate"
-        (ionChange)="onLevelsChange($event)">
-        <ion-select-option *ngFor="let lvl of levelOptions" [value]="lvl">
-          {{ ('home.level.' + lvl) | translate }} ({{ count(lvl) }})
-        </ion-select-option>
-      </ion-select>
-    </div>
-
-    <!-- Compact sort: swap icon + our own caret; whole control opens popover. -->
-    <div class="sort-row">
-      <ion-icon name="swap-vertical-outline" class="sort-icon" aria-hidden="true"></ion-icon>
-      <ion-icon name="chevron-down" class="ctl-caret" aria-hidden="true"></ion-icon>
-      <ion-select
-        class="sort-select"
-        [value]="sortKey"
-        interface="popover"
-        [interfaceOptions]="{ cssClass: 'sort-popover', header: ('words.sortBy' | translate) }"
-        [attr.aria-label]="'words.sortBy' | translate"
-        (ionChange)="onSortChange($event)">
-        <ion-select-option *ngFor="let opt of sortOptions" [value]="opt.value">
-          {{ opt.labelKey | translate }}
-        </ion-select-option>
-      </ion-select>
-    </div>
-  </div>
-
   <!-- Status filter: only shown once the user has hidden at least one word. -->
   <div class="filter-row status-row" *ngIf="hasHiddenWords">
     <ion-chip [class.active]="statusFilter === 'all'" (click)="setStatusFilter('all')">
@@ -89,7 +88,8 @@
 
   <!-- Word list -->
   <ion-list *ngIf="words.length > 0">
-    <ion-item *ngFor="let w of words; trackBy: trackByWord" class="word-row" lines="full" [class.hidden-word]="w.priority === 'hide'">
+    <ion-item *ngFor="let w of words; trackBy: trackByWord" class="word-row" lines="full" button
+      [class.hidden-word]="w.priority === 'hide'" (click)="openPriority(w)">
       <div class="word-main">
         <span class="word-dot" [class.learning]="w.level === 'learning'"
           [class.familiar]="w.level === 'familiar'" [class.known]="w.level === 'known'"></span>

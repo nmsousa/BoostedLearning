@@ -2,12 +2,22 @@
   --padding-top: 8px;
 }
 
+// Header toolbar that holds the search/filter/sort row — kept in <ion-header>
+// so it stays fixed while the list scrolls.
+.search-toolbar {
+  --min-height: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
 // Single toolbar row: search (flex) + level filter + sort, all on one line.
 .toolbar-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 8px 10px;
+  padding: 4px 8px 8px;
 
   .words-search {
     flex: 1 1 auto;
