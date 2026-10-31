@@ -45,15 +45,16 @@
       </ion-chip>
     </div>
 
+    <!-- Compact sort: just the icon + caret. The current value and the full
+         list of options are shown inside the popover when tapped. -->
     <div class="sort-row">
       <ion-icon name="swap-vertical-outline" class="sort-icon" aria-hidden="true"></ion-icon>
-      <span class="sort-prefix">{{ 'words.sortBy' | translate }}:</span>
       <ion-select
         class="sort-select"
         [value]="sortKey"
         interface="popover"
-        [interfaceOptions]="{ cssClass: 'sort-popover' }"
-        aria-label="Sort words"
+        [interfaceOptions]="{ cssClass: 'sort-popover', header: ('words.sortBy' | translate) }"
+        [attr.aria-label]="'words.sortBy' | translate"
         (ionChange)="onSortChange($event)">
         <ion-select-option *ngFor="let opt of sortOptions" [value]="opt.value">
           {{ opt.labelKey | translate }}
