@@ -7,14 +7,30 @@
 }
 
 .sort-row {
-  --background: transparent;
-  --min-height: 40px;
-  --padding-start: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 6px 12px 4px;
   font-size: 0.9rem;
+  color: var(--ion-color-medium);
 
-  ion-icon {
-    color: var(--ion-color-medium);
-    margin-inline-end: 8px;
+  .sort-icon {
+    font-size: 18px;
+  }
+
+  .sort-prefix {
+    white-space: nowrap;
+  }
+
+  // Let the select shrink to just its selected value (no full-width row).
+  .sort-select {
+    --padding-start: 0;
+    --padding-end: 0;
+    min-width: 0;
+    max-width: 60vw;
+    color: var(--ion-text-color);
+    font-weight: 600;
   }
 }
 
@@ -51,6 +67,11 @@
     &.learning { background: var(--ion-color-danger); }
     &.familiar { background: var(--ion-color-warning); }
     &.known { background: var(--ion-color-success); }
+  }
+
+  // The level label only appears on the selected chip; add a little space.
+  .chip-label {
+    margin-inline-end: 4px;
   }
 }
 

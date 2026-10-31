@@ -8,10 +8,11 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { AlertController } from '@ionic/angular';
+import { ActionSheetController, AlertController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck, DeckLevel, PracticeMode } from '../services/flashcard.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { SettingsService } from '../services/settings.service';
+import { AddWordService } from '../services/add-word.service';
 
 /** Deck list ordering preference. */
 type DeckOrder = 'builtinFirst' | 'customFirst';
@@ -26,10 +27,55 @@ export class FlashcardsPage implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private alertController = inject(AlertController);
+  private actionSheet = inject(ActionSheetController);
   private flashcardService = inject(FlashcardService);
   private i18n = inject(I18nAngularService);
   private settings = inject(SettingsService);
+  private addWordService = inject(AddWordService);
   private cdr = inject(ChangeDetectorRef);
+
+  /**
+   * Header "⋮" menu for the deck list: add a word, and (when there's a custom
+   * deck) choose the deck ordering. Keeps the list uncluttered.
+   */
+  async openMenu(): Promise<void> {
+    const buttons: any[] = [
+      {
+        text: this.t('mode.addWord'),
+        icon: 'add-circle-outline',
+        handler: async () => {
+          await this.addWordService.promptAddWord(this.settings.learningLanguage());
+          await this.reloadAfterChange();
+        },
+      },
+    ];
+
+    if (this.hasCustomDecks()) {
+      buttons.push(
+        {
+          text: this.t('practice.order.builtinFirst') + (this.deckOrder === 'builtinFirst' ? '  ✓' : ''),
+          icon: 'albums-outline',
+          handler: () => this.setDeckOrder('builtinFirst'),
+        },
+        {
+          text: this.t('practice.order.customFirst') + (this.deckOrder === 'customFirst' ? '  ✓' : ''),
+          icon: 'person-outline',
+          handler: () => this.setDeckOrder('customFirst'),
+        }
+      );
+    }
+
+    buttons.push({ text: this.t('common.cancel'), role: 'cancel' });
+
+    const sheet = await this.actionSheet.create({ buttons });
+    await sheet.present();
+  }
+
+  /** Reload decks + levels after a change (e.g. a word was added). */
+  private async reloadAfterChange(): Promise<void> {
+    await this.loadDecks();
+    this.cdr.detectChanges();
+  }
 
   /** Practice mode chosen on the home page (defaults to Flashcards flip). */
   mode: PracticeMode = 'flip';

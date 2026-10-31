@@ -167,6 +167,8 @@ export interface DeckLevel {
   skill?: string;
   /** Best completion time in seconds (Match mode); undefined if never timed. */
   bestTimeSeconds?: number;
+  /** Best combo reached (Match mode); undefined if never played. */
+  bestCombo?: number;
 }
 
 /**
@@ -1196,8 +1198,20 @@ export class FlashcardService {
 
   /** Consecutive-correct streak needed to count a word as "familiar". */
   private readonly FAMILIAR_STREAK = 2;
-  /** Consecutive-correct streak needed to count a word as "known". */
-  private readonly KNOWN_STREAK = 4;
+  /** Consecutive-correct streak needed to count a word as "known".
+   *  3-in-a-row reads intuitively as "known" (matches the ✓/✗ counts a user
+   *  sees on the Your Words screen). */
+  private readonly KNOWN_STREAK = 3;
+
+  /**
+   * Map a card's current streak to its knowledge bucket. Single source of
+   * truth shared by the home breakdown and the Your Words list.
+   */
+  private levelForStreak(streak: number): KnowledgeLevel {
+    if (streak >= this.KNOWN_STREAK) return 'known';
+    if (streak >= this.FAMILIAR_STREAK) return 'familiar';
+    return 'learning';
+  }
 
   /** Whether a card has been practiced at least once (any mode). */
   private hasBeenStudied(card: Flashcard): boolean {
@@ -1234,11 +1248,8 @@ export class FlashcardService {
         if (seen === 0 && medium === 0) continue; // never practiced
 
         const missRate = seen > 0 ? incorrect / seen : 0;
-        // Reuse the same streak-based bucket as the home breakdown.
-        let level: KnowledgeLevel;
-        if (card.streak >= 4) level = 'known';
-        else if (card.streak >= 2) level = 'familiar';
-        else level = 'learning';
+        // Same streak-based bucket as the home breakdown (single source).
+        const level = this.levelForStreak(card.streak);
 
         rows.push({
           text: card.text,
@@ -1283,13 +1294,7 @@ export class FlashcardService {
           breakdown.neverStudied++;
           continue;
         }
-        if (card.streak >= this.KNOWN_STREAK) {
-          breakdown.known++;
-        } else if (card.streak >= this.FAMILIAR_STREAK) {
-          breakdown.familiar++;
-        } else {
-          breakdown.learning++;
-        }
+        breakdown[this.levelForStreak(card.streak)]++;
         breakdown.total++;
       }
     }
@@ -1470,6 +1475,7 @@ export class FlashcardService {
         attempts: progress?.attempts ?? 0,
         isUnlocked,
         bestTimeSeconds: progress?.bestTimeSeconds,
+        bestCombo: progress?.bestCombo,
       });
     }
     

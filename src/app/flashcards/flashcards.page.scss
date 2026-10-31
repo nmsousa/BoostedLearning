@@ -54,11 +54,6 @@
   }
 }
 
-// Deck order toggle
-.deck-order {
-  margin-bottom: 16px;
-}
-
 // Deck list
 .deck-list {
   display: flex;
@@ -338,8 +333,9 @@
   }
 }
 
-// Best completion time shown next to the stars (Match mode levels).
-.level-stars .level-time {
+// Best completion time + best combo shown next to the stars (Match levels).
+.level-stars .level-time,
+.level-stars .level-combo {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -348,4 +344,8 @@
   color: var(--ion-color-medium);
 
   ion-icon { font-size: 14px; }
+}
+
+.level-stars .level-combo ion-icon {
+  color: var(--ion-color-warning);
 }

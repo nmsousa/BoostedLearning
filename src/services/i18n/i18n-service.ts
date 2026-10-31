@@ -368,6 +368,7 @@ const PT_MESSAGES: MessageCatalog = {
   'practice.deleteDeck': 'Apagar baralho',
   'practice.order.builtinFirst': 'Incluídos primeiro',
   'practice.order.customFirst': 'Personalizados primeiro',
+  'practice.menu': 'Opções',
 };
 
 /**
@@ -674,6 +675,7 @@ const FR_MESSAGES: MessageCatalog = {
   'practice.deleteDeck': 'Supprimer le paquet',
   'practice.order.builtinFirst': "Intégrés d'abord",
   'practice.order.customFirst': "Personnalisés d'abord",
+  'practice.menu': 'Options',
 };
 
 /**
@@ -980,6 +982,7 @@ const EN_MESSAGES: MessageCatalog = {
   'practice.deleteDeck': 'Delete deck',
   'practice.order.builtinFirst': 'Built-in first',
   'practice.order.customFirst': 'Custom first',
+  'practice.menu': 'Options',
 };
 
 /**
@@ -1256,6 +1259,7 @@ const ES_MESSAGES: MessageCatalog = {
   'practice.deleteDeck': 'Eliminar mazo',
   'practice.order.builtinFirst': 'Incluidos primero',
   'practice.order.customFirst': 'Personalizados primero',
+  'practice.menu': 'Opciones',
 };
 
 /**

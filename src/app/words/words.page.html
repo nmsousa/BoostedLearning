@@ -18,36 +18,45 @@
     (ionClear)="onSearch($event)">
   </ion-searchbar>
 
-  <!-- Sort -->
-  <ion-item lines="none" class="sort-row">
-    <ion-icon slot="start" name="swap-vertical-outline" aria-hidden="true"></ion-icon>
+  <!-- Sort: compact control aligned right. Shows the icon + "Sort by: <current>";
+       the full list of options appears inside the popover when tapped. -->
+  <div class="sort-row">
+    <ion-icon name="swap-vertical-outline" class="sort-icon" aria-hidden="true"></ion-icon>
+    <span class="sort-prefix">{{ t('words.sortBy') }}:</span>
     <ion-select
+      class="sort-select"
       [value]="sortKey"
       interface="popover"
-      [label]="t('words.sortBy')"
+      [interfaceOptions]="{ cssClass: 'sort-popover' }"
+      aria-label="Sort words"
       (ionChange)="onSortChange($event)">
       <ion-select-option *ngFor="let opt of sortOptions" [value]="opt.value">
         {{ t(opt.labelKey) }}
       </ion-select-option>
     </ion-select>
-  </ion-item>
+  </div>
 
   <!-- Level filter chips (with the same colour dots as the home breakdown) -->
+  <!-- Level filter chips: compact (dot + count) by default; the selected chip
+       also shows its label. Keeps the row on one line. -->
   <div class="filter-row">
     <ion-chip [class.active]="filter === 'all'" (click)="setFilter('all')">
       {{ t('words.all') }} ({{ count('all') }})
     </ion-chip>
     <ion-chip class="learning" [class.active]="filter === 'learning'" (click)="setFilter('learning')">
       <span class="chip-dot learning"></span>
-      {{ t('home.level.learning') }} ({{ count('learning') }})
+      <span class="chip-label" *ngIf="filter === 'learning'">{{ t('home.level.learning') }}</span>
+      ({{ count('learning') }})
     </ion-chip>
     <ion-chip class="familiar" [class.active]="filter === 'familiar'" (click)="setFilter('familiar')">
       <span class="chip-dot familiar"></span>
-      {{ t('home.level.familiar') }} ({{ count('familiar') }})
+      <span class="chip-label" *ngIf="filter === 'familiar'">{{ t('home.level.familiar') }}</span>
+      ({{ count('familiar') }})
     </ion-chip>
     <ion-chip class="known" [class.active]="filter === 'known'" (click)="setFilter('known')">
       <span class="chip-dot known"></span>
-      {{ t('home.level.known') }} ({{ count('known') }})
+      <span class="chip-label" *ngIf="filter === 'known'">{{ t('home.level.known') }}</span>
+      ({{ count('known') }})
     </ion-chip>
   </div>
 

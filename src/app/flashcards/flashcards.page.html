@@ -4,6 +4,11 @@
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
     <ion-title>{{ modeLabel }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="openMenu()" [attr.aria-label]="t('practice.menu')">
+        <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -32,19 +37,7 @@
       </ion-button>
     </div>
 
-    <!-- Deck order toggle: only relevant once there's a custom deck. -->
-    <ion-segment
-      *ngIf="decks.length > 0 && hasCustomDecks()"
-      class="deck-order"
-      [value]="deckOrder"
-      (ionChange)="setDeckOrder($any($event).detail.value)">
-      <ion-segment-button value="builtinFirst">
-        <ion-label>{{ t('practice.order.builtinFirst') }}</ion-label>
-      </ion-segment-button>
-      <ion-segment-button value="customFirst">
-        <ion-label>{{ t('practice.order.customFirst') }}</ion-label>
-      </ion-segment-button>
-    </ion-segment>
+    <!-- Deck order + add-word live in the header "⋮" menu (openMenu). -->
 
     <!-- Deck list -->
     <div *ngIf="decks.length > 0" class="deck-list">
@@ -103,6 +96,12 @@
                   class="level-time gamification">
                   <ion-icon name="time-outline"></ion-icon>
                   {{ formatBestTime(level.bestTimeSeconds) }}
+                </span>
+                <span
+                  *ngIf="level.isUnlocked && isMatchMode && level.bestCombo && level.bestCombo >= 2"
+                  class="level-combo gamification">
+                  <ion-icon name="flame"></ion-icon>
+                  {{ level.bestCombo }}
                 </span>
                 <span *ngIf="level.isUnlocked" class="gamification">
                   <ion-icon *ngFor="let s of getStarArray(level.bestStars)" name="star" class="star filled"></ion-icon>
