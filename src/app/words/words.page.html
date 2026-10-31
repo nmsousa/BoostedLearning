@@ -8,22 +8,37 @@
 </ion-header>
 
 <ion-content class="words-content">
-  <!-- Search -->
-  <ion-searchbar
-    class="words-search"
-    [value]="search"
-    [placeholder]="'words.search' | translate"
-    [debounce]="150"
-    (ionInput)="onSearch($event)"
-    (ionClear)="onSearch($event)">
-  </ion-searchbar>
+  <!-- Search + sort share the top row. The compact sort (icon + caret) sits to
+       the right of the searchbar; its current value and the full option list
+       live inside the popover when tapped. -->
+  <div class="search-sort-row">
+    <ion-searchbar
+      class="words-search"
+      [value]="search"
+      [placeholder]="'words.search' | translate"
+      [debounce]="150"
+      (ionInput)="onSearch($event)"
+      (ionClear)="onSearch($event)">
+    </ion-searchbar>
 
-  <!-- Sort: compact control aligned right. Shows the icon + "Sort by: <current>";
-       the full list of options appears inside the popover when tapped.
-       Chips + sort share one row: sort sits to the RIGHT when there's space,
-       and wraps to its own line when the row gets cramped. -->
+    <div class="sort-row">
+      <ion-icon name="swap-vertical-outline" class="sort-icon" aria-hidden="true"></ion-icon>
+      <ion-select
+        class="sort-select"
+        [value]="sortKey"
+        interface="popover"
+        [interfaceOptions]="{ cssClass: 'sort-popover', header: ('words.sortBy' | translate) }"
+        [attr.aria-label]="'words.sortBy' | translate"
+        (ionChange)="onSortChange($event)">
+        <ion-select-option *ngFor="let opt of sortOptions" [value]="opt.value">
+          {{ opt.labelKey | translate }}
+        </ion-select-option>
+      </ion-select>
+    </div>
+  </div>
+
+  <!-- Level filter chips: compact (dot + count); selected chip shows label. -->
   <div class="filter-sort-row">
-    <!-- Level filter chips: compact (dot + count); selected chip shows label. -->
     <div class="filter-row">
       <ion-chip [class.active]="filter === 'all'" (click)="setFilter('all')">
         {{ 'words.all' | translate }} ({{ count('all') }})
@@ -43,23 +58,6 @@
         <span class="chip-label" *ngIf="filter === 'known'">{{ 'home.level.known' | translate }}</span>
         ({{ count('known') }})
       </ion-chip>
-    </div>
-
-    <!-- Compact sort: just the icon + caret. The current value and the full
-         list of options are shown inside the popover when tapped. -->
-    <div class="sort-row">
-      <ion-icon name="swap-vertical-outline" class="sort-icon" aria-hidden="true"></ion-icon>
-      <ion-select
-        class="sort-select"
-        [value]="sortKey"
-        interface="popover"
-        [interfaceOptions]="{ cssClass: 'sort-popover', header: ('words.sortBy' | translate) }"
-        [attr.aria-label]="'words.sortBy' | translate"
-        (ionChange)="onSortChange($event)">
-        <ion-select-option *ngFor="let opt of sortOptions" [value]="opt.value">
-          {{ opt.labelKey | translate }}
-        </ion-select-option>
-      </ion-select>
     </div>
   </div>
 

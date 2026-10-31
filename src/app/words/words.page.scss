@@ -2,12 +2,27 @@
   --padding-top: 8px;
 }
 
+// Search + compact sort on one line. The searchbar takes the free space and
+// the sort control sits snug on the right.
+.search-sort-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 0;
+
+  .words-search {
+    flex: 1 1 auto;
+    min-width: 0;
+    // Padding is now handled by the row wrapper.
+    padding: 0;
+  }
+}
+
 .words-search {
   padding: 8px 8px 0;
 }
 
-// Chips + sort on one line; the sort is pushed to the right and wraps onto
-// its own line (left-aligned) when the row is too narrow.
+// Chips row. (The sort control moved up next to the searchbar.)
 .filter-sort-row {
   display: flex;
   flex-wrap: wrap;
@@ -17,29 +32,40 @@
   padding: 8px 12px 10px;
 }
 
-// Compact sort: an icon + a caret only (no label/value text inline). Always
-// fits on the right next to the chips. Tappable area stays comfortable.
+// Compact sort: an icon + a caret only (no label/value text inline).
+// The whole control is one tap target: the ion-select is stretched across the
+// row, and the leading icon sits on top of it (pointer-events disabled) so a
+// tap anywhere — icon OR caret — opens the popover.
 .sort-row {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 2px;
-  // Push to the right edge of the row when there's room.
-  margin-left: auto;
+  flex: 0 0 auto;
   color: var(--ion-color-medium);
   cursor: pointer;
 
   .sort-icon {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
     font-size: 20px;
-    flex-shrink: 0;
+    pointer-events: none;   // taps pass through to the select beneath
+    z-index: 1;
   }
 
   .sort-select {
-    --padding-start: 0;
-    --padding-end: 0;
+    // Reserve room on the left for the overlaid icon so the caret clears it.
+    --padding-start: 24px;
+    --padding-end: 4px;
+    --highlight-color-focused: transparent;
+    --highlight-color-valid: transparent;
+    --highlight-color-invalid: transparent;
     width: auto;
     min-width: 0;
     flex: 0 0 auto;
     color: var(--ion-color-medium);
+    cursor: pointer;
   }
 
   // Hide the selected-value text; keep only the dropdown caret.
@@ -48,6 +74,11 @@
   }
   .sort-select::part(icon) {
     opacity: 0.9;
+  }
+  // Kill the MD focus/validity underline that lingered after the popover
+  // opened and closed (the stray blue line under the control).
+  .sort-select::part(container) {
+    border: 0;
   }
 }
 
