@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.boostedlearning.app',
-  appName: 'Boosted Learning',
+  appName: 'Boostionary',
   webDir: 'www',
   server: {
     androidScheme: 'https',
