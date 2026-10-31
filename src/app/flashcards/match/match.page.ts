@@ -9,7 +9,7 @@
  * @module app/flashcards/match
  */
 
-import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
 import { I18nAngularService } from '../../services/i18n.service';
@@ -31,6 +31,7 @@ interface MatchItem {
   templateUrl: './match.page.html',
   styleUrls: ['./match.page.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MatchPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);

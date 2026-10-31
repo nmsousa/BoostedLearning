@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular/lazy';
 
 import { FlipPageRoutingModule } from './flip-routing.module';
+import { SharedModule } from '../../shared/shared.module';
 
 import { FlipPage } from './flip.page';
 
@@ -14,6 +15,7 @@ import { FlipPage } from './flip.page';
     FormsModule,
     IonicModule,
     FlipPageRoutingModule,
+    SharedModule,
   ],
   declarations: [FlipPage],
 })

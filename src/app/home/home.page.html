@@ -45,7 +45,7 @@
   <!-- Loading state -->
   <div *ngIf="isLoading" class="loading-container">
     <ion-spinner name="crescent"></ion-spinner>
-    <p>{{ t('common.loading') }}</p>
+    <p>{{ 'common.loading' | translate }}</p>
   </div>
 
   <!-- Main content -->
@@ -56,30 +56,30 @@
 
     <!-- Practice modes section -->
     <section class="practice-section">
-      <h3 class="section-title">{{ t('home.practice') }}</h3>
+      <h3 class="section-title">{{ 'home.practice' | translate }}</h3>
       <div class="mode-grid">
         <button type="button" class="mode-card flip" (click)="startMode('flip')">
           <ion-icon name="albums-outline"></ion-icon>
-          <span class="mode-name">{{ t('home.mode.flashcards') }}</span>
-          <span class="mode-desc">{{ t('home.mode.flashcards.desc') }}</span>
+          <span class="mode-name">{{ 'home.mode.flashcards' | translate }}</span>
+          <span class="mode-desc">{{ 'home.mode.flashcards.desc' | translate }}</span>
         </button>
 
         <button type="button" class="mode-card write" (click)="startMode('write')">
           <ion-icon name="create-outline"></ion-icon>
-          <span class="mode-name">{{ t('home.mode.write') }}</span>
-          <span class="mode-desc">{{ t('home.mode.write.desc') }}</span>
+          <span class="mode-name">{{ 'home.mode.write' | translate }}</span>
+          <span class="mode-desc">{{ 'home.mode.write.desc' | translate }}</span>
         </button>
 
         <button type="button" class="mode-card match" (click)="startMode('match')">
           <ion-icon name="git-compare-outline"></ion-icon>
-          <span class="mode-name">{{ t('home.mode.match') }}</span>
-          <span class="mode-desc">{{ t('home.mode.match.desc') }}</span>
+          <span class="mode-name">{{ 'home.mode.match' | translate }}</span>
+          <span class="mode-desc">{{ 'home.mode.match.desc' | translate }}</span>
         </button>
 
         <button type="button" class="mode-card quiz" (click)="startMode('quiz')">
           <ion-icon name="help-circle-outline"></ion-icon>
-          <span class="mode-name">{{ t('home.mode.quiz') }}</span>
-          <span class="mode-desc">{{ t('home.mode.quiz.desc') }}</span>
+          <span class="mode-name">{{ 'home.mode.quiz' | translate }}</span>
+          <span class="mode-desc">{{ 'home.mode.quiz.desc' | translate }}</span>
         </button>
       </div>
     </section>
@@ -89,14 +89,14 @@
     <section class="knowledge-section gamification">
       <div class="words-hero" (click)="openWords()" [class.tappable]="knowledge.total > 0">
         <div class="hero-top">
-          <h3 class="hero-title">{{ t('home.yourWords') }}</h3>
+          <h3 class="hero-title">{{ 'home.yourWords' | translate }}</h3>
           <ion-icon *ngIf="knowledge.total > 0" name="chevron-forward" class="hero-chevron"></ion-icon>
         </div>
 
         <!-- Studied: big total -->
         <div class="hero-total" *ngIf="knowledge.total > 0">
           <span class="hero-count">{{ knowledge.total }}</span>
-          <span class="hero-count-label">{{ t('home.wordsPracticed') }}</span>
+          <span class="hero-count-label">{{ 'home.wordsPracticed' | translate }}</span>
         </div>
 
         <!-- Proportional bar -->
@@ -111,23 +111,23 @@
           <span class="legend-item">
             <span class="swatch learning"></span>
             <span class="legend-count">{{ knowledge.learning }}</span>
-            <span class="legend-label">{{ t('home.level.learning') }}</span>
+            <span class="legend-label">{{ 'home.level.learning' | translate }}</span>
           </span>
           <span class="legend-item">
             <span class="swatch familiar"></span>
             <span class="legend-count">{{ knowledge.familiar }}</span>
-            <span class="legend-label">{{ t('home.level.familiar') }}</span>
+            <span class="legend-label">{{ 'home.level.familiar' | translate }}</span>
           </span>
           <span class="legend-item">
             <span class="swatch known"></span>
             <span class="legend-count">{{ knowledge.known }}</span>
-            <span class="legend-label">{{ t('home.level.known') }}</span>
+            <span class="legend-label">{{ 'home.level.known' | translate }}</span>
           </span>
         </div>
 
         <!-- Nothing studied yet -->
         <p class="hero-empty" *ngIf="knowledge.total === 0">
-          {{ t('home.wordsEmpty') }}
+          {{ 'home.wordsEmpty' | translate }}
         </p>
       </div>
     </section>

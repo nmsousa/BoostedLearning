@@ -8,7 +8,7 @@
  * @module app/flashcards/study
  */
 
-import { Component, OnInit, OnDestroy, inject, ViewChild, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ViewChild, HostListener, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController, IonInput, ToastController } from '@ionic/angular';
 import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
@@ -38,6 +38,7 @@ interface StudyCard {
   templateUrl: './study.page.html',
   styleUrls: ['./study.page.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StudyPage implements OnInit, OnDestroy {
   @ViewChild('answerInput') answerInput!: IonInput;

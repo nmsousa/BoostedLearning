@@ -1,16 +1,16 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button (click)="endStudy()" [attr.aria-label]="t('mode.close')">
+      <ion-button (click)="endStudy()" [attr.aria-label]="'mode.close' | translate">
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
     <ion-title>
-      <span *ngIf="levelNumber > 0">{{ t('mode.levelPrefix', { n: levelNumber }) }}</span>
-      {{ t('mode.titleWrite') }}
+      <span *ngIf="levelNumber > 0">{{ 'mode.levelPrefix' | translate:{ n: levelNumber } }}</span>
+      {{ 'mode.titleWrite' | translate }}
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="openMenu()" [attr.aria-label]="t('mode.addWord')">
+      <ion-button (click)="openMenu()" [attr.aria-label]="'mode.addWord' | translate">
         <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -43,9 +43,9 @@
             #answerInput
             [(ngModel)]="userAnswer"
             type="text"
-            [placeholder]="t('mode.typeYourAnswer')"
+            [placeholder]="'mode.typeYourAnswer' | translate"
             (keyup.enter)="submitAnswer()"
-            [attr.aria-label]="t('mode.typeYourAnswer')">
+            [attr.aria-label]="'mode.typeYourAnswer' | translate">
           </ion-input>
         </ion-item>
 
@@ -55,7 +55,7 @@
             (click)="submitAnswer()"
             [disabled]="!userAnswer.trim()"
             class="submit-button">
-            {{ t('mode.check') }}
+            {{ 'mode.check' | translate }}
           </ion-button>
           
           <ion-button
@@ -64,7 +64,7 @@
             (click)="showHint()"
             class="hint-button"
             [disabled]="hintExhausted"
-            [attr.aria-label]="t('mode.showHint')">
+            [attr.aria-label]="'mode.showHint' | translate">
             <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
           </ion-button>
         </div>
@@ -78,17 +78,17 @@
           <!-- Audio sits with the TARGET-language word (when it's the answer),
                so the speaker matches what's spoken. -->
           <span class="audio-actions" slot="end" *ngIf="currentDirection === 'en-to-target'">
-            <button type="button" class="audio-icon" (click)="playWord()" [attr.aria-label]="t('mode.playPronunciation')">
+            <button type="button" class="audio-icon" (click)="playWord()" [attr.aria-label]="'mode.playPronunciation' | translate">
               <ion-icon name="volume-high-outline"></ion-icon>
             </button>
-            <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="t('mode.playSlower')">
+            <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="'mode.playSlower' | translate">
               <ion-icon name="volume-low-outline"></ion-icon>
             </button>
           </span>
         </ion-item>
 
         <ion-button expand="block" color="success" (click)="nextCard()" class="submit-button">
-          {{ t('mode.continue') }}
+          {{ 'mode.continue' | translate }}
         </ion-button>
       </ng-container>
     </div>
@@ -107,7 +107,7 @@
       <!-- Almost: encouragement + a hint of the correct answer -->
       <ng-container *ngIf="feedbackResult === 'almost'">
         <div class="almost-hint">
-          <p class="hint-text">{{ t('mode.almostTypo') }}</p>
+          <p class="hint-text">{{ 'mode.almostTypo' | translate }}</p>
           <span class="user-attempt">
             <ion-icon name="alert-circle-outline"></ion-icon>
             {{ submittedAnswer }}
@@ -117,7 +117,7 @@
 
         <div class="button-row">
           <ion-button expand="block" color="warning" (click)="tryAgain()" class="submit-button">
-            {{ t('mode.tryAgain') }}
+            {{ 'mode.tryAgain' | translate }}
           </ion-button>
           <ion-button
             fill="outline"
@@ -125,12 +125,12 @@
             (click)="showHintInAlmost()"
             class="hint-button"
             [disabled]="hintExhausted"
-            [attr.aria-label]="t('mode.showHint')">
+            [attr.aria-label]="'mode.showHint' | translate">
             <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
           </ion-button>
         </div>
         <ion-button expand="block" fill="outline" (click)="acceptAlmost()" class="skip-button">
-          {{ t('mode.skip') }}
+          {{ 'mode.skip' | translate }}
         </ion-button>
       </ng-container>
 
@@ -140,7 +140,7 @@
         <ng-container *ngIf="revealedViaHint">
           <div class="revealed-label">
             <ion-icon name="bulb"></ion-icon>
-            <span>{{ revealedForms.length > 1 ? t('mode.acceptedAnswers') : t('mode.theAnswerIs') }}</span>
+            <span>{{ revealedForms.length > 1 ? ('mode.acceptedAnswers' | translate) : ('mode.theAnswerIs' | translate) }}</span>
           </div>
 
           <div class="answer-reveal">
@@ -152,7 +152,7 @@
         <ng-container *ngIf="!revealedViaHint">
           <div class="incorrect-label">
             <ion-icon name="close-circle"></ion-icon>
-            <span>{{ t('mode.incorrectLabel') }}</span>
+            <span>{{ 'mode.incorrectLabel' | translate }}</span>
           </div>
 
           <div class="answer-comparison">
@@ -164,12 +164,12 @@
 
         <!-- Alternatives if any -->
         <p *ngIf="alternativeAnswers.length > 0" class="alternatives">
-          {{ t('mode.alsoAccepted', { answers: alternativeAnswers.join(', ') }) }}
+          {{ 'mode.alsoAccepted' | translate:{ answers: alternativeAnswers.join(', ') } }}
         </p>
 
         <ion-button expand="block" [color]="revealedViaHint ? 'warning' : 'danger'" (click)="nextCard()" class="submit-button">
           <ion-icon name="arrow-forward" slot="end"></ion-icon>
-          {{ t('mode.continue') }}
+          {{ 'mode.continue' | translate }}
         </ion-button>
       </ng-container>
     </div>
@@ -185,36 +185,36 @@
 
     <h1>
       <ng-container *ngIf="earnedStars >= 1">
-        {{ levelNumber > 0 ? t('mode.levelComplete') : t('mode.studyComplete') }}
+        {{ levelNumber > 0 ? ('mode.levelComplete' | translate) : ('mode.studyComplete' | translate) }}
       </ng-container>
       <ng-container *ngIf="earnedStars === 0">
-        {{ t('mode.keepPracticing') }}
+        {{ 'mode.keepPracticing' | translate }}
       </ng-container>
     </h1>
     
-    <p *ngIf="isNewBest" class="new-best gamification">{{ t('mode.newBest') }}</p>
+    <p *ngIf="isNewBest" class="new-best gamification">{{ 'mode.newBest' | translate }}</p>
 
     <div class="summary-card">
       <div class="summary-stat">
         <span class="stat-value">{{ totalUnique }}</span>
-        <span class="stat-label">{{ t('mode.cards') }}</span>
+        <span class="stat-label">{{ 'mode.cards' | translate }}</span>
       </div>
       <div class="summary-stat">
         <span class="stat-value correct">{{ correctCount }}</span>
-        <span class="stat-label">{{ t('mode.correct') }}</span>
+        <span class="stat-label">{{ 'mode.correct' | translate }}</span>
       </div>
       <div class="summary-stat">
         <span class="stat-value incorrect">{{ incorrectCount }}</span>
-        <span class="stat-label">{{ t('mode.incorrect') }}</span>
+        <span class="stat-label">{{ 'mode.incorrect' | translate }}</span>
       </div>
       <div class="summary-stat">
         <span class="stat-value">{{ accuracy }}%</span>
-        <span class="stat-label">{{ t('mode.accuracy') }}</span>
+        <span class="stat-label">{{ 'mode.accuracy' | translate }}</span>
       </div>
     </div>
 
     <ion-button expand="block" (click)="finishStudy()" class="finish-button">
-      {{ t('mode.done') }}
+      {{ 'mode.done' | translate }}
     </ion-button>
   </div>
 </ion-content>

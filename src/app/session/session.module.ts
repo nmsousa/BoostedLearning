@@ -1,4 +1,5 @@
 import { NgModule } from '@angular/core';
+import { SharedModule } from '../shared/shared.module';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular/lazy';
@@ -10,7 +11,8 @@ import { SessionPage } from './session.page';
     CommonModule,
     FormsModule,
     IonicModule,
-    SessionPageRoutingModule
+    SessionPageRoutingModule,
+    SharedModule
   ],
   declarations: [SessionPage]
 })

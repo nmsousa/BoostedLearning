@@ -396,7 +396,9 @@ ion-button {
     height: 18px;
     border-radius: 3px;
     object-fit: cover;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    // Light hairline so flags whose edge colour matches the dark header
+    // (e.g. the blue stripe of the French flag) stay clearly separated.
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
     display: block;
   }
 

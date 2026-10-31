@@ -6,7 +6,7 @@
  * @module app/flashcards
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ActionSheetController, AlertController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck, DeckLevel, PracticeMode } from '../services/flashcard.service';
@@ -22,6 +22,7 @@ type DeckOrder = 'builtinFirst' | 'customFirst';
   templateUrl: './flashcards.page.html',
   styleUrls: ['./flashcards.page.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FlashcardsPage implements OnInit {
   private router = inject(Router);
@@ -118,6 +119,9 @@ export class FlashcardsPage implements OnInit {
       // Ignore storage errors.
     }
     this.sortDecks();
+    // Called from the header action sheet (outside template event binding),
+    // so explicitly mark the view for update under OnPush.
+    this.cdr.detectChanges();
   }
 
   /** Order decks by the current preference (stable within each group). */

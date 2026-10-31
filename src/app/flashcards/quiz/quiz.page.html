@@ -1,16 +1,16 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button (click)="close()" [attr.aria-label]="t('mode.close')">
+      <ion-button (click)="close()" [attr.aria-label]="'mode.close' | translate">
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
     <ion-title>
-      <span *ngIf="levelNumber > 0">{{ t('mode.levelPrefix', { n: levelNumber }) }}</span>
-      {{ t('mode.titleQuiz') }}
+      <span *ngIf="levelNumber > 0">{{ 'mode.levelPrefix' | translate:{ n: levelNumber } }}</span>
+      {{ 'mode.titleQuiz' | translate }}
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="openMenu()" [attr.aria-label]="t('mode.addWord')">
+      <ion-button (click)="openMenu()" [attr.aria-label]="'mode.addWord' | translate">
         <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -21,17 +21,17 @@
 <ion-content [fullscreen]="true" class="quiz-content">
   <!-- Play phase -->
   <div *ngIf="phase === 'play'" class="quiz-container">
-    <p class="quiz-hint">{{ t('mode.whichTranslation') }}</p>
+    <p class="quiz-hint">{{ 'mode.whichTranslation' | translate }}</p>
 
     <!-- Word + a single audio icon (recorded, with TTS fallback) -->
     <div class="quiz-prompt-row">
       <span class="word-anchor">
         <span class="quiz-prompt">{{ prompt }}</span>
         <span class="audio-actions">
-          <button type="button" class="audio-icon" (click)="playWord()" [attr.aria-label]="t('mode.playPronunciation')">
+          <button type="button" class="audio-icon" (click)="playWord()" [attr.aria-label]="'mode.playPronunciation' | translate">
             <ion-icon name="volume-high-outline"></ion-icon>
           </button>
-          <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="t('mode.playSlower')">
+          <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="'mode.playSlower' | translate">
             <ion-icon name="volume-low-outline"></ion-icon>
           </button>
         </span>
@@ -60,14 +60,14 @@
     </div>
     <div *ngIf="levelNumber === 0" class="complete-emoji gamification">🎉</div>
 
-    <h1>{{ t('mode.quizComplete') }}</h1>
-    <p *ngIf="isNewBest" class="new-best gamification">{{ t('mode.newBest') }}</p>
+    <h1>{{ 'mode.quizComplete' | translate }}</h1>
+    <p *ngIf="isNewBest" class="new-best gamification">{{ 'mode.newBest' | translate }}</p>
     <p class="complete-sub">
-      {{ t('mode.correctOfTotal', { correct: correctCount, total: total }) }}
+      {{ 'mode.correctOfTotal' | translate:{ correct: correctCount, total: total } }}
     </p>
 
     <ion-button expand="block" (click)="finish()" class="finish-button">
-      {{ t('mode.done') }}
+      {{ 'mode.done' | translate }}
     </ion-button>
   </div>
 </ion-content>

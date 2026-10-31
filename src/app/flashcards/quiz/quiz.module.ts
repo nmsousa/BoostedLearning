@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular/lazy';
 
 import { QuizPageRoutingModule } from './quiz-routing.module';
+import { SharedModule } from '../../shared/shared.module';
 
 import { QuizPage } from './quiz.page';
 
@@ -14,6 +15,7 @@ import { QuizPage } from './quiz.page';
     FormsModule,
     IonicModule,
     QuizPageRoutingModule,
+    SharedModule,
   ],
   declarations: [QuizPage],
 })

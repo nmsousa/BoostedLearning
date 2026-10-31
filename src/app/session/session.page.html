@@ -32,7 +32,7 @@
         </ion-button>
         <ion-button *ngIf="canSlowDown" fill="clear" (click)="playAudio(true)" aria-label="Play slow">
           <ion-icon slot="start" name="speedometer-outline"></ion-icon>
-          {{ t('audio.slowDown') }}
+          {{ 'audio.slowDown' | translate }}
         </ion-button>
       </div>
     </div>
@@ -46,7 +46,7 @@
         (click)="showHint()"
       >
         <ion-icon slot="start" name="bulb-outline"></ion-icon>
-        {{ t('hint.show') }}
+        {{ 'hint.show' | translate }}
       </ion-button>
       <p *ngIf="hintVisible" class="hint-text">
         <ion-icon name="bulb" color="warning"></ion-icon>
@@ -61,7 +61,7 @@
           #answerInput
           [(ngModel)]="userAnswer"
           type="text"
-          placeholder="{{ t('exercise.typeAnswer') }}"
+          placeholder="{{ 'exercise.typeAnswer' | translate }}"
           (keyup.enter)="submitAnswer()"
           aria-label="Your answer"
         ></ion-input>
@@ -73,7 +73,7 @@
         [disabled]="!userAnswer.trim()"
         class="submit-button"
       >
-        {{ t('common.submit') }}
+        {{ 'common.submit' | translate }}
       </ion-button>
     </div>
   </div>
@@ -89,15 +89,15 @@
     
     <h2 class="feedback-message">
       <ng-container [ngSwitch]="feedbackResult">
-        <span *ngSwitchCase="'correct'">{{ t('feedback.correct') }}</span>
-        <span *ngSwitchCase="'almost'">{{ t('feedback.almost') }}</span>
-        <span *ngSwitchDefault>{{ t('feedback.incorrect') }}</span>
+        <span *ngSwitchCase="'correct'">{{ 'feedback.correct' | translate }}</span>
+        <span *ngSwitchCase="'almost'">{{ 'feedback.almost' | translate }}</span>
+        <span *ngSwitchDefault>{{ 'feedback.incorrect' | translate }}</span>
       </ng-container>
     </h2>
     
     <!-- Show what user typed -->
     <div class="user-answer-section">
-      <p class="user-answer-label">{{ t('feedback.youTyped') }}</p>
+      <p class="user-answer-label">{{ 'feedback.youTyped' | translate }}</p>
       <p class="user-answer-text" 
          [class.correct]="feedbackResult === 'correct'"
          [class.almost]="feedbackResult === 'almost'"
@@ -106,7 +106,7 @@
     
     <!-- Show correct answer only when incorrect (not for "correct" or "almost") -->
     <div *ngIf="feedbackResult === 'incorrect'" class="correct-answer-section">
-      <p class="correct-answer-label">{{ t('feedback.correctAnswer', { answer: '' }) }}</p>
+      <p class="correct-answer-label">{{ 'feedback.correctAnswer' | translate:{ answer: '' } }}</p>
       <p class="correct-answer-text">{{ correctAnswer }}</p>
     </div>
     
@@ -124,16 +124,16 @@
       <div *ngSwitchCase="'almost'" class="action-buttons">
         <ion-button expand="block" color="warning" (click)="tryAgain()" class="retry-button">
           <ion-icon slot="start" name="refresh"></ion-icon>
-          {{ t('feedback.tryAgain') }}
+          {{ 'feedback.tryAgain' | translate }}
         </ion-button>
         <ion-button expand="block" fill="outline" (click)="acceptAlmost()" class="accept-button">
-          {{ t('common.continue') }}
+          {{ 'common.continue' | translate }}
         </ion-button>
       </div>
       
       <!-- Correct or Incorrect: continue -->
       <ion-button *ngSwitchDefault expand="block" (click)="nextExercise()" class="continue-button">
-        {{ t('common.continue') }}
+        {{ 'common.continue' | translate }}
       </ion-button>
     </ng-container>
   </div>
@@ -144,16 +144,16 @@
       <ion-icon name="trophy"></ion-icon>
     </div>
     
-    <h1>{{ t('session.complete') }}</h1>
+    <h1>{{ 'session.complete' | translate }}</h1>
     
     <div class="summary-card">
       <div class="summary-stat">
         <span class="stat-value">{{ getSummary().completedItems }}</span>
-        <span class="stat-label">{{ t('session.itemsStudied', { count: getSummary().completedItems }) }}</span>
+        <span class="stat-label">{{ 'session.itemsStudied' | translate:{ count: getSummary().completedItems } }}</span>
       </div>
       <div class="summary-stat">
         <span class="stat-value">{{ getSummary().accuracy }}%</span>
-        <span class="stat-label">{{ t('session.accuracy', { percent: getSummary().accuracy }) }}</span>
+        <span class="stat-label">{{ 'session.accuracy' | translate:{ percent: getSummary().accuracy } }}</span>
       </div>
       <div class="summary-stat" *ngIf="getSummary().durationMinutes > 0">
         <span class="stat-value">{{ getSummary().durationMinutes }}</span>
@@ -162,7 +162,7 @@
     </div>
     
     <ion-button expand="block" (click)="finishSession()">
-      {{ t('common.continue') }}
+      {{ 'common.continue' | translate }}
     </ion-button>
   </div>
 </ion-content>

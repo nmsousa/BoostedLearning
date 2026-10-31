@@ -9,7 +9,7 @@
  * @module app/flashcards/flip
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck, FlashcardRating } from '../../services/flashcard.service';
 import { ToastController } from '@ionic/angular';
@@ -25,6 +25,7 @@ type FlipPhase = 'card' | 'complete';
   templateUrl: './flip.page.html',
   styleUrls: ['./flip.page.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FlipPage implements OnInit {
   private route = inject(ActivatedRoute);

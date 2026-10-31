@@ -1,4 +1,5 @@
 import { NgModule } from '@angular/core';
+import { SharedModule } from '../shared/shared.module';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -15,7 +16,8 @@ import { FlashcardsPage } from './flashcards.page';
     FormsModule,
     HttpClientModule,
     IonicModule,
-    FlashcardsPageRoutingModule
+    FlashcardsPageRoutingModule,
+    SharedModule
   ],
   declarations: [FlashcardsPage]
 })

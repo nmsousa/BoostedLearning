@@ -6,7 +6,7 @@
  * @module app/home
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { ContentService } from '../services/content.service';
 import { SessionService } from '../services/session.service';
@@ -29,6 +29,7 @@ interface QuickAction {
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomePage implements OnInit {
   private content = inject(ContentService);
@@ -96,6 +97,7 @@ export class HomePage implements OnInit {
     this.settings.updateSetting('learningLanguage', code);
     // Refresh the breakdown so it reflects the newly-selected language.
     this.knowledge = this.flashcards.getKnowledgeBreakdown(code);
+    this.cdr.detectChanges();
   }
 
   constructor() {

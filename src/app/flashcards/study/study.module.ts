@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular/lazy';
 
 import { StudyPageRoutingModule } from './study-routing.module';
+import { SharedModule } from '../../shared/shared.module';
 
 import { StudyPage } from './study.page';
 
@@ -13,8 +14,9 @@ import { StudyPage } from './study.page';
     CommonModule,
     FormsModule,
     IonicModule,
-    StudyPageRoutingModule
+    StudyPageRoutingModule,
+    SharedModule,
   ],
-  declarations: [StudyPage]
+  declarations: [StudyPage],
 })
 export class StudyPageModule {}

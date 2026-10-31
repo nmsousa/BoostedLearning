@@ -1,16 +1,16 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button (click)="close()" [attr.aria-label]="t('mode.close')">
+      <ion-button (click)="close()" [attr.aria-label]="'mode.close' | translate">
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
     <ion-title>
-      <span *ngIf="levelNumber > 0">{{ t('mode.levelPrefix', { n: levelNumber }) }}</span>
-      {{ t('mode.titleFlip') }}
+      <span *ngIf="levelNumber > 0">{{ 'mode.levelPrefix' | translate:{ n: levelNumber } }}</span>
+      {{ 'mode.titleFlip' | translate }}
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="openMenu()" [attr.aria-label]="t('mode.addWord')">
+      <ion-button (click)="openMenu()" [attr.aria-label]="'mode.addWord' | translate">
         <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -38,10 +38,10 @@
             <span class="word-anchor">
               <h1 class="card-word">{{ frontText }}</h1>
               <span class="audio-actions">
-                <button type="button" class="audio-icon" (click)="playWord($event)" [attr.aria-label]="t('mode.playPronunciation')">
+                <button type="button" class="audio-icon" (click)="playWord($event)" [attr.aria-label]="'mode.playPronunciation' | translate">
                   <ion-icon name="volume-high-outline"></ion-icon>
                 </button>
-                <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord($event, true)" [attr.aria-label]="t('mode.playSlower')">
+                <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord($event, true)" [attr.aria-label]="'mode.playSlower' | translate">
                   <ion-icon name="volume-low-outline"></ion-icon>
                 </button>
               </span>
@@ -49,16 +49,16 @@
           </div>
           <span class="tap-hint">
             <ion-icon name="sync-outline"></ion-icon>
-            {{ t('mode.tapToFlip') }}
+            {{ 'mode.tapToFlip' | translate }}
           </span>
         </div>
         <!-- Back: English -->
         <div class="flip-card-face flip-card-back">
-          <span class="lang-tag">{{ t('mode.langEnglish') }}</span>
+          <span class="lang-tag">{{ 'mode.langEnglish' | translate }}</span>
           <h1 class="card-word">{{ backText }}</h1>
           <span class="tap-hint">
             <ion-icon name="sync-outline"></ion-icon>
-            {{ t('mode.tapToFlipBack') }}
+            {{ 'mode.tapToFlipBack' | translate }}
           </span>
         </div>
       </div>
@@ -67,21 +67,21 @@
     <!-- Rating buttons: always available; flipping to check is optional -->
     <div class="rating-area">
       <p class="rating-prompt">
-        {{ isFlipped ? t('mode.howWellKnew') : t('mode.howWellKnow') }}
+        {{ isFlipped ? ('mode.howWellKnew' | translate) : ('mode.howWellKnow' | translate) }}
       </p>
 
       <div class="rating-buttons">
-        <button type="button" class="rate-btn hard" [class.pending]="pendingRating === 'hard'" (click)="rate('hard')" [attr.aria-label]="t('mode.dontKnow')">
+        <button type="button" class="rate-btn hard" [class.pending]="pendingRating === 'hard'" (click)="rate('hard')" [attr.aria-label]="'mode.dontKnow' | translate">
           <span class="emoji">😢</span>
-          <span class="rate-label">{{ t('mode.dontKnow') }}</span>
+          <span class="rate-label">{{ 'mode.dontKnow' | translate }}</span>
         </button>
-        <button type="button" class="rate-btn medium" [class.pending]="pendingRating === 'medium'" (click)="rate('medium')" [attr.aria-label]="t('mode.soso')">
+        <button type="button" class="rate-btn medium" [class.pending]="pendingRating === 'medium'" (click)="rate('medium')" [attr.aria-label]="'mode.soso' | translate">
           <span class="emoji">😐</span>
-          <span class="rate-label">{{ t('mode.soso') }}</span>
+          <span class="rate-label">{{ 'mode.soso' | translate }}</span>
         </button>
-        <button type="button" class="rate-btn easy" [class.pending]="pendingRating === 'easy'" (click)="rate('easy')" [attr.aria-label]="t('mode.knowIt')">
+        <button type="button" class="rate-btn easy" [class.pending]="pendingRating === 'easy'" (click)="rate('easy')" [attr.aria-label]="'mode.knowIt' | translate">
           <span class="emoji">😎</span>
-          <span class="rate-label">{{ t('mode.knowIt') }}</span>
+          <span class="rate-label">{{ 'mode.knowIt' | translate }}</span>
         </button>
       </div>
     </div>
@@ -98,33 +98,33 @@
     <div *ngIf="levelNumber === 0" class="complete-emoji gamification">🎉</div>
 
     <h1>
-      <ng-container *ngIf="levelNumber > 0 && earnedStars >= 1">{{ t('mode.levelComplete') }}</ng-container>
-      <ng-container *ngIf="levelNumber > 0 && earnedStars === 0">{{ t('mode.keepPracticing') }}</ng-container>
-      <ng-container *ngIf="levelNumber === 0">{{ t('mode.sessionComplete') }}</ng-container>
+      <ng-container *ngIf="levelNumber > 0 && earnedStars >= 1">{{ 'mode.levelComplete' | translate }}</ng-container>
+      <ng-container *ngIf="levelNumber > 0 && earnedStars === 0">{{ 'mode.keepPracticing' | translate }}</ng-container>
+      <ng-container *ngIf="levelNumber === 0">{{ 'mode.sessionComplete' | translate }}</ng-container>
     </h1>
-    <p *ngIf="isNewBest" class="new-best gamification">{{ t('mode.newBest') }}</p>
-    <p class="complete-sub">{{ t('mode.niceWork') }}</p>
+    <p *ngIf="isNewBest" class="new-best gamification">{{ 'mode.newBest' | translate }}</p>
+    <p class="complete-sub">{{ 'mode.niceWork' | translate }}</p>
 
     <div class="summary-card">
       <div class="summary-stat">
         <span class="emoji">😢</span>
         <span class="stat-value hard">{{ ratedHard }}</span>
-        <span class="stat-label">{{ t('mode.dontKnow') }}</span>
+        <span class="stat-label">{{ 'mode.dontKnow' | translate }}</span>
       </div>
       <div class="summary-stat">
         <span class="emoji">😐</span>
         <span class="stat-value medium">{{ ratedMedium }}</span>
-        <span class="stat-label">{{ t('mode.soso') }}</span>
+        <span class="stat-label">{{ 'mode.soso' | translate }}</span>
       </div>
       <div class="summary-stat">
         <span class="emoji">😎</span>
         <span class="stat-value easy">{{ ratedEasy }}</span>
-        <span class="stat-label">{{ t('mode.knowIt') }}</span>
+        <span class="stat-label">{{ 'mode.knowIt' | translate }}</span>
       </div>
     </div>
 
     <ion-button expand="block" (click)="finish()" class="finish-button">
-      {{ t('mode.done') }}
+      {{ 'mode.done' | translate }}
     </ion-button>
   </div>
 </ion-content>

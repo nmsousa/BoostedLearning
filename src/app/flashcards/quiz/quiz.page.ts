@@ -9,7 +9,7 @@
  * @module app/flashcards/quiz
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
 import { ToastController } from '@ionic/angular';
@@ -33,6 +33,7 @@ interface QuizOption {
   templateUrl: './quiz.page.html',
   styleUrls: ['./quiz.page.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QuizPage implements OnInit {
   private route = inject(ActivatedRoute);

@@ -12,7 +12,7 @@
  * @module app/words
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { ActionSheetController } from '@ionic/angular';
 import { FlashcardService, StudiedWord, WordPriority } from '../services/flashcard.service';
@@ -29,6 +29,7 @@ type SortKey = 'needsPractice' | 'mostSeen' | 'leastSeen' | 'accuracyHigh' | 'ac
   templateUrl: './words.page.html',
   styleUrls: ['./words.page.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WordsPage implements OnInit {
   private router = inject(Router);

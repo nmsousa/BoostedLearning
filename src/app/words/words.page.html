@@ -3,7 +3,7 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>{{ t('words.title') }}</ion-title>
+    <ion-title>{{ 'words.title' | translate }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -12,7 +12,7 @@
   <ion-searchbar
     class="words-search"
     [value]="search"
-    [placeholder]="t('words.search')"
+    [placeholder]="'words.search' | translate"
     [debounce]="150"
     (ionInput)="onSearch($event)"
     (ionClear)="onSearch($event)">
@@ -22,7 +22,7 @@
        the full list of options appears inside the popover when tapped. -->
   <div class="sort-row">
     <ion-icon name="swap-vertical-outline" class="sort-icon" aria-hidden="true"></ion-icon>
-    <span class="sort-prefix">{{ t('words.sortBy') }}:</span>
+    <span class="sort-prefix">{{ 'words.sortBy' | translate }}:</span>
     <ion-select
       class="sort-select"
       [value]="sortKey"
@@ -31,7 +31,7 @@
       aria-label="Sort words"
       (ionChange)="onSortChange($event)">
       <ion-select-option *ngFor="let opt of sortOptions" [value]="opt.value">
-        {{ t(opt.labelKey) }}
+        {{ opt.labelKey | translate }}
       </ion-select-option>
     </ion-select>
   </div>
@@ -41,21 +41,21 @@
        also shows its label. Keeps the row on one line. -->
   <div class="filter-row">
     <ion-chip [class.active]="filter === 'all'" (click)="setFilter('all')">
-      {{ t('words.all') }} ({{ count('all') }})
+      {{ 'words.all' | translate }} ({{ count('all') }})
     </ion-chip>
     <ion-chip class="learning" [class.active]="filter === 'learning'" (click)="setFilter('learning')">
       <span class="chip-dot learning"></span>
-      <span class="chip-label" *ngIf="filter === 'learning'">{{ t('home.level.learning') }}</span>
+      <span class="chip-label" *ngIf="filter === 'learning'">{{ 'home.level.learning' | translate }}</span>
       ({{ count('learning') }})
     </ion-chip>
     <ion-chip class="familiar" [class.active]="filter === 'familiar'" (click)="setFilter('familiar')">
       <span class="chip-dot familiar"></span>
-      <span class="chip-label" *ngIf="filter === 'familiar'">{{ t('home.level.familiar') }}</span>
+      <span class="chip-label" *ngIf="filter === 'familiar'">{{ 'home.level.familiar' | translate }}</span>
       ({{ count('familiar') }})
     </ion-chip>
     <ion-chip class="known" [class.active]="filter === 'known'" (click)="setFilter('known')">
       <span class="chip-dot known"></span>
-      <span class="chip-label" *ngIf="filter === 'known'">{{ t('home.level.known') }}</span>
+      <span class="chip-label" *ngIf="filter === 'known'">{{ 'home.level.known' | translate }}</span>
       ({{ count('known') }})
     </ion-chip>
   </div>
@@ -63,27 +63,27 @@
   <!-- Status filter: only shown once the user has hidden at least one word. -->
   <div class="filter-row status-row" *ngIf="hasHiddenWords">
     <ion-chip [class.active]="statusFilter === 'all'" (click)="setStatusFilter('all')">
-      {{ t('words.all') }}
+      {{ 'words.all' | translate }}
     </ion-chip>
     <ion-chip [class.active]="statusFilter === 'enabled'" (click)="setStatusFilter('enabled')">
-      {{ t('words.status.enabled') }} ({{ countEnabled() }})
+      {{ 'words.status.enabled' | translate }} ({{ countEnabled() }})
     </ion-chip>
     <ion-chip [class.active]="statusFilter === 'hidden'" (click)="setStatusFilter('hidden')">
       <ion-icon name="eye-off-outline"></ion-icon>
-      {{ t('words.status.hidden') }} ({{ countHidden() }})
+      {{ 'words.status.hidden' | translate }} ({{ countHidden() }})
     </ion-chip>
   </div>
 
   <!-- Empty state (no practiced words at all) -->
   <div *ngIf="allWords.length === 0" class="empty">
     <ion-icon name="book-outline"></ion-icon>
-    <p>{{ t('words.empty') }}</p>
+    <p>{{ 'words.empty' | translate }}</p>
   </div>
 
   <!-- No search/filter results -->
   <div *ngIf="allWords.length > 0 && words.length === 0" class="empty">
     <ion-icon name="search-outline"></ion-icon>
-    <p>{{ t('words.noResults') }}</p>
+    <p>{{ 'words.noResults' | translate }}</p>
   </div>
 
   <!-- Word list -->
@@ -107,7 +107,7 @@
         <span class="stat wrong" title="Incorrect">✗ {{ w.incorrect }}</span>
         <span class="stat acc">{{ accuracyPct(w) }}%</span>
         <button type="button" class="priority-btn" (click)="openPriority(w, $event)"
-          [attr.aria-label]="t('words.sortBy')">
+          [attr.aria-label]="'words.sortBy' | translate">
           <ion-icon name="ellipsis-vertical"></ion-icon>
         </button>
       </div>

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular/lazy';
 
 import { MatchPageRoutingModule } from './match-routing.module';
+import { SharedModule } from '../../shared/shared.module';
 
 import { MatchPage } from './match.page';
 
@@ -14,6 +15,7 @@ import { MatchPage } from './match.page';
     FormsModule,
     IonicModule,
     MatchPageRoutingModule,
+    SharedModule,
   ],
   declarations: [MatchPage],
 })
