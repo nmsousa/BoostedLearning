@@ -162,6 +162,39 @@ export function createTTSService(provider?: SpeechSynthesisProvider): TTSService
     voice = voices.find(v => v.lang.toLowerCase().startsWith(langBase));
     return voice;
   };
+
+  /**
+   * Wait (briefly) for the voice list to populate. On Android WebView
+   * `getVoices()` is often empty until the `voiceschanged` event fires (and
+   * sometimes only after the first `speak()` call), so we give it a short
+   * grace period before giving up. Resolves as soon as voices appear.
+   */
+  const ensureVoicesLoaded = (timeoutMs = 1000): Promise<SpeechSynthesisVoice[]> => {
+    const current = loadVoices();
+    if (current.length > 0 || !synthesis) return Promise.resolve(current);
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        resolve(loadVoices());
+      };
+
+      const synth = synthesis as unknown as EventTarget;
+      if (typeof synth.addEventListener === 'function') {
+        synth.addEventListener('voiceschanged', done, { once: true } as AddEventListenerOptions);
+      }
+      // Poll as a backstop (some WebViews don't fire voiceschanged reliably).
+      const start = Date.now();
+      const poll = setInterval(() => {
+        if (loadVoices().length > 0 || Date.now() - start >= timeoutMs) {
+          clearInterval(poll);
+          done();
+        }
+      }, 100);
+    });
+  };
   
   return {
     async speak(text: string, options: TTSOptions): Promise<TTSResult> {
@@ -172,11 +205,19 @@ export function createTTSService(provider?: SpeechSynthesisProvider): TTSService
       if (!text || text.trim().length === 0) {
         return { success: false, error: 'Empty text provided' };
       }
-      
-      const voice = findVoiceFor(options.lang);
-      if (!voice) {
-        return { success: false, error: `No voice available for language: ${options.lang}` };
+
+      // Give voices a chance to load ONLY when they're not ready yet (Android
+      // loads them lazily). When voices are already present we avoid any async
+      // gap so `synthesis.speak()` runs synchronously within this call.
+      if (loadVoices().length === 0) {
+        await ensureVoicesLoaded();
       }
+      const voice = findVoiceFor(options.lang);
+
+      // NOTE: we do NOT bail out when no voice is found. On Android the voice
+      // list can stay empty even though the engine CAN speak — it picks a voice
+      // from `utterance.lang`. So we attempt to speak regardless and only
+      // report failure if the engine actually errors.
       
       return new Promise((resolve) => {
         try {
@@ -184,7 +225,7 @@ export function createTTSService(provider?: SpeechSynthesisProvider): TTSService
           synthesis.cancel();
           
           const utterance = new SpeechSynthesisUtterance(text);
-          utterance.voice = voice;
+          if (voice) utterance.voice = voice;   // else let the engine choose by lang
           utterance.lang = options.lang;
           utterance.rate = Math.max(0.1, Math.min(10, options.rate ?? 1.0));
           utterance.pitch = Math.max(0, Math.min(2, options.pitch ?? 1.0));
@@ -222,6 +263,13 @@ export function createTTSService(provider?: SpeechSynthesisProvider): TTSService
     },
     
     hasVoiceFor(lang: string): boolean {
+      // No engine at all → definitively no voice.
+      if (!synthesis) return false;
+      // Engine present but the voice list hasn't populated yet (common on
+      // Android, where it loads lazily or only after the first speak): be
+      // optimistic so the UI doesn't block playback. We only return false when
+      // voices ARE loaded and none match the language.
+      if (loadVoices().length === 0) return true;
       return findVoiceFor(lang) !== undefined;
     },
     

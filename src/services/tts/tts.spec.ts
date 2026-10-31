@@ -260,8 +260,16 @@ describe('TTS Service', () => {
               const qLang = queryLang.toLowerCase();
               return vLang === qLang || vLang.startsWith(baseLang.toLowerCase());
             });
-            
-            expect(hasVoice).toBe(actuallyHasVoice);
+
+            if (voices.length === 0) {
+              // Android resilience: when the engine reports NO voices yet (they
+              // load lazily), hasVoiceFor is optimistic and returns true so the
+              // UI doesn't block playback. Only when voices ARE present does it
+              // report the real match.
+              expect(hasVoice).toBe(true);
+            } else {
+              expect(hasVoice).toBe(actuallyHasVoice);
+            }
           }
         ),
         { numRuns: 100 }
@@ -340,14 +348,24 @@ describe('TTS Service', () => {
       expect(provider.lastUtterance?.rate).toBe(1.0);
     });
     
-    it('should fail gracefully when no voice available', async () => {
+    it('should still attempt to speak when no exact voice matches (engine picks by lang)', async () => {
+      // Android resilience: the voice list may not contain the requested
+      // language (or may be empty), yet the engine can still speak using the
+      // utterance's `lang`. We attempt playback and let the engine decide,
+      // rather than pre-emptively failing with "no voice".
       const provider = createMockProvider([createMockVoice('nl-NL')]);
       const service = createTTSService(provider);
-      
-      const result = await service.speak('Bonjour', { lang: 'fr-FR' });
-      
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('No voice available');
+
+      const speakPromise = service.speak('Bonjour', { lang: 'fr-FR' });
+
+      // The utterance was dispatched with no matched voice; lang carries the hint.
+      expect(provider.speakCalled).toBe(true);
+      expect(provider.lastUtterance?.voice).toBeNull();
+      expect(provider.lastUtterance?.lang).toBe('fr-FR');
+
+      provider.simulateSpeechEnd();
+      const result = await speakPromise;
+      expect(result.success).toBe(true);
     });
     
     it('should fail gracefully with empty text', async () => {
