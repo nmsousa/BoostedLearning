@@ -22,6 +22,10 @@ export interface ModeMenuOptions {
   currentWord?: string | null;
   /** Called after the current word was hidden (e.g. to advance the card). */
   onHidden?: () => void;
+  /** Practice mode name (e.g. 'Quiz'), included in a problem report. */
+  modeName?: string;
+  /** The expected/correct answer for the current word (for a report). */
+  correctAnswer?: string | null;
 }
 
 @Injectable({
@@ -34,6 +38,9 @@ export class AddWordService {
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
+
+  /** Where problem reports are delivered (same address as the card export). */
+  private readonly FEEDBACK_EMAIL = 'wizard.night@gmail.com';
 
   /** Localized display name of a language code, falling back to the code. */
   private langName(code: string): string {
@@ -72,10 +79,90 @@ export class AddWordService {
       });
     }
 
+    // Report a problem with the current word/exercise.
+    buttons.push({
+      text: t('feedback.report'),
+      icon: 'flag-outline',
+      handler: () => { this.reportProblem(opts, lang); },
+    });
+
     buttons.push({ text: t('common.cancel'), icon: 'close-outline', role: 'cancel' });
 
     const sheet = await this.actionSheet.create({ buttons, cssClass: 'mode-menu-sheet' });
     await sheet.present();
+  }
+
+  /**
+   * Show a short "report a problem" form (checkbox reasons + optional note) and
+   * deliver the report to the developer by composing a mailto: — the same
+   * channel used by the custom-card export. The current word, mode, language
+   * and expected answer are attached so a report is actionable.
+   */
+  async reportProblem(opts: ModeMenuOptions = {}, langCode?: string): Promise<void> {
+    const t = (k: string, p?: Record<string, string | number>) => this.i18n.t(k, p);
+    const lang = langCode ?? opts.languageCode ?? this.settings.learningLanguage();
+
+    const reasons: { value: string; labelKey: string }[] = [
+      { value: 'translationWrong', labelKey: 'feedback.reason.translationWrong' },
+      { value: 'answerShouldCount', labelKey: 'feedback.reason.answerShouldCount' },
+      { value: 'audioWrong', labelKey: 'feedback.reason.audioWrong' },
+      { value: 'audioMissing', labelKey: 'feedback.reason.audioMissing' },
+      { value: 'optionsConfusing', labelKey: 'feedback.reason.optionsConfusing' },
+      { value: 'other', labelKey: 'feedback.reason.other' },
+    ];
+
+    const alert = await this.alertCtrl.create({
+      header: t('feedback.report'),
+      message: opts.currentWord
+        ? t('feedback.aboutWord', { word: opts.currentWord })
+        : t('feedback.intro'),
+      inputs: reasons.map(r => ({
+        type: 'checkbox' as const,
+        label: t(r.labelKey),
+        value: r.value,
+      })),
+      buttons: [
+        { text: t('common.cancel'), role: 'cancel' },
+        {
+          text: t('feedback.submit'),
+          handler: (checked: string[]) => {
+            this.sendReport(checked, opts, lang);
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  /** Compose and open the problem report as an email to the developer. */
+  private sendReport(checkedReasons: string[], opts: ModeMenuOptions, lang: string): void {
+    const t = (k: string, p?: Record<string, string | number>) => this.i18n.t(k, p);
+
+    // Ionic passes the checked checkbox VALUES as the handler argument.
+    const reasonLabels = (checkedReasons ?? []).map(v => t(`feedback.reason.${v}`)).join('; ');
+
+    const subject = `Boostionary feedback: ${opts.currentWord ?? '(no word)'}`;
+    const bodyLines = [
+      t('feedback.report'),
+      '',
+      `Word: ${opts.currentWord ?? '-'}`,
+      `Expected answer: ${opts.correctAnswer ?? '-'}`,
+      `Mode: ${opts.modeName ?? '-'}`,
+      `Learning language: ${this.langName(lang)} (${lang})`,
+      `Base language: ${this.langName(this.settings.baseLanguage())}`,
+      '',
+      `Reasons: ${reasonLabels || '-'}`,
+      '',
+      '---',
+      '(Add any extra detail above this line.)',
+    ];
+
+    const mailto =
+      `mailto:${this.FEEDBACK_EMAIL}` +
+      `?subject=${encodeURIComponent(subject)}` +
+      `&body=${encodeURIComponent(bodyLines.join('\n'))}`;
+
+    window.location.href = mailto;
   }
 
   /**

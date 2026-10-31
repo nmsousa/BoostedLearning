@@ -81,8 +81,21 @@ ion-app {
 
 // Scale the whole app's typography. Ionic sizes most text in rem/relative
 // units off the root font-size, so scaling it resizes the UI consistently.
+// The app was tuned on a wide desktop window and felt a touch small/cramped on
+// phones, so nudge the base size up a little on narrow (touch) screens — this
+// enlarges text, cards and rem-based spacing app-wide without a per-page
+// redesign. The user's Text-size setting (`--text-scale`) still multiplies on
+// top of this.
 html {
-  font-size: calc(16px * var(--text-scale));
+  --base-font-size: 16px;
+  font-size: calc(var(--base-font-size) * var(--text-scale));
+}
+
+// Phones / narrow viewports: bump the base so the UI reads larger.
+@media (max-width: 600px) {
+  html {
+    --base-font-size: 17.5px;
+  }
 }
 
 // Reduced motion: neutralize animations and transitions app-wide. Covers the

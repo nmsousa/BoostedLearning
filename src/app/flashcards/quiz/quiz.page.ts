@@ -55,6 +55,8 @@ export class QuizPage implements OnInit {
     await this.addWordService.openModeMenu({
       languageCode: this.deck?.languageCode,
       currentWord: this.currentCard?.text ?? null,
+      correctAnswer: this.currentCard ? this.flashcardService.bestTranslation(this.currentCard) : null,
+      modeName: this.t('mode.titleQuiz'),
       onHidden: () => this.skipHiddenCard(),
     });
   }
@@ -196,7 +198,7 @@ export class QuizPage implements OnInit {
         return tl && tl !== correctLabel.toLowerCase() && tl !== promptLower;
       });
 
-    const distractors = this.shuffle([...new Set(pool)]).slice(0, this.OPTION_COUNT - 1);
+    const distractors = this.pickDistractors(pool, correctLabel, this.OPTION_COUNT - 1);
 
     const labels = this.shuffle([correctLabel, ...distractors]);
     this.options = labels.map(label => ({
@@ -205,6 +207,36 @@ export class QuizPage implements OnInit {
       revealed: false,
       chosen: false,
     }));
+  }
+
+  /** Number of words in a translation label. */
+  private wordCount(s: string): number {
+    return s.trim().split(/\s+/).filter(Boolean).length;
+  }
+
+  /**
+   * Pick `n` distractors that, as much as possible, have the SAME word count as
+   * the correct answer — so a 1-word answer isn't given away by a long
+   * multi-word option. We prefer exact word-count matches, then fall back to
+   * the nearest counts, so we always return `n` options even in small decks.
+   */
+  private pickDistractors(pool: string[], correctLabel: string, n: number): string[] {
+    const unique = [...new Set(pool)];
+    const target = this.wordCount(correctLabel);
+
+    // Group by |wordCount - target| so exact matches come first (distance 0),
+    // then 1-off, etc. Shuffle within each distance band for variety.
+    const byDistance = new Map<number, string[]>();
+    for (const s of unique) {
+      const d = Math.abs(this.wordCount(s) - target);
+      (byDistance.get(d) ?? byDistance.set(d, []).get(d)!).push(s);
+    }
+
+    const ordered: string[] = [];
+    for (const d of [...byDistance.keys()].sort((a, b) => a - b)) {
+      ordered.push(...this.shuffle(byDistance.get(d)!));
+    }
+    return ordered.slice(0, n);
   }
 
   choose(option: QuizOption) {

@@ -47,6 +47,8 @@ export class FlipPage implements OnInit {
     await this.addWordService.openModeMenu({
       languageCode: this.deck?.languageCode,
       currentWord: this.currentCard?.text ?? null,
+      correctAnswer: this.currentCard ? this.flashcardService.bestTranslation(this.currentCard) : null,
+      modeName: this.t('mode.titleFlip'),
       onHidden: () => this.skipHiddenCard(),
     });
   }

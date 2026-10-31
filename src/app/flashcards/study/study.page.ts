@@ -59,6 +59,8 @@ export class StudyPage implements OnInit, OnDestroy {
     await this.addWordService.openModeMenu({
       languageCode: this.deck?.languageCode,
       currentWord: this.currentCard?.text ?? null,
+      correctAnswer: this.targetWord ?? null,
+      modeName: this.t('mode.titleWrite'),
       onHidden: () => this.nextCard(),
     });
   }
