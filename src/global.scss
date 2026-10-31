@@ -128,3 +128,52 @@ ion-popover .lang-list {
     height: 40px;
   }
 }
+
+// --------------------------------------------------------------------------
+// Your Words filter/sort popovers (ion-select interface="popover").
+// These render in a portal at the document root (as <ion-select-popover>),
+// so they need global rules. Verified DOM (Ionic 9):
+//   ion-select-popover > ion-list
+//     > ion-list-header            (the "Levels" / "Sort by" title)
+//     > ion-item (one per option)  (checkbox/radio + label)
+// --------------------------------------------------------------------------
+
+// A divider line under the popover header, separating the title from options.
+.levels-popover,
+.sort-popover {
+  ion-list-header {
+    border-bottom: 1px solid var(--ion-color-step-150, #2a3744);
+    margin-bottom: 4px;
+    min-height: 40px;
+    font-weight: 700;
+  }
+
+  ion-list {
+    padding-top: 0;
+  }
+}
+
+// Coloured dots for each knowledge level in the Levels popover, mirroring the
+// old filter badges (red = learning, amber = familiar, green = known). The
+// options render in a fixed order, so target the items by position. The dot is
+// a leading pseudo-element on each ion-item's native part.
+.levels-popover {
+  ion-item::part(native) {
+    position: relative;
+    padding-inline-start: 26px;
+  }
+
+  ion-item::part(native)::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  ion-item:nth-of-type(1)::part(native)::before { background: var(--ion-color-danger); }  // Learning
+  ion-item:nth-of-type(2)::part(native)::before { background: var(--ion-color-warning); } // Familiar
+  ion-item:nth-of-type(3)::part(native)::before { background: var(--ion-color-success); } // Known
+}
