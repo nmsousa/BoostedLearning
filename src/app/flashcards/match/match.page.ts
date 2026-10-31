@@ -347,11 +347,37 @@ export class MatchPage implements OnInit, OnDestroy {
     return a;
   }
 
-  /** A comfortable pace, in seconds per pair, used as the no-penalty target. */
-  private readonly SECONDS_PER_PAIR = 2.5;
+  // --- Difficulty curve for the time target ---------------------------------
+  // The no-penalty pace (seconds allowed per pair for a full-time run) starts
+  // generous on the first levels and tightens every few levels, down to a
+  // floor. This keeps early levels forgiving and makes 3 stars progressively
+  // harder to earn as the learner advances.
+  /** Pace on the easiest (first) levels. */
+  private readonly BASE_SECONDS_PER_PAIR = 2.2;
+  /** Tightest pace the curve can reach (hardest levels). */
+  private readonly MIN_SECONDS_PER_PAIR = 1.1;
+  /** How much the pace tightens at each step. */
+  private readonly PACE_STEP = 0.2;
+  /** Number of levels per difficulty step. */
+  private readonly LEVELS_PER_STEP = 3;
+
   /** Lowest the time multiplier can drag the score (so a slow-but-perfect run
    *  can still earn stars). */
   private readonly MIN_TIME_FACTOR = 0.6;
+
+  /**
+   * Seconds-per-pair target for the current level. Level 0 (quick study, no
+   * level) uses the base pace. Every LEVELS_PER_STEP levels the target drops
+   * by PACE_STEP, bottoming out at MIN_SECONDS_PER_PAIR.
+   */
+  private get secondsPerPair(): number {
+    const lvl = Math.max(1, this.levelNumber || 1);
+    const steps = Math.floor((lvl - 1) / this.LEVELS_PER_STEP);
+    return Math.max(
+      this.MIN_SECONDS_PER_PAIR,
+      this.BASE_SECONDS_PER_PAIR - steps * this.PACE_STEP
+    );
+  }
 
   /**
    * Final score combines accuracy and speed:
@@ -365,7 +391,7 @@ export class MatchPage implements OnInit, OnDestroy {
     if (total === 0) return 0;
     const accuracy = cleanPairs / total;
 
-    const targetSeconds = total * this.SECONDS_PER_PAIR;
+    const targetSeconds = total * this.secondsPerPair;
     const elapsed = Math.max(1, this.elapsedSeconds);
     const timeFactor = Math.min(
       1,
@@ -396,7 +422,7 @@ export class MatchPage implements OnInit, OnDestroy {
     if (stars >= 3) return '';
     const nextTier = (stars + 1) as 1 | 2 | 3;
     const thresholdPct = this.STAR_THRESHOLDS[nextTier];
-    const targetSeconds = total * this.SECONDS_PER_PAIR;
+    const targetSeconds = total * this.secondsPerPair;
     // Max time (with a flawless run) to still hit the next tier.
     const maxSeconds = (targetSeconds * 100) / thresholdPct;
     return this.t(nextTier === 1 ? 'mode.nextStarHint1' : 'mode.nextStarHintN', {
