@@ -81,5 +81,5 @@ md += `${possessiveHeavy.length} words. The app picks the first non-possessive s
 md += `| French | Now shows | All scraped options | Skill |\n|---|---|---|---|\n`;
 for (const r of possessiveHeavy) md += `| ${esc(r.text)} | ${esc(r.shown)} | ${esc(r.all.join(' · '))} | ${esc(r.skill || '')} |\n`;
 
-writeFileSync('scripts/french-translation-audit.md', md, 'utf8');
+writeFileSync('docs/french-translation-audit.md', md, 'utf8');
 console.log('unique', seen.size, 'curated', curatedRows.length, 'noClean', noClean.length, 'possessiveHeavy', possessiveHeavy.length);

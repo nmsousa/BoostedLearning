@@ -58,7 +58,7 @@ To finish and un-hide:
 Status: **not implemented** — list ready, awaiting validation.
 
 An audit of ALL French translations was generated at
-`scripts/french-translation-audit.md` (256 entries flagged, 4 with no good
+`docs/french-translation-audit.md` (256 entries flagged, 4 with no good
 option). Each flagged entry shows the current translation vs. a suggested one.
 
 To do: go through the list, confirm/correct the suggestions using real French

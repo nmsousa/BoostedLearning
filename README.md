@@ -127,4 +127,4 @@ src/
 
 ## License
 
-See [DEPENDENCIES.md](./DEPENDENCIES.md) for third-party license information.
+See [docs/DEPENDENCIES.md](./docs/DEPENDENCIES.md) for third-party license information.
