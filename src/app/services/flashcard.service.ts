@@ -239,6 +239,7 @@ export class FlashcardService {
       
       // Combine all decks
       this.decksSignal.set([...bundledDecks, ...userDecks]);
+      this.invalidateDedupe();
       this.initialized = true;
       console.log('[FlashcardService] Initialization complete!');
       
@@ -462,6 +463,7 @@ export class FlashcardService {
     }
     
     deck.updatedAt = now;
+    this.invalidateDedupe(deck.id);
     
     // Save deck to IndexedDB
     const deckEntity: FlashcardDeckEntity = {
@@ -652,6 +654,7 @@ export class FlashcardService {
 
     deck.cards.push(card);
     deck.updatedAt = now;
+    this.invalidateDedupe(deck.id);
 
     // Persist card (with createdAt) and deck.
     await this.db.flashcards.put({
@@ -922,6 +925,7 @@ export class FlashcardService {
     
     // Update signal
     this.decksSignal.update(decks => decks.filter(d => d.id !== deckId));
+    this.invalidateDedupe(deckId);
     
     return true;
   }
@@ -1347,9 +1351,29 @@ export class FlashcardService {
    * "oldest learned first" but now over unique prompts, giving consistent
    * packs of 20.
    */
+  /**
+   * Memo of the deduped result per deck, invalidated when the deck's `cards`
+   * array reference changes. `getDeckLevels`/`getMatchSessionCards` call this
+   * many times per render, so caching avoids repeatedly grouping thousands of
+   * cards (which made the Match deck list slow on large courses).
+   */
+  private dedupeCache = new Map<string, { cards: Flashcard[]; result: Flashcard[] }>();
+
+  /** Clear the deduped-cards memo (all decks, or one). Call after adding/
+   *  importing/removing cards so the grouped list is rebuilt. */
+  private invalidateDedupe(deckId?: string): void {
+    if (deckId) this.dedupeCache.delete(deckId);
+    else this.dedupeCache.clear();
+  }
+
   getDedupedCards(deckId: string): Flashcard[] {
     const deck = this.getDeck(deckId);
     if (!deck) return [];
+
+    const cached = this.dedupeCache.get(deckId);
+    if (cached && cached.cards === deck.cards) {
+      return cached.result;
+    }
 
     // Group cards that share their PRIMARY English translation. Each group's
     // prompt is translations[0] of its first card. For every card in the
@@ -1396,6 +1420,8 @@ export class FlashcardService {
       result.push({ ...card, acceptedForms: formsByPrompt.get(key) ?? [card.text] });
     }
 
+    // Cache against the current cards reference (invalidated when it changes).
+    this.dedupeCache.set(deckId, { cards: deck.cards, result });
     return result;
   }
 
@@ -1496,8 +1522,12 @@ export class FlashcardService {
         bestTimeSeconds: progress?.bestTimeSeconds,
         bestCombo: progress?.bestCombo,
         // Match plays level words + review words; show the real pair count so
-        // it lines up with the combo the user can reach.
-        matchWordCount: mode === 'match'
+        // it lines up with the combo the user can reach. Only computed for
+        // UNLOCKED levels — getMatchSessionCards is O(level) (it scans all
+        // earlier levels), so doing it for every level of a 295-level course
+        // was O(n²) and froze the page for several seconds. Locked levels show
+        // the unlock hint instead of a count, so they don't need it.
+        matchWordCount: mode === 'match' && isUnlocked
           ? this.playableCards(this.getMatchSessionCards(deckId, levelNumber)).length
           : undefined,
       });
