@@ -80,7 +80,7 @@ export class AddWordService {
 
     buttons.push({ text: t('common.cancel'), role: 'cancel' });
 
-    const sheet = await this.actionSheet.create({ buttons });
+    const sheet = await this.actionSheet.create({ buttons, cssClass: 'mode-menu-sheet' });
     await sheet.present();
   }
 

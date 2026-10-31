@@ -177,3 +177,23 @@ ion-popover .lang-list {
   ion-item:nth-of-type(2)::part(native)::before { background: var(--ion-color-warning); } // Familiar
   ion-item:nth-of-type(3)::part(native)::before { background: var(--ion-color-success); } // Known
 }
+
+// --------------------------------------------------------------------------
+// Add-word / mode action sheet (AddWordService.openModeMenu).
+// Rendered at the document root, so styled globally and scoped via cssClass.
+// --------------------------------------------------------------------------
+.mode-menu-sheet {
+  // Tighten the oversized gap between a button's icon and its label
+  // (Ionic's MD default is 32px).
+  .action-sheet-icon {
+    margin-inline-end: 16px !important;
+    font-size: 1.4rem;
+  }
+
+  // The Cancel button has no icon, so its label starts further left than the
+  // icon'd buttons. Indent it to line up with the other labels (icon width
+  // ~22px + the 16px gap).
+  .action-sheet-cancel .action-sheet-button-inner {
+    padding-inline-start: 38px;
+  }
+}
