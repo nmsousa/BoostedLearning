@@ -191,10 +191,4 @@ ion-popover .lang-list {
     font-size: 1.4rem;
   }
 
-  // The Cancel button has no icon, so its label starts further left than the
-  // icon'd buttons. Indent it to line up with the other labels (icon width
-  // ~22px + the 16px gap).
-  .action-sheet-cancel .action-sheet-button-inner {
-    padding-inline-start: 38px;
-  }
 }

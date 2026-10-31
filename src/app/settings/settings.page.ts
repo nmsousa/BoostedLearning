@@ -84,11 +84,13 @@ export class SettingsPage {
     { value: 'dark', label: 'Dark' },
   ];
 
+  // Short names so the selected value fits the row on small screens (the
+  // collapsed ion-select value was truncating to "Ocean (dark na…").
   colorThemeOptions: { value: ColorTheme; label: string }[] = [
-    { value: 'ocean', label: 'Ocean (dark navy)' },
-    { value: 'slate', label: 'Slate (dark grey)' },
-    { value: 'forest', label: 'Forest (dark green)' },
-    { value: 'default', label: 'Midnight (dark black)' },
+    { value: 'ocean', label: 'Ocean' },
+    { value: 'slate', label: 'Slate' },
+    { value: 'forest', label: 'Forest' },
+    { value: 'default', label: 'Midnight' },
     { value: 'light', label: 'Light' },
   ];
 

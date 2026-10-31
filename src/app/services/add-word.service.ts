@@ -78,7 +78,7 @@ export class AddWordService {
       });
     }
 
-    buttons.push({ text: t('common.cancel'), role: 'cancel' });
+    buttons.push({ text: t('common.cancel'), icon: 'close-outline', role: 'cancel' });
 
     const sheet = await this.actionSheet.create({ buttons, cssClass: 'mode-menu-sheet' });
     await sheet.present();

@@ -15,8 +15,10 @@ ion-item-divider {
 
 // Keep select values from overflowing/clipping on rows that also have a
 // two-line label (e.g. Typing Direction). The value ellipsizes instead.
+// Allow a little over half the row so short labels (e.g. "Theme") give the
+// value enough room on small screens.
 ion-item ion-select {
-  max-width: 45%;
+  max-width: 55%;
   --padding-start: 0;
 }
 ion-item ion-select::part(text) {
