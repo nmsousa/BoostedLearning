@@ -35,12 +35,6 @@ export class AddWordService {
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
 
-  /**
-   * Base/origin language for translations. Fixed to English for now; this will
-   * become a user-selectable setting (see TODO: source/origin language).
-   */
-  private readonly BASE_LANGUAGE = 'en';
-
   /** Localized display name of a language code, falling back to the code. */
   private langName(code: string): string {
     const key = `langName.${code}`;
@@ -94,10 +88,10 @@ export class AddWordService {
     const t = (k: string, p?: Record<string, string | number>) => this.i18n.t(k, p);
 
     // Field labels name the actual languages: the word in the language being
-    // learned, and its translation in the base language (English for now —
-    // the base language will become user-selectable, see TODO).
+    // learned, and its translation in the learner's base/origin language
+    // (chosen when the study language was added).
     const targetName = this.langName(lang);
-    const baseName = this.langName(this.BASE_LANGUAGE);
+    const baseName = this.langName(this.settings.baseLanguage());
     const wordPlaceholder = t('mode.wordInLang', { lang: targetName });
     const translationPlaceholder = t('mode.wordInLang', { lang: baseName });
 

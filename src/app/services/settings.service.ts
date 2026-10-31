@@ -72,6 +72,13 @@ export class SettingsService {
   readonly theme = computed(() => this.settingsSignal().theme);
   readonly colorTheme = computed(() => this.settingsSignal().colorTheme);
   readonly appLanguage = computed(() => this.settingsSignal().appLanguage);
+  /**
+   * The learner's BASE / origin language — the language they already know and
+   * translate FROM. It doubles as the app UI language (the i18n service reads
+   * `appLanguage`, which this is stored in). Chosen when adding a study
+   * language; English for most users today, but pt/es/fr are also supported.
+   */
+  readonly baseLanguage = computed(() => this.settingsSignal().appLanguage);
   readonly textSize = computed(() => this.settingsSignal().textSize);
   readonly audioSpeed = computed(() => this.settingsSignal().audioSpeed);
   readonly reducedMotion = computed(() => this.settingsSignal().reducedMotion);
@@ -186,6 +193,15 @@ export class SettingsService {
       this.saveSettings(updated);
       return updated;
     });
+  }
+
+  /**
+   * Set the learner's base/origin language. Updates both `appLanguage` (which
+   * also drives the app UI language via the i18n service) and
+   * `explanationLanguage`, keeping them in sync from a single call.
+   */
+  setBaseLanguage(code: AppLanguage): void {
+    this.updateSettings({ appLanguage: code, explanationLanguage: code });
   }
 
   /**

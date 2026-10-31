@@ -16,20 +16,23 @@ Later extension: **grammar and phrases**. Once words are learned, add grammar
 explanations and example phrases/sentences that reuse the learned words, so the
 user practises words in real context (not just isolated vocabulary).
 
-### Base / origin (source) language — not yet defined
-Status: **not implemented** — currently hardcoded to English.
+### Base / origin (source) language — picker added; content still English-only
+Status: **partially implemented.**
 
-Translations in all decks are stored in English, and the app assumes English
-as the base/origin language everywhere (e.g. the "Add word" dialog labels the
-second field "Word in English" via `AddWordService.BASE_LANGUAGE = 'en'`).
+Done: the base/origin language (the language you know and translate FROM) is
+now chosen in the "Add a language" flow (duome modal) via a base-language
+picker, stored in the `appLanguage` setting (exposed as
+`SettingsService.baseLanguage` / set via `setBaseLanguage`). It also drives the
+app UI language and the "Add word" dialog field labels. The standalone
+"App language" control was removed from Settings.
 
-To do: let the user pick their base/origin language (the language they already
-know / translate from). This affects:
-- the "Add word" dialog field labels/placeholders,
-- the Duolingo import default,
-- potentially showing deck translations in the chosen base language (requires
-  translation data beyond English — bigger content change).
-Start by turning `AddWordService.BASE_LANGUAGE` into a real setting.
+Still to do:
+- Duome only hosts English-base courses today, so a non-English base + target
+  URL (e.g. `pt/fr`) may not resolve. Expand `DUOME_COURSES` (or source) once
+  other bases are available; the URL is editable as a stopgap.
+- Showing deck TRANSLATIONS in the chosen base language needs translation data
+  beyond English — a bigger content change. Decks still store English
+  translations regardless of the chosen base.
 
 ### Daily goal, session length, reminders & push notifications
 Status: **not implemented — Settings "Sessions" section is HIDDEN for now.**

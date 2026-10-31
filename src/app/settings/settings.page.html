@@ -131,27 +131,9 @@
       </ion-item>
     </ion-item-group>
 
-    <!-- Language Section -->
-    <ion-item-group>
-      <ion-item-divider>
-        <ion-label>{{ 'settings.secLanguage' | translate }}</ion-label>
-      </ion-item-divider>
-
-      <ion-item>
-        <ion-icon slot="start" name="language-outline"></ion-icon>
-        <ion-label>{{ 'settings.appLanguage' | translate }}</ion-label>
-        <ion-select
-          [value]="appLanguage"
-          (ionChange)="onAppLanguageChange($event)"
-          interface="popover"
-          aria-label="Select app language"
-        >
-          <ion-select-option *ngFor="let opt of appLanguageOptions" [value]="opt.value">
-            {{ opt.label }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
-    </ion-item-group>
+    <!-- The app UI language is no longer a standalone setting. It follows the
+         learner's BASE language, which is chosen when adding a study language
+         (see the "Add a language" flow below). -->
 
     <!-- Session Section (Session Length / Daily Goal / Reminders) is hidden
          until those settings actually drive behavior. Tracked in docs/TODO.md. -->
@@ -380,6 +362,22 @@
           <p class="vocab-intro">{{ 'settings.pickLanguageIntro' | translate }}</p>
           <p class="vocab-hint">{{ 'settings.pickLanguageHint' | translate }}</p>
         </div>
+
+        <!-- Base/origin language: the one you already know and translate FROM.
+             It also becomes the app's UI language. -->
+        <ion-item>
+          <ion-select
+            [value]="duomeBase"
+            (ionChange)="onDuomeBaseChange($event)"
+            [label]="'settings.baseLanguage' | translate"
+            labelPlacement="floating"
+            interface="popover"
+            [placeholder]="'settings.chooseLanguage' | translate">
+            <ion-select-option *ngFor="let opt of baseLanguageOptions" [value]="opt.value">
+              {{ opt.label }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
 
         <ion-item>
           <ion-select

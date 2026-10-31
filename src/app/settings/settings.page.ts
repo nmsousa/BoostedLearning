@@ -15,7 +15,6 @@ import { AlertController } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
 import { SettingsService, Theme, ColorTheme, AppLanguage, TextSize, AudioSpeed, AppSettings, FlashcardDirection } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
-import { ExplanationLanguage } from '../../services/i18n';
 import { FlashcardService, DuolingoResponse, DuolingoLexeme } from '../services/flashcard.service';
 import { DUOME_COURSES } from '../services/duome-courses';
 import { BUILD_INFO } from '../../build-info';
@@ -53,6 +52,7 @@ export class SettingsPage {
   showDuomeModal = false;
   readonly duomeCourses = DUOME_COURSES;
   duomeTarget = '';   // selected target language code (from dropdown)
+  duomeBase: AppLanguage = 'en';  // the learner's base/origin language
   duomeUrl = '';      // auto-built, editable
   duomeError = '';
   duomeBusy = false;
@@ -70,7 +70,6 @@ export class SettingsPage {
   get audioSpeed() { return this.settingsService.audioSpeed(); }
   get reducedMotion() { return this.settingsService.reducedMotion(); }
   get explanationLanguage() { return this.settingsService.explanationLanguage(); }
-  get appLanguage() { return this.settingsService.appLanguage(); }
   get sessionLength() { return this.settingsService.sessionLength(); }
   get dailyGoal() { return this.settingsService.dailyGoal(); }
   get notificationsEnabled() { return this.settingsService.notificationsEnabled(); }
@@ -107,14 +106,10 @@ export class SettingsPage {
     { value: 1.25, label: '1.25x (Fast)' },
   ];
 
-  languageOptions: { value: ExplanationLanguage; label: string }[] = [
-    { value: 'en', label: 'English' },
-    { value: 'pt', label: 'Português' },
-    { value: 'es', label: 'Español' },
-    { value: 'fr', label: 'Français' },
-  ];
-
-  appLanguageOptions: { value: AppLanguage; label: string }[] = [
+  /** Base/origin languages the learner can translate FROM. These are the UI
+   *  languages we have catalogs for; the chosen one also becomes the app UI
+   *  language. Offered when adding a study language. */
+  baseLanguageOptions: { value: AppLanguage; label: string }[] = [
     { value: 'en', label: 'English' },
     { value: 'pt', label: 'Português' },
     { value: 'es', label: 'Español' },
@@ -153,13 +148,6 @@ export class SettingsPage {
 
   onReducedMotionChange(event: CustomEvent): void {
     this.settingsService.updateSetting('reducedMotion', event.detail.checked);
-  }
-
-  onAppLanguageChange(event: CustomEvent): void {
-    // Keep both the app UI language and the explanation language in sync.
-    // appLanguage is the single source of truth the i18n service reads from.
-    this.settingsService.updateSetting('appLanguage', event.detail.value as AppLanguage);
-    this.settingsService.updateSetting('explanationLanguage', event.detail.value);
   }
 
   onSessionLengthChange(event: CustomEvent): void {
@@ -211,6 +199,8 @@ export class SettingsPage {
   // --- Add a language from duome.eu ---
   openDuomeModal() {
     this.duomeTarget = '';
+    // Pre-select the learner's current base language.
+    this.duomeBase = this.settingsService.baseLanguage() as AppLanguage;
     this.duomeUrl = '';
     this.duomeError = '';
     this.duomeBusy = false;
@@ -221,11 +211,21 @@ export class SettingsPage {
     this.showDuomeModal = false;
   }
 
+  /** The base (origin) language changed — rebuild the URL with the new base. */
+  onDuomeBaseChange(event: CustomEvent) {
+    this.duomeBase = event.detail.value as AppLanguage;
+    this.buildDuomeUrl();
+  }
+
   /** When a course is picked from the dropdown, build the skills URL. */
   onDuomeCourseChange() {
-    const course = this.duomeCourses.find(c => c.code === this.duomeTarget);
-    if (course) {
-      this.duomeUrl = `https://duome.eu/vocabulary/${course.base}/${course.code}/skills`;
+    this.buildDuomeUrl();
+  }
+
+  /** Build the duome skills URL from the chosen base + target languages. */
+  private buildDuomeUrl() {
+    if (this.duomeTarget) {
+      this.duomeUrl = `https://duome.eu/vocabulary/${this.duomeBase}/${this.duomeTarget}/skills`;
     }
   }
 
@@ -259,8 +259,10 @@ export class SettingsPage {
         this.flashcardService.importFromDuomeUrl(url, target),
         30000
       );
-      // Switch to the newly-imported language so it shows immediately.
+      // Switch to the newly-imported language so it shows immediately, and
+      // adopt the chosen base language (also sets the app UI language).
       this.settingsService.updateSetting('learningLanguage', target);
+      this.settingsService.setBaseLanguage(this.duomeBase);
       this.closeDuomeModal();
       const alert = await this.alertController.create({
         header: 'Language added',
