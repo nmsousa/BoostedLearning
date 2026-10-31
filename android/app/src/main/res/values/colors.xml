@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- System-bar colour used by the app theme (status + navigation bars).
+         Matches the default dark "ocean" app background so the bars blend in.
+         The status bar is further refined per theme at runtime by
+         @capacitor/status-bar; the navigation (gesture) bar uses this value. -->
+    <color name="appBackground">#0F1B2D</color>
+</resources>

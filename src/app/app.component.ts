@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, effect } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { SettingsService } from './services/settings.service';
 import { AppUpdateService } from './services/app-update.service';
 
@@ -25,6 +26,45 @@ export class AppComponent {
     void this.appUpdate.init();
 
     this.registerHardwareBackButton();
+    this.syncStatusBarWithTheme();
+  }
+
+  /**
+   * Keep the native status bar (and Android navigation bar) in step with the
+   * current theme so it looks consistent across devices.
+   *
+   * Without this, some devices (e.g. Xiaomi/MIUI) leave the status bar
+   * overlaying the web view with a device-specific inset, producing a tall
+   * empty band above the header, and show a system-coloured gesture/nav bar
+   * that doesn't match the app. We:
+   *   - take the status bar OUT of overlay mode so it's a solid band, and
+   *   - paint it (and the nav bar) with the app's current toolbar colour, with
+   *     light/dark icons chosen from the effective theme.
+   */
+  private syncStatusBarWithTheme(): void {
+    if (!Capacitor.isNativePlatform()) return;
+
+    // React to theme/palette changes. The settings effects apply the DOM
+    // classes first; we read the resulting computed colour here.
+    effect(() => {
+      const isDark = this.settings.effectiveTheme() === 'dark';
+      // Touch colorTheme so this effect re-runs when the palette changes.
+      this.settings.colorTheme();
+
+      // Defer a tick so the CSS variables for the new theme are in place.
+      setTimeout(() => {
+        const styles = getComputedStyle(document.documentElement);
+        const bar =
+          styles.getPropertyValue('--ion-toolbar-background').trim() ||
+          styles.getPropertyValue('--ion-background-color').trim() ||
+          (isDark ? '#0e1113' : '#ffffff');
+
+        void StatusBar.setOverlaysWebView({ overlay: false });
+        void StatusBar.setBackgroundColor({ color: bar });
+        // Light icons on a dark bar, dark icons on a light bar.
+        void StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark });
+      });
+    });
   }
 
   /**
