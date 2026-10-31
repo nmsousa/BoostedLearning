@@ -14,11 +14,16 @@
   <meta name="description" content="Boostionary - a dictionary that boosts your vocabulary. Learn languages from your own words." />
   <meta name="theme-color" content="#00a6d6" />
 
-  <!-- Favicons / app icons -->
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/icon/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="assets/icon/favicon-16x16.png" />
-  <link rel="apple-touch-icon" href="assets/icon/apple-touch-icon.png" />
-  <link rel="manifest" href="assets/manifest.webmanifest" />
+  <!-- Favicons / app icons. Absolute paths so they resolve from the app root
+       regardless of the current route. The explicit shortcut icon stops the
+       browser from auto-requesting /favicon.ico (which the SPA router then
+       fails to match -> NG04002). -->
+  <link rel="icon" href="/assets/icon/favicon.png" />
+  <link rel="shortcut icon" type="image/png" href="/assets/icon/favicon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icon/favicon-16x16.png" />
+  <link rel="apple-touch-icon" href="/assets/icon/apple-touch-icon.png" />
+  <link rel="manifest" href="/assets/manifest.webmanifest" />
 
   <!-- add to homescreen for ios -->
   <meta name="mobile-web-app-capable" content="yes" />
