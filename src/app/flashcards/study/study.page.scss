@@ -18,19 +18,25 @@
 }
 
 // Question phase.
-// Centered column (like the flip card): the word + the answer area sit
-// together in the vertical middle, not pinned top/bottom. This looks right on
-// desktop (no huge empty gap) and on mobile the content simply shifts up a
-// little when the keyboard opens because the scroll host shrinks.
+// The prompt card sits in the upper area and the answer group (input +
+// buttons) is anchored to the BOTTOM. This way, when the mobile keyboard opens
+// and the scroll host shrinks, the answer group stays pinned just above the
+// keyboard with no large empty gap between the CHECK button and the keys.
 .question-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;   // centre the word + answer group vertically
+  justify-content: space-between;  // card -> top, answer group -> bottom
   align-items: center;
   gap: 20px;
   flex: 1 1 auto;
   box-sizing: border-box;
   padding: 24px 12px;
+}
+
+// Centre the prompt card within the free space above the answer group, so on a
+// tall screen (no keyboard) it doesn't cling to the very top.
+.question-container > .card-section {
+  flex: 1 1 auto;
 }
 
 .card-section {
