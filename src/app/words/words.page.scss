@@ -2,34 +2,63 @@
   --padding-top: 8px;
 }
 
-// Search + compact sort on one line. The searchbar takes the free space and
-// the sort control sits snug on the right.
-.search-sort-row {
+// Single toolbar row: search (flex) + level filter + sort, all on one line.
+.toolbar-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 8px 0;
+  gap: 6px;
+  padding: 8px 8px 10px;
 
   .words-search {
     flex: 1 1 auto;
     min-width: 0;
-    // Padding is now handled by the row wrapper.
     padding: 0;
   }
 }
 
-.words-search {
-  padding: 8px 8px 0;
-}
-
-// Chips row. (The sort control moved up next to the searchbar.)
-.filter-sort-row {
+// Level filter control: a compact button showing the current label + caret
+// that opens a multi-select checkbox popover.
+.filter-ctl {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  column-gap: 12px;
-  row-gap: 4px;
-  padding: 8px 12px 10px;
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 4px 0 10px;
+  border: 1px solid var(--ion-color-step-250, #3a4754);
+  border-radius: 17px;
+  color: var(--ion-color-medium);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &.active {
+    border-color: var(--ion-color-primary);
+    color: var(--ion-color-primary);
+  }
+
+  .filter-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    pointer-events: none;   // taps fall through to the select beneath
+  }
+
+  // Stretch the select across the whole button so the label OR caret opens it.
+  .filter-select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    --padding-start: 0;
+    --padding-end: 4px;
+    --highlight-color-focused: transparent;
+    --highlight-color-valid: transparent;
+    --highlight-color-invalid: transparent;
+    cursor: pointer;
+  }
+  // Hide the select's own value text; the .filter-label shows it instead.
+  .filter-select::part(text) { display: none; }
+  .filter-select::part(icon) { opacity: 0.9; margin-inline-start: auto; }
+  .filter-select::part(container) { border: 0; }
 }
 
 // Compact sort: an icon + a caret only (no label/value text inline).
@@ -82,12 +111,12 @@
   }
 }
 
+// The status filter row (shown only once a word is hidden) keeps using chips.
 .filter-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  // Padding now lives on the parent .filter-sort-row.
-  padding: 0;
+  padding: 0 12px;
   margin: 0;
 
   ion-chip {
@@ -103,24 +132,6 @@
       font-size: 14px;
       margin-inline-end: 4px;
     }
-  }
-
-  // Colour dots mirror the home-screen knowledge breakdown.
-  .chip-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    margin-inline-end: 6px;
-    flex-shrink: 0;
-
-    &.learning { background: var(--ion-color-danger); }
-    &.familiar { background: var(--ion-color-warning); }
-    &.known { background: var(--ion-color-success); }
-  }
-
-  // The level label only appears on the selected chip; add a little space.
-  .chip-label {
-    margin-inline-end: 4px;
   }
 }
 

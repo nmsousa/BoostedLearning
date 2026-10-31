@@ -8,10 +8,12 @@
 </ion-header>
 
 <ion-content class="words-content">
-  <!-- Search + sort share the top row. The compact sort (icon + caret) sits to
-       the right of the searchbar; its current value and the full option list
-       live inside the popover when tapped. -->
-  <div class="search-sort-row">
+  <!-- Everything on a single row: search + level filter + sort.
+       - Search flexes to fill the free space.
+       - Level filter is a MULTI-select dropdown (checkboxes) with a coloured
+         dot, level name and count per option; empty selection means "All".
+       - Sort is the compact icon + caret (whole control is tappable). -->
+  <div class="toolbar-row">
     <ion-searchbar
       class="words-search"
       [value]="search"
@@ -21,6 +23,24 @@
       (ionClear)="onSearch($event)">
     </ion-searchbar>
 
+    <!-- Level filter: a labelled button that opens a checkbox popover. -->
+    <div class="filter-ctl" [class.active]="hasLevelFilter">
+      <span class="filter-label">{{ levelFilterLabel }}</span>
+      <ion-select
+        class="filter-select"
+        [value]="selectedLevels"
+        [multiple]="true"
+        interface="popover"
+        [interfaceOptions]="{ cssClass: 'levels-popover', header: ('words.filterLevels' | translate) }"
+        [attr.aria-label]="'words.filterLevels' | translate"
+        (ionChange)="onLevelsChange($event)">
+        <ion-select-option *ngFor="let lvl of levelOptions" [value]="lvl">
+          {{ ('home.level.' + lvl) | translate }} ({{ count(lvl) }})
+        </ion-select-option>
+      </ion-select>
+    </div>
+
+    <!-- Compact sort: icon + caret; whole control opens the popover. -->
     <div class="sort-row">
       <ion-icon name="swap-vertical-outline" class="sort-icon" aria-hidden="true"></ion-icon>
       <ion-select
@@ -34,30 +54,6 @@
           {{ opt.labelKey | translate }}
         </ion-select-option>
       </ion-select>
-    </div>
-  </div>
-
-  <!-- Level filter chips: compact (dot + count); selected chip shows label. -->
-  <div class="filter-sort-row">
-    <div class="filter-row">
-      <ion-chip [class.active]="filter === 'all'" (click)="setFilter('all')">
-        {{ 'words.all' | translate }} ({{ count('all') }})
-      </ion-chip>
-      <ion-chip class="learning" [class.active]="filter === 'learning'" (click)="setFilter('learning')">
-        <span class="chip-dot learning"></span>
-        <span class="chip-label" *ngIf="filter === 'learning'">{{ 'home.level.learning' | translate }}</span>
-        ({{ count('learning') }})
-      </ion-chip>
-      <ion-chip class="familiar" [class.active]="filter === 'familiar'" (click)="setFilter('familiar')">
-        <span class="chip-dot familiar"></span>
-        <span class="chip-label" *ngIf="filter === 'familiar'">{{ 'home.level.familiar' | translate }}</span>
-        ({{ count('familiar') }})
-      </ion-chip>
-      <ion-chip class="known" [class.active]="filter === 'known'" (click)="setFilter('known')">
-        <span class="chip-dot known"></span>
-        <span class="chip-label" *ngIf="filter === 'known'">{{ 'home.level.known' | translate }}</span>
-        ({{ count('known') }})
-      </ion-chip>
     </div>
   </div>
 

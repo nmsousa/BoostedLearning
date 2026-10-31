@@ -40,10 +40,14 @@ export class WordsPage implements OnInit {
   private actionSheet = inject(ActionSheetController);
 
   allWords: StudiedWord[] = [];
-  filter: Filter = 'all';
+  /** Selected knowledge levels. Empty array = "All" (no level filter). */
+  selectedLevels: KnowledgeLevel[] = [];
   statusFilter: StatusFilter = 'all';
   search = '';
   sortKey: SortKey = 'needsPractice';
+
+  /** The three knowledge levels shown in the filter dropdown. */
+  readonly levelOptions: KnowledgeLevel[] = ['learning', 'familiar', 'known'];
 
   readonly sortOptions: { value: SortKey; labelKey: string }[] = [
     { value: 'needsPractice', labelKey: 'words.sort.needsPractice' },
@@ -82,7 +86,8 @@ export class WordsPage implements OnInit {
 
   /** Words after status + level filter + search + sort. */
   get words(): StudiedWord[] {
-    const key = `${this.dataVersion}|${this.statusFilter}|${this.filter}|${this.sortKey}|${this.search.trim().toLowerCase()}`;
+    const levelsKey = [...this.selectedLevels].sort().join(',');
+    const key = `${this.dataVersion}|${this.statusFilter}|${levelsKey}|${this.sortKey}|${this.search.trim().toLowerCase()}`;
     if (key === this.wordsCacheKey) return this.wordsCache;
 
     const q = this.search.trim().toLowerCase();
@@ -93,8 +98,11 @@ export class WordsPage implements OnInit {
     } else if (this.statusFilter === 'hidden') {
       list = list.filter(w => w.priority === 'hide');
     }
-    if (this.filter !== 'all') {
-      list = list.filter(w => w.level === this.filter);
+    // Empty selection = "All" (no level filter). Otherwise keep words whose
+    // level is among the selected ones (multi-select).
+    if (this.selectedLevels.length > 0) {
+      const set = new Set(this.selectedLevels);
+      list = list.filter(w => set.has(w.level));
     }
     if (q) {
       list = list.filter(
@@ -160,8 +168,23 @@ export class WordsPage implements OnInit {
     return base.filter(w => w.level === level).length;
   }
 
-  setFilter(f: Filter) {
-    this.filter = f;
+  /** Multi-select level filter changed (from the dropdown). */
+  onLevelsChange(event: CustomEvent) {
+    this.selectedLevels = (event.detail?.value ?? []) as KnowledgeLevel[];
+  }
+
+  /** Human label for the filter button: "All" when nothing is selected,
+   *  the single level name when one is picked, else "N levels". */
+  get levelFilterLabel(): string {
+    const n = this.selectedLevels.length;
+    if (n === 0) return this.t('words.all');
+    if (n === 1) return this.t(`home.level.${this.selectedLevels[0]}`);
+    return `${n} ${this.t('words.filterLevels').toLowerCase()}`;
+  }
+
+  /** True when any level filter is active (drives the button's accent style). */
+  get hasLevelFilter(): boolean {
+    return this.selectedLevels.length > 0;
   }
 
   onSearch(event: CustomEvent) {
