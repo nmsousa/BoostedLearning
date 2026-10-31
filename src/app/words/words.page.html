@@ -19,45 +19,47 @@
   </ion-searchbar>
 
   <!-- Sort: compact control aligned right. Shows the icon + "Sort by: <current>";
-       the full list of options appears inside the popover when tapped. -->
-  <div class="sort-row">
-    <ion-icon name="swap-vertical-outline" class="sort-icon" aria-hidden="true"></ion-icon>
-    <span class="sort-prefix">{{ 'words.sortBy' | translate }}:</span>
-    <ion-select
-      class="sort-select"
-      [value]="sortKey"
-      interface="popover"
-      [interfaceOptions]="{ cssClass: 'sort-popover' }"
-      aria-label="Sort words"
-      (ionChange)="onSortChange($event)">
-      <ion-select-option *ngFor="let opt of sortOptions" [value]="opt.value">
-        {{ opt.labelKey | translate }}
-      </ion-select-option>
-    </ion-select>
-  </div>
+       the full list of options appears inside the popover when tapped.
+       Chips + sort share one row: sort sits to the RIGHT when there's space,
+       and wraps to its own line when the row gets cramped. -->
+  <div class="filter-sort-row">
+    <!-- Level filter chips: compact (dot + count); selected chip shows label. -->
+    <div class="filter-row">
+      <ion-chip [class.active]="filter === 'all'" (click)="setFilter('all')">
+        {{ 'words.all' | translate }} ({{ count('all') }})
+      </ion-chip>
+      <ion-chip class="learning" [class.active]="filter === 'learning'" (click)="setFilter('learning')">
+        <span class="chip-dot learning"></span>
+        <span class="chip-label" *ngIf="filter === 'learning'">{{ 'home.level.learning' | translate }}</span>
+        ({{ count('learning') }})
+      </ion-chip>
+      <ion-chip class="familiar" [class.active]="filter === 'familiar'" (click)="setFilter('familiar')">
+        <span class="chip-dot familiar"></span>
+        <span class="chip-label" *ngIf="filter === 'familiar'">{{ 'home.level.familiar' | translate }}</span>
+        ({{ count('familiar') }})
+      </ion-chip>
+      <ion-chip class="known" [class.active]="filter === 'known'" (click)="setFilter('known')">
+        <span class="chip-dot known"></span>
+        <span class="chip-label" *ngIf="filter === 'known'">{{ 'home.level.known' | translate }}</span>
+        ({{ count('known') }})
+      </ion-chip>
+    </div>
 
-  <!-- Level filter chips (with the same colour dots as the home breakdown) -->
-  <!-- Level filter chips: compact (dot + count) by default; the selected chip
-       also shows its label. Keeps the row on one line. -->
-  <div class="filter-row">
-    <ion-chip [class.active]="filter === 'all'" (click)="setFilter('all')">
-      {{ 'words.all' | translate }} ({{ count('all') }})
-    </ion-chip>
-    <ion-chip class="learning" [class.active]="filter === 'learning'" (click)="setFilter('learning')">
-      <span class="chip-dot learning"></span>
-      <span class="chip-label" *ngIf="filter === 'learning'">{{ 'home.level.learning' | translate }}</span>
-      ({{ count('learning') }})
-    </ion-chip>
-    <ion-chip class="familiar" [class.active]="filter === 'familiar'" (click)="setFilter('familiar')">
-      <span class="chip-dot familiar"></span>
-      <span class="chip-label" *ngIf="filter === 'familiar'">{{ 'home.level.familiar' | translate }}</span>
-      ({{ count('familiar') }})
-    </ion-chip>
-    <ion-chip class="known" [class.active]="filter === 'known'" (click)="setFilter('known')">
-      <span class="chip-dot known"></span>
-      <span class="chip-label" *ngIf="filter === 'known'">{{ 'home.level.known' | translate }}</span>
-      ({{ count('known') }})
-    </ion-chip>
+    <div class="sort-row">
+      <ion-icon name="swap-vertical-outline" class="sort-icon" aria-hidden="true"></ion-icon>
+      <span class="sort-prefix">{{ 'words.sortBy' | translate }}:</span>
+      <ion-select
+        class="sort-select"
+        [value]="sortKey"
+        interface="popover"
+        [interfaceOptions]="{ cssClass: 'sort-popover' }"
+        aria-label="Sort words"
+        (ionChange)="onSortChange($event)">
+        <ion-select-option *ngFor="let opt of sortOptions" [value]="opt.value">
+          {{ opt.labelKey | translate }}
+        </ion-select-option>
+      </ion-select>
+    </div>
   </div>
 
   <!-- Status filter: only shown once the user has hidden at least one word. -->

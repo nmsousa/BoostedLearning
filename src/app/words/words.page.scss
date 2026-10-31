@@ -6,14 +6,24 @@
   padding: 8px 8px 0;
 }
 
+// Chips + sort on one line; the sort is pushed to the right and wraps onto
+// its own line (left-aligned) when the row is too narrow.
+.filter-sort-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 4px;
+  padding: 8px 12px 10px;
+}
+
 .sort-row {
   display: flex;
   align-items: center;
-  // Keep the control inline near the left (under the search), not pushed to
-  // the far right edge (which looked detached on wide/desktop screens).
-  justify-content: flex-start;
   gap: 6px;
-  padding: 6px 12px 4px;
+  // Push to the right edge of the row when there's room; drops below (and
+  // sits left) once the flex container wraps.
+  margin-left: auto;
   font-size: 0.9rem;
   color: var(--ion-color-medium);
 
@@ -33,7 +43,7 @@
     --padding-end: 0;
     width: auto;
     min-width: 0;
-    max-width: 60%;
+    max-width: 60vw;
     flex: 0 1 auto;
     color: var(--ion-text-color);
     font-weight: 600;
@@ -48,8 +58,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 8px 12px 12px;
-  margin-bottom: 4px;
+  // Padding now lives on the parent .filter-sort-row.
+  padding: 0;
+  margin: 0;
 
   ion-chip {
     margin: 0;
