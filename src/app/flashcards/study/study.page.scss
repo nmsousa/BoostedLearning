@@ -111,7 +111,22 @@
 .submit-button {
   min-height: 56px;
   font-size: 1.125rem;
-  font-weight: 600;
+  font-weight: 700;
+  // Force a vivid, clearly-enabled look. On the dark footer the default
+  // primary could read as muted/disabled, so pin a bright background + strong
+  // contrast text and full opacity.
+  --background: var(--ion-color-primary);
+  --background-activated: var(--ion-color-primary-shade);
+  --background-focused: var(--ion-color-primary-shade);
+  --background-hover: var(--ion-color-primary-tint);
+  --color: var(--ion-color-primary-contrast);
+  --opacity: 1;
+
+  // The disabled state (empty input) stays visibly dimmed so the contrast with
+  // the enabled button is obvious.
+  &.button-disabled {
+    --opacity: 0.4;
+  }
 }
 
 .button-row {
