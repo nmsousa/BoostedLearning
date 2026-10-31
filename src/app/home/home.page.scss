@@ -333,6 +333,30 @@
     color: var(--ion-color-medium);
     margin: 10px 0 0;
   }
+
+  // Loading placeholder (shown until the breakdown is ready) — avoids the
+  // flash of the empty state before the coloured bar appears on cold start.
+  .hero-skeleton {
+    margin-top: 10px;
+
+    .sk-bar {
+      height: 18px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      margin-bottom: 14px;
+    }
+    .sk-legend {
+      display: flex;
+      gap: 20px;
+      span {
+        display: inline-block;
+        width: 60px;
+        height: 14px;
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+    }
+  }
 }
 
 .empty-state {
@@ -410,9 +434,11 @@ ion-button {
 
 // Flags inside the language popover list
 .lang-list {
-  // No outer list padding so item highlights reach the popover edges and
-  // there's no uncovered gap between rows.
-  padding: 0;
+  // Kill the list's default top/bottom padding so there's no empty strip
+  // after the last language in the popover.
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin: 0;
 
   .flag {
     width: 26px;

@@ -102,3 +102,15 @@ html {
 .reduced-distraction .gamification {
   display: none !important;
 }
+
+// Language popover list (rendered in a portal at the document root, so it
+// needs a global rule): remove the default list padding so there's no empty
+// gap after the last language.
+.lang-list {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+ion-popover .lang-list {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}

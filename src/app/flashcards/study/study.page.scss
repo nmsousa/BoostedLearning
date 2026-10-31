@@ -122,136 +122,10 @@
 }
 
 // Correct answer display (same style as input)
-.correct-answer-display {
-  --background: var(--ion-color-light);
-  --border-radius: 8px;
-  --padding-start: 16px;
-  --padding-end: 16px;
-  margin-bottom: 16px;
-  
-  .correct-icon {
-    color: var(--ion-color-success);
-    font-size: 24px;
-    margin-right: 8px;
-  }
-  
-  .answered-text {
-    font-size: 1.125rem;
-    padding: 16px 0;
-  }
-}
-
-.correct-continue {
-  min-height: 56px;
-  font-size: 1.125rem;
-  font-weight: 600;
-  max-width: 320px;
-  margin: 0 auto;
-}
-
-// Feedback styles (within question-container)
-.feedback-message {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin: 0 0 24px;
-  text-align: center;
-  
-  &.almost {
-    color: var(--ion-color-warning);
-  }
-  
-  &.incorrect {
-    color: var(--ion-color-danger);
-  }
-}
-
-// Answer comparison line
-.answer-comparison {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 16px;
-  background: var(--ion-color-light);
-  border-radius: 12px;
-  margin-bottom: 12px;
-  
-  ion-icon {
-    color: var(--ion-text-color-step-400, #999);
-    font-size: 20px;
-  }
-  
-  .wrong-answer {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--ion-color-danger);
-    text-decoration: line-through;
-  }
-  
-  .right-answer {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--ion-color-success);
-  }
-}
-
-// Incorrect label (not a button)
-.incorrect-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  color: var(--ion-color-danger);
-  margin-bottom: 12px;
-  
-  ion-icon {
-    font-size: 20px;
-  }
-  
-  span {
-    font-size: 1rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-}
-
-// Revealed-via-hint label (friendly, not an error)
-.revealed-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  color: var(--ion-color-warning-shade);
-  margin-bottom: 12px;
-
-  ion-icon {
-    font-size: 20px;
-  }
-
-  span {
-    font-size: 1rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-}
-
-// Revealed answer (shown prominently, no strike-through)
-.answer-reveal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: var(--ion-color-light);
-  border-radius: 12px;
-  margin-bottom: 12px;
-
-  .right-answer {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--ion-color-success);
-  }
+// (Obsolete feedback styles removed — replaced by .result-card / .lang-pair
+//  below. The almost/try-again path keeps .almost-hint.)
+.answer-reveal-REMOVED {
+  display: none;
 }
 
 // Almost hint (no answer shown)
@@ -458,5 +332,104 @@
     height: 34px;
 
     ion-icon { font-size: 17px; }
+  }
+}
+
+// ── Result card (two-language answer) ──────────────────────────────────────
+// Shown after submitting: English + target word with a proper sound button,
+// framed by a coloured border (green = correct, red = incorrect).
+.result-card {
+  width: 100%;
+  background: var(--ion-color-light);
+  border: 2px solid transparent;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+
+  &.correct { border-color: var(--ion-color-success); }
+  &.incorrect { border-color: var(--ion-color-danger); }
+
+  .result-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+
+    ion-icon { font-size: 18px; }
+  }
+  &.correct .result-badge { color: var(--ion-color-success); }
+  &.incorrect .result-badge { color: var(--ion-color-danger); }
+
+  .you-typed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 0;
+    font-size: 0.95rem;
+
+    ion-icon { color: var(--ion-color-medium); font-size: 16px; }
+    .wrong-answer {
+      color: var(--ion-color-danger);
+      text-decoration: line-through;
+    }
+  }
+}
+
+.lang-pair {
+  .lang-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .lang-name {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ion-color-medium);
+  }
+
+  .lang-word {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--ion-text-color);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    &.target { color: var(--ion-color-primary); }
+  }
+
+  .lang-divider {
+    height: 1px;
+    background: var(--ion-color-step-150, rgba(255, 255, 255, 0.08));
+    margin: 12px 0;
+  }
+
+  // Proper, visible sound buttons next to the target word.
+  .pair-audio {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(var(--ion-color-primary-rgb), 0.14);
+    cursor: pointer;
+
+    ion-icon { font-size: 20px; color: var(--ion-color-primary); }
+    &:active { transform: scale(0.94); }
+
+    &.slow {
+      width: 32px;
+      height: 32px;
+      ion-icon { font-size: 16px; }
+    }
   }
 }

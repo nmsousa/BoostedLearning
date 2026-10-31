@@ -21,7 +21,9 @@
 <ion-content [fullscreen]="true" class="study-content">
   <!-- Question Phase (also shown when correct) -->
   <div *ngIf="(phase === 'question' || (phase === 'feedback' && feedbackResult === 'correct')) && currentCard" class="question-container">
-    <div class="card-section">
+    <!-- Prompt card: only while typing. After answering, the result card below
+         already shows both languages, so this is hidden to avoid duplication. -->
+    <div class="card-section" *ngIf="phase === 'question'">
       <div class="word-display">
         <div class="word-row">
           <h1 class="target-word">{{ promptText }}</h1>
@@ -70,22 +72,15 @@
         </div>
       </ng-container>
 
-      <!-- Correct answer display (same layout as input) -->
+      <!-- Correct: show the full two-language answer card (green). -->
       <ng-container *ngIf="phase === 'feedback' && feedbackResult === 'correct'">
-        <ion-item class="answer-input correct-answer-display">
-          <ion-icon name="checkmark-circle" slot="start" class="correct-icon"></ion-icon>
-          <span class="answered-text">{{ submittedAnswer }}</span>
-          <!-- Audio sits with the TARGET-language word (when it's the answer),
-               so the speaker matches what's spoken. -->
-          <span class="audio-actions" slot="end" *ngIf="currentDirection === 'en-to-target'">
-            <button type="button" class="audio-icon" (click)="playWord()" [attr.aria-label]="'mode.playPronunciation' | translate">
-              <ion-icon name="volume-high-outline"></ion-icon>
-            </button>
-            <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="'mode.playSlower' | translate">
-              <ion-icon name="volume-low-outline"></ion-icon>
-            </button>
-          </span>
-        </ion-item>
+        <div class="result-card correct">
+          <div class="result-badge">
+            <ion-icon name="checkmark-circle"></ion-icon>
+            <span>{{ 'mode.correctLabel' | translate }}</span>
+          </div>
+          <ng-container *ngTemplateOutlet="answerPair"></ng-container>
+        </div>
 
         <ion-button expand="block" color="success" (click)="nextCard()" class="submit-button">
           {{ 'mode.continue' | translate }}
@@ -96,8 +91,9 @@
 
   <!-- Feedback Phase (only for almost/incorrect) -->
   <div *ngIf="phase === 'feedback' && feedbackResult !== 'correct'" class="question-container">
-    <!-- Keep word prominent like question screen - same structure -->
-    <div class="card-section">
+    <!-- Prompt card kept only for the "almost" case (which has no result
+         card). For "incorrect", the result card below shows both languages. -->
+    <div class="card-section" *ngIf="feedbackResult === 'almost'">
       <div class="word-display">
         <h1 class="target-word">{{ promptText }}</h1>
       </div>
@@ -134,46 +130,52 @@
         </ion-button>
       </ng-container>
 
-      <!-- Incorrect: show comparison -->
+      <!-- Incorrect: show the full two-language answer card (red), plus what
+           the user typed for comparison. -->
       <ng-container *ngIf="feedbackResult === 'incorrect'">
-        <!-- Answer revealed via the hint button -->
-        <ng-container *ngIf="revealedViaHint">
-          <div class="revealed-label">
-            <ion-icon name="bulb"></ion-icon>
-            <span>{{ revealedForms.length > 1 ? ('mode.acceptedAnswers' | translate) : ('mode.theAnswerIs' | translate) }}</span>
-          </div>
-
-          <div class="answer-reveal">
-            <span class="right-answer">{{ revealedForms.join(' · ') }}</span>
-          </div>
-        </ng-container>
-
-        <!-- Normal wrong answer -->
-        <ng-container *ngIf="!revealedViaHint">
-          <div class="incorrect-label">
+        <div class="result-card incorrect">
+          <div class="result-badge">
             <ion-icon name="close-circle"></ion-icon>
-            <span>{{ 'mode.incorrectLabel' | translate }}</span>
+            <span>{{ revealedViaHint ? ('mode.theAnswerIs' | translate) : ('mode.incorrectLabel' | translate) }}</span>
           </div>
-
-          <div class="answer-comparison">
-            <span class="wrong-answer">{{ submittedAnswer }}</span>
+          <ng-container *ngTemplateOutlet="answerPair"></ng-container>
+          <!-- What you typed (only when it wasn't a hint reveal) -->
+          <p *ngIf="!revealedViaHint && submittedAnswer" class="you-typed">
             <ion-icon name="arrow-forward"></ion-icon>
-            <span class="right-answer">{{ correctAnswer }}</span>
-          </div>
-        </ng-container>
+            <span class="wrong-answer">{{ submittedAnswer }}</span>
+          </p>
+        </div>
 
-        <!-- Alternatives if any -->
-        <p *ngIf="alternativeAnswers.length > 0" class="alternatives">
-          {{ 'mode.alsoAccepted' | translate:{ answers: alternativeAnswers.join(', ') } }}
-        </p>
-
-        <ion-button expand="block" [color]="revealedViaHint ? 'warning' : 'danger'" (click)="nextCard()" class="submit-button">
-          <ion-icon name="arrow-forward" slot="end"></ion-icon>
+        <ion-button expand="block" color="danger" (click)="nextCard()" class="submit-button">
           {{ 'mode.continue' | translate }}
         </ion-button>
       </ng-container>
     </div>
   </div>
+
+  <!-- Shared two-language answer card: English label + word, target label +
+       word + a proper sound button. Used by both correct and incorrect. -->
+  <ng-template #answerPair>
+    <div class="lang-pair">
+      <div class="lang-row">
+        <span class="lang-name">{{ baseLangName }}</span>
+        <span class="lang-word">{{ englishWord }}</span>
+      </div>
+      <div class="lang-divider"></div>
+      <div class="lang-row">
+        <span class="lang-name">{{ targetLangName }}</span>
+        <span class="lang-word target">
+          {{ targetWord }}
+          <button type="button" class="pair-audio" (click)="playWord()" [attr.aria-label]="'mode.playPronunciation' | translate">
+            <ion-icon name="volume-high-outline"></ion-icon>
+          </button>
+          <button type="button" class="pair-audio slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="'mode.playSlower' | translate">
+            <ion-icon name="volume-low-outline"></ion-icon>
+          </button>
+        </span>
+      </div>
+    </div>
+  </ng-template>
 
   <!-- Complete Phase -->
   <div *ngIf="phase === 'complete'" class="complete-container">

@@ -52,6 +52,10 @@ export class HomePage implements OnInit {
     total: 0,
   };
 
+  /** True once the breakdown has been computed (data loaded). Until then the
+   *  "Your words" card shows a skeleton instead of flashing the empty state. */
+  wordsReady = false;
+
   isLoading = false; // Start as false since load is synchronous
 
   // Languages the user can learn, derived from available decks (bundled +
@@ -116,6 +120,7 @@ export class HomePage implements OnInit {
     }
     this.refreshLanguages();
     this.loadDashboardData();
+    this.wordsReady = true;
     this.cdr.detectChanges();
   }
 
@@ -128,6 +133,7 @@ export class HomePage implements OnInit {
     }
     this.refreshLanguages();
     this.knowledge = this.flashcards.getKnowledgeBreakdown(this.settings.learningLanguage());
+    this.wordsReady = true;
     this.cdr.detectChanges();
   }
 

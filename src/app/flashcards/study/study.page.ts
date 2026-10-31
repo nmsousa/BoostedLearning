@@ -220,6 +220,25 @@ export class StudyPage implements OnInit, OnDestroy {
       : this.currentCard.text;             // Show Dutch
   }
 
+  /** The target-language word (e.g. "hij") — always the card's own text. */
+  get targetWord(): string {
+    return this.currentCard?.text ?? '';
+  }
+
+  /** The base-language (English) word for the result card. */
+  get englishWord(): string {
+    return this.currentCard
+      ? this.flashcardService.bestTranslation(this.currentCard)
+      : '';
+  }
+
+  /** Localized "English" label for the result card (base language). */
+  get baseLangName(): string {
+    const key = 'langName.en';
+    const name = this.i18n.t(key);
+    return name === key ? 'English' : name;
+  }
+
   /** Localized name of the learning language (for the instruction text). */
   get targetLangName(): string {
     const code = this.deck?.languageCode ?? '';

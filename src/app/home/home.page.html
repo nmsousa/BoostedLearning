@@ -125,8 +125,17 @@
           </span>
         </div>
 
-        <!-- Nothing studied yet -->
-        <p class="hero-empty" *ngIf="knowledge.total === 0">
+        <!-- Loading placeholder: shown until the breakdown is computed, so the
+             card doesn't flash "no words" before the colours appear. -->
+        <div class="hero-skeleton" *ngIf="!wordsReady" aria-hidden="true">
+          <div class="sk-bar"></div>
+          <div class="sk-legend">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <!-- Nothing studied yet (only once data has actually loaded) -->
+        <p class="hero-empty" *ngIf="wordsReady && knowledge.total === 0">
           {{ 'home.wordsEmpty' | translate }}
         </p>
       </div>
