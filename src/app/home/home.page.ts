@@ -104,18 +104,37 @@ export class HomePage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    // Flashcard data drives the "Your words" breakdown; load it before reading.
-    await this.flashcards.initialize();
+    // Flashcard data drives the "Your words" breakdown. Guard the whole thing
+    // so a slow/failed DB init on a fresh install can't leave the dashboard
+    // half-rendered (the "Your words" card was sometimes blank on first open).
+    try {
+      await this.flashcards.initialize();
+    } catch (e) {
+      console.error('[HomePage] flashcard init failed:', e);
+    }
     this.refreshLanguages();
     this.loadDashboardData();
-    // Data loads after an await, so render the breakdown/count right away.
     this.cdr.detectChanges();
   }
 
   /** Recompute when returning to the home tab (e.g. after play or an import). */
   async ionViewWillEnter(): Promise<void> {
-    await this.flashcards.initialize();
+    try {
+      await this.flashcards.initialize();
+    } catch (e) {
+      console.error('[HomePage] flashcard init failed:', e);
+    }
     this.refreshLanguages();
+    this.knowledge = this.flashcards.getKnowledgeBreakdown(this.settings.learningLanguage());
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Fires after the view has entered and the first render settled. Recompute
+   * once more so the "Your words" card is populated on a cold first launch
+   * even if the DB init resolved just after the initial change detection.
+   */
+  ionViewDidEnter(): void {
     this.knowledge = this.flashcards.getKnowledgeBreakdown(this.settings.learningLanguage());
     this.cdr.detectChanges();
   }
