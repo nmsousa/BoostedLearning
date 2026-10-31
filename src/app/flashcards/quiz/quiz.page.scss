@@ -5,6 +5,18 @@
   --padding-end: 8px;
 }
 
+.quiz-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+
+  ion-spinner {
+    width: 40px;
+    height: 40px;
+  }
+}
+
 .quiz-container {
   min-height: 100%;
   display: flex;

@@ -73,6 +73,8 @@ export class MatchPage implements OnInit, OnDestroy {
   selectedRight: MatchItem | null = null;
 
   phase: MatchPhase = 'play';
+  /** True while the session is being prepared (DB load). */
+  isLoading = true;
   mistakes = 0;
   earnedStars = 0;
   isNewBest = false;
@@ -144,6 +146,7 @@ export class MatchPage implements OnInit, OnDestroy {
       this.startTimer();
     }
 
+    this.isLoading = false;
     this.cdr.detectChanges();
   }
 

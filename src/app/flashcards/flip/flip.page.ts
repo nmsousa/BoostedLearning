@@ -69,6 +69,8 @@ export class FlipPage implements OnInit {
   currentIndex = 0;
   isFlipped = false;
   phase: FlipPhase = 'card';
+  /** True while the session is being prepared (DB load). */
+  isLoading = true;
 
   // Exit animation direction for the current card: '' | 'left' | 'right' | 'down'.
   exitDirection: '' | 'left' | 'right' | 'down' = '';
@@ -121,6 +123,7 @@ export class FlipPage implements OnInit {
       this.phase = 'complete';
     }
 
+    this.isLoading = false;
     this.cdr.detectChanges();
   }
 

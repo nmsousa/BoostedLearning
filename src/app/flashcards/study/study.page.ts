@@ -67,6 +67,8 @@ export class StudyPage implements OnInit, OnDestroy {
   studyCards: StudyCard[] = [];
   currentIndex = 0;
   phase: StudyPhase = 'question';
+  /** True while the session is being prepared (DB load). */
+  isLoading = true;
   feedbackResult: FeedbackResult = 'incorrect';
   
   // Level info
@@ -137,7 +139,8 @@ export class StudyPage implements OnInit, OnDestroy {
       this.studyCards = this.buildStudyCards(cards);
       this.totalUnique = this.studyCards.length;
     }
-    
+
+    this.isLoading = false;
     this.cdr.detectChanges();
   }
 

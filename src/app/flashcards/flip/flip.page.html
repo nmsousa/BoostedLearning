@@ -19,8 +19,13 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="flip-content">
+  <!-- Loading: while the session is being prepared (DB load). -->
+  <div *ngIf="isLoading" class="mode-loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
   <!-- Card phase -->
-  <div *ngIf="phase === 'card' && currentCard" class="flip-container">
+  <div *ngIf="!isLoading && phase === 'card' && currentCard" class="flip-container">
     <!-- Flip card -->
     <div
       class="flip-card"
@@ -88,7 +93,7 @@
   </div>
 
   <!-- Complete phase -->
-  <div *ngIf="phase === 'complete'" class="complete-container">
+  <div *ngIf="!isLoading && phase === 'complete'" class="complete-container">
     <!-- Stars (level sessions) -->
     <div *ngIf="levelNumber > 0" class="stars-display gamification">
       <ion-icon *ngFor="let s of [1,2,3]" [name]="s <= earnedStars ? 'star' : 'star-outline'"

@@ -19,8 +19,13 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="study-content">
+  <!-- Loading: while the session is being prepared (DB load). -->
+  <div *ngIf="isLoading" class="mode-loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
   <!-- Question Phase (also shown when correct) -->
-  <div *ngIf="(phase === 'question' || (phase === 'feedback' && feedbackResult === 'correct')) && currentCard" class="question-container">
+  <div *ngIf="!isLoading && (phase === 'question' || (phase === 'feedback' && feedbackResult === 'correct')) && currentCard" class="question-container">
     <!-- Prompt card: only while typing. After answering, the result card below
          already shows both languages, so this is hidden to avoid duplication. -->
     <div class="card-section" *ngIf="phase === 'question'">
@@ -90,7 +95,7 @@
   </div>
 
   <!-- Feedback Phase (only for almost/incorrect) -->
-  <div *ngIf="phase === 'feedback' && feedbackResult !== 'correct'" class="question-container">
+  <div *ngIf="!isLoading && phase === 'feedback' && feedbackResult !== 'correct'" class="question-container">
     <!-- Prompt card kept only for the "almost" case (which has no result
          card). For "incorrect", the result card below shows both languages. -->
     <div class="card-section" *ngIf="feedbackResult === 'almost'">
@@ -178,7 +183,7 @@
   </ng-template>
 
   <!-- Complete Phase -->
-  <div *ngIf="phase === 'complete'" class="complete-container">
+  <div *ngIf="!isLoading && phase === 'complete'" class="complete-container">
     <!-- Star display -->
     <div class="stars-display gamification">
       <ion-icon *ngFor="let s of getStarArray(earnedStars)" name="star" class="star filled"></ion-icon>

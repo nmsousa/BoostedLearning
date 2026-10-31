@@ -83,6 +83,9 @@ export class QuizPage implements OnInit {
   options: QuizOption[] = [];
 
   phase: QuizPhase = 'play';
+  /** True while the session is being prepared (DB load). Prevents showing an
+   *  empty play screen before the first question is ready. */
+  isLoading = true;
   mistakes = 0;
   correctCount = 0;
   earnedStars = 0;
@@ -132,6 +135,7 @@ export class QuizPage implements OnInit {
       this.loadQuestion();
     }
 
+    this.isLoading = false;
     this.cdr.detectChanges();
   }
 

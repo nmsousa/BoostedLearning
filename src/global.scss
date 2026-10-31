@@ -114,3 +114,17 @@ ion-popover .lang-list {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
+
+// Loading spinner shown while a practice mode prepares its session (DB load),
+// so pages don't briefly render an empty/half state on refresh.
+.mode-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+
+  ion-spinner {
+    width: 40px;
+    height: 40px;
+  }
+}

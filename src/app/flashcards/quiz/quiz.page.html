@@ -19,8 +19,13 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="quiz-content">
+  <!-- Loading: while the session/question is being prepared (DB load). -->
+  <div *ngIf="isLoading" class="quiz-loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
   <!-- Play phase -->
-  <div *ngIf="phase === 'play'" class="quiz-container">
+  <div *ngIf="!isLoading && phase === 'play'" class="quiz-container">
     <p class="quiz-hint">{{ 'mode.whichTranslation' | translate }}</p>
 
     <!-- Word + a single audio icon (recorded, with TTS fallback) -->
@@ -53,7 +58,7 @@
   </div>
 
   <!-- Complete phase -->
-  <div *ngIf="phase === 'complete'" class="complete-container">
+  <div *ngIf="!isLoading && phase === 'complete'" class="complete-container">
     <div *ngIf="levelNumber > 0" class="stars-display gamification">
       <ion-icon *ngFor="let s of [1,2,3]" [name]="s <= earnedStars ? 'star' : 'star-outline'"
         class="star" [class.filled]="s <= earnedStars"></ion-icon>
