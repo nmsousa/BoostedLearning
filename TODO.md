@@ -4,6 +4,21 @@ Tracked tasks that are deferred or in progress.
 
 ## Deferred (on standby)
 
+### Base / origin (source) language — not yet defined
+Status: **not implemented** — currently hardcoded to English.
+
+Translations in all decks are stored in English, and the app assumes English
+as the base/origin language everywhere (e.g. the "Add word" dialog labels the
+second field "Word in English" via `AddWordService.BASE_LANGUAGE = 'en'`).
+
+To do: let the user pick their base/origin language (the language they already
+know / translate from). This affects:
+- the "Add word" dialog field labels/placeholders,
+- the Duolingo import default,
+- potentially showing deck translations in the chosen base language (requires
+  translation data beyond English — bigger content change).
+Start by turning `AddWordService.BASE_LANGUAGE` into a real setting.
+
 ### Daily goal, session length, reminders & push notifications
 Status: **not implemented — Settings "Sessions" section is HIDDEN for now.**
 

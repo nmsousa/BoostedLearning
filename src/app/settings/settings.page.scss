@@ -13,6 +13,18 @@ ion-item-divider {
   letter-spacing: 0.5px;
 }
 
+// Keep select values from overflowing/clipping on rows that also have a
+// two-line label (e.g. Typing Direction). The value ellipsizes instead.
+ion-item ion-select {
+  max-width: 45%;
+  --padding-start: 0;
+}
+ion-item ion-select::part(text) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 ion-item {
   --padding-start: 16px;
   --padding-end: 16px;

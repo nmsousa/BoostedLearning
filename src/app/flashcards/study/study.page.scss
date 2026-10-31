@@ -32,11 +32,12 @@
 }
 
 .card-section {
-  // Fixed-height band so the word stays in the SAME place regardless of how
-  // much content the answer section below holds.
-  flex: 0 0 auto;
-  height: 38vh;
-  min-height: 200px;
+  // Word band. Uses max-height (not a fixed height) and can shrink so that
+  // when the on-screen keyboard reduces the viewport, the input + action
+  // buttons stay visible instead of being pushed off-screen.
+  flex: 0 1 auto;
+  max-height: 38vh;
+  min-height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;

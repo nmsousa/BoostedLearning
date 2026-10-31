@@ -42,7 +42,8 @@
     <!-- Deck list -->
     <div *ngIf="decks.length > 0" class="deck-list">
       <ion-card *ngFor="let deck of decks" class="deck-card">
-        <ion-card-header (click)="toggleDeckExpand(deck.id)" class="deck-header">
+        <ion-card-header (click)="decks.length > 1 && toggleDeckExpand(deck.id)" class="deck-header"
+          [class.not-collapsible]="decks.length === 1">
           <ion-card-title>{{ deck.name }}</ion-card-title>
           <ion-card-subtitle>
             {{ t('practice.countSummary', { words: getUniqueCardCount(deck), levels: getLevels(deck.id).length }) }}
@@ -57,7 +58,7 @@
               <ion-icon name="star" color="warning"></ion-icon>
               <span>{{ getTotalStars(deck.id) }} / {{ getMaxStars(deck.id) }}</span>
             </span>
-            <ion-icon [name]="isDeckExpanded(deck.id) ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
+            <ion-icon *ngIf="decks.length > 1" [name]="isDeckExpanded(deck.id) ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
           </div>
         </ion-card-header>
 
@@ -84,7 +85,7 @@
                 <span class="level-number">
                   {{ t('practice.level', { n: level.levelNumber }) }}<span *ngIf="level.skill"> · {{ level.skill }}</span>
                 </span>
-                <span *ngIf="level.isUnlocked" class="level-cards">{{ t('practice.levelWords', { count: level.cardCount }) }}</span>
+                <span *ngIf="level.isUnlocked" class="level-cards">{{ t('practice.levelWords', { count: (isMatchMode && level.matchWordCount ? level.matchWordCount : level.cardCount) }) }}</span>
                 <span *ngIf="!level.isUnlocked" class="level-cards level-locked-hint">
                   {{ t('practice.unlockHint') }}
                 </span>
@@ -112,12 +113,11 @@
             </div>
           </div>
 
-          <div class="deck-actions">
-            <ion-button fill="outline" size="default" class="deck-action" (click)="confirmResetProgress(deck)">
-              <ion-icon slot="start" name="refresh-outline"></ion-icon>
-              {{ t('practice.resetProgress') }}
-            </ion-button>
-            <ion-button *ngIf="!deck.isBundled" fill="outline" size="default" color="danger" class="deck-action" (click)="confirmDeleteDeck(deck)">
+          <!-- Reset progress removed from the UI (mainly a dev/testing action;
+               confirmResetProgress() kept in the component). Only custom decks
+               show a destructive action: delete the deck. -->
+          <div class="deck-actions" *ngIf="!deck.isBundled">
+            <ion-button fill="outline" size="default" color="danger" class="deck-action" (click)="confirmDeleteDeck(deck)">
               <ion-icon slot="start" name="trash-outline"></ion-icon>
               {{ t('practice.deleteDeck') }}
             </ion-button>

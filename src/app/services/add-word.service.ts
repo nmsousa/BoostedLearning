@@ -36,6 +36,19 @@ export class AddWordService {
   private i18n = inject(I18nAngularService);
 
   /**
+   * Base/origin language for translations. Fixed to English for now; this will
+   * become a user-selectable setting (see TODO: source/origin language).
+   */
+  private readonly BASE_LANGUAGE = 'en';
+
+  /** Localized display name of a language code, falling back to the code. */
+  private langName(code: string): string {
+    const key = `langName.${code}`;
+    const name = this.i18n.t(key);
+    return name === key ? code.toUpperCase() : name;
+  }
+
+  /**
    * Open the practice-page header menu (the 3-dots / "+" action): add a word,
    * and — when a current word is provided — hide that word from future
    * practice.
@@ -80,13 +93,21 @@ export class AddWordService {
     const lang = languageCode ?? this.settings.learningLanguage();
     const t = (k: string, p?: Record<string, string | number>) => this.i18n.t(k, p);
 
+    // Field labels name the actual languages: the word in the language being
+    // learned, and its translation in the base language (English for now —
+    // the base language will become user-selectable, see TODO).
+    const targetName = this.langName(lang);
+    const baseName = this.langName(this.BASE_LANGUAGE);
+    const wordPlaceholder = t('mode.wordInLang', { lang: targetName });
+    const translationPlaceholder = t('mode.wordInLang', { lang: baseName });
+
     return new Promise<boolean>(async (resolve) => {
       const alert = await this.alertCtrl.create({
         header: t('mode.addWord'),
         message: t('mode.addWordMsg'),
         inputs: [
-          { name: 'word', type: 'text', placeholder: t('mode.wordLabel'), attributes: { autocapitalize: 'off' } },
-          { name: 'translations', type: 'text', placeholder: t('mode.translationLabel') },
+          { name: 'word', type: 'text', placeholder: wordPlaceholder, attributes: { autocapitalize: 'off' } },
+          { name: 'translations', type: 'text', placeholder: translationPlaceholder },
         ],
         buttons: [
           { text: t('common.cancel'), role: 'cancel', handler: () => resolve(false) },

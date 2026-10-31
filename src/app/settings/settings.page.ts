@@ -123,8 +123,9 @@ export class SettingsPage {
   dailyGoalOptions: number[] = [10, 15, 20, 30, 50];
 
   flashcardDirectionOptions: { value: FlashcardDirection; label: string }[] = [
-    { value: 'target-only', label: 'Learning language only' },
-    { value: 'mixed', label: 'Mixed (learning + your language)' },
+    // Short labels so the selected value fits the settings row.
+    { value: 'target-only', label: 'Learning only' },
+    { value: 'mixed', label: 'Mixed' },
   ];
 
   goBack(): void {

@@ -26,6 +26,7 @@
     "@angular/platform-browser-dynamic": "22.2.3",
     "@angular/router": "22.2.3",
     "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.3",
     "@capgo/capacitor-updater": "^8.54.0",
     "@ionic/angular": "^9.0.0",

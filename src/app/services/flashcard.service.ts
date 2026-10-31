@@ -169,6 +169,13 @@ export interface DeckLevel {
   bestTimeSeconds?: number;
   /** Best combo reached (Match mode); undefined if never played. */
   bestCombo?: number;
+  /**
+   * Actual number of pairs a Match session plays for this level (level words +
+   * weakest review words from earlier levels). Only set in Match mode; other
+   * modes use `cardCount`. Lets the UI show the true count (which the combo can
+   * reach) instead of the generic level size.
+   */
+  matchWordCount?: number;
 }
 
 /**
@@ -1198,18 +1205,30 @@ export class FlashcardService {
 
   /** Consecutive-correct streak needed to count a word as "familiar". */
   private readonly FAMILIAR_STREAK = 2;
-  /** Consecutive-correct streak needed to count a word as "known".
-   *  3-in-a-row reads intuitively as "known" (matches the ✓/✗ counts a user
-   *  sees on the Your Words screen). */
+  /** Consecutive-correct streak needed to count a word as "known". */
   private readonly KNOWN_STREAK = 3;
+  /** Lifetime accuracy required for "known" (so a lucky recent streak over a
+   *  poor overall record doesn't mark a word as mastered). */
+  private readonly KNOWN_MIN_ACCURACY = 0.7;
+  /** Lifetime accuracy required for "familiar". */
+  private readonly FAMILIAR_MIN_ACCURACY = 0.5;
 
   /**
-   * Map a card's current streak to its knowledge bucket. Single source of
-   * truth shared by the home breakdown and the Your Words list.
+   * Map a card to its knowledge bucket from BOTH the current streak and the
+   * lifetime accuracy. Requiring accuracy prevents the confusing case where a
+   * word with a bad record (e.g. 3 right / 4 wrong = 43%) shows as "known"
+   * just because the last few answers were correct. Single source of truth
+   * shared by the home breakdown and the Your Words list.
    */
-  private levelForStreak(streak: number): KnowledgeLevel {
-    if (streak >= this.KNOWN_STREAK) return 'known';
-    if (streak >= this.FAMILIAR_STREAK) return 'familiar';
+  private levelForCard(card: Flashcard): KnowledgeLevel {
+    const correct = card.correctCount ?? 0;
+    const incorrect = card.incorrectCount ?? 0;
+    const seen = correct + incorrect;
+    const accuracy = seen > 0 ? correct / seen : 1; // unseen-by-stats: don't penalize
+    const streak = card.streak ?? 0;
+
+    if (streak >= this.KNOWN_STREAK && accuracy >= this.KNOWN_MIN_ACCURACY) return 'known';
+    if (streak >= this.FAMILIAR_STREAK && accuracy >= this.FAMILIAR_MIN_ACCURACY) return 'familiar';
     return 'learning';
   }
 
@@ -1248,8 +1267,8 @@ export class FlashcardService {
         if (seen === 0 && medium === 0) continue; // never practiced
 
         const missRate = seen > 0 ? incorrect / seen : 0;
-        // Same streak-based bucket as the home breakdown (single source).
-        const level = this.levelForStreak(card.streak);
+        // Same bucket rule as the home breakdown (streak + accuracy).
+        const level = this.levelForCard(card);
 
         rows.push({
           text: card.text,
@@ -1294,7 +1313,7 @@ export class FlashcardService {
           breakdown.neverStudied++;
           continue;
         }
-        breakdown[this.levelForStreak(card.streak)]++;
+        breakdown[this.levelForCard(card)]++;
         breakdown.total++;
       }
     }
@@ -1476,6 +1495,11 @@ export class FlashcardService {
         isUnlocked,
         bestTimeSeconds: progress?.bestTimeSeconds,
         bestCombo: progress?.bestCombo,
+        // Match plays level words + review words; show the real pair count so
+        // it lines up with the combo the user can reach.
+        matchWordCount: mode === 'match'
+          ? this.playableCards(this.getMatchSessionCards(deckId, levelNumber)).length
+          : undefined,
       });
     }
     
