@@ -23,9 +23,12 @@
       (ionClear)="onSearch($event)">
     </ion-searchbar>
 
-    <!-- Level filter: a labelled button that opens a checkbox popover. -->
+    <!-- Level filter: a labelled button that opens a checkbox popover. The
+         label + our own caret are drawn in the button; the ion-select is
+         stretched invisibly behind it and owns the tap/interaction. -->
     <div class="filter-ctl" [class.active]="hasLevelFilter">
       <span class="filter-label">{{ levelFilterLabel }}</span>
+      <ion-icon name="chevron-down" class="ctl-caret" aria-hidden="true"></ion-icon>
       <ion-select
         class="filter-select"
         [value]="selectedLevels"
@@ -40,9 +43,10 @@
       </ion-select>
     </div>
 
-    <!-- Compact sort: icon + caret; whole control opens the popover. -->
+    <!-- Compact sort: swap icon + our own caret; whole control opens popover. -->
     <div class="sort-row">
       <ion-icon name="swap-vertical-outline" class="sort-icon" aria-hidden="true"></ion-icon>
+      <ion-icon name="chevron-down" class="ctl-caret" aria-hidden="true"></ion-icon>
       <ion-select
         class="sort-select"
         [value]="sortKey"

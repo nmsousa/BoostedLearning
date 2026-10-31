@@ -14,17 +14,62 @@
     min-width: 0;
     padding: 0;
   }
+
+  // Trim the searchbar's generous internal padding so the placeholder keeps
+  // showing (instead of clipping to "Search w…") when the row gets narrow.
+  // ion-searchbar uses SCOPED (not shadow) styles, so ::ng-deep reaches them.
+  ::ng-deep .words-search {
+    .searchbar-input {
+      padding-inline-start: 34px;
+      padding-inline-end: 8px;
+    }
+    .searchbar-search-icon {
+      inset-inline-start: 8px;
+      width: 18px;
+      height: 18px;
+    }
+  }
 }
 
-// Level filter control: a compact button showing the current label + caret
-// that opens a multi-select checkbox popover.
+// A (hidden) ion-select stretched behind visible content so a tap anywhere on
+// the control opens the popover. The visible label/icons + our own caret are
+// drawn in the wrapper; the select's native text and toggle icon are hidden.
+.filter-select,
+.sort-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --highlight-color-focused: transparent;
+  --highlight-color-valid: transparent;
+  --highlight-color-invalid: transparent;
+  cursor: pointer;
+
+  &::part(text) { display: none; }
+  &::part(icon) { display: none; }   // our own .ctl-caret is used instead
+  &::part(container) { border: 0; }
+}
+
+// Our own caret, always on the right of the control.
+.ctl-caret {
+  font-size: 14px;
+  flex-shrink: 0;
+  pointer-events: none;   // taps fall through to the select beneath
+}
+
+// Level filter: a pill showing the current label + caret; opens a checkbox
+// popover. gap + padding leave room for both the label and the caret.
 .filter-ctl {
   position: relative;
   display: flex;
   align-items: center;
+  gap: 4px;
   flex: 0 0 auto;
   height: 34px;
-  padding: 0 4px 0 10px;
+  padding: 0 10px;
   border: 1px solid var(--ion-color-step-250, #3a4754);
   border-radius: 17px;
   color: var(--ion-color-medium);
@@ -39,75 +84,26 @@
   .filter-label {
     font-size: 0.82rem;
     font-weight: 600;
-    pointer-events: none;   // taps fall through to the select beneath
+    pointer-events: none;
   }
-
-  // Stretch the select across the whole button so the label OR caret opens it.
-  .filter-select {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    --padding-start: 0;
-    --padding-end: 4px;
-    --highlight-color-focused: transparent;
-    --highlight-color-valid: transparent;
-    --highlight-color-invalid: transparent;
-    cursor: pointer;
-  }
-  // Hide the select's own value text; the .filter-label shows it instead.
-  .filter-select::part(text) { display: none; }
-  .filter-select::part(icon) { opacity: 0.9; margin-inline-start: auto; }
-  .filter-select::part(container) { border: 0; }
 }
 
-// Compact sort: an icon + a caret only (no label/value text inline).
-// The whole control is one tap target: the ion-select is stretched across the
-// row, and the leading icon sits on top of it (pointer-events disabled) so a
-// tap anywhere — icon OR caret — opens the popover.
+// Compact sort: swap icon + caret; the whole control opens the popover.
 .sort-row {
   position: relative;
   display: flex;
   align-items: center;
+  gap: 3px;
   flex: 0 0 auto;
+  height: 34px;
+  padding: 0 6px;
   color: var(--ion-color-medium);
   cursor: pointer;
 
   .sort-icon {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
     font-size: 20px;
-    pointer-events: none;   // taps pass through to the select beneath
-    z-index: 1;
-  }
-
-  .sort-select {
-    // Reserve room on the left for the overlaid icon so the caret clears it.
-    --padding-start: 24px;
-    --padding-end: 4px;
-    --highlight-color-focused: transparent;
-    --highlight-color-valid: transparent;
-    --highlight-color-invalid: transparent;
-    width: auto;
-    min-width: 0;
-    flex: 0 0 auto;
-    color: var(--ion-color-medium);
-    cursor: pointer;
-  }
-
-  // Hide the selected-value text; keep only the dropdown caret.
-  .sort-select::part(text) {
-    display: none;
-  }
-  .sort-select::part(icon) {
-    opacity: 0.9;
-  }
-  // Kill the MD focus/validity underline that lingered after the popover
-  // opened and closed (the stray blue line under the control).
-  .sort-select::part(container) {
-    border: 0;
+    flex-shrink: 0;
+    pointer-events: none;
   }
 }
 
