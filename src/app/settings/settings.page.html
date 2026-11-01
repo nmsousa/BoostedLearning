@@ -189,6 +189,27 @@
       </ion-item>
     </ion-item-group>
 
+    <!-- Admin / dev section (hidden in production builds) -->
+    <ion-item-group *ngIf="showAdminGroup">
+      <ion-item-divider>
+        <ion-label>{{ 'settings.secAdmin' | translate }}</ion-label>
+      </ion-item-divider>
+
+      <ion-item>
+        <ion-icon slot="start" name="construct-outline"></ion-icon>
+        <ion-label>
+          {{ 'settings.adminMode' | translate }}
+          <p>{{ 'settings.adminModeDesc' | translate }}</p>
+        </ion-label>
+        <ion-toggle mode="ios" [checked]="adminMode" (ionChange)="onAdminModeChange($event)"></ion-toggle>
+      </ion-item>
+
+      <ion-item button detail="true" (click)="openAdminPage()" *ngIf="adminMode">
+        <ion-icon slot="start" name="information-circle-outline"></ion-icon>
+        <ion-label>{{ 'settings.adminInfo' | translate }}</ion-label>
+      </ion-item>
+    </ion-item-group>
+
     <!-- About Section -->
     <ion-item-group>
       <ion-item-divider>

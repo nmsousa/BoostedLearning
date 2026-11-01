@@ -18,6 +18,7 @@ import { I18nAngularService } from '../services/i18n.service';
 import { FlashcardService, DuolingoResponse, DuolingoLexeme } from '../services/flashcard.service';
 import { DUOME_COURSES } from '../services/duome-courses';
 import { BUILD_INFO } from '../../build-info';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-settings',
@@ -75,6 +76,10 @@ export class SettingsPage {
   get notificationsEnabled() { return this.settingsService.notificationsEnabled(); }
   get reducedDistraction() { return this.settingsService.reducedDistraction(); }
   get flashcardDirection() { return this.settingsService.flashcardDirection(); }
+  get adminMode() { return this.settingsService.adminMode(); }
+
+  /** Whether dev-only controls (the Admin group) should be shown at all. */
+  get showAdminGroup() { return !environment.production; }
 
   // Options
   themeOptions: { value: Theme; label: string }[] = [
@@ -168,6 +173,15 @@ export class SettingsPage {
 
   onFlashcardDirectionChange(event: CustomEvent): void {
     this.settingsService.updateSetting('flashcardDirection', event.detail.value);
+  }
+
+  onAdminModeChange(event: CustomEvent): void {
+    this.settingsService.updateSetting('adminMode', event.detail.checked);
+  }
+
+  /** Open the in-app Admin / debug info page. */
+  openAdminPage(): void {
+    this.router.navigate(['/admin']);
   }
 
   // ============================================

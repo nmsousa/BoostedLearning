@@ -1,0 +1,40 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/settings"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Admin · How it works</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="admin-content ion-padding">
+  <p class="admin-pending">{{ pending }}</p>
+
+  <h2>Unlocking</h2>
+  <p>{{ unlockRule }}</p>
+
+  <h2>Rounds (5 per level)</h2>
+  <table class="admin-table">
+    <thead>
+      <tr><th>Round</th><th>New</th><th>Review</th><th>Emphasis</th></tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let r of rounds">
+        <td>{{ r.round }}</td><td>{{ r.newPct }}</td><td>{{ r.reviewPct }}</td><td>{{ r.emphasis }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Stars</h2>
+  <table class="admin-table">
+    <tbody>
+      <tr *ngFor="let s of stars"><td class="stars-cell">{{ s.stars }}</td><td>{{ s.rule }}</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Time for 3 stars (Match)</h2>
+  <p>{{ timeRule }}</p>
+
+  <h2>Why is a word shown so often?</h2>
+  <p>{{ frequencyRule }}</p>
+</ion-content>

@@ -39,6 +39,11 @@ const routes: Routes = [
     path: 'words',
     loadChildren: () => import('./words/words.module').then( m => m.WordsPageModule)
   },
+  {
+    // Dev/testing "how it works" page (reached from Settings → Admin).
+    path: 'admin',
+    loadChildren: () => import('./admin/admin.module').then( m => m.AdminPageModule)
+  },
 ];
 
 @NgModule({

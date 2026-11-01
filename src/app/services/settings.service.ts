@@ -41,6 +41,7 @@ export interface AppSettings {
   reducedDistraction: boolean; // hides non-essential gamification
   flashcardDirection: FlashcardDirection; // typing direction in flashcard study
   learningLanguage: string; // code of the language being learned, e.g. 'nl'
+  adminMode: boolean; // dev/test tools (hidden in production builds)
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -57,6 +58,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   reducedDistraction: false,
   flashcardDirection: 'target-only',
   learningLanguage: 'nl',
+  // Defaults ON for now (dev/test phase). Will default off / be removed for
+  // production. The Settings toggle itself is hidden in production builds.
+  adminMode: true,
 };
 
 const STORAGE_KEY = 'boosted-learning-settings';
@@ -89,6 +93,8 @@ export class SettingsService {
   readonly reducedDistraction = computed(() => this.settingsSignal().reducedDistraction);
   readonly flashcardDirection = computed(() => this.settingsSignal().flashcardDirection);
   readonly learningLanguage = computed(() => this.settingsSignal().learningLanguage);
+  /** Dev/test tools enabled. The Settings toggle is hidden in production. */
+  readonly adminMode = computed(() => this.settingsSignal().adminMode);
 
   // Computed effective theme (resolves 'system')
   readonly effectiveTheme = computed<'light' | 'dark'>(() => {

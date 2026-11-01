@@ -101,8 +101,9 @@ export class AddWordService {
       handler: () => { this.reportProblem(opts, lang); },
     });
 
-    // DEV-only Admin shortcut: complete the level with a chosen star count.
-    if (!environment.production && opts.onAdminComplete) {
+    // Admin shortcut: complete the level with a chosen star count. Shown only
+    // in non-production builds AND when the Admin-mode setting is on.
+    if (!environment.production && this.settings.adminMode() && opts.onAdminComplete) {
       buttons.push({
         text: '🛠  Admin: terminar nível',
         handler: () => { this.promptAdminComplete(opts.onAdminComplete!); },
