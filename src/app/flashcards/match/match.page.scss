@@ -88,7 +88,9 @@
 .match-board {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  // Slightly more space between the two columns.
+  column-gap: 14px;
+  row-gap: 22px;
   // Columns start at the top of the reserved board height so removing tiles
   // near the end leaves space at the bottom rather than re-centering.
   align-items: start;
@@ -101,15 +103,21 @@
 .match-col {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  // Taller spacing between stacked tiles.
+  gap: 22px;
 }
 
 .match-item {
   width: 100%;
-  min-height: 76px;
-  padding: 16px 16px;
+  // Taller tiles so they're easier to read and tap.
+  min-height: 92px;
+  padding: 18px 16px;
   border: 2px solid transparent;
   border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   background: var(--ion-color-light);
   color: var(--ion-text-color);
   font-size: 1.05rem;

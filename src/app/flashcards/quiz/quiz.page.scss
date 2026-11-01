@@ -96,13 +96,15 @@
 .quiz-options {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  // A bit more breathing room between options.
+  gap: 18px;
 }
 
 .quiz-option {
   width: 100%;
-  min-height: 60px;
-  padding: 14px 16px;
+  // Taller option cards so they're easier to read and tap.
+  min-height: 72px;
+  padding: 18px 16px;
   border: 2px solid transparent;
   border-radius: 14px;
   background: var(--ion-color-light);
