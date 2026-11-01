@@ -57,6 +57,14 @@ export class BuilderPage implements OnInit {
   /** For a phrase stage: the shuffled word bank to pick from. */
   bank: string[] = [];
 
+  /**
+   * Token the user just tapped in the wrong order. Drives a brief red "shake"
+   * on that bank word so a wrong pick gives feedback instead of silently
+   * getting the phrase stuck. Cleared on a timer / the next correct pick.
+   */
+  wrongToken: string | null = null;
+  private wrongTimer: ReturnType<typeof setTimeout> | null = null;
+
   t(key: string, params?: Record<string, string | number>): string {
     return this.i18n.t(key, params);
   }
@@ -137,12 +145,21 @@ export class BuilderPage implements OnInit {
 
   pick(token: string): void {
     if (this.stage.kind !== 'phrase' || this.stage.done) return;
+
+    // Only accept the word if it is the correct NEXT token. A wrong pick used
+    // to be appended silently, which gave no feedback and left the phrase
+    // permanently un-completable (stuck). Now a wrong pick is rejected with a
+    // brief visual flash and the word stays in the bank.
+    const expected = this.stage.phrase.tokens[this.stage.chosen.length];
+    if (token !== expected) {
+      this.flashWrong(token);
+      return;
+    }
+
+    this.clearWrong();
     const chosen = [...this.stage.chosen, token];
     this.bank = this.removeFirst(this.bank, token);
-    const correctSoFar = this.stage.phrase.tokens
-      .slice(0, chosen.length)
-      .every((t, i) => t === chosen[i]);
-    const done = chosen.length === this.stage.phrase.tokens.length && correctSoFar;
+    const done = chosen.length === this.stage.phrase.tokens.length;
     this.stage = { ...this.stage, chosen, done };
     if (done) {
       this.completed.add(this.stage.phrase.id);
@@ -152,8 +169,36 @@ export class BuilderPage implements OnInit {
     this.cdr.detectChanges();
   }
 
+  /** Remove a chosen word (tap-to-undo) and return it to the bank. */
+  unpick(index: number): void {
+    if (this.stage.kind !== 'phrase' || this.stage.done) return;
+    if (index < 0 || index >= this.stage.chosen.length) return;
+    const chosen = [...this.stage.chosen];
+    const [removed] = chosen.splice(index, 1);
+    this.bank = [...this.bank, removed];
+    this.clearWrong();
+    this.stage = { ...this.stage, chosen, done: false };
+    this.cdr.detectChanges();
+  }
+
+  private flashWrong(token: string): void {
+    this.wrongToken = token;
+    if (this.wrongTimer) clearTimeout(this.wrongTimer);
+    this.wrongTimer = setTimeout(() => {
+      this.wrongToken = null;
+      this.wrongTimer = null;
+      this.cdr.detectChanges();
+    }, 600);
+    this.cdr.detectChanges();
+  }
+  private clearWrong(): void {
+    if (this.wrongTimer) { clearTimeout(this.wrongTimer); this.wrongTimer = null; }
+    this.wrongToken = null;
+  }
+
   resetPhrase(): void {
     if (this.stage.kind !== 'phrase') return;
+    this.clearWrong();
     this.bank = this.shuffle([...this.stage.phrase.tokens]);
     this.stage = { ...this.stage, chosen: [], done: false };
     this.cdr.detectChanges();
