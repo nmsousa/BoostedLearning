@@ -13,6 +13,7 @@ import { SessionService } from '../services/session.service';
 import { SettingsService } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { FlashcardService } from '../services/flashcard.service';
+import { AddWordService } from '../services/add-word.service';
 import { KnowledgeBreakdown } from '../../core/knowledge-level';
 
 interface QuickAction {
@@ -37,6 +38,7 @@ export class HomePage implements OnInit {
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
   private flashcards = inject(FlashcardService);
+  private addWordService = inject(AddWordService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
@@ -225,6 +227,11 @@ export class HomePage implements OnInit {
 
   navigateToSettings(): void {
     this.router.navigate(['/settings']);
+  }
+
+  /** Open the "report a problem" feedback form from the home page. */
+  reportProblem(): void {
+    void this.addWordService.reportProblem({ languageCode: this.settings.learningLanguage() });
   }
 
   /** Open the detailed "Your words" list (only when there are words). */

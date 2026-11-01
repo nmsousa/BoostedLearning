@@ -124,17 +124,44 @@ export class AddWordService {
       message: opts.currentWord
         ? t('feedback.aboutWord', { word: opts.currentWord })
         : t('feedback.intro'),
-      inputs: reasons.map(r => ({
-        type: 'checkbox' as const,
-        label: t(r.labelKey),
-        value: r.value,
-      })),
+      inputs: [
+        ...reasons.map(r => ({
+          type: 'checkbox' as const,
+          label: t(r.labelKey),
+          value: r.value,
+        })),
+      ],
+      buttons: [
+        { text: t('common.cancel'), role: 'cancel' },
+        {
+          text: t('feedback.next'),
+          handler: (checked: string[]) => {
+            // Chain to a free-text step so the user can add detail (a single
+            // Ionic alert can't reliably mix checkboxes + a textarea).
+            void this.promptNoteAndSend(checked ?? [], opts, lang);
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  /** Second step: optional free-text note, then submit. */
+  private async promptNoteAndSend(checkedReasons: string[], opts: ModeMenuOptions, lang: string): Promise<void> {
+    const t = (k: string, p?: Record<string, string | number>) => this.i18n.t(k, p);
+
+    const alert = await this.alertCtrl.create({
+      header: t('feedback.report'),
+      message: t('feedback.noteIntro'),
+      inputs: [
+        { name: 'note', type: 'textarea', placeholder: t('feedback.notePlaceholder') },
+      ],
       buttons: [
         { text: t('common.cancel'), role: 'cancel' },
         {
           text: t('feedback.submit'),
-          handler: (checked: string[]) => {
-            void this.sendReport(checked ?? [], opts, lang);
+          handler: (data: { note?: string }) => {
+            void this.sendReport(checkedReasons, data?.note ?? '', opts, lang);
           },
         },
       ],
@@ -144,9 +171,10 @@ export class AddWordService {
 
   /** Deliver the report via FeedbackService (Worker → GitHub issue, with a
    *  mailto fallback) and confirm to the user. */
-  private async sendReport(checkedReasons: string[], opts: ModeMenuOptions, lang: string): Promise<void> {
+  private async sendReport(checkedReasons: string[], note: string, opts: ModeMenuOptions, lang: string): Promise<void> {
     const ok = await this.feedback.submit({
       reasons: checkedReasons,
+      note,
       word: opts.currentWord ?? null,
       correctAnswer: opts.correctAnswer ?? null,
       modeName: opts.modeName ?? null,

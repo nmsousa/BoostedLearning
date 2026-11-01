@@ -61,8 +61,11 @@ export class AppComponent {
 
         void StatusBar.setOverlaysWebView({ overlay: false });
         void StatusBar.setBackgroundColor({ color: bar });
-        // Light icons on a dark bar, dark icons on a light bar.
-        void StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark });
+        // NOTE: the plugin's Style names are counter-intuitive:
+        //   Style.Dark  = LIGHT text (for a dark background)
+        //   Style.Light = DARK text  (for a light background)
+        // So a dark theme needs Style.Dark to get readable light text.
+        void StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light });
       });
     });
   }

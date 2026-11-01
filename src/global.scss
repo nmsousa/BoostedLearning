@@ -152,8 +152,14 @@ ion-popover .lang-list {
 // --------------------------------------------------------------------------
 
 // A divider line under the popover header, separating the title from options.
+// Also give these popovers a comfortable minimum width so option labels don't
+// get truncated with an ellipsis (the Sort popover's longest option was being
+// clipped to "…").
 .levels-popover,
 .sort-popover {
+  --min-width: 248px;
+  --width: auto;
+
   ion-list-header {
     border-bottom: 1px solid var(--ion-color-step-150, #2a3744);
     margin-bottom: 4px;
@@ -164,32 +170,55 @@ ion-popover .lang-list {
   ion-list {
     padding-top: 0;
   }
+
+  // Let option labels use the full width and wrap instead of truncating.
+  ion-select-popover ion-item,
+  ion-item {
+    --min-height: 44px;
+  }
+  ion-label {
+    white-space: normal !important;
+    overflow: visible !important;
+  }
 }
 
-// Coloured dots for each knowledge level in the Levels popover, mirroring the
-// old filter badges (red = learning, amber = familiar, green = known). The
-// options render in a fixed order, so target the items by position. The dot
-// sits at the END of the row (AFTER the checkbox), as a trailing pseudo-
-// element on each ion-item's native part.
+// Colour-code each knowledge level in the Levels popover by tinting its
+// CHECKBOX (red = learning, amber = familiar, green = known). Targeting the
+// checkbox is far more reliable across WebViews than a ::part pseudo-element.
+// Options render in a fixed order, so address them by position.
 .levels-popover {
-  ion-item::part(native) {
-    position: relative;
-    padding-inline-end: 24px;
+  ion-item:nth-of-type(1) ion-checkbox {
+    --border-color: var(--ion-color-danger);
+    --checkbox-background-checked: var(--ion-color-danger);
+    --border-color-checked: var(--ion-color-danger);
+  }
+  ion-item:nth-of-type(2) ion-checkbox {
+    --border-color: var(--ion-color-warning);
+    --checkbox-background-checked: var(--ion-color-warning);
+    --border-color-checked: var(--ion-color-warning);
+  }
+  ion-item:nth-of-type(3) ion-checkbox {
+    --border-color: var(--ion-color-success);
+    --checkbox-background-checked: var(--ion-color-success);
+    --border-color-checked: var(--ion-color-success);
   }
 
-  ion-item::part(native)::after {
+  // A coloured dot BEFORE each label too, via a leading pseudo-element on the
+  // label (belt-and-braces with the checkbox tint).
+  ion-item:nth-of-type(1) ion-label::before,
+  ion-item:nth-of-type(2) ion-label::before,
+  ion-item:nth-of-type(3) ion-label::before {
     content: "";
-    position: absolute;
-    inset-inline-end: 8px;
-    top: 50%;
-    transform: translateY(-50%);
+    display: inline-block;
     width: 10px;
     height: 10px;
     border-radius: 50%;
+    margin-inline-end: 8px;
+    vertical-align: middle;
   }
-  ion-item:nth-of-type(1)::part(native)::after { background: var(--ion-color-danger); }  // Learning
-  ion-item:nth-of-type(2)::part(native)::after { background: var(--ion-color-warning); } // Familiar
-  ion-item:nth-of-type(3)::part(native)::after { background: var(--ion-color-success); } // Known
+  ion-item:nth-of-type(1) ion-label::before { background: var(--ion-color-danger); }
+  ion-item:nth-of-type(2) ion-label::before { background: var(--ion-color-warning); }
+  ion-item:nth-of-type(3) ion-label::before { background: var(--ion-color-success); }
 }
 
 // --------------------------------------------------------------------------

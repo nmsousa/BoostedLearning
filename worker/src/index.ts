@@ -44,6 +44,7 @@ interface FeedbackPayload {
   correctAnswer?: string | null;
   modeName?: string | null;
   learningLanguage?: string | null;
+  note?: string | null;
   diagnostics?: Diagnostics;
 }
 
@@ -88,11 +89,13 @@ function buildIssue(p: FeedbackPayload): { title: string; body: string } {
 
   const title = `Feedback: ${word}${reasons.length ? ` — ${reasons[0]}` : ''}`;
 
+  const note = clamp(p.note, 1000);
   const body = [
     `**Word:** ${word}`,
     `**Expected answer:** ${clamp(p.correctAnswer, 200) || '-'}`,
     `**Mode:** ${clamp(p.modeName, 40) || '-'}`,
     `**Reasons:** ${reasons.join(', ') || '-'}`,
+    `**Note:** ${note || '-'}`,
     '',
     '<details><summary>Diagnostics</summary>',
     '',
@@ -132,9 +135,10 @@ export default {
       return json({ ok: false, error: 'Invalid JSON' }, 400, env);
     }
 
-    // Minimal validation: must have at least one reason or a word.
+    // Minimal validation: must have at least one reason, a note, or a word.
     const hasReason = Array.isArray(payload.reasons) && payload.reasons.length > 0;
-    if (!hasReason && !payload.word) {
+    const hasNote = typeof payload.note === 'string' && payload.note.trim().length > 0;
+    if (!hasReason && !hasNote && !payload.word) {
       return json({ ok: false, error: 'Empty report' }, 422, env);
     }
 

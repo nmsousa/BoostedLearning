@@ -33,6 +33,8 @@ export interface FeedbackReport {
   modeName?: string | null;
   /** Target (learning) language code. */
   learningLanguage?: string | null;
+  /** Optional free-text detail typed by the user. */
+  note?: string | null;
 }
 
 /** Device + app diagnostics attached automatically to every report. */
@@ -121,6 +123,7 @@ export class FeedbackService {
       `Expected answer: ${report.correctAnswer ?? '-'}`,
       `Mode: ${report.modeName ?? '-'}`,
       `Reasons: ${report.reasons.join('; ') || '-'}`,
+      `Note: ${report.note?.trim() || '-'}`,
       '',
       '--- diagnostics ---',
       `App: ${d.appVersion} (${d.buildDate})`,

@@ -464,3 +464,12 @@ ion-button {
     --background: rgba(var(--ion-color-primary-rgb), 0.08);
   }
 }
+
+// App icon shown in place of the "BoostedLearning" title text.
+.app-logo {
+  height: 28px;
+  width: 28px;
+  vertical-align: middle;
+  object-fit: contain;
+  &.large { height: 44px; width: 44px; }
+}

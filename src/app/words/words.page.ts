@@ -222,8 +222,9 @@ export class WordsPage implements OnInit {
           role: 'destructive',
           handler: () => { this.setPriority(w, 'hide'); },
         },
-        { text: this.t('common.cancel'), role: 'cancel' },
+        { text: this.t('common.cancel'), icon: 'close-outline', role: 'cancel' },
       ],
+      cssClass: 'mode-menu-sheet',
     });
     await sheet.present();
   }

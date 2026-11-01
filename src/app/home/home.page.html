@@ -1,6 +1,8 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>BoostedLearning</ion-title>
+    <ion-title>
+      <img class="app-logo" src="assets/icon/favicon-32x32.png" alt="Boostionary" />
+    </ion-title>
     <ion-buttons slot="end">
       <!-- Learning-language selector: flag-only button, flag + name inside -->
       <button
@@ -28,6 +30,9 @@
           </ion-list>
         </ng-template>
       </ion-popover>
+      <ion-button (click)="reportProblem()" [attr.aria-label]="'feedback.report' | translate">
+        <ion-icon slot="icon-only" name="flag-outline"></ion-icon>
+      </ion-button>
       <ion-button (click)="navigateToSettings()" aria-label="Settings">
         <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
       </ion-button>
@@ -38,7 +43,9 @@
 <ion-content [fullscreen]="true">
   <ion-header collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">BoostedLearning</ion-title>
+      <ion-title size="large">
+        <img class="app-logo large" src="assets/icon/icon-192.png" alt="Boostionary" />
+      </ion-title>
     </ion-toolbar>
   </ion-header>
 
