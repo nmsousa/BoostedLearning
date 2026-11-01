@@ -66,9 +66,23 @@ export class FlashcardsPage implements OnInit {
       );
     }
 
-    buttons.push({ text: this.t('common.cancel'), role: 'cancel' });
+    // Report a problem — available on the levels list too (no specific word
+    // here, so the feedback form uses the generic intro).
+    buttons.push({
+      text: this.t('feedback.report'),
+      icon: 'flag-outline',
+      handler: () => {
+        void this.addWordService.reportProblem({
+          languageCode: this.settings.learningLanguage(),
+          modeName: this.modeLabel,
+        });
+      },
+    });
 
-    const sheet = await this.actionSheet.create({ buttons });
+    buttons.push({ text: this.t('common.cancel'), icon: 'close-outline', role: 'cancel' });
+
+    // Reuse the shared menu styling (tightened icon↔label gap, aligned Cancel).
+    const sheet = await this.actionSheet.create({ buttons, cssClass: 'mode-menu-sheet' });
     await sheet.present();
   }
 
