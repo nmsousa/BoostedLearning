@@ -14,6 +14,7 @@ import { FlashcardService } from './flashcard.service';
 import { SettingsService } from './settings.service';
 import { I18nAngularService } from './i18n.service';
 import { FeedbackService } from './feedback.service';
+import { environment } from '../../environments/environment';
 
 /** Options for the practice-page header menu. */
 export interface ModeMenuOptions {
@@ -33,6 +34,12 @@ export interface ModeMenuOptions {
    * page instead. Only the in-game menus use this service, hence the default.
    */
   allowAddWord?: boolean;
+  /**
+   * DEV-only: when provided (and not a production build), an "Admin" entry is
+   * offered that completes the current level with the chosen star count,
+   * skipping actual play — handy to test level progression quickly.
+   */
+  onAdminComplete?: (stars: 0 | 1 | 2 | 3) => void;
 }
 
 @Injectable({
@@ -94,9 +101,33 @@ export class AddWordService {
       handler: () => { this.reportProblem(opts, lang); },
     });
 
+    // DEV-only Admin shortcut: complete the level with a chosen star count.
+    if (!environment.production && opts.onAdminComplete) {
+      buttons.push({
+        text: '🛠  Admin: terminar nível',
+        handler: () => { this.promptAdminComplete(opts.onAdminComplete!); },
+      });
+    }
+
     buttons.push({ text: t('common.cancel'), icon: 'close-outline', role: 'cancel' });
 
     const sheet = await this.actionSheet.create({ buttons, cssClass: 'mode-menu-sheet' });
+    await sheet.present();
+  }
+
+  /** DEV-only: pick how many stars to finish the current level with. */
+  private async promptAdminComplete(cb: (stars: 0 | 1 | 2 | 3) => void): Promise<void> {
+    const sheet = await this.actionSheet.create({
+      header: 'Admin · terminar nível com…',
+      cssClass: 'mode-menu-sheet',
+      buttons: [
+        { text: '0 estrelas (falhei muito)', handler: () => cb(0) },
+        { text: '1 estrela', handler: () => cb(1) },
+        { text: '2 estrelas', handler: () => cb(2) },
+        { text: '3 estrelas', handler: () => cb(3) },
+        { text: this.i18n.t('common.cancel'), icon: 'close-outline', role: 'cancel' },
+      ],
+    });
     await sheet.present();
   }
 

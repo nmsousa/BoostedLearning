@@ -62,7 +62,22 @@ export class StudyPage implements OnInit, OnDestroy {
       correctAnswer: this.targetWord ?? null,
       modeName: this.t('mode.titleWrite'),
       onHidden: () => this.nextCard(),
+      onAdminComplete: (stars) => this.adminCompleteLevel(stars),
     });
+  }
+
+  /**
+   * DEV-only: finish the current level immediately with a chosen star count,
+   * persisting progress under the active mode, then return. Skips real play.
+   */
+  private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
+    if (this.levelNumber <= 0 || !this.deck) { this.router.navigate([this.backUrl], { replaceUrl: true }); return; }
+    // Map a star target to a score percentage inside its band.
+    const pct = { 0: 30, 1: 75, 2: 90, 3: 100 }[stars];
+    const total = Math.max(1, this.totalUnique || this.studyCards.length || 1);
+    const correct = Math.round((pct / 100) * total);
+    await this.flashcardService.saveLevelProgress(this.deck.id, this.mode, this.levelNumber, correct, total);
+    this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 
   deck: FlashcardDeck | null = null;

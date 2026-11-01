@@ -14,7 +14,9 @@
   gap: 4px;
   padding: 18px 20px;
   border-radius: 22px;
-  background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-tertiary, #7c3aed));
+  // A cool blue→violet gradient (the previous one ended in gold, which made
+  // the gold stars invisible).
+  background: linear-gradient(135deg, var(--ion-color-primary), #7c3aed);
   color: #fff;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
   cursor: pointer;
@@ -41,7 +43,15 @@
     padding: 7px 16px;
     border-radius: 999px;
   }
-  .hero-stars .star { font-size: 18px; &.filled { color: #ffd33d; } &.empty { color: rgba(255,255,255,0.5); } }
+  // Stars on a dark chip so they always read, regardless of the gradient.
+  .hero-stars {
+    display: inline-flex;
+    gap: 2px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.28);
+    .star { font-size: 16px; &.filled { color: #ffd33d; } &.empty { color: rgba(255, 255, 255, 0.55); } }
+  }
 }
 
 // ── Jump-to-level ──────────────────────────────────────────────────────────
@@ -62,24 +72,32 @@
   }
 }
 
-// ── Chapter ────────────────────────────────────────────────────────────────
+// ── Chapter (each is a distinct card) ───────────────────────────────────────
 .chapter {
-  margin-top: 18px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--ion-color-step-100, #13263c);
+  border: 1px solid var(--ion-color-step-150, #1e3550);
 
-  &.locked { opacity: 0.6; }
+  // Locked chapters: dim, dashed, collapsed to just the header + hint.
+  &.locked {
+    background: transparent;
+    border-style: dashed;
+    opacity: 0.7;
+  }
 
   .chapter-head {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 4px;
   }
   .chapter-title {
     font-size: 0.82rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--ion-color-medium);
+    color: var(--ion-text-color);
     flex: 1 1 auto;
     white-space: nowrap;
     overflow: hidden;
@@ -95,7 +113,7 @@
     font-size: 0.82rem;
     color: var(--ion-color-medium);
     font-style: italic;
-    margin: 4px 0 0;
+    margin: 6px 0 0;
   }
 }
 
@@ -103,8 +121,8 @@
 .trail {
   display: flex;
   flex-direction: column;
-  gap: 22px;   // extra room so the star pill under a node clears the next one
-  padding: 10px 0 16px;
+  gap: 30px;   // room so the star pill under a node clears the next one
+  padding: 12px 0 20px;
   position: relative;
 }
 
@@ -138,20 +156,22 @@
 
   .node-num { line-height: 1; }
 
-  // Stars sit on a pill just below the node, fully clear of the border so they
+  // Stars sit on a pill BELOW the node, fully clear of the border so they
   // aren't clipped by the circle.
   .node-stars {
     position: absolute;
-    bottom: -14px;
+    bottom: -20px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 1px;
-    padding: 2px 5px;
+    gap: 2px;
+    padding: 2px 6px;
     border-radius: 999px;
     background: var(--ion-background-color);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-    ion-icon { font-size: 10px; color: #ffd33d; }
+    border: 1px solid var(--ion-color-step-200, #2a3a52);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+    z-index: 2;
+    ion-icon { font-size: 11px; color: #ffd33d; }
   }
 
   &.done {
