@@ -45,10 +45,11 @@
         <ion-card-header (click)="decks.length > 1 && toggleDeckExpand(deck.id)" class="deck-header"
           [class.not-collapsible]="decks.length === 1">
           <ion-card-title>{{ deck.name }}</ion-card-title>
-          <ion-card-subtitle>
-            {{ 'practice.countSummary' | translate:{ levels: deckStats.get(deck.id)?.levelCount || 0 } }}
-            <ion-badge *ngIf="deck.isBundled && hasCustomDecks()" color="primary" style="margin-left: 8px;">{{ 'practice.builtin' | translate }}</ion-badge>
-                <ion-badge *ngIf="!deck.isBundled" color="tertiary" style="margin-left: 8px;">{{ 'practice.custom' | translate }}</ion-badge>
+          <!-- Level/word counts removed (irrelevant to the user). The subtitle
+               now only carries the built-in/custom badges, when relevant. -->
+          <ion-card-subtitle *ngIf="(deck.isBundled && hasCustomDecks()) || !deck.isBundled || (deckStats.get(deck.id)?.customCount || 0) > 0">
+            <ion-badge *ngIf="deck.isBundled && hasCustomDecks()" color="primary">{{ 'practice.builtin' | translate }}</ion-badge>
+            <ion-badge *ngIf="!deck.isBundled" color="tertiary">{{ 'practice.custom' | translate }}</ion-badge>
             <ion-badge *ngIf="(deckStats.get(deck.id)?.customCount || 0) > 0" color="tertiary" style="margin-left: 8px;">
               {{ 'practice.customCards' | translate:{ count: deckStats.get(deck.id)?.customCount || 0 } }}
             </ion-badge>
