@@ -322,6 +322,13 @@ export class FlashcardsPage implements OnInit {
     return `${filled} ${circumference - filled}`;
   }
 
+  /** Ring dash for the 5-round model: fills roundsCompleted / 5. */
+  ringDashRounds(rounds: number): string {
+    const circumference = 2 * Math.PI * 17;
+    const filled = (Math.max(0, Math.min(5, rounds)) / 5) * circumference;
+    return `${filled} ${circumference - filled}`;
+  }
+
   /**
    * The "current" level to highlight for a deck: the first unlocked level that
    * isn't fully mastered (so the user sees where to click without reading).

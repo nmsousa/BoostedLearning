@@ -65,9 +65,7 @@ export class QuizPage implements OnInit {
   /** DEV-only: finish the current level with a chosen star count, then exit. */
   private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
     if (this.levelNumber > 0 && this.deck) {
-      const pct = { 0: 30, 1: 75, 2: 90, 3: 100 }[stars];
-      const total = Math.max(1, this.cards.length || 1);
-      await this.flashcardService.saveLevelProgress(this.deck.id, 'quiz', this.levelNumber, Math.round((pct / 100) * total), total);
+      await this.flashcardService.adminForceComplete(this.deck.id, 'quiz', this.levelNumber, stars);
     }
     this.router.navigate(['/practice'], { replaceUrl: true });
   }
@@ -85,6 +83,13 @@ export class QuizPage implements OnInit {
 
   deck: FlashcardDeck | null = null;
   levelNumber = 0;
+
+  // ── 5-round model ──────────────────────────────────────────────────────────
+  round = 0;
+  readonly totalRounds = 5;
+  roundsCompleted = 0;
+  roundInterstitial = false;
+  private missedThisLevel = new Set<string>();
 
   private readonly OPTION_COUNT = 4;
 
@@ -133,7 +138,9 @@ export class QuizPage implements OnInit {
         this.router.navigate(['/practice']);
         return;
       }
-      cards = this.flashcardService.getLevelCards(deckId, this.levelNumber);
+      this.roundsCompleted = await this.flashcardService.getRoundsCompleted(deckId, 'quiz', this.levelNumber);
+      this.round = Math.min(this.totalRounds, this.roundsCompleted + 1);
+      cards = this.flashcardService.getRoundCards(deckId, this.levelNumber, this.round);
     } else {
       cards = this.flashcardService.getFlashcardQueue(deckId, 20);
     }
@@ -267,6 +274,7 @@ export class QuizPage implements OnInit {
       }
     } else {
       this.mistakes++;
+      this.missedThisLevel.add(this.cards[this.currentIndex].id);
       if (this.deck) {
         this.flashcardService.rateFlashcard(this.deck.id, this.cards[this.currentIndex].id, 'hard');
       }
@@ -296,25 +304,43 @@ export class QuizPage implements OnInit {
   }
 
   private async completeSession() {
-    this.phase = 'complete';
-
     const total = this.cards.length;
     const scorePercent = total > 0 ? Math.round((this.correctCount / total) * 100) : 0;
 
-    if (this.levelNumber > 0 && this.deck) {
-      const result = await this.flashcardService.saveLevelProgress(
-        this.deck.id,
-        'quiz',
-        this.levelNumber,
-        this.correctCount,
-        total
-      );
-      this.earnedStars = result.stars;
-      this.isNewBest = result.isNewBest;
-    } else {
+    if (this.levelNumber <= 0 || !this.deck) {
+      this.phase = 'complete';
       this.earnedStars = this.flashcardService.calculateStars(scorePercent);
+      this.cdr.detectChanges();
+      return;
     }
 
+    const result = await this.flashcardService.saveRoundProgress(
+      this.deck.id, 'quiz', this.levelNumber, scorePercent
+    );
+    this.roundsCompleted = result.roundsCompleted;
+    this.earnedStars = result.stars;
+    this.isNewBest = result.levelComplete;
+    this.roundInterstitial = !result.levelComplete;
+    this.phase = 'complete';
+    this.cdr.detectChanges();
+  }
+
+  /** Continue to the next round. */
+  nextRound(): void {
+    if (!this.deck) return;
+    this.round = Math.min(this.totalRounds, this.roundsCompleted + 1);
+    let cards = this.flashcardService.getRoundCards(
+      this.deck.id, this.levelNumber, this.round, [...this.missedThisLevel]
+    );
+    cards = this.flashcardService.playableCards(cards);
+    this.cards = this.shuffle(cards);
+    this.currentIndex = 0;
+    this.correctCount = 0;
+    this.mistakes = 0;
+    this.roundInterstitial = false;
+    this.phase = 'play';
+    if (this.cards.length === 0) { this.completeSession(); return; }
+    this.loadQuestion();
     this.cdr.detectChanges();
   }
 

@@ -58,9 +58,7 @@ export class MatchPage implements OnInit, OnDestroy {
   /** DEV-only: finish the current level with a chosen star count, then exit. */
   private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
     if (this.levelNumber > 0 && this.deck) {
-      const pct = { 0: 30, 1: 75, 2: 90, 3: 100 }[stars];
-      const total = Math.max(1, this.totalPairs || this.queue.length || 1);
-      await this.flashcardService.saveLevelProgress(this.deck.id, 'match', this.levelNumber, Math.round((pct / 100) * total), total);
+      await this.flashcardService.adminForceComplete(this.deck.id, 'match', this.levelNumber, stars);
     }
     this.router.navigate(['/practice'], { replaceUrl: true });
   }
@@ -467,22 +465,21 @@ export class MatchPage implements OnInit, OnDestroy {
     const scorePercent = this.computeScorePercent(total, cleanPairs);
 
     if (this.levelNumber > 0 && this.deck) {
-      // saveLevelProgress derives the percentage from correct/total, so pass an
-      // "effective correct" count that encodes the combined score.
-      const effectiveCorrect = Math.round((scorePercent / 100) * total);
-      const result = await this.flashcardService.saveLevelProgress(
+      // 5-round model: each Match playthrough counts as one round toward the 5.
+      // (Match keeps its single-board session per round for now; the circle on
+      // the levels list fills as rounds accumulate.)
+      const result = await this.flashcardService.saveRoundProgress(
         this.deck.id,
         'match',
         this.levelNumber,
-        effectiveCorrect,
-        total,
+        scorePercent,
         this.elapsedSeconds,
         this.bestCombo
       );
       this.earnedStars = result.stars;
-      this.isNewBest = result.isNewBest;
-      this.bestTimeSeconds = result.bestTimeSeconds ?? this.elapsedSeconds;
-      this.bestComboSaved = result.bestCombo ?? this.bestCombo;
+      this.isNewBest = result.levelComplete;
+      this.bestTimeSeconds = this.elapsedSeconds;
+      this.bestComboSaved = this.bestCombo;
     } else {
       this.earnedStars = this.flashcardService.calculateStars(scorePercent);
       this.bestTimeSeconds = this.elapsedSeconds;

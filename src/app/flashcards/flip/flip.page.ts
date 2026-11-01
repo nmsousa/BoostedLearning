@@ -57,9 +57,7 @@ export class FlipPage implements OnInit {
   /** DEV-only: finish the current level with a chosen star count, then exit. */
   private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
     if (this.levelNumber > 0 && this.deck) {
-      const pct = { 0: 30, 1: 75, 2: 90, 3: 100 }[stars];
-      const total = Math.max(1, this.cards.length || 1);
-      await this.flashcardService.saveLevelProgress(this.deck.id, 'flip', this.levelNumber, Math.round((pct / 100) * total), total);
+      await this.flashcardService.adminForceComplete(this.deck.id, 'flip', this.levelNumber, stars);
     }
     this.router.navigate(['/practice'], { replaceUrl: true });
   }
@@ -257,18 +255,15 @@ export class FlipPage implements OnInit {
     const scorePercent = total > 0 ? Math.round((weighted / total) * 100) : 0;
 
     if (this.levelNumber > 0 && this.deck) {
-      // saveLevelProgress expects a "correct count"; pass the weighted score
-      // expressed as a count out of total so it computes the same percentage.
-      const effectiveCorrect = Math.round((scorePercent / 100) * total);
-      const result = await this.flashcardService.saveLevelProgress(
+      // 5-round model: each Flashcards playthrough counts as one round.
+      const result = await this.flashcardService.saveRoundProgress(
         this.deck.id,
         'flip',
         this.levelNumber,
-        effectiveCorrect,
-        total
+        scorePercent
       );
       this.earnedStars = result.stars;
-      this.isNewBest = result.isNewBest;
+      this.isNewBest = result.levelComplete;
     } else {
       this.earnedStars = this.flashcardService.calculateStars(scorePercent);
     }

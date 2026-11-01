@@ -9,6 +9,7 @@
       <span *ngIf="levelNumber > 0">{{ 'mode.levelPrefix' | translate:{ n: levelNumber } }}</span>
       <ng-container *ngIf="levelTitle">{{ levelTitle }}</ng-container>
       <ng-container *ngIf="!levelTitle">{{ 'mode.titleQuiz' | translate }}</ng-container>
+      <span *ngIf="round > 0" class="round-pill">{{ round }}/{{ totalRounds }}</span>
     </ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="openMenu()" [attr.aria-label]="'mode.addWord' | translate">
@@ -59,7 +60,21 @@
   </div>
 
   <!-- Complete phase -->
-  <div *ngIf="!isLoading && phase === 'complete'" class="complete-container">
+  <!-- Round interstitial (between rounds of a level). -->
+  <div *ngIf="!isLoading && phase === 'complete' && roundInterstitial" class="complete-container">
+    <div class="round-badge">{{ roundsCompleted }}/{{ totalRounds }}</div>
+    <h1>{{ 'mode.roundComplete' | translate:{ n: roundsCompleted, total: totalRounds } }}</h1>
+    <p class="complete-sub">{{ 'mode.roundNext' | translate }}</p>
+    <ion-button expand="block" (click)="nextRound()" class="finish-button">
+      {{ 'mode.continue' | translate }}
+    </ion-button>
+    <ion-button expand="block" fill="clear" (click)="finish()">
+      {{ 'mode.saveAndExit' | translate }}
+    </ion-button>
+  </div>
+
+  <!-- Final level summary / quick-study result. -->
+  <div *ngIf="!isLoading && phase === 'complete' && !roundInterstitial" class="complete-container">
     <div *ngIf="levelNumber > 0" class="stars-display gamification">
       <ion-icon *ngFor="let s of [1,2,3]" [name]="s <= earnedStars ? 'star' : 'star-outline'"
         class="star" [class.filled]="s <= earnedStars"></ion-icon>

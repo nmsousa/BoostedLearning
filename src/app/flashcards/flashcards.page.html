@@ -78,11 +78,13 @@
                    (0-3) for scored modes; Flashcards has no stars so the ring
                    only shows the number + state. A lock replaces it when
                    locked. -->
-              <div class="level-ring" [class.locked]="!level.isUnlocked" [attr.data-stars]="level.bestStars">
+              <!-- The ring fills by ROUNDS completed (0-5) — the real
+                   progression. Stars (0-3) still show on the right. -->
+              <div class="level-ring" [class.locked]="!level.isUnlocked" [attr.data-rounds]="level.roundsCompleted">
                 <svg viewBox="0 0 40 40" aria-hidden="true">
                   <circle class="ring-track" cx="20" cy="20" r="17"></circle>
-                  <circle class="ring-fill" cx="20" cy="20" r="17" *ngIf="showStars"
-                    [style.stroke-dasharray]="ringDash(level.bestStars)"></circle>
+                  <circle class="ring-fill" cx="20" cy="20" r="17"
+                    [style.stroke-dasharray]="ringDashRounds(level.roundsCompleted)"></circle>
                 </svg>
                 <span class="ring-num" *ngIf="level.isUnlocked">{{ level.levelNumber }}</span>
                 <ion-icon *ngIf="!level.isUnlocked" name="lock-closed" class="ring-lock"></ion-icon>
