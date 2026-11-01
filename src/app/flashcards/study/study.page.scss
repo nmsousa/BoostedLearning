@@ -378,11 +378,14 @@
 // framed by a coloured border (green = correct, red = incorrect).
 .result-card {
   width: 100%;
+  // Match the prompt card's width so the layout doesn't jump when going from
+  // the question to the result.
+  max-width: 440px;
+  margin: 0 auto 16px;
   background: var(--ion-color-light);
   border: 2px solid transparent;
   border-radius: 16px;
   padding: 16px 18px;
-  margin-bottom: 16px;
 
   &.correct { border-color: var(--ion-color-success); }
   &.incorrect { border-color: var(--ion-color-danger); }

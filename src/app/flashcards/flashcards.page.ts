@@ -51,6 +51,17 @@ export class FlashcardsPage implements OnInit {
       },
     ];
 
+    // Quick study moved here (was a prominent button): practice the whole deck
+    // with no level/stars. Targets the first (current-language) deck.
+    const quickDeck = this.decks[0];
+    if (quickDeck) {
+      buttons.push({
+        text: this.t('practice.quickStudy'),
+        icon: 'flash-outline',
+        handler: () => { void this.startQuickStudy(quickDeck); },
+      });
+    }
+
     if (this.hasCustomDecks()) {
       buttons.push(
         {
@@ -198,6 +209,9 @@ export class FlashcardsPage implements OnInit {
   }
 
   async loadDecks() {
+    // Recompute which level is "current" on every (re)load.
+    this.currentLevelCache.clear();
+
     // Show only decks for the currently-selected learning language. User-added
     // decks (no languageCode match) and the selected language's bundled deck.
     const lang = this.settings.learningLanguage();
@@ -303,6 +317,23 @@ export class FlashcardsPage implements OnInit {
     const circumference = 2 * Math.PI * 17; // ≈ 106.8
     const filled = (Math.max(0, Math.min(3, stars)) / 3) * circumference;
     return `${filled} ${circumference - filled}`;
+  }
+
+  /**
+   * The "current" level to highlight for a deck: the first unlocked level that
+   * isn't fully mastered (so the user sees where to click without reading).
+   * Memoised per deck id so the *ngFor binding stays cheap under OnPush.
+   */
+  private currentLevelCache = new Map<string, number>();
+  isCurrentLevel(deckId: string, level: DeckLevel): boolean {
+    if (!this.currentLevelCache.has(deckId)) {
+      const levels = this.getLevels(deckId);
+      const next =
+        levels.find(l => l.isUnlocked && l.bestStars < 3) ??
+        levels.find(l => l.isUnlocked);
+      this.currentLevelCache.set(deckId, next?.levelNumber ?? -1);
+    }
+    return this.currentLevelCache.get(deckId) === level.levelNumber;
   }
 
   getTotalStars(deckId: string): number {

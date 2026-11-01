@@ -123,13 +123,6 @@
   padding-top: 0;
 }
 
-// Secondary quick-study action at the top of an expanded deck: reachable but
-// subtle, so the levels below stay the primary path.
-.quick-study-top {
-  margin: 4px 0 16px;
-  --border-radius: 10px;
-}
-
 // "Levels" heading to separate the guided path from quick study.
 .levels-title {
   margin: 0 0 8px;
@@ -148,40 +141,60 @@
 }
 
 // Compact level row: progress ring (left) + name/records (middle) + stars (right).
+// A full coloured border around the card tells state at a glance, no reading:
+//   .done    -> green border (completed, >=1 star)
+//   .current -> primary border + glow (the one to play next, highlighted)
+//   default  -> neutral (unlocked, not started)
+//   .locked  -> dim, dashed
 .level-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 12px 14px;
   background: var(--ion-color-light);
-  border-radius: 12px;
+  border: 2px solid var(--ion-color-step-200, #2a3a52);
+  border-radius: 14px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
 
   &:hover:not(.locked) { background: var(--ion-color-light-shade); }
-  &.locked { opacity: 0.55; cursor: not-allowed; }
-  // A subtle left accent for completed levels.
-  &.done { box-shadow: inset 3px 0 0 var(--ion-color-success); }
+
+  &.done {
+    border-color: var(--ion-color-success);
+  }
+
+  &.current {
+    border-color: var(--ion-color-primary);
+    background: rgba(var(--ion-color-primary-rgb), 0.08);
+    box-shadow: 0 0 0 3px rgba(var(--ion-color-primary-rgb), 0.18);
+  }
+
+  &.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-style: dashed;
+    border-color: var(--ion-color-step-200, #2a3a52);
+  }
 }
 
 // ── Progress ring ───────────────────────────────────────────────────────────
 .level-ring {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   flex-shrink: 0;
 
-  svg { width: 40px; height: 40px; transform: rotate(-90deg); }
+  svg { width: 46px; height: 46px; transform: rotate(-90deg); }
 
   .ring-track {
     fill: none;
-    stroke: var(--ion-color-step-200, rgba(0, 0, 0, 0.12));
-    stroke-width: 4;
+    stroke: var(--ion-color-step-250, rgba(255, 255, 255, 0.14));
+    stroke-width: 5;
   }
   .ring-fill {
     fill: none;
     stroke: var(--ion-color-warning);
-    stroke-width: 4;
+    stroke-width: 5;
     stroke-linecap: round;
     transition: stroke-dasharray 0.3s ease;
   }
@@ -192,19 +205,27 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
-    font-size: 0.9rem;
+    font-weight: 800;
+    font-size: 1rem;
     color: var(--ion-text-color);
   }
   .ring-lock {
     position: absolute;
     inset: 0;
     margin: auto;
-    font-size: 18px;
+    font-size: 20px;
     color: var(--ion-color-medium);
   }
 
   &.locked .ring-fill { stroke: transparent; }
+}
+
+// Done rows: the ring fill reads as green (matches the border).
+.level-item.done .level-ring .ring-fill { stroke: var(--ion-color-success); }
+// Current row: a solid primary ring so the eye lands on it.
+.level-item.current .level-ring {
+  .ring-track { stroke: rgba(var(--ion-color-primary-rgb), 0.3); }
+  .ring-num { color: var(--ion-color-primary); }
 }
 
 .level-info {
