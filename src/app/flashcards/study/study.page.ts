@@ -71,12 +71,10 @@ export class StudyPage implements OnInit, OnDestroy {
    * persisting progress under the active mode, then return. Skips real play.
    */
   private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
-    if (this.levelNumber <= 0 || !this.deck) { this.router.navigate([this.backUrl], { replaceUrl: true }); return; }
-    // Map a star target to a score percentage inside its band.
-    const pct = { 0: 30, 1: 75, 2: 90, 3: 100 }[stars];
-    const total = Math.max(1, this.totalUnique || this.studyCards.length || 1);
-    const correct = Math.round((pct / 100) * total);
-    await this.flashcardService.saveLevelProgress(this.deck.id, this.mode, this.levelNumber, correct, total);
+    if (this.levelNumber > 0 && this.deck) {
+      // Force all 5 rounds complete with the chosen star rating.
+      await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
+    }
     this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 
@@ -92,6 +90,18 @@ export class StudyPage implements OnInit, OnDestroy {
   
   // Level info
   levelNumber = 0;
+
+  // ── 5-round model ──────────────────────────────────────────────────────────
+  /** Current round (1..5) when playing a level. 0 = quick study (no rounds). */
+  round = 0;
+  /** Total rounds in a level (from the service). */
+  readonly totalRounds = 5;
+  /** Card ids the user failed across THIS level's rounds (feeds round 5). */
+  private missedThisLevel = new Set<string>();
+  /** True on the "round complete" interstitial (not the final level summary). */
+  roundInterstitial = false;
+  /** Rounds completed so far (for the progress display). */
+  roundsCompleted = 0;
 
   /**
    * Which mode this Write session is scored under. Defaults to 'write' (the
@@ -161,7 +171,11 @@ export class StudyPage implements OnInit, OnDestroy {
         this.router.navigate([this.backUrl]);
         return;
       }
-      cards = this.flashcardService.getLevelCards(deckId, this.levelNumber);
+      // Start the 5-round sequence from where the user left off (so finishing
+      // round 2 earlier resumes at round 3).
+      this.roundsCompleted = await this.flashcardService.getRoundsCompleted(deckId, this.mode, this.levelNumber);
+      this.round = Math.min(this.totalRounds, this.roundsCompleted + 1);
+      cards = this.flashcardService.getRoundCards(deckId, this.levelNumber, this.round);
     } else {
       cards = this.flashcardService.getStudyCards(deckId, 20);
     }
@@ -541,31 +555,61 @@ export class StudyPage implements OnInit, OnDestroy {
   }
 
   async completeSession(): Promise<void> {
-    this.phase = 'complete';
-
-    // Score is based on how many unique cards were answered correctly on the
-    // first try (i.e. never failed), out of the total unique cards.
+    // First-try accuracy for this round/session.
     const firstTryCorrect = Math.max(0, this.totalUnique - this.failedIds.size);
+    const pct = this.totalUnique > 0
+      ? Math.round((firstTryCorrect / this.totalUnique) * 100)
+      : 0;
 
-    // Save level progress if this was a level-based session
-    if (this.levelNumber > 0 && this.deck) {
-      const result = await this.flashcardService.saveLevelProgress(
-        this.deck.id,
-        this.mode,
-        this.levelNumber,
-        firstTryCorrect,
-        this.totalUnique
-      );
-      this.earnedStars = result.stars;
-      this.isNewBest = result.isNewBest;
-    } else {
-      const pct = this.totalUnique > 0
-        ? Math.round((firstTryCorrect / this.totalUnique) * 100)
-        : 0;
+    // Quick study (no level): just show a simple result, no rounds.
+    if (this.levelNumber <= 0 || !this.deck) {
+      this.phase = 'complete';
       this.earnedStars = this.flashcardService.calculateStars(pct);
+      this.cdr.detectChanges();
+      return;
     }
-    
+
+    // Record which words were missed this round, to bias the final round.
+    for (const id of this.failedIds) this.missedThisLevel.add(id);
+
+    // Save this round's result.
+    const result = await this.flashcardService.saveRoundProgress(
+      this.deck.id, this.mode, this.levelNumber, pct
+    );
+    this.roundsCompleted = result.roundsCompleted;
+    this.earnedStars = result.stars;
+
+    if (result.levelComplete) {
+      // All 5 rounds done → final level summary.
+      this.isNewBest = true;
+      this.phase = 'complete';
+    } else {
+      // More rounds to go → show a round interstitial with a Continue button.
+      this.roundInterstitial = true;
+      this.phase = 'complete';
+    }
     this.cdr.detectChanges();
+  }
+
+  /** Continue to the next round (rebuilds the round's cards and resets state). */
+  nextRound(): void {
+    if (!this.deck) return;
+    this.round = Math.min(this.totalRounds, this.roundsCompleted + 1);
+    const cards = this.flashcardService.getRoundCards(
+      this.deck.id, this.levelNumber, this.round, [...this.missedThisLevel]
+    );
+    // Reset per-session state for the new round.
+    this.studyCards = this.buildStudyCards(cards);
+    this.totalUnique = this.studyCards.length;
+    this.currentIndex = 0;
+    this.failedIds.clear();
+    this.completedIds.clear();
+    this.userAnswer = '';
+    this.submittedAnswer = '';
+    this.roundInterstitial = false;
+    this.phase = 'question';
+    this.cdr.detectChanges();
+    this.focusInput();
   }
 
   async endStudy(): Promise<void> {
