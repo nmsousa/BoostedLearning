@@ -67,6 +67,8 @@ export class StudyPage implements OnInit, OnDestroy {
 
   deck: FlashcardDeck | null = null;
   studyCards: StudyCard[] = [];
+  /** Skill/title of the current level (for the header), if any. */
+  get levelTitle(): string { return this.studyCards[0]?.card?.skill ?? ''; }
   currentIndex = 0;
   phase: StudyPhase = 'question';
   /** True while the session is being prepared (DB load). */

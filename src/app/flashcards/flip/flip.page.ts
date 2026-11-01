@@ -68,6 +68,8 @@ export class FlipPage implements OnInit {
   levelNumber = 0;
 
   cards: Flashcard[] = [];
+  /** Skill/title of the current level (for the header), if any. */
+  get levelTitle(): string { return this.cards[0]?.skill ?? ''; }
   currentIndex = 0;
   isFlipped = false;
   phase: FlipPhase = 'card';

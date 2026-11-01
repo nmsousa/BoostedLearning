@@ -66,6 +66,9 @@ export class MatchPage implements OnInit, OnDestroy {
   private totalPairs = 0;
   private solvedPairs = 0;
 
+  /** Skill/title of the current level (for the header), if any. */
+  levelTitle = '';
+
   leftItems: MatchItem[] = [];
   rightItems: MatchItem[] = [];
 
@@ -128,6 +131,8 @@ export class MatchPage implements OnInit, OnDestroy {
       // Match uses a longer session: the level's words + weak words from
       // earlier levels (for bigger combos and review).
       cards = this.flashcardService.getMatchSessionCards(deckId, this.levelNumber);
+      // Title from the level's OWN cards (the session mixes in review words).
+      this.levelTitle = this.flashcardService.getLevelCards(deckId, this.levelNumber)[0]?.skill ?? '';
     } else {
       cards = this.flashcardService.getFlashcardQueue(deckId, 20);
     }

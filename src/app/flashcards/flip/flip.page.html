@@ -7,7 +7,8 @@
     </ion-buttons>
     <ion-title>
       <span *ngIf="levelNumber > 0">{{ 'mode.levelPrefix' | translate:{ n: levelNumber } }}</span>
-      {{ 'mode.titleFlip' | translate }}
+      <ng-container *ngIf="levelTitle">{{ levelTitle }}</ng-container>
+      <ng-container *ngIf="!levelTitle">{{ 'mode.titleFlip' | translate }}</ng-container>
     </ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="openMenu()" [attr.aria-label]="'mode.addWord' | translate">

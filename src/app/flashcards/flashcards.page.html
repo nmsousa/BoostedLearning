@@ -73,13 +73,14 @@
               [class.current]="isCurrentLevel(deck.id, level)"
               (click)="startLevel(deck, level)">
 
-              <!-- Progress ring on the left: a circular track whose fill shows
-                   how many stars (0-3) were earned; the level number sits
-                   inside. A lock replaces it on locked levels. -->
+              <!-- Progress ring on the left: the circular fill tracks stars
+                   (0-3) for scored modes; Flashcards has no stars so the ring
+                   only shows the number + state. A lock replaces it when
+                   locked. -->
               <div class="level-ring" [class.locked]="!level.isUnlocked" [attr.data-stars]="level.bestStars">
                 <svg viewBox="0 0 40 40" aria-hidden="true">
                   <circle class="ring-track" cx="20" cy="20" r="17"></circle>
-                  <circle class="ring-fill" cx="20" cy="20" r="17"
+                  <circle class="ring-fill" cx="20" cy="20" r="17" *ngIf="showStars"
                     [style.stroke-dasharray]="ringDash(level.bestStars)"></circle>
                 </svg>
                 <span class="ring-num" *ngIf="level.isUnlocked">{{ level.levelNumber }}</span>
@@ -105,7 +106,8 @@
                 </span>
               </div>
 
-              <div class="level-stars" *ngIf="level.isUnlocked">
+              <!-- Stars only for scored modes (Write / Quiz / Match). -->
+              <div class="level-stars" *ngIf="level.isUnlocked && showStars">
                 <span class="gamification">
                   <ion-icon *ngFor="let s of getStarArray(level.bestStars)" name="star" class="star filled"></ion-icon>
                   <ion-icon *ngFor="let s of getEmptyStarArray(level.bestStars)" name="star-outline" class="star empty"></ion-icon>

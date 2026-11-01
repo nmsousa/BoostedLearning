@@ -279,6 +279,15 @@ export class FlashcardsPage implements OnInit {
     return this.mode === 'match';
   }
 
+  /**
+   * Whether this mode earns STARS per level. Flashcards (flip) is self-rated
+   * ("just click"), so stars there are meaningless — hidden. Write, Quiz and
+   * Match all score meaningfully.
+   */
+  get showStars(): boolean {
+    return this.mode !== 'flip';
+  }
+
   getLevels(deckId: string): DeckLevel[] {
     return this.deckLevels.get(deckId) ?? [];
   }
