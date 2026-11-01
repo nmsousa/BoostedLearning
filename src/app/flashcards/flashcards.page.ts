@@ -347,21 +347,35 @@ export class FlashcardsPage implements OnInit {
   }
 
   /**
-   * The "current" level to highlight for a deck: the first unlocked level that
-   * isn't fully mastered (so the user sees where to click without reading).
+   * The "current" level to highlight for a deck: the next one to PLAY, i.e. the
+   * first unlocked level the user hasn't started yet (0 rounds done). Only if
+   * every unlocked level has already been started do we fall back to the first
+   * one that isn't fully complete. This makes the highlight point FORWARD (to
+   * the next new level), not back at an already-played one.
    * Memoised per deck id so the *ngFor binding stays cheap under OnPush.
    */
   private currentLevelCache = new Map<string, number>();
   isCurrentLevel(deckId: string, level: DeckLevel): boolean {
     if (!this.currentLevelCache.has(deckId)) {
       const levels = this.getLevels(deckId);
+      // A level counts as "complete" when all rounds are done, OR (legacy
+      // records written before rounds existed) it already has stars.
+      const isComplete = (l: DeckLevel) =>
+        l.roundsCompleted >= this.totalRoundsConst || (l.roundsCompleted === 0 && l.bestStars >= 1);
       const next =
-        levels.find(l => l.isUnlocked && l.bestStars < 3) ??
-        levels.find(l => l.isUnlocked);
+        // Prefer the first unlocked level not started AND not complete.
+        levels.find(l => l.isUnlocked && l.roundsCompleted === 0 && !isComplete(l)) ??
+        // Else the first unlocked, incomplete level (partially played).
+        levels.find(l => l.isUnlocked && !isComplete(l)) ??
+        // Else nothing to highlight (everything complete).
+        undefined;
       this.currentLevelCache.set(deckId, next?.levelNumber ?? -1);
     }
     return this.currentLevelCache.get(deckId) === level.levelNumber;
   }
+
+  /** Rounds that make up a level (mirrors the service constant). */
+  private readonly totalRoundsConst = 5;
 
   getTotalStars(deckId: string): number {
     const levels = this.getLevels(deckId);
