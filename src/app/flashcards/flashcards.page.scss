@@ -175,6 +175,12 @@
     border-style: dashed;
     border-color: var(--ion-color-step-200, #2a3a52);
   }
+
+  // Flashcards (free practice): border by how well the level's words are known.
+  // Grey (default border) = not started; the rest signal mastery.
+  &.know-green { border-color: var(--ion-color-success); }
+  &.know-yellow { border-color: var(--ion-color-warning); }
+  &.know-red { border-color: var(--ion-color-danger); }
 }
 
 // ── Progress ring ───────────────────────────────────────────────────────────

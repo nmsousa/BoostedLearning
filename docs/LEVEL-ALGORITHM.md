@@ -95,6 +95,31 @@ priorityFactor = boost:1.5 | normal:1.0 | hide:0  (hidden never shown)
 So a word appears often when: you miss it a lot, you missed it recently, or you
 marked it "boost". It stops appearing when marked "hide".
 
+## 6b. Flashcards mode — free practice & knowledge colour
+
+Flashcards (flip) is **free practice**: every level is always unlocked and
+there are **no rounds, no stars, no unlock gating**. Its level card border
+instead reflects **how well the user knows that level's words**, from the
+per-word knowledge level (learning / familiar / known):
+
+Let `known` = words in that level rated "known", over `total` level words, and
+`practised` = how many of the level's words have been seen at least once.
+
+| Border colour | Condition |
+|---------------|-----------|
+| **Grey (neutral)** | `practised == 0` — not started. |
+| **Red** | some words practised, but `known / total < 0.60`. |
+| **Yellow** | `0.60 ≤ known / total < 0.90`. |
+| **Green** | `known / total ≥ 0.90` — you know (almost) all of them. |
+
+No "current level" highlight is shown in Flashcards (there is no next level to
+funnel toward — it's free practice).
+
+Other modes (Write / Quiz / Match) keep the round ring + stars and the
+"current level" highlight; they do NOT use the knowledge colour, because the
+stars already convey performance (no / few stars already means "you got few
+right").
+
 ## 7. Admin tools (dev/testing)
 
 - **Settings → Admin → Admin mode** (toggle, default ON for now, hidden in

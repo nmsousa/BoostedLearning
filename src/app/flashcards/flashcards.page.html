@@ -70,8 +70,11 @@
               *ngFor="let level of getLevels(deck.id); trackBy: trackByLevelNumber"
               class="level-item"
               [class.locked]="!level.isUnlocked"
-              [class.done]="level.isUnlocked && level.bestStars >= 1"
-              [class.current]="isCurrentLevel(deck.id, level)"
+              [class.done]="!isFlipMode && level.isUnlocked && level.bestStars >= 1"
+              [class.current]="!isFlipMode && isCurrentLevel(deck.id, level)"
+              [class.know-green]="isFlipMode && levelKnowledgeColor(deck.id, level) === 'green'"
+              [class.know-yellow]="isFlipMode && levelKnowledgeColor(deck.id, level) === 'yellow'"
+              [class.know-red]="isFlipMode && levelKnowledgeColor(deck.id, level) === 'red'"
               (click)="startLevel(deck, level)">
 
               <!-- Progress ring on the left: the circular fill tracks stars

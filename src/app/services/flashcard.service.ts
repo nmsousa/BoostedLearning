@@ -1329,6 +1329,28 @@ export class FlashcardService {
     return 'learning';
   }
 
+  /**
+   * Knowledge colour for a level in Flashcards (free practice). Returns one of
+   * 'none' | 'red' | 'yellow' | 'green' per docs/LEVEL-ALGORITHM.md §6b, based
+   * on how many of the level's words are "known".
+   */
+  getLevelKnowledgeColor(deckId: string, levelNumber: number): 'none' | 'red' | 'yellow' | 'green' {
+    const cards = this.getLevelCards(deckId, levelNumber);
+    const total = cards.length;
+    if (total === 0) return 'none';
+    let practised = 0;
+    let known = 0;
+    for (const c of cards) {
+      if (this.hasBeenStudied(c)) practised++;
+      if (this.levelForCard(c) === 'known') known++;
+    }
+    if (practised === 0) return 'none';
+    const ratio = known / total;
+    if (ratio >= 0.90) return 'green';
+    if (ratio >= 0.60) return 'yellow';
+    return 'red';
+  }
+
   /** Whether a card has been practiced at least once (any mode). */
   private hasBeenStudied(card: Flashcard): boolean {
     return card.lastSeen !== null || card.correctCount > 0 || card.incorrectCount > 0;

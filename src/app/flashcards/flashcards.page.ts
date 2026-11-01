@@ -203,8 +203,9 @@ export class FlashcardsPage implements OnInit {
   }
 
   async loadDecks() {
-    // Recompute which level is "current" on every (re)load.
+    // Recompute which level is "current" / its knowledge colour on every load.
     this.currentLevelCache.clear();
+    this.knowledgeColorCache.clear();
 
     // Show only decks for the currently-selected learning language. User-added
     // decks (no languageCode match) and the selected language's bundled deck.
@@ -280,6 +281,22 @@ export class FlashcardsPage implements OnInit {
    */
   get showStars(): boolean {
     return this.mode !== 'flip';
+  }
+
+  /** Flashcards is free practice: coloured by word knowledge, not rounds/stars. */
+  get isFlipMode(): boolean {
+    return this.mode === 'flip';
+  }
+
+  // Memoised per deck+level so the *ngFor binding is cheap under OnPush.
+  private knowledgeColorCache = new Map<string, 'none' | 'red' | 'yellow' | 'green'>();
+  /** Knowledge colour for a Flashcards level card (see service / doc §6b). */
+  levelKnowledgeColor(deckId: string, level: DeckLevel): 'none' | 'red' | 'yellow' | 'green' {
+    const key = `${deckId}:${level.levelNumber}`;
+    if (!this.knowledgeColorCache.has(key)) {
+      this.knowledgeColorCache.set(key, this.flashcardService.getLevelKnowledgeColor(deckId, level.levelNumber));
+    }
+    return this.knowledgeColorCache.get(key)!;
   }
 
   getLevels(deckId: string): DeckLevel[] {
