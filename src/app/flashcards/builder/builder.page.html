@@ -1,0 +1,90 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button *ngIf="stage.kind === 'map'" (click)="close()" aria-label="Close">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+      <ion-button *ngIf="stage.kind !== 'map'" (click)="backToMap()" aria-label="Back">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ 'builder.title' | translate }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="builder-content">
+  <div *ngIf="isLoading" class="mode-loading"><ion-spinner name="crescent"></ion-spinner></div>
+
+  <div *ngIf="!isLoading && !data" class="builder-empty">
+    <ion-icon name="construct-outline"></ion-icon>
+    <p>{{ 'builder.unavailable' | translate }}</p>
+  </div>
+
+  <!-- MAP: grammar groups that merge into phrase nodes -->
+  <div *ngIf="!isLoading && data && stage.kind === 'map'" class="builder-map">
+    <p class="builder-intro">{{ 'builder.intro' | translate }}</p>
+
+    <h4 class="builder-section">{{ 'builder.groups' | translate }}</h4>
+    <div class="group-grid">
+      <button type="button" class="group-node" *ngFor="let g of groups"
+        [class.done]="isDone(g.id)" (click)="openGroup(g)">
+        <span class="group-name">{{ g.name }}</span>
+        <span class="group-count">{{ g.words.length }}</span>
+        <ion-icon *ngIf="isDone(g.id)" name="checkmark-circle" class="group-check"></ion-icon>
+      </button>
+    </div>
+
+    <h4 class="builder-section">{{ 'builder.phrases' | translate }}</h4>
+    <div class="phrase-list">
+      <button type="button" class="phrase-node" *ngFor="let p of phrases"
+        [class.done]="isDone(p.id)" [class.locked]="!isPhraseUnlocked(p)"
+        [disabled]="!isPhraseUnlocked(p)" (click)="openPhrase(p)">
+        <ion-icon *ngIf="!isPhraseUnlocked(p)" name="lock-closed" class="phrase-lock"></ion-icon>
+        <ion-icon *ngIf="isDone(p.id)" name="checkmark-circle" class="phrase-check"></ion-icon>
+        <span class="phrase-en">{{ isPhraseUnlocked(p) ? p.en : ('builder.phraseLocked' | translate) }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- GROUP: flip through the group's words -->
+  <div *ngIf="stage.kind === 'group' && groupWord" class="builder-group">
+    <span class="group-progress">{{ stage.index + 1 }} / {{ stage.group.words.length }}</span>
+    <div class="word-card">
+      <span class="word-nl">
+        <span class="word-article" *ngIf="groupWord.article">{{ groupWord.article }} </span>{{ groupWord.text }}
+      </span>
+      <button type="button" class="word-audio" (click)="playWord(groupWord.text)" aria-label="Play">
+        <ion-icon name="volume-high-outline"></ion-icon>
+      </button>
+      <span class="word-en">{{ groupWord.translations.join(', ') }}</span>
+    </div>
+    <ion-button expand="block" class="group-next" (click)="nextWord()">
+      {{ (stage.index === stage.group.words.length - 1 ? 'builder.finishGroup' : 'builder.nextWord') | translate }}
+    </ion-button>
+  </div>
+
+  <!-- PHRASE: tap words in the right order -->
+  <div *ngIf="stage.kind === 'phrase'" class="builder-phrase">
+    <span class="phrase-target">{{ stage.phrase.en }}</span>
+
+    <div class="phrase-slots">
+      <span class="slot" *ngFor="let w of stage.chosen">{{ w }}</span>
+      <span class="slot empty" *ngIf="!stage.done"></span>
+    </div>
+
+    <div class="phrase-bank" *ngIf="!stage.done">
+      <button type="button" class="bank-word" *ngFor="let w of bank" (click)="pick(w)">{{ w }}</button>
+    </div>
+
+    <div class="phrase-result" *ngIf="stage.done">
+      <ion-icon name="checkmark-circle" color="success"></ion-icon>
+      <span class="result-nl">{{ stage.phrase.nl }}</span>
+      <span class="result-en">{{ stage.phrase.en }}</span>
+    </div>
+
+    <div class="phrase-actions">
+      <ion-button fill="outline" *ngIf="!stage.done" (click)="resetPhrase()">{{ 'builder.reset' | translate }}</ion-button>
+      <ion-button *ngIf="stage.done" expand="block" color="success" (click)="backToMap()">{{ 'builder.done' | translate }}</ion-button>
+    </div>
+  </div>
+</ion-content>

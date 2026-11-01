@@ -97,7 +97,13 @@ export class FlashcardsPage implements OnInit {
 
   /** Human label for the active mode, shown in the header. */
   get modeLabel(): string {
-    return { flip: 'Flashcards', write: 'Write', match: 'Match', quiz: 'Quiz' }[this.mode];
+    // Only the four original modes use this page; journey/builder have their
+    // own pages but are part of the PracticeMode union, so cover them here too.
+    const labels: Record<PracticeMode, string> = {
+      flip: 'Flashcards', write: 'Write', match: 'Match', quiz: 'Quiz',
+      journey: 'Journey', builder: 'Builder',
+    };
+    return labels[this.mode];
   }
 
   decks: FlashcardDeck[] = [];

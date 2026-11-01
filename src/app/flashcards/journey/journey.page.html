@@ -1,0 +1,71 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ 'journey.title' | translate }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="journey-content">
+  <div *ngIf="isLoading" class="mode-loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div *ngIf="!isLoading && deck" class="journey">
+    <!-- Hero: continue the current level -->
+    <div class="hero" *ngIf="current" (click)="continueCurrent()">
+      <span class="hero-kicker">{{ 'journey.continue' | translate }}</span>
+      <span class="hero-level">
+        {{ 'practice.level' | translate:{ n: current.levelNumber } }}<span *ngIf="current.skill"> · {{ current.skill }}</span>
+      </span>
+      <div class="hero-foot">
+        <span class="hero-play">▶ {{ 'journey.play' | translate }}</span>
+        <span class="hero-stars">
+          <ion-icon *ngFor="let s of starArray(current.bestStars)" name="star" class="star filled"></ion-icon>
+          <ion-icon *ngFor="let s of emptyStarArray(current.bestStars)" name="star-outline" class="star empty"></ion-icon>
+        </span>
+      </div>
+    </div>
+
+    <!-- Jump to level -->
+    <div class="jump-row">
+      <ion-input class="jump-input" type="number" inputmode="numeric"
+        [(ngModel)]="jumpTo" [placeholder]="'journey.jumpTo' | translate"
+        (keyup.enter)="onJump()"></ion-input>
+      <ion-button size="small" fill="outline" (click)="onJump()">{{ 'journey.go' | translate }}</ion-button>
+    </div>
+
+    <!-- Chapters -->
+    <div class="chapter" *ngFor="let chapter of chapters; let ci = index"
+      [class.locked]="chapter.allLocked">
+      <div class="chapter-head">
+        <span class="chapter-title">{{ chapter.title }}</span>
+        <span class="chapter-progress" *ngIf="!chapter.allLocked">{{ chapter.done }}/{{ chapter.total }}</span>
+        <ion-icon *ngIf="chapter.allLocked" name="lock-closed" class="chapter-lock"></ion-icon>
+      </div>
+
+      <!-- Winding trail of nodes -->
+      <div class="trail" *ngIf="!chapter.allLocked">
+        <div class="node-row" *ngFor="let level of chapter.levels; let li = index"
+          [attr.data-offset]="nodeOffset(li)">
+          <button type="button" class="node"
+            [class.done]="level.bestStars >= 1 && !isCurrent(level)"
+            [class.current]="isCurrent(level)"
+            [class.locked]="!level.isUnlocked"
+            [disabled]="!level.isUnlocked"
+            (click)="startLevel(level)">
+            <span class="node-num" *ngIf="level.isUnlocked">{{ level.levelNumber }}</span>
+            <ion-icon *ngIf="!level.isUnlocked" name="lock-closed"></ion-icon>
+            <span class="node-stars" *ngIf="level.isUnlocked && level.bestStars > 0">
+              <ion-icon *ngFor="let s of starArray(level.bestStars)" name="star"></ion-icon>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsed hint for fully-locked chapters -->
+      <p class="chapter-hint" *ngIf="chapter.allLocked">{{ 'journey.chapterLocked' | translate }}</p>
+    </div>
+  </div>
+</ion-content>

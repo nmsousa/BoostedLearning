@@ -32,6 +32,22 @@ const routes: Routes = [
     // Quiz mode (multiple choice).
     path: 'quiz/:id',
     loadChildren: () => import('./quiz/quiz.module').then(m => m.QuizPageModule)
+  },
+  {
+    // EXPERIMENTAL: Journey map (game-style level map). Its own page.
+    path: 'journey',
+    loadChildren: () => import('./journey/journey.module').then(m => m.JourneyPageModule)
+  },
+  {
+    // EXPERIMENTAL: a Journey level reuses the Write exercise, scored under
+    // the 'journey' mode (via ?mode=journey).
+    path: 'journey-play/:id',
+    loadChildren: () => import('./study/study.module').then(m => m.StudyPageModule)
+  },
+  {
+    // EXPERIMENTAL: Builder mode (grammar groups -> phrases). Its own page.
+    path: 'builder',
+    loadChildren: () => import('./builder/builder.module').then(m => m.BuilderPageModule)
   }
 ];
 

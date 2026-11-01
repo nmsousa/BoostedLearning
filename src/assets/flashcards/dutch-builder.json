@@ -1,0 +1,113 @@
+{
+  "id": "deck-builder-nl",
+  "name": "Dutch Builder (beta)",
+  "languageCode": "nl",
+  "description": "A small hand-categorised Dutch set for the experimental sentence Builder mode.",
+  "groups": [
+    {
+      "id": "articles",
+      "category": "article",
+      "name": "Articles",
+      "order": 1,
+      "words": [
+        { "text": "de", "translations": ["the"] },
+        { "text": "het", "translations": ["the"] },
+        { "text": "een", "translations": ["a"] }
+      ]
+    },
+    {
+      "id": "pronouns",
+      "category": "pronoun",
+      "name": "Pronouns",
+      "order": 2,
+      "words": [
+        { "text": "ik", "translations": ["I"] },
+        { "text": "jij", "translations": ["you"] },
+        { "text": "hij", "translations": ["he"] },
+        { "text": "zij", "translations": ["she"] },
+        { "text": "wij", "translations": ["we"] }
+      ]
+    },
+    {
+      "id": "nouns",
+      "category": "noun",
+      "name": "Nouns",
+      "order": 3,
+      "words": [
+        { "text": "man", "translations": ["man"], "article": "de" },
+        { "text": "vrouw", "translations": ["woman"], "article": "de" },
+        { "text": "kind", "translations": ["child"], "article": "het" },
+        { "text": "hond", "translations": ["dog"], "article": "de" },
+        { "text": "kat", "translations": ["cat"], "article": "de" },
+        { "text": "huis", "translations": ["house"], "article": "het" },
+        { "text": "brood", "translations": ["bread"], "article": "het" },
+        { "text": "water", "translations": ["water"], "article": "het" },
+        { "text": "appel", "translations": ["apple"], "article": "de" },
+        { "text": "boek", "translations": ["book"], "article": "het" }
+      ]
+    },
+    {
+      "id": "verbs",
+      "category": "verb",
+      "name": "Verbs",
+      "order": 4,
+      "words": [
+        { "text": "eet", "translations": ["eat", "eats"], "lemma": "eten" },
+        { "text": "drinkt", "translations": ["drink", "drinks"], "lemma": "drinken" },
+        { "text": "leest", "translations": ["read", "reads"], "lemma": "lezen" },
+        { "text": "ziet", "translations": ["see", "sees"], "lemma": "zien" },
+        { "text": "heeft", "translations": ["has", "have"], "lemma": "hebben" },
+        { "text": "is", "translations": ["is", "am", "are"], "lemma": "zijn" }
+      ]
+    },
+    {
+      "id": "adjectives",
+      "category": "adjective",
+      "name": "Adjectives",
+      "order": 5,
+      "words": [
+        { "text": "groot", "translations": ["big"] },
+        { "text": "klein", "translations": ["small"] },
+        { "text": "goed", "translations": ["good"] },
+        { "text": "lekker", "translations": ["tasty"] }
+      ]
+    }
+  ],
+  "phrases": [
+    {
+      "id": "p1",
+      "unlockAfter": ["pronouns", "verbs"],
+      "nl": "ik eet",
+      "en": "I eat",
+      "tokens": ["ik", "eet"]
+    },
+    {
+      "id": "p2",
+      "unlockAfter": ["pronouns", "verbs", "nouns"],
+      "nl": "ik eet brood",
+      "en": "I eat bread",
+      "tokens": ["ik", "eet", "brood"]
+    },
+    {
+      "id": "p3",
+      "unlockAfter": ["articles", "nouns", "verbs"],
+      "nl": "de hond drinkt water",
+      "en": "the dog drinks water",
+      "tokens": ["de", "hond", "drinkt", "water"]
+    },
+    {
+      "id": "p4",
+      "unlockAfter": ["pronouns", "verbs", "nouns", "adjectives"],
+      "nl": "zij leest een goed boek",
+      "en": "she reads a good book",
+      "tokens": ["zij", "leest", "een", "goed", "boek"]
+    },
+    {
+      "id": "p5",
+      "unlockAfter": ["articles", "nouns", "verbs", "adjectives"],
+      "nl": "het kind heeft een kleine kat",
+      "en": "the child has a small cat",
+      "tokens": ["het", "kind", "heeft", "een", "kleine", "kat"]
+    }
+  ]
+}

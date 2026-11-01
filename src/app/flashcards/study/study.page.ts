@@ -11,7 +11,7 @@
 import { Component, OnInit, OnDestroy, inject, ViewChild, HostListener, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController, IonInput, ToastController } from '@ionic/angular';
-import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
+import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { SettingsService } from '../../services/settings.service';
 import { AudioService } from '../../services/audio.service';
@@ -75,7 +75,16 @@ export class StudyPage implements OnInit, OnDestroy {
   
   // Level info
   levelNumber = 0;
-  
+
+  /**
+   * Which mode this Write session is scored under. Defaults to 'write' (the
+   * normal Write mode). The experimental Journey mode reuses this page via a
+   * `?mode=journey` query param so its progress is tracked separately.
+   */
+  mode: PracticeMode = 'write';
+  /** Where "finish/close" returns to (the levels list, or the journey map). */
+  private backUrl = '/practice';
+
   userAnswer = '';
   submittedAnswer = '';
   correctAnswer = '';
@@ -109,15 +118,20 @@ export class StudyPage implements OnInit, OnDestroy {
     const deckId = this.route.snapshot.paramMap.get('id');
     const levelParam = this.route.snapshot.queryParamMap.get('level');
     this.levelNumber = levelParam ? parseInt(levelParam, 10) : 0;
+    // Journey reuses this page under its own mode namespace + return route.
+    if (this.route.snapshot.queryParamMap.get('mode') === 'journey') {
+      this.mode = 'journey';
+      this.backUrl = '/practice/journey';
+    }
     
     if (!deckId) {
-      this.router.navigate(['/practice']);
+      this.router.navigate([this.backUrl]);
       return;
     }
 
     this.deck = this.flashcardService.getDeck(deckId);
     if (!this.deck) {
-      this.router.navigate(['/practice']);
+      this.router.navigate([this.backUrl]);
       return;
     }
 
@@ -125,9 +139,9 @@ export class StudyPage implements OnInit, OnDestroy {
     let cards: Flashcard[];
     if (this.levelNumber > 0) {
       // Check if level is unlocked
-      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, 'write', this.levelNumber);
+      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
       if (!isUnlocked) {
-        this.router.navigate(['/practice']);
+        this.router.navigate([this.backUrl]);
         return;
       }
       cards = this.flashcardService.getLevelCards(deckId, this.levelNumber);
@@ -520,7 +534,7 @@ export class StudyPage implements OnInit, OnDestroy {
     if (this.levelNumber > 0 && this.deck) {
       const result = await this.flashcardService.saveLevelProgress(
         this.deck.id,
-        'write',
+        this.mode,
         this.levelNumber,
         firstTryCorrect,
         this.totalUnique
@@ -550,7 +564,7 @@ export class StudyPage implements OnInit, OnDestroy {
           text: this.t('mode.end'),
           role: 'confirm',
           handler: () => {
-            this.router.navigate(['/practice'], { replaceUrl: true });
+            this.router.navigate([this.backUrl], { replaceUrl: true });
           },
         },
       ],
@@ -559,7 +573,7 @@ export class StudyPage implements OnInit, OnDestroy {
   }
 
   finishStudy(): void {
-    this.router.navigate(['/practice'], { replaceUrl: true });
+    this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 
   get accuracy(): number {

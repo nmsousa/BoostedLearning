@@ -25,9 +25,9 @@ export type FlashcardRating = 'hard' | 'medium' | 'easy';
 /**
  * A practice mode. Level stars/progress are tracked PER MODE so that, e.g.,
  * clearing a level in Flashcards does not mark it complete in Match.
- * ('quiz' is defined for completeness but not yet implemented.)
+ * 'journey' and 'builder' are EXPERIMENTAL modes added alongside the originals.
  */
-export type PracticeMode = 'flip' | 'write' | 'match' | 'quiz';
+export type PracticeMode = 'flip' | 'write' | 'match' | 'quiz' | 'journey' | 'builder';
 
 /**
  * A single flashcard with learning stats
