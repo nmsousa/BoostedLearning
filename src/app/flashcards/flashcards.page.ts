@@ -206,6 +206,7 @@ export class FlashcardsPage implements OnInit {
     // Recompute which level is "current" / its knowledge colour on every load.
     this.currentLevelCache.clear();
     this.knowledgeColorCache.clear();
+    this.knowledgeCache.clear();
 
     // Show only decks for the currently-selected learning language. User-added
     // decks (no languageCode match) and the selected language's bundled deck.
@@ -297,6 +298,16 @@ export class FlashcardsPage implements OnInit {
       this.knowledgeColorCache.set(key, this.flashcardService.getLevelKnowledgeColor(deckId, level.levelNumber));
     }
     return this.knowledgeColorCache.get(key)!;
+  }
+
+  private knowledgeCache = new Map<string, { total: number; learning: number; familiar: number; known: number; neverStudied: number }>();
+  /** Knowledge breakdown counts for a Flashcards level (for the segmented bar). */
+  levelKnowledge(deckId: string, level: DeckLevel) {
+    const key = `${deckId}:${level.levelNumber}`;
+    if (!this.knowledgeCache.has(key)) {
+      this.knowledgeCache.set(key, this.flashcardService.getLevelKnowledge(deckId, level.levelNumber));
+    }
+    return this.knowledgeCache.get(key)!;
   }
 
   getLevels(deckId: string): DeckLevel[] {

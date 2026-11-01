@@ -1330,22 +1330,34 @@ export class FlashcardService {
   }
 
   /**
-   * Knowledge colour for a level in Flashcards (free practice). Returns one of
-   * 'none' | 'red' | 'yellow' | 'green' per docs/LEVEL-ALGORITHM.md §6b, based
-   * on how many of the level's words are "known".
+   * Knowledge breakdown for a level in Flashcards (free practice): how many of
+   * the level's words fall in each bucket. `learning`+`familiar`+`known` sum to
+   * the practised words; `neverStudied` are the untouched ones. See
+   * docs/LEVEL-ALGORITHM.md §6b. The level's word set is fixed, so this is
+   * stable.
+   */
+  getLevelKnowledge(deckId: string, levelNumber: number): {
+    total: number; learning: number; familiar: number; known: number; neverStudied: number;
+  } {
+    const cards = this.getLevelCards(deckId, levelNumber);
+    const out = { total: cards.length, learning: 0, familiar: 0, known: 0, neverStudied: 0 };
+    for (const c of cards) {
+      if (!this.hasBeenStudied(c)) { out.neverStudied++; continue; }
+      out[this.levelForCard(c)]++;
+    }
+    return out;
+  }
+
+  /**
+   * Knowledge colour for a level in Flashcards (see §6b): green ≥90% known,
+   * yellow ≥60%, red otherwise, 'none' when nothing practised yet.
    */
   getLevelKnowledgeColor(deckId: string, levelNumber: number): 'none' | 'red' | 'yellow' | 'green' {
-    const cards = this.getLevelCards(deckId, levelNumber);
-    const total = cards.length;
-    if (total === 0) return 'none';
-    let practised = 0;
-    let known = 0;
-    for (const c of cards) {
-      if (this.hasBeenStudied(c)) practised++;
-      if (this.levelForCard(c) === 'known') known++;
-    }
+    const k = this.getLevelKnowledge(deckId, levelNumber);
+    if (k.total === 0) return 'none';
+    const practised = k.learning + k.familiar + k.known;
     if (practised === 0) return 'none';
-    const ratio = known / total;
+    const ratio = k.known / k.total;
     if (ratio >= 0.90) return 'green';
     if (ratio >= 0.60) return 'yellow';
     return 'red';
