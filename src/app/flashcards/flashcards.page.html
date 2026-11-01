@@ -72,9 +72,6 @@
               [class.locked]="!level.isUnlocked"
               [class.done]="!isFlipMode && level.isUnlocked && level.bestStars >= 1"
               [class.current]="!isFlipMode && isCurrentLevel(deck.id, level)"
-              [class.know-green]="isFlipMode && levelKnowledgeColor(deck.id, level) === 'green'"
-              [class.know-yellow]="isFlipMode && levelKnowledgeColor(deck.id, level) === 'yellow'"
-              [class.know-red]="isFlipMode && levelKnowledgeColor(deck.id, level) === 'red'"
               (click)="startLevel(deck, level)">
 
               <!-- Progress ring on the left: the circular fill tracks stars
@@ -102,25 +99,6 @@
                   {{ 'practice.unlockHint' | translate }}
                 </span>
 
-                <!-- Flashcards: segmented knowledge bar + counts (Option A).
-                     Shown only once at least one word has been practised. -->
-                <ng-container *ngIf="isFlipMode && levelKnowledgeColor(deck.id, level) !== 'none'">
-                  <div class="know-bar" [attr.aria-hidden]="true">
-                    <span class="seg learning" *ngIf="levelKnowledge(deck.id, level).learning"
-                      [style.flex]="levelKnowledge(deck.id, level).learning"></span>
-                    <span class="seg familiar" *ngIf="levelKnowledge(deck.id, level).familiar"
-                      [style.flex]="levelKnowledge(deck.id, level).familiar"></span>
-                    <span class="seg known" *ngIf="levelKnowledge(deck.id, level).known"
-                      [style.flex]="levelKnowledge(deck.id, level).known"></span>
-                    <span class="seg none" *ngIf="levelKnowledge(deck.id, level).neverStudied"
-                      [style.flex]="levelKnowledge(deck.id, level).neverStudied"></span>
-                  </div>
-                  <span class="know-legend">
-                    {{ 'practice.know.learning' | translate:{ n: levelKnowledge(deck.id, level).learning } }}
-                    · {{ 'practice.know.familiar' | translate:{ n: levelKnowledge(deck.id, level).familiar } }}
-                    · {{ 'practice.know.known' | translate:{ n: levelKnowledge(deck.id, level).known } }}
-                  </span>
-                </ng-container>
                 <!-- Match-only: discrete best time + combo, only when set. -->
                 <span class="level-records gamification"
                   *ngIf="level.isUnlocked && isMatchMode && (level.bestTimeSeconds !== undefined || (level.bestCombo && level.bestCombo >= 2))">

@@ -203,10 +203,8 @@ export class FlashcardsPage implements OnInit {
   }
 
   async loadDecks() {
-    // Recompute which level is "current" / its knowledge colour on every load.
+    // Recompute which level is "current" on every load.
     this.currentLevelCache.clear();
-    this.knowledgeColorCache.clear();
-    this.knowledgeCache.clear();
 
     // Show only decks for the currently-selected learning language. User-added
     // decks (no languageCode match) and the selected language's bundled deck.
@@ -284,30 +282,13 @@ export class FlashcardsPage implements OnInit {
     return this.mode !== 'flip';
   }
 
-  /** Flashcards is free practice: coloured by word knowledge, not rounds/stars. */
+  /**
+   * Flashcards is free practice: no stars/rounds, and no knowledge colouring
+   * either. A single correct pass can't prove mastery, so colours/counts here
+   * were misleading. Kept as a flag only to hide stars / the "current" highlight.
+   */
   get isFlipMode(): boolean {
     return this.mode === 'flip';
-  }
-
-  // Memoised per deck+level so the *ngFor binding is cheap under OnPush.
-  private knowledgeColorCache = new Map<string, 'none' | 'red' | 'yellow' | 'green'>();
-  /** Knowledge colour for a Flashcards level card (see service / doc §6b). */
-  levelKnowledgeColor(deckId: string, level: DeckLevel): 'none' | 'red' | 'yellow' | 'green' {
-    const key = `${deckId}:${level.levelNumber}`;
-    if (!this.knowledgeColorCache.has(key)) {
-      this.knowledgeColorCache.set(key, this.flashcardService.getLevelKnowledgeColor(deckId, level.levelNumber));
-    }
-    return this.knowledgeColorCache.get(key)!;
-  }
-
-  private knowledgeCache = new Map<string, { total: number; learning: number; familiar: number; known: number; neverStudied: number }>();
-  /** Knowledge breakdown counts for a Flashcards level (for the segmented bar). */
-  levelKnowledge(deckId: string, level: DeckLevel) {
-    const key = `${deckId}:${level.levelNumber}`;
-    if (!this.knowledgeCache.has(key)) {
-      this.knowledgeCache.set(key, this.flashcardService.getLevelKnowledge(deckId, level.levelNumber));
-    }
-    return this.knowledgeCache.get(key)!;
   }
 
   getLevels(deckId: string): DeckLevel[] {
