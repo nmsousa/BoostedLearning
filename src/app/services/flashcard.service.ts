@@ -1912,25 +1912,15 @@ export class FlashcardService {
     return { roundsCompleted, stars, levelComplete };
   }
 
-  /** DEV/admin: force a level to a given completion (all rounds + stars). */
+  /**
+   * DEV/admin: simulate completing ONE round of a level with the chosen star
+   * rating (maps to a round score). Advances roundsCompleted by one — so
+   * repeated use fills the ring 1/5 at a time, mirroring real play. This lets
+   * you watch the levels-list ring fill step by step.
+   */
   async adminForceComplete(deckId: string, mode: PracticeMode, levelNumber: number, stars: 0 | 1 | 2 | 3): Promise<void> {
-    const progressId = this.levelProgressId(deckId, mode, levelNumber);
-    const existing = await this.db.levelProgress.get(progressId);
     const pct = { 0: 30, 1: 75, 2: 90, 3: 100 }[stars];
-    await this.db.levelProgress.put({
-      id: progressId,
-      deckId,
-      mode,
-      levelNumber,
-      bestStars: stars,
-      bestScore: pct,
-      attempts: (existing?.attempts ?? 0) + 1,
-      lastAttempt: new Date().toISOString(),
-      roundsCompleted: stars > 0 ? this.ROUNDS_PER_LEVEL : 0,
-      roundScores: existing?.roundScores ?? [],
-      ...(existing?.bestTimeSeconds !== undefined ? { bestTimeSeconds: existing.bestTimeSeconds } : {}),
-      ...(existing?.bestCombo !== undefined ? { bestCombo: existing.bestCombo } : {}),
-    });
+    await this.saveRoundProgress(deckId, mode, levelNumber, pct);
   }
 
   /**

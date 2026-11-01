@@ -105,7 +105,7 @@ export class AddWordService {
     // in non-production builds AND when the Admin-mode setting is on.
     if (!environment.production && this.settings.adminMode() && opts.onAdminComplete) {
       buttons.push({
-        text: 'Admin: terminar nível',
+        text: 'Admin: completar 1 ronda',
         icon: 'construct-outline',
         handler: () => { this.promptAdminComplete(opts.onAdminComplete!); },
       });
@@ -117,13 +117,13 @@ export class AddWordService {
     await sheet.present();
   }
 
-  /** DEV-only: pick how many stars to finish the current level with. */
+  /** DEV-only: simulate ONE round with a chosen star rating (fills 1/5). */
   private async promptAdminComplete(cb: (stars: 0 | 1 | 2 | 3) => void): Promise<void> {
     const sheet = await this.actionSheet.create({
-      header: 'Admin · terminar nível com…',
+      header: 'Admin · completar 1 ronda com…',
       cssClass: 'mode-menu-sheet',
       buttons: [
-        { text: '0 estrelas (falhei muito)', icon: 'ellipse-outline', handler: () => cb(0) },
+        { text: '0 estrelas (falhei — não conta)', icon: 'ellipse-outline', handler: () => cb(0) },
         { text: '1 estrela', icon: 'star-half-outline', handler: () => cb(1) },
         { text: '2 estrelas', icon: 'star-outline', handler: () => cb(2) },
         { text: '3 estrelas', icon: 'star', handler: () => cb(3) },
