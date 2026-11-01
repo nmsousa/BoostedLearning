@@ -1,0 +1,14 @@
+name = "boostionary-feedback"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# Non-secret config. The repo the issues are opened on.
+[vars]
+GITHUB_REPO = "nmsousa/BoostedLearning"
+# Optional: lock down which origin may call the worker. "*" is fine for a
+# mobile WebView (there's no cookie/credential to protect). To restrict, set
+# e.g. "https://localhost" or your dev origin.
+ALLOWED_ORIGIN = "*"
+
+# GITHUB_TOKEN is a SECRET — do NOT put it here. Set it with:
+#   wrangler secret put GITHUB_TOKEN

@@ -13,6 +13,7 @@ import { ActionSheetController, AlertController, ToastController } from '@ionic/
 import { FlashcardService } from './flashcard.service';
 import { SettingsService } from './settings.service';
 import { I18nAngularService } from './i18n.service';
+import { FeedbackService } from './feedback.service';
 
 /** Options for the practice-page header menu. */
 export interface ModeMenuOptions {
@@ -38,9 +39,7 @@ export class AddWordService {
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
-
-  /** Where problem reports are delivered (same address as the card export). */
-  private readonly FEEDBACK_EMAIL = 'wizard.night@gmail.com';
+  private feedback = inject(FeedbackService);
 
   /** Localized display name of a language code, falling back to the code. */
   private langName(code: string): string {
@@ -126,7 +125,7 @@ export class AddWordService {
         {
           text: t('feedback.submit'),
           handler: (checked: string[]) => {
-            this.sendReport(checked, opts, lang);
+            void this.sendReport(checked ?? [], opts, lang);
           },
         },
       ],
@@ -134,35 +133,21 @@ export class AddWordService {
     await alert.present();
   }
 
-  /** Compose and open the problem report as an email to the developer. */
-  private sendReport(checkedReasons: string[], opts: ModeMenuOptions, lang: string): void {
-    const t = (k: string, p?: Record<string, string | number>) => this.i18n.t(k, p);
-
-    // Ionic passes the checked checkbox VALUES as the handler argument.
-    const reasonLabels = (checkedReasons ?? []).map(v => t(`feedback.reason.${v}`)).join('; ');
-
-    const subject = `Boostionary feedback: ${opts.currentWord ?? '(no word)'}`;
-    const bodyLines = [
-      t('feedback.report'),
-      '',
-      `Word: ${opts.currentWord ?? '-'}`,
-      `Expected answer: ${opts.correctAnswer ?? '-'}`,
-      `Mode: ${opts.modeName ?? '-'}`,
-      `Learning language: ${this.langName(lang)} (${lang})`,
-      `Base language: ${this.langName(this.settings.baseLanguage())}`,
-      '',
-      `Reasons: ${reasonLabels || '-'}`,
-      '',
-      '---',
-      '(Add any extra detail above this line.)',
-    ];
-
-    const mailto =
-      `mailto:${this.FEEDBACK_EMAIL}` +
-      `?subject=${encodeURIComponent(subject)}` +
-      `&body=${encodeURIComponent(bodyLines.join('\n'))}`;
-
-    window.location.href = mailto;
+  /** Deliver the report via FeedbackService (Worker → GitHub issue, with a
+   *  mailto fallback) and confirm to the user. */
+  private async sendReport(checkedReasons: string[], opts: ModeMenuOptions, lang: string): Promise<void> {
+    const ok = await this.feedback.submit({
+      reasons: checkedReasons,
+      word: opts.currentWord ?? null,
+      correctAnswer: opts.correctAnswer ?? null,
+      modeName: opts.modeName ?? null,
+      learningLanguage: lang,
+    });
+    // On a successful POST we confirm; the mailto fallback already opened the
+    // mail client, so no toast is needed there.
+    if (ok) {
+      await this.toast(this.i18n.t('feedback.thanks'));
+    }
   }
 
   /**

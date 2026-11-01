@@ -28,6 +28,7 @@
     "@capacitor/android": "^8.5.3",
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.3",
+    "@capacitor/device": "^8.0.3",
     "@capacitor/keyboard": "^8.0.6",
     "@capacitor/status-bar": "^8.0.4",
     "@capgo/capacitor-updater": "^8.54.0",
