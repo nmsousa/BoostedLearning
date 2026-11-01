@@ -83,15 +83,19 @@ function clamp(s: unknown, max: number): string {
 }
 
 function buildIssue(p: FeedbackPayload): { title: string; body: string } {
-  const word = clamp(p.word, 120) || '(no word)';
+  const word = clamp(p.word, 120);
+  const mode = clamp(p.modeName, 40);
   const reasons = Array.isArray(p.reasons) ? p.reasons.map(r => clamp(r, 40)) : [];
   const d = p.diagnostics ?? {};
 
-  const title = `Feedback: ${word}${reasons.length ? ` — ${reasons[0]}` : ''}`;
+  // Title context: the word if there is one, else the screen/mode it came
+  // from (e.g. "Homepage"), else a generic placeholder.
+  const context = word || (mode ? `(${mode})` : '(no word)');
+  const title = `Feedback: ${context}${reasons.length ? ` — ${reasons[0]}` : ''}`;
 
   const note = clamp(p.note, 1000);
   const body = [
-    `**Word:** ${word}`,
+    `**Word:** ${word || '-'}`,
     `**Expected answer:** ${clamp(p.correctAnswer, 200) || '-'}`,
     `**Mode:** ${clamp(p.modeName, 40) || '-'}`,
     `**Reasons:** ${reasons.join(', ') || '-'}`,

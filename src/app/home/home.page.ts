@@ -231,7 +231,10 @@ export class HomePage implements OnInit {
 
   /** Open the "report a problem" feedback form from the home page. */
   reportProblem(): void {
-    void this.addWordService.reportProblem({ languageCode: this.settings.learningLanguage() });
+    void this.addWordService.reportProblem({
+      languageCode: this.settings.learningLanguage(),
+      modeName: 'Homepage',
+    });
   }
 
   /** Open the detailed "Your words" list (only when there are words). */
