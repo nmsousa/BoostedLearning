@@ -54,8 +54,6 @@ export class JourneyPage implements OnInit {
   /** The level the user should play next (first unlocked & not 3-star). */
   current: DeckLevel | null = null;
   isLoading = true;
-  /** Jump field value. */
-  jumpTo = '';
 
   t(key: string, params?: Record<string, string | number>): string {
     return this.i18n.t(key, params);
@@ -156,13 +154,6 @@ export class JourneyPage implements OnInit {
 
   continueCurrent(): void {
     if (this.current) this.startLevel(this.current);
-  }
-
-  onJump(): void {
-    const n = parseInt(this.jumpTo, 10);
-    if (!n) return;
-    const level = this.levels.find(l => l.levelNumber === n);
-    if (level) this.startLevel(level);
   }
 
   close(): void {

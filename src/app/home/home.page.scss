@@ -467,11 +467,20 @@ ion-button {
   }
 }
 
-// App icon shown in place of the "BoostedLearning" title text.
-.app-logo {
-  height: 28px;
-  width: 28px;
-  vertical-align: middle;
-  object-fit: contain;
-  &.large { height: 44px; width: 44px; }
+// "TEST" badge on the experimental mode cards (journey / builder).
+.mode-card {
+  position: relative;
+
+  .beta-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    background: var(--ion-color-warning);
+    color: var(--ion-color-warning-contrast, #2b1a00);
+  }
 }

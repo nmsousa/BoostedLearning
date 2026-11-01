@@ -28,14 +28,6 @@
       </div>
     </div>
 
-    <!-- Jump to level -->
-    <div class="jump-row">
-      <ion-input class="jump-input" type="number" inputmode="numeric"
-        [(ngModel)]="jumpTo" [placeholder]="'journey.jumpTo' | translate"
-        (keyup.enter)="onJump()"></ion-input>
-      <ion-button size="small" fill="outline" (click)="onJump()">{{ 'journey.go' | translate }}</ion-button>
-    </div>
-
     <!-- Chapters -->
     <div class="chapter" *ngFor="let chapter of chapters; let ci = index"
       [class.locked]="chapter.allLocked">

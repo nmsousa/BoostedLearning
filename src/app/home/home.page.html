@@ -1,8 +1,5 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      <img class="app-logo" src="assets/icon/favicon-32x32.png" alt="Boostionary" />
-    </ion-title>
     <ion-buttons slot="end">
       <!-- Learning-language selector: flag-only button, flag + name inside -->
       <button
@@ -41,13 +38,7 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">
-        <img class="app-logo large" src="assets/icon/icon-192.png" alt="Boostionary" />
-      </ion-title>
-    </ion-toolbar>
-  </ion-header>
+
 
   <!-- Loading state -->
   <div *ngIf="isLoading" class="loading-container">
@@ -89,14 +80,16 @@
           <span class="mode-desc">{{ 'home.mode.quiz.desc' | translate }}</span>
         </button>
 
-        <!-- EXPERIMENTAL modes (beta) -->
+        <!-- EXPERIMENTAL modes: a BETA badge marks them as test modes. -->
         <button type="button" class="mode-card journey" (click)="startJourney()">
+          <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>
           <ion-icon name="map-outline"></ion-icon>
           <span class="mode-name">{{ 'home.mode.journey' | translate }}</span>
           <span class="mode-desc">{{ 'home.mode.journey.desc' | translate }}</span>
         </button>
 
         <button type="button" class="mode-card builder" (click)="startBuilder()">
+          <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>
           <ion-icon name="construct-outline"></ion-icon>
           <span class="mode-name">{{ 'home.mode.builder' | translate }}</span>
           <span class="mode-desc">{{ 'home.mode.builder.desc' | translate }}</span>

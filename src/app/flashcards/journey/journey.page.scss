@@ -103,8 +103,8 @@
 .trail {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 10px 0;
+  gap: 22px;   // extra room so the star pill under a node clears the next one
+  padding: 10px 0 16px;
   position: relative;
 }
 
@@ -138,15 +138,20 @@
 
   .node-num { line-height: 1; }
 
-  // Stars badge under the number
+  // Stars sit on a pill just below the node, fully clear of the border so they
+  // aren't clipped by the circle.
   .node-stars {
     position: absolute;
-    bottom: -9px;
+    bottom: -14px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     gap: 1px;
-    ion-icon { font-size: 11px; color: #ffd33d; }
+    padding: 2px 5px;
+    border-radius: 999px;
+    background: var(--ion-background-color);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    ion-icon { font-size: 10px; color: #ffd33d; }
   }
 
   &.done {
