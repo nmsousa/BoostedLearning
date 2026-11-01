@@ -77,35 +77,35 @@
     {
       "id": "p1",
       "unlockAfter": ["pronouns", "verbs"],
-      "nl": "ik eet",
+      "target": "ik eet",
       "en": "I eat",
       "tokens": ["ik", "eet"]
     },
     {
       "id": "p2",
       "unlockAfter": ["pronouns", "verbs", "nouns"],
-      "nl": "ik eet brood",
+      "target": "ik eet brood",
       "en": "I eat bread",
       "tokens": ["ik", "eet", "brood"]
     },
     {
       "id": "p3",
       "unlockAfter": ["articles", "nouns", "verbs"],
-      "nl": "de hond drinkt water",
+      "target": "de hond drinkt water",
       "en": "the dog drinks water",
       "tokens": ["de", "hond", "drinkt", "water"]
     },
     {
       "id": "p4",
       "unlockAfter": ["pronouns", "verbs", "nouns", "adjectives"],
-      "nl": "zij leest een goed boek",
+      "target": "zij leest een goed boek",
       "en": "she reads a good book",
       "tokens": ["zij", "leest", "een", "goed", "boek"]
     },
     {
       "id": "p5",
       "unlockAfter": ["articles", "nouns", "verbs", "adjectives"],
-      "nl": "het kind heeft een kleine kat",
+      "target": "het kind heeft een kleine kat",
       "en": "the child has a small cat",
       "tokens": ["het", "kind", "heeft", "een", "kleine", "kat"]
     }

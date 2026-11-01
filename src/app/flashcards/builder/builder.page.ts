@@ -20,10 +20,11 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AudioService } from '../../services/audio.service';
+import { SettingsService } from '../../services/settings.service';
 
 interface BuilderWord { text: string; translations: string[]; article?: string; lemma?: string; }
 interface BuilderGroup { id: string; category: string; name: string; order: number; words: BuilderWord[]; }
-interface BuilderPhrase { id: string; unlockAfter: string[]; nl: string; en: string; tokens: string[]; }
+interface BuilderPhrase { id: string; unlockAfter: string[]; target: string; en: string; tokens: string[]; }
 interface BuilderData { id: string; name: string; languageCode: string; groups: BuilderGroup[]; phrases: BuilderPhrase[]; }
 
 type Stage =
@@ -43,9 +44,21 @@ export class BuilderPage implements OnInit {
   private router = inject(Router);
   private i18n = inject(I18nAngularService);
   private audio = inject(AudioService);
+  private settings = inject(SettingsService);
   private cdr = inject(ChangeDetectorRef);
 
-  private static readonly STORE_KEY = 'boosted-builder-progress-nl';
+  /**
+   * Builder datasets per learning language. Each is a hand-categorised set in
+   * assets/flashcards. Languages without an entry here simply show the
+   * "unavailable" empty state (the mode is experimental / content-gated).
+   */
+  private static readonly DATASETS: Record<string, string> = {
+    nl: 'assets/flashcards/dutch-builder.json',
+    fr: 'assets/flashcards/french-builder.json',
+  };
+
+  /** The language this Builder session is running in (drives audio + storage). */
+  private langCode = 'nl';
 
   data: BuilderData | null = null;
   isLoading = true;
@@ -70,12 +83,18 @@ export class BuilderPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    this.langCode = this.settings.learningLanguage();
     this.loadProgress();
+    const url = BuilderPage.DATASETS[this.langCode];
+    if (!url) {
+      // No Builder content for this language yet.
+      this.data = null;
+      this.isLoading = false;
+      this.cdr.detectChanges();
+      return;
+    }
     try {
-      const json = await firstValueFrom(
-        this.http.get<BuilderData>('assets/flashcards/dutch-builder.json')
-      );
-      this.data = json;
+      this.data = await firstValueFrom(this.http.get<BuilderData>(url));
     } catch {
       this.data = null;
     }
@@ -84,15 +103,18 @@ export class BuilderPage implements OnInit {
   }
 
   // ── Progress ──────────────────────────────────────────────────────────────
+  /** Progress is kept per language so French/Dutch don't clobber each other. */
+  private get storeKey(): string { return `boosted-builder-progress-${this.langCode}`; }
+
   private loadProgress(): void {
     try {
-      const raw = localStorage.getItem(BuilderPage.STORE_KEY);
-      if (raw) this.completed = new Set(JSON.parse(raw) as string[]);
-    } catch { /* ignore */ }
+      const raw = localStorage.getItem(this.storeKey);
+      this.completed = raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+    } catch { this.completed = new Set(); }
   }
   private saveProgress(): void {
     try {
-      localStorage.setItem(BuilderPage.STORE_KEY, JSON.stringify([...this.completed]));
+      localStorage.setItem(this.storeKey, JSON.stringify([...this.completed]));
     } catch { /* ignore */ }
   }
 
@@ -132,7 +154,7 @@ export class BuilderPage implements OnInit {
   }
 
   playWord(text: string): void {
-    void this.audio.playWord(text, undefined, 'nl');
+    void this.audio.playWord(text, undefined, this.langCode);
   }
 
   // ── Phrase building (tap words in order) ────────────────────────────────────
@@ -164,7 +186,7 @@ export class BuilderPage implements OnInit {
     if (done) {
       this.completed.add(this.stage.phrase.id);
       this.saveProgress();
-      void this.audio.playWord(this.stage.phrase.nl, undefined, 'nl');
+      void this.audio.playWord(this.stage.phrase.target, undefined, this.langCode);
     }
     this.cdr.detectChanges();
   }

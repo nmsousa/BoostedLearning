@@ -1,0 +1,145 @@
+{
+  "id": "deck-builder-fr",
+  "name": "French Builder (beta)",
+  "languageCode": "fr",
+  "description": "A small hand-categorised French set for the experimental sentence Builder mode.",
+  "groups": [
+    {
+      "id": "expressions",
+      "category": "expression",
+      "name": "Expressions & connectors",
+      "order": 1,
+      "words": [
+        { "text": "oui", "translations": ["yes"] },
+        { "text": "non", "translations": ["no"] },
+        { "text": "merci", "translations": ["thank you"] },
+        { "text": "bonjour", "translations": ["hello"] },
+        { "text": "au revoir", "translations": ["goodbye"] },
+        { "text": "et", "translations": ["and"] },
+        { "text": "mais", "translations": ["but"] },
+        { "text": "très", "translations": ["very"] },
+        { "text": "aussi", "translations": ["too", "also"] }
+      ]
+    },
+    {
+      "id": "articles",
+      "category": "article",
+      "name": "Articles",
+      "order": 2,
+      "words": [
+        { "text": "le", "translations": ["the (m.)"] },
+        { "text": "la", "translations": ["the (f.)"] },
+        { "text": "un", "translations": ["a (m.)"] },
+        { "text": "une", "translations": ["a (f.)"] }
+      ]
+    },
+    {
+      "id": "pronouns",
+      "category": "pronoun",
+      "name": "Pronouns",
+      "order": 3,
+      "words": [
+        { "text": "je", "translations": ["I"] },
+        { "text": "tu", "translations": ["you"] },
+        { "text": "il", "translations": ["he"] },
+        { "text": "elle", "translations": ["she"] },
+        { "text": "nous", "translations": ["we"] }
+      ]
+    },
+    {
+      "id": "nouns",
+      "category": "noun",
+      "name": "Nouns",
+      "order": 4,
+      "words": [
+        { "text": "homme", "translations": ["man"], "article": "un" },
+        { "text": "femme", "translations": ["woman"], "article": "une" },
+        { "text": "enfant", "translations": ["child"], "article": "un" },
+        { "text": "chien", "translations": ["dog"], "article": "un" },
+        { "text": "chat", "translations": ["cat"], "article": "un" },
+        { "text": "maison", "translations": ["house"], "article": "une" },
+        { "text": "pain", "translations": ["bread"], "article": "le" },
+        { "text": "eau", "translations": ["water"], "article": "une" },
+        { "text": "café", "translations": ["coffee"], "article": "un" },
+        { "text": "livre", "translations": ["book"], "article": "un" }
+      ]
+    },
+    {
+      "id": "verbs",
+      "category": "verb",
+      "name": "Verbs",
+      "order": 5,
+      "words": [
+        { "text": "mange", "translations": ["eat", "eats"], "lemma": "manger" },
+        { "text": "bois", "translations": ["drink"], "lemma": "boire" },
+        { "text": "boit", "translations": ["drinks"], "lemma": "boire" },
+        { "text": "lit", "translations": ["reads"], "lemma": "lire" },
+        { "text": "a", "translations": ["has"], "lemma": "avoir" },
+        { "text": "est", "translations": ["is"], "lemma": "être" }
+      ]
+    },
+    {
+      "id": "adjectives",
+      "category": "adjective",
+      "name": "Adjectives",
+      "order": 6,
+      "words": [
+        { "text": "grand", "translations": ["big (m.)"] },
+        { "text": "petit", "translations": ["small (m.)"] },
+        { "text": "bon", "translations": ["good (m.)"] },
+        { "text": "chaud", "translations": ["hot (m.)"] }
+      ]
+    }
+  ],
+  "phrases": [
+    {
+      "id": "p1",
+      "unlockAfter": ["expressions"],
+      "target": "oui merci",
+      "en": "yes, thank you",
+      "tokens": ["oui", "merci"]
+    },
+    {
+      "id": "p2",
+      "unlockAfter": ["pronouns", "verbs"],
+      "target": "je mange",
+      "en": "I eat",
+      "tokens": ["je", "mange"]
+    },
+    {
+      "id": "p3",
+      "unlockAfter": ["pronouns", "verbs", "nouns"],
+      "target": "je mange le pain",
+      "en": "I eat the bread",
+      "tokens": ["je", "mange", "le", "pain"]
+    },
+    {
+      "id": "p4",
+      "unlockAfter": ["articles", "nouns", "verbs"],
+      "target": "le chien mange le pain",
+      "en": "the dog eats the bread",
+      "tokens": ["le", "chien", "mange", "le", "pain"]
+    },
+    {
+      "id": "p5",
+      "unlockAfter": ["pronouns", "verbs", "nouns", "adjectives"],
+      "target": "il lit un bon livre",
+      "en": "he reads a good book",
+      "tokens": ["il", "lit", "un", "bon", "livre"]
+    },
+    {
+      "id": "p6",
+      "unlockAfter": ["expressions", "articles", "pronouns", "verbs", "nouns"],
+      "target": "je mange le pain et je bois un café",
+      "en": "I eat the bread and I drink a coffee",
+      "tokens": ["je", "mange", "le", "pain", "et", "je", "bois", "un", "café"]
+    },
+    {
+      "id": "p7",
+      "unlockAfter": ["expressions", "articles", "nouns", "verbs", "adjectives"],
+      "target": "le café est très chaud",
+      "en": "the coffee is very hot",
+      "tokens": ["le", "café", "est", "très", "chaud"]
+    }
+  ]
+}
