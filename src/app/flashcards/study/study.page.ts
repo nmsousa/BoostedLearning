@@ -612,7 +612,21 @@ export class StudyPage implements OnInit, OnDestroy {
     this.focusInput();
   }
 
+  /** True when the current round has no answered/typed progress to lose. */
+  private get hasNothingToLose(): boolean {
+    return this.completedIds.size === 0
+      && this.failedIds.size === 0
+      && this.currentIndex === 0
+      && !this.userAnswer.trim();
+  }
+
   async endStudy(): Promise<void> {
+    // If nothing was answered this round, there's nothing to lose — just exit
+    // without the confirmation prompt.
+    if (this.hasNothingToLose) {
+      this.router.navigate([this.backUrl], { replaceUrl: true });
+      return;
+    }
     const alert = await this.alertController.create({
       header: this.t('mode.endStudyHeader'),
       message: this.t('mode.endStudyMessage'),
