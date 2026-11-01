@@ -161,6 +161,8 @@ export interface DeckLevel {
   cardCount: number;
   bestStars: number;
   bestScore: number;
+  /** 5-round model: rounds completed (0-5). The level card ring fills by this. */
+  roundsCompleted: number;
   attempts: number;
   isUnlocked: boolean;
   /** Skill name for skill-based decks (French); undefined for chunked decks. */
@@ -1422,6 +1424,17 @@ export class FlashcardService {
 
   private readonly CARDS_PER_LEVEL = 20;
 
+  // ── 5-round model (see docs/LEVEL-ALGORITHM.md) ────────────────────────────
+  /** Rounds that make up one level. */
+  readonly ROUNDS_PER_LEVEL = 5;
+  /** First-try accuracy needed for a round to count toward the 5. */
+  private readonly ROUND_PASS_SCORE = 70;
+  /** Per-round composition: fraction of NEW (this-level) words. The rest is
+   *  review drawn worst-first (round 5 biases to words missed in this level). */
+  private readonly ROUND_NEW_FRACTION = [1.0, 0.9, 0.75, 0.6, 0.8];
+  /** Target items per round (capped to the level's size). */
+  private readonly ROUND_TARGET_ITEMS = 10;
+
   /** Lowercase + strip accents, for grouping/comparison. */
   private normalizeKey(text: string): string {
     return text
@@ -1596,9 +1609,14 @@ export class FlashcardService {
       
       const progress = progressMap.get(levelNumber);
       
-      // Level is unlocked if it's level 1 or the previous level scored >= 70%.
+      // Unlock: level 1, or the previous level has all 5 rounds done. Legacy
+      // records (no roundsCompleted) fall back to the old >=70% score rule.
       const previousProgress = progressMap.get(levelNumber - 1);
-      const isUnlocked = levelNumber === 1 || (previousProgress?.bestScore ?? 0) >= this.UNLOCK_SCORE;
+      const prevRounds = previousProgress?.roundsCompleted;
+      const prevUnlocks = prevRounds !== undefined
+        ? prevRounds >= this.ROUNDS_PER_LEVEL
+        : (previousProgress?.bestScore ?? 0) >= this.UNLOCK_SCORE;
+      const isUnlocked = levelNumber === 1 || prevUnlocks;
       
       levels.push({
         levelNumber,
@@ -1608,6 +1626,7 @@ export class FlashcardService {
         skill: skillName,
         bestStars: progress?.bestStars ?? 0,
         bestScore: progress?.bestScore ?? 0,
+        roundsCompleted: progress?.roundsCompleted ?? 0,
         attempts: progress?.attempts ?? 0,
         isUnlocked,
         bestTimeSeconds: progress?.bestTimeSeconds,
@@ -1755,6 +1774,165 @@ export class FlashcardService {
     return `${deckId}-${mode}-${levelNumber}`;
   }
 
+  // ── 5-round model API ──────────────────────────────────────────────────────
+
+  /** How many of a level's 5 rounds are done (0-5). */
+  async getRoundsCompleted(deckId: string, mode: PracticeMode, levelNumber: number): Promise<number> {
+    const p = await this.getLevelProgress(deckId, mode, levelNumber);
+    return p?.roundsCompleted ?? 0;
+  }
+
+  /**
+   * Build the card set for a specific round (1-based) of a level, per the
+   * composition in docs/LEVEL-ALGORITHM.md: increasingly review-heavy, with the
+   * final round biased toward words the user missed in THIS level.
+   *
+   * `missedThisLevel` are card ids the user got wrong in earlier rounds of the
+   * same level (the mode page tracks these across the 5 rounds).
+   */
+  getRoundCards(
+    deckId: string,
+    levelNumber: number,
+    round: number,
+    missedThisLevel: string[] = []
+  ): Flashcard[] {
+    const levelCards = this.getLevelCards(deckId, levelNumber);
+    if (levelCards.length === 0) return [];
+
+    const r = Math.max(1, Math.min(this.ROUNDS_PER_LEVEL, round));
+    const newFraction = this.ROUND_NEW_FRACTION[r - 1];
+    const target = Math.min(this.ROUND_TARGET_ITEMS, levelCards.length);
+
+    // Round 1 (or any 100%-new round): just the level's words, shuffled.
+    if (newFraction >= 1) return this.shuffleArr(levelCards).slice(0, Math.max(target, levelCards.length >= target ? target : levelCards.length));
+
+    const newCount = Math.max(1, Math.round(target * newFraction));
+    const reviewCount = Math.max(0, target - newCount);
+
+    const newPart = this.shuffleArr(levelCards).slice(0, newCount);
+
+    // Review pool: earlier-level words, worst-first. On the final round, bias
+    // to words missed in THIS level first.
+    let reviewPool: Flashcard[] = [];
+    if (reviewCount > 0) {
+      const earlier = this.getReviewPool(deckId, levelNumber);
+      if (r === this.ROUNDS_PER_LEVEL && missedThisLevel.length > 0) {
+        const missedSet = new Set(missedThisLevel);
+        const missedCards = levelCards.filter(c => missedSet.has(c.id));
+        reviewPool = [...missedCards, ...earlier];
+      } else {
+        reviewPool = earlier;
+      }
+    }
+    const reviewPart = reviewPool.slice(0, reviewCount);
+
+    return this.shuffleArr([...newPart, ...reviewPart]);
+  }
+
+  /** Earlier-level words ordered worst-first (weakest accuracy). */
+  private getReviewPool(deckId: string, levelNumber: number): Flashcard[] {
+    const deck = this.getDeck(deckId);
+    if (!deck || levelNumber <= 1) return [];
+    const deduped = this.getDedupedCards(deckId);
+    const levelIds = new Set(this.getLevelCards(deckId, levelNumber).map(c => c.id));
+    // Candidate review = everything not in the current level.
+    const candidates = deduped.filter(c => !levelIds.has(c.id));
+    const weakness = (c: Flashcard) => {
+      const seen = c.correctCount + c.incorrectCount;
+      return seen === 0 ? 0.5 : c.incorrectCount / seen;
+    };
+    return [...candidates].sort((a, b) => weakness(b) - weakness(a));
+  }
+
+  private shuffleArr<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /**
+   * Record the result of ONE round. Advances roundsCompleted when the round is
+   * passed (>= ROUND_PASS_SCORE). Recomputes stars from the average of all
+   * recorded round scores. Returns the updated round count + stars + whether
+   * the level just became fully complete (all 5 rounds).
+   */
+  async saveRoundProgress(
+    deckId: string,
+    mode: PracticeMode,
+    levelNumber: number,
+    roundScorePercent: number,
+    timeSeconds?: number,
+    combo?: number
+  ): Promise<{ roundsCompleted: number; stars: number; levelComplete: boolean }> {
+    const progressId = this.levelProgressId(deckId, mode, levelNumber);
+    const existing = await this.db.levelProgress.get(progressId);
+
+    const prevRounds = existing?.roundsCompleted ?? 0;
+    const passed = roundScorePercent >= this.ROUND_PASS_SCORE;
+    // A round only advances the counter when passed and we aren't already at 5.
+    const roundsCompleted = passed ? Math.min(this.ROUNDS_PER_LEVEL, prevRounds + 1) : prevRounds;
+
+    const roundScores = [...(existing?.roundScores ?? [])];
+    roundScores.push(roundScorePercent);
+
+    // Stars from the average first-try accuracy across recorded rounds.
+    const avg = roundScores.reduce((s, v) => s + v, 0) / roundScores.length;
+    const stars = this.calculateStars(Math.round(avg));
+
+    let bestTimeSeconds = existing?.bestTimeSeconds;
+    if (timeSeconds !== undefined) {
+      bestTimeSeconds = bestTimeSeconds === undefined ? timeSeconds : Math.min(bestTimeSeconds, timeSeconds);
+    }
+    let bestCombo = existing?.bestCombo;
+    if (combo !== undefined) {
+      bestCombo = bestCombo === undefined ? combo : Math.max(bestCombo, combo);
+    }
+
+    const levelComplete = roundsCompleted >= this.ROUNDS_PER_LEVEL;
+
+    const progress: LevelProgressEntity = {
+      id: progressId,
+      deckId,
+      mode,
+      levelNumber,
+      bestStars: Math.max(existing?.bestStars ?? 0, levelComplete ? stars : 0),
+      bestScore: Math.max(existing?.bestScore ?? 0, Math.round(avg)),
+      attempts: (existing?.attempts ?? 0) + 1,
+      lastAttempt: new Date().toISOString(),
+      roundsCompleted,
+      roundScores,
+      ...(bestTimeSeconds !== undefined ? { bestTimeSeconds } : {}),
+      ...(bestCombo !== undefined ? { bestCombo } : {}),
+    };
+    await this.db.levelProgress.put(progress);
+
+    return { roundsCompleted, stars, levelComplete };
+  }
+
+  /** DEV/admin: force a level to a given completion (all rounds + stars). */
+  async adminForceComplete(deckId: string, mode: PracticeMode, levelNumber: number, stars: 0 | 1 | 2 | 3): Promise<void> {
+    const progressId = this.levelProgressId(deckId, mode, levelNumber);
+    const existing = await this.db.levelProgress.get(progressId);
+    const pct = { 0: 30, 1: 75, 2: 90, 3: 100 }[stars];
+    await this.db.levelProgress.put({
+      id: progressId,
+      deckId,
+      mode,
+      levelNumber,
+      bestStars: stars,
+      bestScore: pct,
+      attempts: (existing?.attempts ?? 0) + 1,
+      lastAttempt: new Date().toISOString(),
+      roundsCompleted: stars > 0 ? this.ROUNDS_PER_LEVEL : 0,
+      roundScores: existing?.roundScores ?? [],
+      ...(existing?.bestTimeSeconds !== undefined ? { bestTimeSeconds: existing.bestTimeSeconds } : {}),
+      ...(existing?.bestCombo !== undefined ? { bestCombo: existing.bestCombo } : {}),
+    });
+  }
+
   /**
    * Get progress for a specific level
    */
@@ -1771,8 +1949,16 @@ export class FlashcardService {
 
   async isLevelUnlocked(deckId: string, mode: PracticeMode, levelNumber: number): Promise<boolean> {
     if (levelNumber === 1) return true;
-    
+
     const previousProgress = await this.getLevelProgress(deckId, mode, levelNumber - 1);
-    return (previousProgress?.bestScore ?? 0) >= this.UNLOCK_SCORE;
+    if (!previousProgress) return false;
+
+    // 5-round model: the previous level must have all rounds completed.
+    if (previousProgress.roundsCompleted !== undefined) {
+      return previousProgress.roundsCompleted >= this.ROUNDS_PER_LEVEL;
+    }
+    // Legacy records (pre-rounds): fall back to the old score threshold so
+    // existing progress keeps the next level open.
+    return (previousProgress.bestScore ?? 0) >= this.UNLOCK_SCORE;
   }
 }

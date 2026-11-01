@@ -95,6 +95,18 @@ export interface LevelProgressEntity {
   bestTimeSeconds?: number;
   /** Best combo streak achieved (Match mode). Optional. */
   bestCombo?: number;
+  /**
+   * 5-round model: how many of the level's 5 rounds the user has completed
+   * (0-5). The next level unlocks when this reaches 5. Optional for backward
+   * compatibility with records written by the old single-pass engine.
+   */
+  roundsCompleted?: number;
+  /**
+   * First-try accuracy (0-100) recorded for each completed round, in order.
+   * Used to compute the level's stars. Optional / may be shorter than
+   * roundsCompleted for legacy records.
+   */
+  roundScores?: number[];
 }
 
 /**
