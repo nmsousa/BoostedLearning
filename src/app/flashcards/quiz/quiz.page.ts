@@ -58,7 +58,18 @@ export class QuizPage implements OnInit {
       correctAnswer: this.currentCard ? this.flashcardService.bestTranslation(this.currentCard) : null,
       modeName: this.t('mode.titleQuiz'),
       onHidden: () => this.skipHiddenCard(),
+      onAdminComplete: (stars) => this.adminCompleteLevel(stars),
     });
+  }
+
+  /** DEV-only: finish the current level with a chosen star count, then exit. */
+  private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
+    if (this.levelNumber > 0 && this.deck) {
+      const pct = { 0: 30, 1: 75, 2: 90, 3: 100 }[stars];
+      const total = Math.max(1, this.cards.length || 1);
+      await this.flashcardService.saveLevelProgress(this.deck.id, 'quiz', this.levelNumber, Math.round((pct / 100) * total), total);
+    }
+    this.router.navigate(['/practice'], { replaceUrl: true });
   }
 
   /** After hiding the current word, move to the next question. */

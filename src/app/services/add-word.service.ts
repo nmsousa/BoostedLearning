@@ -105,7 +105,8 @@ export class AddWordService {
     // in non-production builds AND when the Admin-mode setting is on.
     if (!environment.production && this.settings.adminMode() && opts.onAdminComplete) {
       buttons.push({
-        text: '🛠  Admin: terminar nível',
+        text: 'Admin: terminar nível',
+        icon: 'construct-outline',
         handler: () => { this.promptAdminComplete(opts.onAdminComplete!); },
       });
     }
@@ -122,10 +123,10 @@ export class AddWordService {
       header: 'Admin · terminar nível com…',
       cssClass: 'mode-menu-sheet',
       buttons: [
-        { text: '0 estrelas (falhei muito)', handler: () => cb(0) },
-        { text: '1 estrela', handler: () => cb(1) },
-        { text: '2 estrelas', handler: () => cb(2) },
-        { text: '3 estrelas', handler: () => cb(3) },
+        { text: '0 estrelas (falhei muito)', icon: 'ellipse-outline', handler: () => cb(0) },
+        { text: '1 estrela', icon: 'star-half-outline', handler: () => cb(1) },
+        { text: '2 estrelas', icon: 'star-outline', handler: () => cb(2) },
+        { text: '3 estrelas', icon: 'star', handler: () => cb(3) },
         { text: this.i18n.t('common.cancel'), icon: 'close-outline', role: 'cancel' },
       ],
     });
