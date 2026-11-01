@@ -294,6 +294,17 @@ export class FlashcardsPage implements OnInit {
     return Array(3 - count).fill(0);
   }
 
+  /**
+   * `stroke-dasharray` for the level progress ring: fills stars/3 of the
+   * circle. Circle radius is 17 → circumference ≈ 106.8. First value is the
+   * filled arc length, second is the remaining gap.
+   */
+  ringDash(stars: number): string {
+    const circumference = 2 * Math.PI * 17; // ≈ 106.8
+    const filled = (Math.max(0, Math.min(3, stars)) / 3) * circumference;
+    return `${filled} ${circumference - filled}`;
+  }
+
   getTotalStars(deckId: string): number {
     const levels = this.getLevels(deckId);
     return levels.reduce((sum, level) => sum + level.bestStars, 0);

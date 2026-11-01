@@ -54,10 +54,8 @@
             </ion-badge>
           </ion-card-subtitle>
           <div class="deck-stars">
-            <span class="deck-star-count gamification">
-              <ion-icon name="star" color="warning"></ion-icon>
-              <span>{{ deckStats.get(deck.id)?.totalStars || 0 }} / {{ deckStats.get(deck.id)?.maxStars || 0 }}</span>
-            </span>
+            <!-- The total-stars counter (e.g. "0/885") was removed: it was
+                 noise and could feel discouraging. The chevron stays. -->
             <ion-icon *ngIf="decks.length > 1" [name]="isDeckExpanded(deck.id) ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
           </div>
         </ion-card-header>
@@ -79,36 +77,46 @@
               *ngFor="let level of getLevels(deck.id); trackBy: trackByLevelNumber"
               class="level-item"
               [class.locked]="!level.isUnlocked"
+              [class.done]="level.isUnlocked && level.bestStars >= 1"
               (click)="startLevel(deck, level)">
+
+              <!-- Progress ring on the left: a circular track whose fill shows
+                   how many stars (0-3) were earned; the level number sits
+                   inside. A lock replaces it on locked levels. -->
+              <div class="level-ring" [class.locked]="!level.isUnlocked" [attr.data-stars]="level.bestStars">
+                <svg viewBox="0 0 40 40" aria-hidden="true">
+                  <circle class="ring-track" cx="20" cy="20" r="17"></circle>
+                  <circle class="ring-fill" cx="20" cy="20" r="17"
+                    [style.stroke-dasharray]="ringDash(level.bestStars)"></circle>
+                </svg>
+                <span class="ring-num" *ngIf="level.isUnlocked">{{ level.levelNumber }}</span>
+                <ion-icon *ngIf="!level.isUnlocked" name="lock-closed" class="ring-lock"></ion-icon>
+              </div>
 
               <div class="level-info">
                 <span class="level-number">
                   {{ 'practice.level' | translate:{ n: level.levelNumber } }}<span *ngIf="level.skill"> · {{ level.skill }}</span>
                 </span>
-                <span *ngIf="level.isUnlocked" class="level-cards">{{ 'practice.levelWords' | translate:{ count: (isMatchMode && level.matchWordCount ? level.matchWordCount : level.cardCount) } }}</span>
-                <span *ngIf="!level.isUnlocked" class="level-cards level-locked-hint">
+                <span *ngIf="!level.isUnlocked" class="level-locked-hint">
                   {{ 'practice.unlockHint' | translate }}
+                </span>
+                <!-- Match-only: discrete best time + combo, only when set. -->
+                <span class="level-records gamification"
+                  *ngIf="level.isUnlocked && isMatchMode && (level.bestTimeSeconds !== undefined || (level.bestCombo && level.bestCombo >= 2))">
+                  <span class="rec time" *ngIf="level.bestTimeSeconds !== undefined">
+                    <ion-icon name="time-outline"></ion-icon>{{ formatBestTime(level.bestTimeSeconds) }}
+                  </span>
+                  <span class="rec combo" *ngIf="level.bestCombo && level.bestCombo >= 2">
+                    <ion-icon name="flame"></ion-icon>{{ level.bestCombo }}
+                  </span>
                 </span>
               </div>
 
-              <div class="level-stars">
-                <span
-                  *ngIf="level.isUnlocked && isMatchMode && level.bestTimeSeconds !== undefined"
-                  class="level-time gamification">
-                  <ion-icon name="time-outline"></ion-icon>
-                  {{ formatBestTime(level.bestTimeSeconds) }}
-                </span>
-                <span
-                  *ngIf="level.isUnlocked && isMatchMode && level.bestCombo && level.bestCombo >= 2"
-                  class="level-combo gamification">
-                  <ion-icon name="flame"></ion-icon>
-                  {{ level.bestCombo }}
-                </span>
-                <span *ngIf="level.isUnlocked" class="gamification">
+              <div class="level-stars" *ngIf="level.isUnlocked">
+                <span class="gamification">
                   <ion-icon *ngFor="let s of getStarArray(level.bestStars)" name="star" class="star filled"></ion-icon>
                   <ion-icon *ngFor="let s of getEmptyStarArray(level.bestStars)" name="star-outline" class="star empty"></ion-icon>
                 </span>
-                <ion-icon *ngIf="!level.isUnlocked" name="lock-closed" class="lock-icon"></ion-icon>
               </div>
             </div>
           </div>

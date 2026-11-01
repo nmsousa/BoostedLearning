@@ -147,80 +147,110 @@
   margin-bottom: 16px;
 }
 
+// Compact level row: progress ring (left) + name/records (middle) + stars (right).
 .level-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
+  gap: 12px;
+  padding: 10px 14px;
   background: var(--ion-color-light);
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: background 0.2s;
-  
-  &:hover:not(.locked) {
-    background: var(--ion-color-light-shade);
+
+  &:hover:not(.locked) { background: var(--ion-color-light-shade); }
+  &.locked { opacity: 0.55; cursor: not-allowed; }
+  // A subtle left accent for completed levels.
+  &.done { box-shadow: inset 3px 0 0 var(--ion-color-success); }
+}
+
+// ── Progress ring ───────────────────────────────────────────────────────────
+.level-ring {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+
+  svg { width: 40px; height: 40px; transform: rotate(-90deg); }
+
+  .ring-track {
+    fill: none;
+    stroke: var(--ion-color-step-200, rgba(0, 0, 0, 0.12));
+    stroke-width: 4;
   }
-  
-  &.locked {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .ring-fill {
+    fill: none;
+    stroke: var(--ion-color-warning);
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.3s ease;
   }
+
+  .ring-num {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--ion-text-color);
+  }
+  .ring-lock {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    font-size: 18px;
+    color: var(--ion-color-medium);
+  }
+
+  &.locked .ring-fill { stroke: transparent; }
 }
 
 .level-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  // Take the free space and allow the title to wrap without pushing the
-  // stats group off the row.
   flex: 1 1 auto;
   min-width: 0;
-  
+
   .level-number {
     font-weight: 600;
     font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  
-  .level-cards {
+  .level-locked-hint {
     font-size: 0.8rem;
+    font-style: italic;
     color: var(--ion-color-medium);
+    opacity: 0.85;
   }
 
-  .level-locked-hint {
-    font-style: italic;
-    opacity: 0.85;
+  // Match records: small, inline, dimmed; only rendered when present.
+  .level-records {
+    display: flex;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: var(--ion-color-medium);
+
+    .rec { display: inline-flex; align-items: center; gap: 3px; }
+    .rec ion-icon { font-size: 13px; }
+    .rec.combo ion-icon { color: var(--ion-color-warning); }
   }
 }
 
 .level-stars {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 4px 8px;
   flex-shrink: 0;
-  // Cap the stats group so a long time+combo wraps instead of overflowing.
-  max-width: 55%;
-
-  // Keep the 3 stars together on their own line (never split).
-  .gamification { white-space: nowrap; }
+  white-space: nowrap;
 
   .star {
-    font-size: 20px;
-    
-    &.filled {
-      color: var(--ion-color-warning);
-    }
-    
-    &.empty {
-      color: var(--ion-color-medium);
-    }
-  }
-  
-  .lock-icon {
-    font-size: 20px;
-    color: var(--ion-color-medium);
+    font-size: 18px;
+    &.filled { color: var(--ion-color-warning); }
+    &.empty { color: var(--ion-color-medium); }
   }
 }
 
@@ -340,30 +370,4 @@
   color: var(--ion-color-medium);
 }
 
-// Spacing between the star icon and the count in the deck header.
-.deck-stars {
-  gap: 8px;
 
-  .deck-star-count {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-}
-
-// Best completion time + best combo shown next to the stars (Match levels).
-.level-stars .level-time,
-.level-stars .level-combo {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  margin-right: 8px;
-  font-size: 0.8rem;
-  color: var(--ion-color-medium);
-
-  ion-icon { font-size: 14px; }
-}
-
-.level-stars .level-combo ion-icon {
-  color: var(--ion-color-warning);
-}
