@@ -1609,14 +1609,15 @@ export class FlashcardService {
       
       const progress = progressMap.get(levelNumber);
       
-      // Unlock: level 1, or the previous level has all 5 rounds done. Legacy
-      // records (no roundsCompleted) fall back to the old >=70% score rule.
+      // Unlock: Flashcards is free practice (all open). Otherwise level 1, or
+      // the previous level has all 5 rounds done. Legacy records (no
+      // roundsCompleted) fall back to the old >=70% score rule.
       const previousProgress = progressMap.get(levelNumber - 1);
       const prevRounds = previousProgress?.roundsCompleted;
       const prevUnlocks = prevRounds !== undefined
         ? prevRounds >= this.ROUNDS_PER_LEVEL
         : (previousProgress?.bestScore ?? 0) >= this.UNLOCK_SCORE;
-      const isUnlocked = levelNumber === 1 || prevUnlocks;
+      const isUnlocked = mode === 'flip' || levelNumber === 1 || prevUnlocks;
       
       levels.push({
         levelNumber,
@@ -1939,6 +1940,9 @@ export class FlashcardService {
 
   async isLevelUnlocked(deckId: string, mode: PracticeMode, levelNumber: number): Promise<boolean> {
     if (levelNumber === 1) return true;
+    // Flashcards is a free practice mode: every level is always open so the
+    // user can review anything. No round/unlock gating.
+    if (mode === 'flip') return true;
 
     const previousProgress = await this.getLevelProgress(deckId, mode, levelNumber - 1);
     if (!previousProgress) return false;

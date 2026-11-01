@@ -50,16 +50,9 @@ export class FlipPage implements OnInit {
       correctAnswer: this.currentCard ? this.flashcardService.bestTranslation(this.currentCard) : null,
       modeName: this.t('mode.titleFlip'),
       onHidden: () => this.skipHiddenCard(),
-      onAdminComplete: (stars) => this.adminCompleteLevel(stars),
+      // No admin "complete round" for Flashcards: it has no rounds/unlocking
+      // (free practice — all levels open).
     });
-  }
-
-  /** DEV-only: finish the current level with a chosen star count, then exit. */
-  private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
-    if (this.levelNumber > 0 && this.deck) {
-      await this.flashcardService.adminForceComplete(this.deck.id, 'flip', this.levelNumber, stars);
-    }
-    this.router.navigate(['/practice'], { replaceUrl: true });
   }
 
   /** After hiding the current word, advance to the next card. */
@@ -255,15 +248,18 @@ export class FlipPage implements OnInit {
     const scorePercent = total > 0 ? Math.round((weighted / total) * 100) : 0;
 
     if (this.levelNumber > 0 && this.deck) {
-      // 5-round model: each Flashcards playthrough counts as one round.
-      const result = await this.flashcardService.saveRoundProgress(
+      // Flashcards is free practice (no rounds, no unlock gating). We still
+      // record a best score/stars for display via the simple single-pass save.
+      const effectiveCorrect = Math.round((scorePercent / 100) * total);
+      const result = await this.flashcardService.saveLevelProgress(
         this.deck.id,
         'flip',
         this.levelNumber,
-        scorePercent
+        effectiveCorrect,
+        total
       );
       this.earnedStars = result.stars;
-      this.isNewBest = result.levelComplete;
+      this.isNewBest = result.isNewBest;
     } else {
       this.earnedStars = this.flashcardService.calculateStars(scorePercent);
     }
