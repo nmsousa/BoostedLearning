@@ -92,8 +92,11 @@
               </div>
 
               <div class="level-info">
+                <!-- The ring already shows the level number, so drop the
+                     redundant "Nível N ·" prefix: show the skill name alone,
+                     falling back to "Nível N" only when a level has no skill. -->
                 <span class="level-number">
-                  {{ 'practice.level' | translate:{ n: level.levelNumber } }}<span *ngIf="level.skill"> · {{ level.skill }}</span>
+                  {{ level.skill || ('practice.level' | translate:{ n: level.levelNumber }) }}
                 </span>
                 <span *ngIf="!level.isUnlocked" class="level-locked-hint">
                   {{ 'practice.unlockHint' | translate }}
