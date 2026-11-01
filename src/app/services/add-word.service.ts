@@ -27,6 +27,12 @@ export interface ModeMenuOptions {
   modeName?: string;
   /** The expected/correct answer for the current word (for a report). */
   correctAnswer?: string | null;
+  /**
+   * Whether to offer "Add a new word" in this menu. Off by default: adding a
+   * word mid-exercise is out of place, so that action lives on the levels list
+   * page instead. Only the in-game menus use this service, hence the default.
+   */
+  allowAddWord?: boolean;
 }
 
 @Injectable({
@@ -49,21 +55,24 @@ export class AddWordService {
   }
 
   /**
-   * Open the practice-page header menu (the 3-dots / "+" action): add a word,
-   * and — when a current word is provided — hide that word from future
-   * practice.
+   * Open the in-exercise header menu (the 3-dots action): hide the current
+   * word and report a problem. "Add a new word" is intentionally NOT here —
+   * it belongs on the levels-list page, not mid-game — unless a caller opts in
+   * via `allowAddWord`.
    */
   async openModeMenu(opts: ModeMenuOptions = {}): Promise<void> {
     const lang = opts.languageCode ?? this.settings.learningLanguage();
     const t = (k: string, p?: Record<string, string | number>) => this.i18n.t(k, p);
 
-    const buttons: any[] = [
-      {
+    const buttons: any[] = [];
+
+    if (opts.allowAddWord) {
+      buttons.push({
         text: t('mode.addWord'),
         icon: 'add-circle-outline',
         handler: () => { this.promptAddWord(lang); },
-      },
-    ];
+      });
+    }
 
     if (opts.currentWord) {
       buttons.push({
