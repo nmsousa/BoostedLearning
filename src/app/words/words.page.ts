@@ -18,6 +18,7 @@ import { ActionSheetController } from '@ionic/angular';
 import { FlashcardService, StudiedWord, WordPriority } from '../services/flashcard.service';
 import { SettingsService } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
+import { AddWordService } from '../services/add-word.service';
 import { KnowledgeLevel } from '../../core/knowledge-level';
 
 type Filter = 'all' | KnowledgeLevel;
@@ -38,6 +39,7 @@ export class WordsPage implements OnInit {
   private i18n = inject(I18nAngularService);
   private cdr = inject(ChangeDetectorRef);
   private actionSheet = inject(ActionSheetController);
+  private addWordService = inject(AddWordService);
 
   allWords: StudiedWord[] = [];
   /** Selected knowledge levels. Empty array = "All" (no level filter). */
@@ -232,6 +234,12 @@ export class WordsPage implements OnInit {
   private async setPriority(w: StudiedWord, priority: WordPriority) {
     await this.flashcards.setWordPriority(w.text, priority, this.settings.learningLanguage());
     this.reload();
+  }
+
+  /** Add a new custom word to the current learning language, then refresh. */
+  async addWord(): Promise<void> {
+    const added = await this.addWordService.promptAddWord(this.settings.learningLanguage());
+    if (added) this.reload();
   }
 
   /** Icon shown on a row for its current priority (none for 'normal'). */

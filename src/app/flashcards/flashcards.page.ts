@@ -40,19 +40,13 @@ export class FlashcardsPage implements OnInit {
    * deck) choose the deck ordering. Keeps the list uncluttered.
    */
   async openMenu(): Promise<void> {
-    const buttons: any[] = [
-      {
-        text: this.t('mode.addWord'),
-        icon: 'add-circle-outline',
-        handler: async () => {
-          await this.addWordService.promptAddWord(this.settings.learningLanguage());
-          await this.reloadAfterChange();
-        },
-      },
-    ];
+    const buttons: any[] = [];
 
-    // Quick study moved here (was a prominent button): practice the whole deck
-    // with no level/stars. Targets the first (current-language) deck.
+    // "Add a new word" now lives on the "Your words" screen (vocabulary
+    // management), so it's intentionally NOT offered here any more.
+
+    // Quick study: practice the whole deck with no level/stars. Targets the
+    // first (current-language) deck.
     const quickDeck = this.decks[0];
     if (quickDeck) {
       buttons.push({

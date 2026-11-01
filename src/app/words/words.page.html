@@ -4,6 +4,11 @@
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
     <ion-title>{{ 'words.title' | translate }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="addWord()" [attr.aria-label]="'mode.addWord' | translate">
+        <ion-icon slot="icon-only" name="add-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 
   <!-- Search + filter + sort live in the HEADER so they stay fixed while the
