@@ -1038,11 +1038,13 @@ export class FlashcardService {
     );
 
     const toSave: Flashcard[] = [];
+    const touchedDecks = new Set<string>();
     for (const deck of decks) {
       for (const card of deck.cards) {
         if (this.normalizeKey(card.text) === key) {
           card.priority = priority;
           toSave.push(card);
+          touchedDecks.add(deck.id);
         }
       }
     }
@@ -1050,6 +1052,12 @@ export class FlashcardService {
     for (const card of toSave) {
       await this.saveCardProgress(card);
     }
+
+    // The deduped list is memoised and holds COPIES of the cards, so mutating
+    // the originals above doesn't change what getStudiedWords/getDedupedCards
+    // return until the cache is rebuilt. Without this the Words list showed the
+    // old priority until the app was reopened. Invalidate the touched decks.
+    for (const id of touchedDecks) this.invalidateDedupe(id);
 
     // Trigger reactive consumers (Words page, breakdown, queues).
     this.decksSignal.update(d => [...d]);
@@ -1404,7 +1412,10 @@ export class FlashcardService {
         const incorrect = card.incorrectCount ?? 0;
         const medium = card.mediumCount ?? 0;
         const seen = correct + incorrect;
-        if (seen === 0 && medium === 0) continue; // never practiced
+        // Skip never-practised words — EXCEPT the user's own custom words, which
+        // should appear in "Your words" right after being added (so the user
+        // sees their new word immediately, before any practice).
+        if (seen === 0 && medium === 0 && !card.isCustom) continue;
 
         const missRate = seen > 0 ? incorrect / seen : 0;
         // Same bucket rule as the home breakdown (streak + accuracy).

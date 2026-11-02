@@ -143,6 +143,8 @@
 
 .status-row {
   padding-top: 0;
+  // Breathing room before the word list starts.
+  padding-bottom: 8px;
 }
 
 .empty {
@@ -168,6 +170,13 @@ ion-list {
 
 .word-row {
   --padding-start: 12px;
+  // Keep rows compact: without an explicit min-height, Ionic's default item
+  // min-height (plus the larger mobile base font) inflated each row to ~140px.
+  // The content is two short lines, so a tight min-height + small vertical
+  // padding is plenty.
+  --min-height: 56px;
+  --padding-top: 0;
+  --padding-bottom: 0;
   // Hide the divider on the last row so there's no trailing line at the end.
   &:last-of-type {
     --inner-border-width: 0;

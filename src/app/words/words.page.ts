@@ -205,28 +205,59 @@ export class WordsPage implements OnInit {
   /** Open the priority action sheet for a word (boost / normal / hide). */
   async openPriority(w: StudiedWord, event?: Event) {
     event?.stopPropagation();
+    const buttons: any[] = [
+      {
+        text: this.t('words.priority.boost'),
+        icon: 'arrow-up-circle-outline',
+        handler: () => { this.setPriority(w, 'boost'); },
+      },
+    ];
+    // "Normal" clears an existing boost/hide — only meaningful when one is set.
+    if (w.priority !== 'normal') {
+      buttons.push({
+        text: this.t('words.priority.normal'),
+        icon: 'remove-circle-outline',
+        handler: () => { this.setPriority(w, 'normal'); },
+      });
+    }
+    // Don't offer "hide" for an already-hidden word (use "normal" to unhide).
+    if (w.priority !== 'hide') {
+      buttons.push({
+        text: this.t('words.priority.hide'),
+        icon: 'eye-off-outline',
+        role: 'destructive',
+        handler: () => { this.setPriority(w, 'hide'); },
+      });
+    }
+    buttons.push({ text: this.t('common.cancel'), icon: 'close-outline', role: 'cancel' });
+
     const sheet = await this.actionSheet.create({
       header: w.text,
+      buttons,
+      cssClass: 'mode-menu-sheet',
+    });
+    await sheet.present();
+  }
+
+  /**
+   * Header "⋮" menu: report a problem (Report / Cancel). The report is tagged
+   * with a fixed English screen name so GitHub issues stay consistent.
+   */
+  async openMenu(): Promise<void> {
+    const sheet = await this.actionSheet.create({
       buttons: [
         {
-          text: this.t('words.priority.boost'),
-          icon: 'arrow-up-circle-outline',
-          handler: () => { this.setPriority(w, 'boost'); },
-        },
-        {
-          text: this.t('words.priority.normal'),
-          icon: 'remove-circle-outline',
-          handler: () => { this.setPriority(w, 'normal'); },
-        },
-        {
-          text: this.t('words.priority.hide'),
-          icon: 'eye-off-outline',
-          role: 'destructive',
-          handler: () => { this.setPriority(w, 'hide'); },
+          text: this.t('feedback.report'),
+          icon: 'flag-outline',
+          handler: () => {
+            void this.addWordService.reportProblem({
+              languageCode: this.settings.learningLanguage(),
+              modeName: 'Your words',
+            });
+          },
         },
         { text: this.t('common.cancel'), icon: 'close-outline', role: 'cancel' },
       ],
-      cssClass: 'mode-menu-sheet',
     });
     await sheet.present();
   }

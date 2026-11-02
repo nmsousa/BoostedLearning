@@ -117,10 +117,14 @@ export class HomePage implements OnInit {
     // until an app restart.
     effect(() => {
       // Depend on the decks signal + the learning-language signal.
-      this.flashcards.decks();
+      const decks = this.flashcards.decks();
       const lang = this.settings.learningLanguage();
       this.knowledge = this.flashcards.getKnowledgeBreakdown(lang);
-      this.wordsReady = true;
+      // Only mark ready once the decks are actually loaded. Flipping wordsReady
+      // true on the constructor's first effect run (before initialize() loads
+      // any deck) skipped the skeleton and showed an empty card that then
+      // "popped in" its numbers. Keep the skeleton until there's real data.
+      if (decks.length > 0) this.wordsReady = true;
       // markForCheck (not detectChanges) is safe to call at any point in the
       // lifecycle, including before the first render.
       this.cdr.markForCheck();
