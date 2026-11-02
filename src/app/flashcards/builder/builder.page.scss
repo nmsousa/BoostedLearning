@@ -104,6 +104,12 @@
     &:disabled { cursor: default; }
     &.empty { background: transparent; border: 2px dashed var(--ion-color-step-250, #33465c); min-width: 40px; }
   }
+
+  // Full phrase but wrong order: shake the chosen slots red to prompt a fix.
+  &.wrong {
+    animation: builder-shake 0.4s ease;
+    .slot:not(.empty) { background: var(--ion-color-danger); }
+  }
 }
 .phrase-hint { font-size: 0.78rem; color: var(--ion-color-medium); margin-top: -8px; }
 
@@ -113,14 +119,6 @@
   background: var(--ion-color-step-150, #24405f); color: var(--ion-text-color);
   border: 2px solid transparent; cursor: pointer;
   &:active { transform: scale(0.95); }
-
-  // Wrong pick: flash red + shake so the error is obvious (the word stays in
-  // the bank — only the correct next word is accepted).
-  &.wrong {
-    background: var(--ion-color-danger);
-    color: #fff;
-    animation: builder-shake 0.4s ease;
-  }
 }
 
 @keyframes builder-shake {

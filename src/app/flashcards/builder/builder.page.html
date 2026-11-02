@@ -89,19 +89,19 @@
   <div *ngIf="stage.kind === 'phrase'" class="builder-phrase">
     <span class="phrase-target">{{ stage.phrase.en }}</span>
 
-    <!-- Chosen words. Tap one to remove it (and send it back to the bank). -->
-    <div class="phrase-slots">
+    <!-- Chosen words. Tap one to remove it (and send it back to the bank).
+         When the phrase is full but out of order, the slots flash red. -->
+    <div class="phrase-slots" [class.wrong]="wrongOrder">
       <button type="button" class="slot" *ngFor="let w of stage.chosen; let i = index"
         [disabled]="stage.done" (click)="unpick(i)">{{ w }}</button>
       <span class="slot empty" *ngIf="!stage.done"></span>
     </div>
     <span class="phrase-hint" *ngIf="!stage.done && stage.chosen.length">
-      {{ 'builder.tapToRemove' | translate }}
+      {{ (wrongOrder ? 'builder.wrongOrder' : 'builder.tapToRemove') | translate }}
     </span>
 
     <div class="phrase-bank" *ngIf="!stage.done">
-      <button type="button" class="bank-word" *ngFor="let w of bank"
-        [class.wrong]="wrongToken === w" (click)="pick(w)">{{ w }}</button>
+      <button type="button" class="bank-word" *ngFor="let w of bank" (click)="pick(w)">{{ w }}</button>
     </div>
 
     <div class="phrase-result" *ngIf="stage.done">

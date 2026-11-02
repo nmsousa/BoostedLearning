@@ -114,6 +114,7 @@ export class BuilderPage implements OnInit {
             void this.addWordService.reportProblem({
               languageCode: this.langCode,
               modeName: 'Builder',
+              reportContext: 'generic',
             });
           },
         },
@@ -134,11 +135,11 @@ export class BuilderPage implements OnInit {
   bank: string[] = [];
 
   /**
-   * Token the user just tapped in the wrong order. Drives a brief red "shake"
-   * on that bank word so a wrong pick gives feedback instead of silently
-   * getting the phrase stuck. Cleared on a timer / the next correct pick.
+   * True briefly when the user fills every slot but the ORDER is wrong — drives
+   * a red shake on the chosen slots, prompting them to remove a word (tap it)
+   * or Reset and try again. Cleared on a timer / on any edit.
    */
-  wrongToken: string | null = null;
+  wrongOrder = false;
   private wrongTimer: ReturnType<typeof setTimeout> | null = null;
 
   t(key: string, params?: Record<string, string | number>): string {
@@ -226,6 +227,7 @@ export class BuilderPage implements OnInit {
   // ── Phrase building (tap words in order) ────────────────────────────────────
   openPhrase(phrase: BuilderPhrase): void {
     if (!this.isPhraseUnlocked(phrase)) return;
+    this.clearWrong();
     this.bank = this.shuffle([...phrase.tokens]);
     this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
     this.cdr.detectChanges();
@@ -234,25 +236,34 @@ export class BuilderPage implements OnInit {
   pick(token: string): void {
     if (this.stage.kind !== 'phrase' || this.stage.done) return;
 
-    // Only accept the word if it is the correct NEXT token. A wrong pick used
-    // to be appended silently, which gave no feedback and left the phrase
-    // permanently un-completable (stuck). Now a wrong pick is rejected with a
-    // brief visual flash and the word stays in the bank.
-    const expected = this.stage.phrase.tokens[this.stage.chosen.length];
-    if (token !== expected) {
-      this.flashWrong(token);
-      return;
-    }
-
+    // Accept ANY word in ANY order — the user is allowed to make mistakes, then
+    // fix them by tapping a chosen word to remove it (or Reset). Validation
+    // happens only once the phrase is full (below). (The older version rejected
+    // out-of-order taps, which made the remove/reset actions pointless and let
+    // the user "spam" words until the right ones stuck — confusing feedback.)
     this.clearWrong();
     const chosen = [...this.stage.chosen, token];
     this.bank = this.removeFirst(this.bank, token);
-    const done = chosen.length === this.stage.phrase.tokens.length;
-    this.stage = { ...this.stage, chosen, done };
-    if (done) {
+
+    const full = chosen.length === this.stage.phrase.tokens.length;
+    const correct = full && this.stage.phrase.tokens.every((t, i) => t === chosen[i]);
+
+    this.stage = { ...this.stage, chosen, done: correct };
+
+    if (correct) {
       this.completed.add(this.stage.phrase.id);
       this.saveProgress();
       void this.audio.playWord(this.stage.phrase.target, undefined, this.langCode);
+    } else if (full) {
+      // Full but wrong order: flag it so the slots flash, prompting the user to
+      // tap a word to remove it (or Reset) and try a different order.
+      this.wrongOrder = true;
+      if (this.wrongTimer) clearTimeout(this.wrongTimer);
+      this.wrongTimer = setTimeout(() => {
+        this.wrongOrder = false;
+        this.wrongTimer = null;
+        this.cdr.detectChanges();
+      }, 800);
     }
     this.cdr.detectChanges();
   }
@@ -269,19 +280,9 @@ export class BuilderPage implements OnInit {
     this.cdr.detectChanges();
   }
 
-  private flashWrong(token: string): void {
-    this.wrongToken = token;
-    if (this.wrongTimer) clearTimeout(this.wrongTimer);
-    this.wrongTimer = setTimeout(() => {
-      this.wrongToken = null;
-      this.wrongTimer = null;
-      this.cdr.detectChanges();
-    }, 600);
-    this.cdr.detectChanges();
-  }
   private clearWrong(): void {
     if (this.wrongTimer) { clearTimeout(this.wrongTimer); this.wrongTimer = null; }
-    this.wrongToken = null;
+    this.wrongOrder = false;
   }
 
   resetPhrase(): void {
