@@ -106,16 +106,16 @@
   </ng-template>
 
   <!-- Complete Phase -->
-  <!-- Round interstitial: between rounds of a 5-round level. -->
+  <!-- Round interstitial: between rounds of a 5-round level. The round badge
+       is gone (the heading already states the round, and so does the header).
+       A single "Continue" is enough — progress is already saved per round, so
+       the separate "save and exit" was redundant; X in the header exits. -->
   <div *ngIf="!isLoading && phase === 'complete' && roundInterstitial" class="complete-container">
-    <div class="round-badge">{{ roundsCompleted }}/{{ totalRounds }}</div>
+    <div class="round-badge"><ion-icon name="checkmark"></ion-icon></div>
     <h1>{{ 'mode.roundComplete' | translate:{ n: roundsCompleted, total: totalRounds } }}</h1>
     <p class="complete-sub">{{ 'mode.roundNext' | translate }}</p>
     <ion-button expand="block" (click)="nextRound()" class="finish-button">
       {{ 'mode.continue' | translate }}
-    </ion-button>
-    <ion-button expand="block" fill="clear" (click)="finishStudy()">
-      {{ 'mode.saveAndExit' | translate }}
     </ion-button>
   </div>
 
@@ -170,10 +170,18 @@
     <!-- Question: input + CHECK + hint. -->
     <ng-container *ngIf="phase === 'question'">
       <ion-item class="answer-input" lines="none">
+        <!-- Autocorrect/autocapitalize/spell-check OFF: the keyboard was
+             "fixing" foreign words (e.g. turning "café" into "caf"), and
+             inputmode="text" keeps the number row off the keyboard. -->
         <ion-input
           #answerInput
           [(ngModel)]="userAnswer"
           type="text"
+          inputmode="text"
+          autocapitalize="off"
+          autocorrect="off"
+          spellcheck="false"
+          autocomplete="off"
           [placeholder]="'mode.typeYourAnswer' | translate"
           (keyup.enter)="submitAnswer()"
           [attr.aria-label]="'mode.typeYourAnswer' | translate">

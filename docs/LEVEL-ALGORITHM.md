@@ -24,10 +24,16 @@ truth for the engine and is surfaced in-app on the **Admin** page.
 ## 2. Unlocking
 
 - Level 1 is always unlocked.
-- Level N+1 unlocks when level N has **all 5 rounds completed** (the circle is
-  full). Completing a round requires at least a passing score (see §4).
-- (Current shipped rule, to be replaced: level N+1 unlocks when level N's best
-  single-pass score ≥ 70%.)
+- **Write / Quiz**: level N+1 unlocks when level N has **all 5 rounds completed**
+  (the circle is full). Completing a round requires at least a passing score
+  (see §4).
+- **Match**: unlocks on a **single passing play** of the previous level
+  (best score ≥ 70%) — requiring 5 full rounds just to unlock felt grindy for a
+  quick timed game. Match still fills its 5-round ring for stars/completion;
+  that is separate from unlocking.
+- **Flashcards (flip)**: no gating — every level is always open (§6b).
+- Legacy records with no round data fall back to: previous level best score
+  ≥ 70%.
 
 ## 3. Round composition (what words each round contains)
 

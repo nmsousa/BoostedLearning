@@ -63,14 +63,11 @@
   <!-- Complete phase -->
   <!-- Round interstitial (between rounds of a level). -->
   <div *ngIf="!isLoading && phase === 'complete' && roundInterstitial" class="complete-container">
-    <div class="round-badge">{{ roundsCompleted }}/{{ totalRounds }}</div>
+    <div class="round-badge"><ion-icon name="checkmark"></ion-icon></div>
     <h1>{{ 'mode.roundComplete' | translate:{ n: roundsCompleted, total: totalRounds } }}</h1>
     <p class="complete-sub">{{ 'mode.roundNext' | translate }}</p>
     <ion-button expand="block" (click)="nextRound()" class="finish-button">
       {{ 'mode.continue' | translate }}
-    </ion-button>
-    <ion-button expand="block" fill="clear" (click)="finish()">
-      {{ 'mode.saveAndExit' | translate }}
     </ion-button>
   </div>
 

@@ -2060,6 +2060,15 @@ export class FlashcardService {
     const previousProgress = await this.getLevelProgress(deckId, mode, levelNumber - 1);
     if (!previousProgress) return false;
 
+    // Match is a quick timed game: requiring 5 full rounds just to unlock the
+    // next level felt grindy (play the same board 5×). Unlock Match on a single
+    // passing play (best score >= 70%). It still fills its 5-round ring for
+    // stars/completion — that's separate from unlocking.
+    if (mode === 'match') {
+      return (previousProgress.bestScore ?? 0) >= this.UNLOCK_SCORE
+        || (previousProgress.roundsCompleted ?? 0) >= this.ROUNDS_PER_LEVEL;
+    }
+
     // 5-round model: the previous level must have all rounds completed.
     if (previousProgress.roundsCompleted !== undefined) {
       return previousProgress.roundsCompleted >= this.ROUNDS_PER_LEVEL;
