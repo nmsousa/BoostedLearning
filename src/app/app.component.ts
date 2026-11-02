@@ -4,12 +4,6 @@ import { Router } from '@angular/router';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import {
-  ModalController,
-  PopoverController,
-  ActionSheetController,
-  AlertController,
-} from '@ionic/angular';
 import { SettingsService } from './services/settings.service';
 import { AppUpdateService } from './services/app-update.service';
 
@@ -26,10 +20,6 @@ export class AppComponent {
   private appUpdate = inject(AppUpdateService);
   private location = inject(Location);
   private router = inject(Router);
-  private modalCtrl = inject(ModalController);
-  private popoverCtrl = inject(PopoverController);
-  private actionSheetCtrl = inject(ActionSheetController);
-  private alertCtrl = inject(AlertController);
 
   constructor() {
     // Mark the current OTA bundle as healthy and enable live updates.
@@ -117,24 +107,29 @@ export class AppComponent {
   /**
    * Dismiss the single top-most open Ionic overlay, if any. Returns true when
    * one was dismissed (so the caller stops and does NOT also navigate back).
-   * Picks the overlay that is actually on top across the four controllers.
+   *
+   * We query the DOM rather than inject the overlay controllers: this app boots
+   * Ionic via `@ionic/angular/lazy`, where the controllers aren't reliably
+   * injectable into the root AppComponent (it threw NG0201 at startup). Every
+   * open Ionic overlay is a custom element (ion-modal / ion-popover /
+   * ion-action-sheet / ion-alert / ion-select-popover …) with a `.dismiss()`
+   * method; the visible one lacks the `.overlay-hidden` class. We dismiss the
+   * one with the highest z-index (the most recently presented).
    */
   private async dismissTopOverlay(): Promise<boolean> {
-    const tops = await Promise.all([
-      this.alertCtrl.getTop(),
-      this.actionSheetCtrl.getTop(),
-      this.popoverCtrl.getTop(),
-      this.modalCtrl.getTop(),
-    ]);
-    // Keep only the open overlays, then dismiss the one on top (highest
-    // z-index = latest presented).
-    const open = tops.filter(Boolean) as HTMLElement[];
+    const selector =
+      'ion-modal, ion-popover, ion-action-sheet, ion-alert, ion-select-popover, ion-picker, ion-toast';
+    const open = Array.from(document.querySelectorAll<HTMLElement>(selector))
+      .filter(el => !el.classList.contains('overlay-hidden'));
     if (open.length === 0) return false;
+
     let top = open[0];
-    for (const o of open) {
-      if ((Number(o.style.zIndex) || 0) >= (Number(top.style.zIndex) || 0)) top = o;
+    for (const el of open) {
+      if ((Number(el.style.zIndex) || 0) >= (Number(top.style.zIndex) || 0)) top = el;
     }
-    await (top as unknown as { dismiss: () => Promise<boolean> }).dismiss();
+    const dismiss = (top as unknown as { dismiss?: () => Promise<boolean> }).dismiss;
+    if (typeof dismiss !== 'function') return false;
+    await dismiss.call(top);
     return true;
   }
 }
