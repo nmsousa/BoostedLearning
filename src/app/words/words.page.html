@@ -8,8 +8,10 @@
       <ion-button (click)="addWord()" [attr.aria-label]="'mode.addWord' | translate">
         <ion-icon slot="icon-only" name="add-circle-outline"></ion-icon>
       </ion-button>
-      <ion-button (click)="openMenu()" [attr.aria-label]="'practice.menu' | translate">
-        <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
+      <!-- Only one menu action (report), so expose it directly as a flag button
+           instead of a ⋮ menu. -->
+      <ion-button (click)="reportProblem()" [attr.aria-label]="'feedback.report' | translate">
+        <ion-icon slot="icon-only" name="flag-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -68,49 +70,50 @@
 </ion-header>
 
 <ion-content class="words-content">
-  <!-- Status filter: only shown once the user has hidden at least one word. -->
-  <div class="filter-row status-row" *ngIf="hasHiddenWords">
-    <ion-chip [class.active]="statusFilter === 'all'" (click)="setStatusFilter('all')">
-      {{ 'words.all' | translate }}
-    </ion-chip>
-    <ion-chip [class.active]="statusFilter === 'enabled'" (click)="setStatusFilter('enabled')">
-      {{ 'words.status.enabled' | translate }} ({{ countEnabled() }})
-    </ion-chip>
-    <ion-chip [class.active]="statusFilter === 'hidden'" (click)="setStatusFilter('hidden')">
-      <ion-icon name="eye-off-outline"></ion-icon>
-      {{ 'words.status.hidden' | translate }} ({{ countHidden() }})
-    </ion-chip>
+  <!-- Loading skeleton: shown until the first load finishes, so we never flash
+       the "no words" message before the data has actually arrived. -->
+  <div *ngIf="isLoading" class="word-list skeleton-list">
+    <div class="word-row" *ngFor="let _ of skeletonRows">
+      <ion-skeleton-text [animated]="true" class="sk-dot"></ion-skeleton-text>
+      <div class="word-text">
+        <ion-skeleton-text [animated]="true" style="width: 90px;"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 60px;"></ion-skeleton-text>
+      </div>
+      <span class="word-stats">
+        <ion-skeleton-text [animated]="true" style="width: 40px;"></ion-skeleton-text>
+      </span>
+    </div>
   </div>
 
-  <!-- Empty state (no practiced words at all) -->
-  <div *ngIf="allWords.length === 0" class="empty">
+  <!-- Empty state (no practiced words at all) — only once loading is done. -->
+  <div *ngIf="!isLoading && allWords.length === 0" class="empty">
     <ion-icon name="book-outline"></ion-icon>
     <p>{{ 'words.empty' | translate }}</p>
   </div>
 
   <!-- No search/filter results -->
-  <div *ngIf="allWords.length > 0 && words.length === 0" class="empty">
+  <div *ngIf="!isLoading && allWords.length > 0 && words.length === 0" class="empty">
     <ion-icon name="search-outline"></ion-icon>
     <p>{{ 'words.noResults' | translate }}</p>
   </div>
 
-  <!-- Word list -->
-  <ion-list *ngIf="words.length > 0">
-    <ion-item *ngFor="let w of words; trackBy: trackByWord" class="word-row" lines="full" button
+  <!-- Word list. Plain flex rows (NOT ion-item): ion-item's shadow DOM was
+       inflating every row to ~144px no matter the custom-property overrides.
+       A div row with an explicit height is fully under our control. -->
+  <div class="word-list" *ngIf="!isLoading && words.length > 0">
+    <button type="button" class="word-row" *ngFor="let w of words; trackBy: trackByWord"
       [class.hidden-word]="w.priority === 'hide'" (click)="openPriority(w)">
-      <div class="word-main">
-        <span class="word-dot" [class.learning]="w.level === 'learning'"
-          [class.familiar]="w.level === 'familiar'" [class.known]="w.level === 'known'"></span>
-        <div class="word-text">
-          <span class="word-target">
-            {{ w.text }}
-            <ion-icon *ngIf="priorityIcon(w)" [name]="priorityIcon(w)" class="priority-flag"
-              [class.boost]="w.priority === 'boost'" [class.hide]="w.priority === 'hide'"></ion-icon>
-          </span>
-          <span class="word-translation">{{ w.translation }}</span>
-        </div>
+      <span class="word-dot" [class.learning]="w.level === 'learning'"
+        [class.familiar]="w.level === 'familiar'" [class.known]="w.level === 'known'"></span>
+      <div class="word-text">
+        <span class="word-target">
+          {{ w.text }}
+          <ion-icon *ngIf="priorityIcon(w)" [name]="priorityIcon(w)" class="priority-flag"
+            [class.boost]="w.priority === 'boost'" [class.hide]="w.priority === 'hide'"></ion-icon>
+        </span>
+        <span class="word-translation">{{ w.translation }}</span>
       </div>
-      <div class="word-stats" slot="end">
+      <span class="word-stats">
         <span class="stat correct" title="Correct">✓ {{ w.correct }}</span>
         <!-- The "so-so" column is always rendered (even when 0) so the ✓ / ~ /
              ✗ / % columns stay vertically aligned across rows. It's just made
@@ -118,11 +121,7 @@
         <span class="stat medium" [class.empty]="w.medium <= 0" title="So-so">~ {{ w.medium }}</span>
         <span class="stat wrong" title="Incorrect">✗ {{ w.incorrect }}</span>
         <span class="stat acc">{{ accuracyPct(w) }}%</span>
-        <button type="button" class="priority-btn" (click)="openPriority(w, $event)"
-          [attr.aria-label]="'words.sortBy' | translate">
-          <ion-icon name="ellipsis-vertical"></ion-icon>
-        </button>
-      </div>
-    </ion-item>
-  </ion-list>
+      </span>
+    </button>
+  </div>
 </ion-content>

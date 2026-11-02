@@ -1524,6 +1524,42 @@ export class FlashcardService {
     else this.dedupeCache.clear();
   }
 
+  /** Primary-translation key for grouping a card by its English prompt. */
+  private promptKeyOf(c: Flashcard): string {
+    return this.normalizeKey(c.translations[0] ?? '');
+  }
+
+  /**
+   * Map of prompt key -> every accepted target-language form for that prompt,
+   * across the given cards. Shared by de-duplication AND by skill-level
+   * building so that, e.g., the English "your" accepts BOTH "ta" and "ton"
+   * (French), not just whichever card happens to be shown.
+   */
+  private buildFormsByPrompt(cards: Flashcard[]): Map<string, string[]> {
+    const formsByPrompt = new Map<string, string[]>();
+    const addForm = (key: string, word: string) => {
+      const forms = formsByPrompt.get(key) ?? [];
+      if (!forms.some(f => this.normalizeKey(f) === this.normalizeKey(word))) {
+        forms.push(word);
+      }
+      formsByPrompt.set(key, forms);
+    };
+    // Pass 1: every card contributes its own word to its own prompt.
+    for (const card of cards) {
+      addForm(this.promptKeyOf(card), card.text);
+    }
+    // Pass 2: a card whose translations contain another prompt's word is also
+    // a valid answer for that prompt (covers synonyms like we/wij, ta/ton).
+    const promptKeys = new Set(formsByPrompt.keys());
+    for (const card of cards) {
+      for (const tr of card.translations) {
+        const k = this.normalizeKey(tr);
+        if (promptKeys.has(k)) addForm(k, card.text);
+      }
+    }
+    return formsByPrompt;
+  }
+
   getDedupedCards(deckId: string): Flashcard[] {
     const deck = this.getDeck(deckId);
     if (!deck) return [];
@@ -1535,38 +1571,10 @@ export class FlashcardService {
 
     // Group cards that share their PRIMARY English translation. Each group's
     // prompt is translations[0] of its first card. For every card in the
-    // group we accept its Dutch word. We also accept Dutch words from other
-    // cards whose translation list contains that same prompt word, e.g.:
-    //   we  -> [we, ons]   (prompt "we")
-    //   wij -> [us, we]    ("we" appears here too, so "wij" is also accepted)
-    const keyOf = (c: Flashcard) => this.normalizeKey(c.translations[0] ?? '');
-
-    // Accepted Dutch forms per prompt key.
-    const formsByPrompt = new Map<string, string[]>();
-    const addForm = (key: string, word: string) => {
-      const forms = formsByPrompt.get(key) ?? [];
-      if (!forms.some(f => this.normalizeKey(f) === this.normalizeKey(word))) {
-        forms.push(word);
-      }
-      formsByPrompt.set(key, forms);
-    };
-
-    // Pass 1: every card contributes its own word to its own prompt.
-    for (const card of deck.cards) {
-      addForm(keyOf(card), card.text);
-    }
-
-    // Pass 2: a card whose translations contain another prompt's word is also
-    // a valid answer for that prompt (covers synonyms like we/wij).
-    const promptKeys = new Set(formsByPrompt.keys());
-    for (const card of deck.cards) {
-      for (const tr of card.translations) {
-        const k = this.normalizeKey(tr);
-        if (promptKeys.has(k)) {
-          addForm(k, card.text);
-        }
-      }
-    }
+    // group we accept its word, plus words from other cards whose translation
+    // list contains that same prompt word (synonyms like we/wij, ta/ton).
+    const keyOf = (c: Flashcard) => this.promptKeyOf(c);
+    const formsByPrompt = this.buildFormsByPrompt(deck.cards);
 
     // Keep only the first card per prompt, attaching all accepted forms.
     const seen = new Set<string>();
@@ -1598,13 +1606,26 @@ export class FlashcardService {
     const deck = this.getDeck(deckId);
     if (!deck) return [];
 
-    // Group by skill, preserving skillOrder.
-    const groups = new Map<string, { order: number; cards: Flashcard[] }>();
+    // Accepted forms per English prompt across the WHOLE deck, so a prompt like
+    // "your" accepts every French form (ta/ton/tes/votre/vos) no matter which
+    // card is shown. Without this, skill-level cards carried no acceptedForms
+    // and Write/Quiz only accepted the single shown form (e.g. "ta" but not
+    // "ton"), marking a valid answer wrong.
+    const formsByPrompt = this.buildFormsByPrompt(deck.cards);
+
+    // Group by skill, preserving skillOrder; within a skill, de-duplicate by
+    // prompt key so ta/ton (both "your") collapse into ONE card that accepts
+    // both forms — mirroring how chunked decks are deduped.
+    const groups = new Map<string, { order: number; cards: Flashcard[]; seen: Set<string> }>();
     for (const card of deck.cards) {
       const skill = card.skill ?? 'Uncategorized';
       const order = card.skillOrder ?? 9999;
-      const g = groups.get(skill) ?? { order, cards: [] };
-      g.cards.push(card);
+      const g = groups.get(skill) ?? { order, cards: [], seen: new Set<string>() };
+      const key = this.promptKeyOf(card);
+      if (!g.seen.has(key)) {
+        g.seen.add(key);
+        g.cards.push({ ...card, acceptedForms: formsByPrompt.get(key) ?? [card.text] });
+      }
       groups.set(skill, g);
     }
 

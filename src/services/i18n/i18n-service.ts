@@ -396,12 +396,14 @@ const PT_MESSAGES: MessageCatalog = {
   'words.sort.accuracyHigh': 'Precisão (maior)',
   'words.sort.accuracyLow': 'Precisão (menor)',
   'words.sort.alpha': 'Alfabética (A-Z)',
+  'words.sort.hiddenLast': 'Ocultas no fim',
   'words.priority.boost': 'Mostrar mais vezes',
   'words.priority.normal': 'Frequência normal',
   'words.priority.hide': 'Ocultar da prática',
   'words.hiddenNote': 'Oculta da prática',
   'words.status.enabled': 'Ativas',
   'words.status.hidden': 'Ocultas',
+
 
   // Practice (level list)
   'practice.loading': 'A carregar...',
@@ -757,12 +759,14 @@ const FR_MESSAGES: MessageCatalog = {
   'words.sort.accuracyHigh': 'Précision (haute)',
   'words.sort.accuracyLow': 'Précision (basse)',
   'words.sort.alpha': 'Alphabétique (A-Z)',
+  'words.sort.hiddenLast': 'Masqués à la fin',
   'words.priority.boost': 'Afficher plus souvent',
   'words.priority.normal': 'Fréquence normale',
   'words.priority.hide': 'Masquer de la pratique',
   'words.hiddenNote': 'Masqué de la pratique',
   'words.status.enabled': 'Actifs',
   'words.status.hidden': 'Masqués',
+
 
   // Practice (level list)
   'practice.loading': 'Chargement...',
@@ -1118,12 +1122,14 @@ const EN_MESSAGES: MessageCatalog = {
   'words.sort.accuracyHigh': 'Accuracy (high)',
   'words.sort.accuracyLow': 'Accuracy (low)',
   'words.sort.alpha': 'Alphabetical (A-Z)',
+  'words.sort.hiddenLast': 'Hidden last',
   'words.priority.boost': 'Show more often',
   'words.priority.normal': 'Normal frequency',
   'words.priority.hide': 'Hide from practice',
   'words.hiddenNote': 'Hidden from practice',
   'words.status.enabled': 'Enabled',
   'words.status.hidden': 'Hidden',
+
 
   // Practice (level list)
   'practice.loading': 'Loading decks...',
@@ -1449,12 +1455,14 @@ const ES_MESSAGES: MessageCatalog = {
   'words.sort.accuracyHigh': 'Precisión (alta)',
   'words.sort.accuracyLow': 'Precisión (baja)',
   'words.sort.alpha': 'Alfabético (A-Z)',
+  'words.sort.hiddenLast': 'Ocultas al final',
   'words.priority.boost': 'Mostrar más a menudo',
   'words.priority.normal': 'Frecuencia normal',
   'words.priority.hide': 'Ocultar de la práctica',
   'words.hiddenNote': 'Oculta de la práctica',
   'words.status.enabled': 'Activas',
   'words.status.hidden': 'Ocultas',
+
 
   // Practice (level list)
   'practice.loading': 'Cargando...',

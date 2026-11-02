@@ -22,8 +22,7 @@ import { AddWordService } from '../services/add-word.service';
 import { KnowledgeLevel } from '../../core/knowledge-level';
 
 type Filter = 'all' | KnowledgeLevel;
-type StatusFilter = 'all' | 'enabled' | 'hidden';
-type SortKey = 'needsPractice' | 'mostSeen' | 'leastSeen' | 'accuracyHigh' | 'accuracyLow' | 'alpha';
+type SortKey = 'needsPractice' | 'mostSeen' | 'leastSeen' | 'accuracyHigh' | 'accuracyLow' | 'alpha' | 'hiddenLast';
 
 @Component({
   selector: 'app-words',
@@ -42,9 +41,13 @@ export class WordsPage implements OnInit {
   private addWordService = inject(AddWordService);
 
   allWords: StudiedWord[] = [];
+  /** True until the first load finishes, so we show a skeleton (not the empty
+   *  message) while data is still being fetched. */
+  isLoading = true;
+  /** Placeholder rows for the loading skeleton. */
+  readonly skeletonRows = Array.from({ length: 8 });
   /** Selected knowledge levels. Empty array = "All" (no level filter). */
   selectedLevels: KnowledgeLevel[] = [];
-  statusFilter: StatusFilter = 'all';
   search = '';
   sortKey: SortKey = 'needsPractice';
 
@@ -58,6 +61,7 @@ export class WordsPage implements OnInit {
     { value: 'accuracyHigh', labelKey: 'words.sort.accuracyHigh' },
     { value: 'accuracyLow', labelKey: 'words.sort.accuracyLow' },
     { value: 'alpha', labelKey: 'words.sort.alpha' },
+    { value: 'hiddenLast', labelKey: 'words.sort.hiddenLast' },
   ];
 
   async ngOnInit() {
@@ -72,12 +76,8 @@ export class WordsPage implements OnInit {
   private reload(): void {
     this.allWords = this.flashcards.getStudiedWords(this.settings.learningLanguage());
     this.dataVersion++;
+    this.isLoading = false;
     this.cdr.detectChanges();
-  }
-
-  /** True when at least one word is hidden (drives the status filter row). */
-  get hasHiddenWords(): boolean {
-    return this.allWords.some(w => w.priority === 'hide');
   }
 
   // Memoized filtered+sorted list: recomputed only when the inputs change, so
@@ -89,17 +89,15 @@ export class WordsPage implements OnInit {
   /** Words after status + level filter + search + sort. */
   get words(): StudiedWord[] {
     const levelsKey = [...this.selectedLevels].sort().join(',');
-    const key = `${this.dataVersion}|${this.statusFilter}|${levelsKey}|${this.sortKey}|${this.search.trim().toLowerCase()}`;
+    const key = `${this.dataVersion}|${levelsKey}|${this.sortKey}|${this.search.trim().toLowerCase()}`;
     if (key === this.wordsCacheKey) return this.wordsCache;
 
     const q = this.search.trim().toLowerCase();
     let list = this.allWords;
 
-    if (this.statusFilter === 'enabled') {
-      list = list.filter(w => w.priority !== 'hide');
-    } else if (this.statusFilter === 'hidden') {
-      list = list.filter(w => w.priority === 'hide');
-    }
+    // Hidden words are no longer filtered out here — they stay in the list and
+    // the "hidden last" sort option pushes them to the end (so the hide state
+    // is managed via sorting, not a separate filter chip that duplicated "All").
     // Empty selection = "All" (no level filter). Otherwise keep words whose
     // level is among the selected ones (multi-select).
     if (this.selectedLevels.length > 0) {
@@ -120,10 +118,6 @@ export class WordsPage implements OnInit {
   /** Stable identity for the word list *ngFor. */
   trackByWord = (_: number, w: StudiedWord) => w.text;
 
-  setStatusFilter(s: StatusFilter) {
-    this.statusFilter = s;
-  }
-
   /**
    * Words matching the current SEARCH only (ignores level + status filters).
    * Used as the base for the chip counters so they reflect what the user typed.
@@ -136,20 +130,9 @@ export class WordsPage implements OnInit {
     );
   }
 
-  /** Base list for the LEVEL chip counts: search + status filter applied. */
+  /** Base list for the LEVEL chip counts: search applied. */
   private get levelCountBase(): StudiedWord[] {
-    let list = this.searchMatched;
-    if (this.statusFilter === 'enabled') list = list.filter(w => w.priority !== 'hide');
-    else if (this.statusFilter === 'hidden') list = list.filter(w => w.priority === 'hide');
-    return list;
-  }
-
-  countHidden(): number {
-    return this.searchMatched.filter(w => w.priority === 'hide').length;
-  }
-
-  countEnabled(): number {
-    return this.searchMatched.filter(w => w.priority !== 'hide').length;
+    return this.searchMatched;
   }
 
   private compare(a: StudiedWord, b: StudiedWord): number {
@@ -159,6 +142,12 @@ export class WordsPage implements OnInit {
       case 'accuracyHigh': return b.accuracy - a.accuracy || b.attempts - a.attempts;
       case 'accuracyLow': return a.accuracy - b.accuracy || b.attempts - a.attempts;
       case 'alpha': return a.text.localeCompare(b.text);
+      case 'hiddenLast': {
+        // Hidden words sink to the bottom; within each group, worst-first.
+        const ah = a.priority === 'hide' ? 1 : 0;
+        const bh = b.priority === 'hide' ? 1 : 0;
+        return ah - bh || b.missRate - a.missRate || b.attempts - a.attempts;
+      }
       case 'needsPractice':
       default: return b.missRate - a.missRate || b.attempts - a.attempts;
     }
@@ -240,26 +229,14 @@ export class WordsPage implements OnInit {
   }
 
   /**
-   * Header "⋮" menu: report a problem (Report / Cancel). The report is tagged
-   * with a fixed English screen name so GitHub issues stay consistent.
+   * Report a problem from this screen. Tagged with a fixed English screen name
+   * so GitHub issues stay consistent regardless of the app's display language.
    */
-  async openMenu(): Promise<void> {
-    const sheet = await this.actionSheet.create({
-      buttons: [
-        {
-          text: this.t('feedback.report'),
-          icon: 'flag-outline',
-          handler: () => {
-            void this.addWordService.reportProblem({
-              languageCode: this.settings.learningLanguage(),
-              modeName: 'Your words',
-            });
-          },
-        },
-        { text: this.t('common.cancel'), icon: 'close-outline', role: 'cancel' },
-      ],
+  reportProblem(): void {
+    void this.addWordService.reportProblem({
+      languageCode: this.settings.learningLanguage(),
+      modeName: 'Your words',
     });
-    await sheet.present();
   }
 
   private async setPriority(w: StudiedWord, priority: WordPriority) {
