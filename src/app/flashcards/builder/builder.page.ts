@@ -17,10 +17,12 @@
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { ActionSheetController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
+import { AddWordService } from '../../services/add-word.service';
 
 interface BuilderWord { text: string; translations: string[]; article?: string; lemma?: string; }
 interface BuilderGroup { id: string; category: string; name: string; order: number; words: BuilderWord[]; }
@@ -45,6 +47,8 @@ export class BuilderPage implements OnInit {
   private i18n = inject(I18nAngularService);
   private audio = inject(AudioService);
   private settings = inject(SettingsService);
+  private addWordService = inject(AddWordService);
+  private actionSheet = inject(ActionSheetController);
   private cdr = inject(ChangeDetectorRef);
 
   /**
@@ -57,8 +61,67 @@ export class BuilderPage implements OnInit {
     fr: 'assets/flashcards/french-builder.json',
   };
 
+  /** Display names for the languages the Builder has a dataset for. */
+  private static readonly LANG_NAMES: Record<string, string> = { nl: 'Dutch', fr: 'French' };
+
   /** The language this Builder session is running in (drives audio + storage). */
   private langCode = 'nl';
+
+  // ── Header language flag (only languages with a Builder dataset) ───────────
+  availableLanguages: { code: string; name: string; flagUrl: string }[] = Object.keys(BuilderPage.DATASETS)
+    .map(code => ({ code, name: BuilderPage.LANG_NAMES[code] ?? code.toUpperCase(), flagUrl: this.flagUrl(code) }));
+
+  private flagUrl(code: string): string {
+    const toCountry: Record<string, string> = {
+      nl: 'nl', dn: 'nl', fr: 'fr', es: 'es', it: 'it', de: 'de', pt: 'pt',
+      en: 'gb', da: 'dk', el: 'gr', ja: 'jp', ko: 'kr', zs: 'cn', uk: 'ua',
+      nb: 'no', he: 'il', hi: 'in', vi: 'vn', cs: 'cz', sv: 'se', ga: 'ie',
+      gd: 'gb', cy: 'gb', hw: 'us', ht: 'ht', zu: 'za', sw: 'ke',
+    };
+    return `https://flagcdn.com/${toCountry[code] ?? code}.svg`;
+  }
+  get learningLanguage(): string { return this.langCode; }
+  get currentLanguage(): { code: string; name: string; flagUrl: string } {
+    return (
+      this.availableLanguages.find(l => l.code === this.langCode) ??
+      this.availableLanguages[0] ?? { code: this.langCode, name: this.langCode.toUpperCase(), flagUrl: this.flagUrl(this.langCode) }
+    );
+  }
+  /** Switch the Builder's language, persist it, and reload its dataset. */
+  async selectLanguage(code: string): Promise<void> {
+    if (code === this.langCode) return;
+    this.settings.updateSetting('learningLanguage', code);
+    this.langCode = code;
+    this.stage = { kind: 'map' };
+    this.isLoading = true;
+    this.cdr.detectChanges();
+    await this.loadDataset();
+    this.isLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Header "⋮" menu: a problem report (Report / Cancel), tagged with a FIXED
+   * ENGLISH screen name so GitHub issues stay consistent across app languages.
+   */
+  async openMenu(): Promise<void> {
+    const sheet = await this.actionSheet.create({
+      buttons: [
+        {
+          text: this.i18n.t('feedback.report'),
+          icon: 'flag-outline',
+          handler: () => {
+            void this.addWordService.reportProblem({
+              languageCode: this.langCode,
+              modeName: 'Builder',
+            });
+          },
+        },
+        { text: this.i18n.t('common.cancel'), icon: 'close-outline', role: 'cancel' },
+      ],
+    });
+    await sheet.present();
+  }
 
   data: BuilderData | null = null;
   isLoading = true;
@@ -83,23 +146,26 @@ export class BuilderPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.langCode = this.settings.learningLanguage();
+    // If the selected app language has a Builder dataset use it; otherwise fall
+    // back to the first language the Builder does support, so the mode is never
+    // just "unavailable" when opened from a language without content.
+    const appLang = this.settings.learningLanguage();
+    this.langCode = BuilderPage.DATASETS[appLang] ? appLang : Object.keys(BuilderPage.DATASETS)[0];
+    await this.loadDataset();
+    this.isLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  /** (Re)load the Builder dataset + progress for the current `langCode`. */
+  private async loadDataset(): Promise<void> {
     this.loadProgress();
     const url = BuilderPage.DATASETS[this.langCode];
-    if (!url) {
-      // No Builder content for this language yet.
-      this.data = null;
-      this.isLoading = false;
-      this.cdr.detectChanges();
-      return;
-    }
+    if (!url) { this.data = null; return; }
     try {
       this.data = await firstValueFrom(this.http.get<BuilderData>(url));
     } catch {
       this.data = null;
     }
-    this.isLoading = false;
-    this.cdr.detectChanges();
   }
 
   // ── Progress ──────────────────────────────────────────────────────────────

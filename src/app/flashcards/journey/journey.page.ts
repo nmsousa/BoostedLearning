@@ -14,9 +14,11 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
+import { ActionSheetController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck, DeckLevel } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
+import { AddWordService } from '../../services/add-word.service';
 
 /** A chapter = a contiguous run of levels shown as one trail. */
 interface Chapter {
@@ -42,9 +44,72 @@ export class JourneyPage implements OnInit {
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
+  private addWordService = inject(AddWordService);
+  private actionSheet = inject(ActionSheetController);
   private cdr = inject(ChangeDetectorRef);
 
   private static readonly MODE = 'journey' as const;
+
+  // ── Header language flag (mirrors the homepage / mode-list selector) ───────
+  availableLanguages: { code: string; name: string; flagUrl: string }[] = [];
+
+  private flagUrl(code: string): string {
+    const toCountry: Record<string, string> = {
+      nl: 'nl', dn: 'nl', fr: 'fr', es: 'es', it: 'it', de: 'de', pt: 'pt',
+      en: 'gb', da: 'dk', el: 'gr', ja: 'jp', ko: 'kr', zs: 'cn', uk: 'ua',
+      nb: 'no', he: 'il', hi: 'in', vi: 'vn', cs: 'cz', sv: 'se', ga: 'ie',
+      gd: 'gb', cy: 'gb', hw: 'us', ht: 'ht', zu: 'za', sw: 'ke',
+    };
+    return `https://flagcdn.com/${toCountry[code] ?? code}.svg`;
+  }
+  private refreshLanguages(): void {
+    this.availableLanguages = this.flashcards
+      .getAvailableLanguages()
+      .map(l => ({ ...l, flagUrl: this.flagUrl(l.code) }));
+  }
+  get learningLanguage(): string { return this.settings.learningLanguage(); }
+  get currentLanguage(): { code: string; name: string; flagUrl: string } {
+    return (
+      this.availableLanguages.find(l => l.code === this.learningLanguage) ??
+      this.availableLanguages[0] ?? {
+        code: this.learningLanguage,
+        name: this.learningLanguage.toUpperCase(),
+        flagUrl: this.flagUrl(this.learningLanguage),
+      }
+    );
+  }
+  async selectLanguage(code: string): Promise<void> {
+    if (code === this.learningLanguage) return;
+    this.settings.updateSetting('learningLanguage', code);
+    this.isLoading = true;
+    this.cdr.detectChanges();
+    await this.flashcards.initialize();
+    await this.load();
+  }
+
+  /**
+   * Header "⋮" menu: just a problem report for now (Report / Cancel). The
+   * report is tagged with a FIXED ENGLISH screen name so GitHub issues are
+   * consistent regardless of the app's display language.
+   */
+  async openMenu(): Promise<void> {
+    const sheet = await this.actionSheet.create({
+      buttons: [
+        {
+          text: this.i18n.t('feedback.report'),
+          icon: 'flag-outline',
+          handler: () => {
+            void this.addWordService.reportProblem({
+              languageCode: this.settings.learningLanguage(),
+              modeName: 'Journey',
+            });
+          },
+        },
+        { text: this.i18n.t('common.cancel'), icon: 'close-outline', role: 'cancel' },
+      ],
+    });
+    await sheet.present();
+  }
   /** Levels per chapter for chunked decks (skill decks chapter per skill). */
   private static readonly LEVELS_PER_CHAPTER = 5;
 
@@ -70,6 +135,7 @@ export class JourneyPage implements OnInit {
   }
 
   private async load(): Promise<void> {
+    this.refreshLanguages();
     const lang = this.settings.learningLanguage();
     const decks = this.flashcards.getAllDecks().filter(d => d.languageCode === lang);
     this.deck = decks[0] ?? this.flashcards.getAllDecks()[0] ?? null;

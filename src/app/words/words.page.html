@@ -109,7 +109,10 @@
       </div>
       <div class="word-stats" slot="end">
         <span class="stat correct" title="Correct">✓ {{ w.correct }}</span>
-        <span class="stat medium" *ngIf="w.medium > 0" title="So-so">~ {{ w.medium }}</span>
+        <!-- The "so-so" column is always rendered (even when 0) so the ✓ / ~ /
+             ✗ / % columns stay vertically aligned across rows. It's just made
+             invisible when there's nothing to show. -->
+        <span class="stat medium" [class.empty]="w.medium <= 0" title="So-so">~ {{ w.medium }}</span>
         <span class="stat wrong" title="Incorrect">✗ {{ w.incorrect }}</span>
         <span class="stat acc">{{ accuracyPct(w) }}%</span>
         <button type="button" class="priority-btn" (click)="openPriority(w, $event)"

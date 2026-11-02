@@ -4,6 +4,28 @@
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
     <ion-title>{{ 'journey.title' | translate }}</ion-title>
+    <ion-buttons slot="end">
+      <button type="button" class="lang-trigger" id="journey-lang-trigger"
+        aria-label="Change learning language">
+        <img class="flag" [src]="currentLanguage.flagUrl" [alt]="currentLanguage.name" />
+        <ion-icon name="chevron-down" class="lang-caret"></ion-icon>
+      </button>
+      <ion-popover trigger="journey-lang-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
+        <ng-template>
+          <ion-list class="lang-list">
+            <ion-item *ngFor="let lang of availableLanguages" button detail="false" lines="none"
+              [class.active]="lang.code === learningLanguage" (click)="selectLanguage(lang.code)">
+              <img class="flag" slot="start" [src]="lang.flagUrl" [alt]="lang.name" />
+              <ion-label>{{ lang.name }}</ion-label>
+              <ion-icon *ngIf="lang.code === learningLanguage" name="checkmark" slot="end" color="primary"></ion-icon>
+            </ion-item>
+          </ion-list>
+        </ng-template>
+      </ion-popover>
+      <ion-button (click)="openMenu()" [attr.aria-label]="'practice.menu' | translate">
+        <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 

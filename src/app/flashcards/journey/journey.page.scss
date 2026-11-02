@@ -1,3 +1,27 @@
+// Learning-language flag picker in the header (same look as the homepage).
+.lang-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  .flag {
+    width: 26px;
+    height: 18px;
+    border-radius: 3px;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+    display: block;
+  }
+  .lang-caret {
+    font-size: 12px;
+    color: var(--ion-color-medium);
+  }
+}
+
 .journey-content {
   --padding-start: 0;
   --padding-end: 0;

@@ -1329,6 +1329,49 @@ export class FlashcardService {
     return 'learning';
   }
 
+  /**
+   * Bucket a card for the FLASHCARDS level breakdown (pie ring + legend).
+   *
+   * This is deliberately NOT `levelForCard`: that one needs a long streak to
+   * call a word "known", which is right for the long-term "Your words" mastery
+   * view but wrong here — a single flip pass can never build a streak, so a
+   * level you mostly *knew* would show all-red. Flashcards flip has its own
+   * direct self-rating ("don't know" / "so-so" / "know"), so we classify from
+   * those counts instead, reflecting what the user actually said:
+   *   - known:    said "know" at least once, never "don't know", and "know" ≥ "so-so".
+   *   - learning: never said "know", OR "don't know" outweighs "know"+"so-so".
+   *   - familiar: anything else that's been studied (mixed / mostly so-so).
+   * See docs/LEVEL-ALGORITHM.md §6b.
+   */
+  private flipKnowledgeBucket(card: Flashcard): KnowledgeLevel {
+    const know = card.correctCount ?? 0;
+    const soso = card.mediumCount ?? 0;
+    const dont = card.incorrectCount ?? 0;
+
+    if (know > 0 && dont === 0 && know >= soso) return 'known';
+    if (know === 0 || dont > know + soso) return 'learning';
+    return 'familiar';
+  }
+
+  /**
+   * Knowledge breakdown for one Flashcards level: how many of the level's words
+   * fall in each bucket (learning / familiar / known), plus the untouched ones.
+   * The level's word set is FIXED (skill group or fixed 20-card slice), so this
+   * is well-defined even before the user starts. Drives the pie ring + legend
+   * on the Flashcards level list. See docs/LEVEL-ALGORITHM.md §6b.
+   */
+  getLevelKnowledge(deckId: string, levelNumber: number): {
+    total: number; learning: number; familiar: number; known: number; neverStudied: number;
+  } {
+    const cards = this.getLevelCards(deckId, levelNumber);
+    const out = { total: cards.length, learning: 0, familiar: 0, known: 0, neverStudied: 0 };
+    for (const c of cards) {
+      if (!this.hasBeenStudied(c)) { out.neverStudied++; continue; }
+      out[this.flipKnowledgeBucket(c)]++;
+    }
+    return out;
+  }
+
   /** Whether a card has been practiced at least once (any mode). */
   private hasBeenStudied(card: Flashcard): boolean {
     return card.lastSeen !== null || card.correctCount > 0 || card.incorrectCount > 0;
@@ -1899,8 +1942,12 @@ export class FlashcardService {
       deckId,
       mode,
       levelNumber,
-      bestStars: Math.max(existing?.bestStars ?? 0, levelComplete ? stars : 0),
-      bestScore: Math.max(existing?.bestScore ?? 0, Math.round(avg)),
+      // Stars reflect the running average across the rounds played SO FAR, so
+      // the list shows your rating as you go (e.g. a 3-star first round shows 3
+      // stars immediately) instead of staying at 0 until all 5 rounds are done.
+      // It's the average, so it can still shift as later rounds are recorded.
+      bestStars: stars,
+      bestScore: Math.round(avg),
       attempts: (existing?.attempts ?? 0) + 1,
       lastAttempt: new Date().toISOString(),
       roundsCompleted,

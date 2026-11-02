@@ -59,15 +59,18 @@ Rules:
 - A round is **passed** when first-try accuracy ≥ **70%**. A pass is required
   for the round to count toward the 5 (an un-passed round can be retried and
   does not advance the circle).
-- **Stars** are awarded on the **level**, from the user's performance across the
-  rounds (best effort), using first-try accuracy of the final/consolidation
-  round plus overall:
-  - **3 stars** — ≥ 95% average first-try accuracy across the 5 rounds.
+- **Stars** reflect the **running average first-try accuracy across the rounds
+  played so far** (not only after all 5 are done). They are stored as `bestStars`
+  on each round save and shown in the level list immediately, so a 3-star first
+  round shows 3 stars right away. Because it's an average, the rating can still
+  move up or down as later rounds are recorded.
+  - **3 stars** — ≥ 95% average first-try accuracy.
   - **2 stars** — ≥ 85%.
   - **1 star** — ≥ 70% (the pass line).
-  - **0 stars** — below 70% (level not yet complete).
-- (Current shipped rule: 3★ = 100%, 2★ ≥ 85%, 1★ ≥ 70%, computed from a single
-  pass.)
+  - **0 stars** — below 70%.
+- Rationale: an earlier version only wrote stars once the **whole** level (all 5
+  rounds) was complete, so a level where the user had just scored 3 stars on
+  round 1 still showed 0 stars — confusing. Stars now track progress as you go.
 
 ## 5. Time for 3 stars (Match mode only)
 
@@ -95,26 +98,52 @@ priorityFactor = boost:1.5 | normal:1.0 | hide:0  (hidden never shown)
 So a word appears often when: you miss it a lot, you missed it recently, or you
 marked it "boost". It stops appearing when marked "hide".
 
-## 6b. Flashcards mode — free practice (no scoring)
+## 6b. Flashcards mode — free practice & knowledge breakdown
 
 Flashcards (flip) is **free practice**: every level is always unlocked and
-there are **no rounds, no stars, no unlock gating**.
+there are **no rounds, no stars, no unlock gating**. No "current level"
+highlight either (there is no next level to funnel toward).
 
-Flashcards also shows **no knowledge colour / breakdown** on the level list.
-An earlier version coloured each level (and showed a "learning / familiar /
-known" bar) from the per-word knowledge buckets, but those buckets need a
-streak of 2–3 correct answers to move a word out of "learning". A single
-practice pass — even a perfect one — therefore left every word in "learning",
-so a level the user had just aced still read "all learning" / neutral. That was
-misleading for a free-practice mode, so the colouring and the bar were removed.
-Flashcards level rows are plain: just the level number and title.
+Each level instead shows a **knowledge breakdown**: a pie ring around the level
+number (red/yellow/green) plus a grey count legend under the title. The legend
+reuses the **same wording as the flip rating buttons** ("don't know" / "so-so"
+/ "know it") so the user maps the colours to the buttons they tap, e.g.
+"8 don't know · 7 so-so · 9 know it". Each legend part is hidden when its count
+is 0, and never-practised levels show a plain grey ring with no legend.
+The level's word set is **fixed and known up front** (a skill group, or a fixed
+20-card slice for decks without skills), so the breakdown is well-defined.
 
-No "current level" highlight is shown in Flashcards either (there is no next
-level to funnel toward — it's free practice).
+### Why a Flashcards-specific bucket rule (not the "Your words" one)
+
+The long-term mastery buckets used by the home breakdown / "Your words" list
+(`levelForCard`) require a **streak of 2–3 correct answers** before a word
+counts as familiar/known. That is right for a mastery view, but wrong for the
+Flashcards list: a single flip pass can never build a streak, so a level the
+user had just aced (mostly "I know") showed up **all red** ("24 a aprender").
+That looked broken.
+
+Flashcards flip has its own direct per-card self-rating — **don't know /
+so-so / know** — stored as `incorrectCount` / `mediumCount` / `correctCount`.
+The breakdown classifies from those counts (`flipKnowledgeBucket`), reflecting
+what the user actually said:
+
+| Bucket | Colour | Rule |
+|--------|--------|------|
+| **known**    | green  | said "know" ≥ 1, never "don't know", and `know ≥ so-so`. |
+| **learning** | red    | never said "know", **or** "don't know" outweighs `know + so-so`. |
+| **familiar** | yellow | anything else studied (mixed / mostly "so-so"). |
+
+So a pass of 9 "know" / 7 "so-so" / 8 "don't know" reads ≈ 9 green · 7 yellow ·
+8 red — matching the session. The pie ring's proportions are over the
+**practised** words only (untouched words don't colour the ring).
+
+> History: an even earlier version coloured the whole level *border* green/
+> yellow/red from the mastery buckets. It was removed because one pass left
+> everything "learning". The current pie+legend uses the flip-rating rule above
+> instead, which does not have that problem.
 
 Other modes (Write / Quiz / Match) keep the round ring + stars and the
-"current level" highlight; those already convey performance (no / few stars
-means "you got few right").
+"current level" highlight; those already convey performance.
 
 ## 7. Admin tools (dev/testing)
 
@@ -126,6 +155,40 @@ means "you got few right").
 - **Settings → Admin → How it works** opens an in-app page that renders the live
   values derived from this document (unlock rule, star thresholds, round
   composition, and — when opened for a specific word — why it's shown).
+
+## 8. Per-word priority overrides ("mostrar mais vezes" / "ocultar da prática")
+
+In **As tuas palavras** (Your words) the "⋮" menu on a word opens an action
+sheet with three choices, stored as the word's `priority` (`WordPriority =
+'boost' | 'normal' | 'hide'`, persisted per card and applied to every form that
+shares the prompt, e.g. de/het). They only change **how often a word is shown in
+practice** — never its stats, its knowledge bucket, or which level it belongs
+to.
+
+### "Mostrar mais vezes" → `boost`
+Surfaces the word sooner, across modes:
+- **Quick Study** (`getFlashcardQueue`-style scoring): a boosted word gets a flat
+  `BOOST_SCORE = 600` added to its priority score, pushing it up the queue.
+- **Flashcards queue** (`getFlashcardQueue`): boosted words are sorted **first,
+  regardless of their FSRS due date** (ahead of due/new words).
+- Row shows an ▲ `arrow-up-circle` badge.
+
+### "Ocultar da prática" → `hide`
+Removes the word from practice entirely:
+- Excluded from Quick Study and the Flashcards queue (`excludeHidden`) and from
+  the playable set used by Match and friends (`playableCards`).
+- Row shows an 🚫 `eye-off` badge and dims; a status filter (All / Enabled /
+  Hidden) appears in Your words once at least one word is hidden, so hidden
+  words remain findable and can be restored.
+- **Not** removed from level membership or the Flashcards knowledge breakdown
+  (§6b) — `getLevelCards` counts the fixed word set and does not filter hidden
+  words. Hiding affects *practice selection only*, not the level's definition.
+
+### "Normal" → `normal`
+Clears any override: default scheduling, no badge.
+
+Hiding/boosting is a pure practice-queue override and does not unlock levels,
+award stars, or alter round composition.
 
 ---
 

@@ -118,10 +118,21 @@ html {
 
 // Language popover list (rendered in a portal at the document root, so it
 // needs a global rule): remove the default list padding so there's no empty
-// gap after the last language.
+// gap after the last language, and size the flag thumbnails (the popover
+// renders at the document root, so page-scoped rules don't reach it — without
+// this the SVG flags render at their natural huge size on pages other than
+// Home).
 .lang-list {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+
+  .flag {
+    width: 26px;
+    height: 18px;
+    border-radius: 3px;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  }
 }
 ion-popover .lang-list {
   padding-top: 0 !important;

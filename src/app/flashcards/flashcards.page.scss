@@ -1,3 +1,28 @@
+// Learning-language flag picker in the header (same look as the homepage).
+.lang-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  .flag {
+    width: 26px;
+    height: 18px;
+    border-radius: 3px;
+    object-fit: cover;
+    // Hairline so flags with a dark edge stay separated from the header.
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+    display: block;
+  }
+  .lang-caret {
+    font-size: 12px;
+    color: var(--ion-color-medium);
+  }
+}
+
 // Loading state
 .loading-state {
   display: flex;
@@ -18,7 +43,9 @@
 }
 
 .flashcards-container {
-  padding: 12px;
+  // A touch more breathing room above the list (the deck header is hidden for
+  // a lone bundled deck, so "Níveis" would otherwise sit tight to the toolbar).
+  padding: 18px 12px 12px;
 }
 
 // Empty state
@@ -200,6 +227,17 @@
     transition: stroke-dasharray 0.3s ease;
   }
 
+  // Flashcards pie segments: one coloured arc per knowledge bucket. Butt caps
+  // so adjacent segments meet cleanly (no rounded overlap).
+  .ring-pie {
+    fill: none;
+    stroke-width: 5;
+    stroke-linecap: butt;
+    &.seg-learning { stroke: var(--ion-color-danger); }
+    &.seg-familiar { stroke: var(--ion-color-warning); }
+    &.seg-known { stroke: var(--ion-color-success); }
+  }
+
   .ring-num {
     position: absolute;
     inset: 0;
@@ -248,6 +286,32 @@
     font-style: italic;
     color: var(--ion-color-medium);
     opacity: 0.85;
+  }
+
+  // Flashcards knowledge legend: grey counts, each preceded by a small coloured
+  // dot (red/yellow/green) that ties it to the pie ring and the flip buttons.
+  // Parts with a 0 count are hidden, so a level with only "known" words just
+  // reads "• 5 sei".
+  .know-legend {
+    font-size: 0.78rem;
+    line-height: 1.2;
+    color: var(--ion-color-medium);
+
+    .kn {
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+      &.learning { background: var(--ion-color-danger); }
+      &.familiar { background: var(--ion-color-warning); }
+      &.known { background: var(--ion-color-success); }
+    }
   }
 
   // Match records: small, inline, dimmed; only rendered when present.

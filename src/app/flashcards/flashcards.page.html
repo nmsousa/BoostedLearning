@@ -5,6 +5,25 @@
     </ion-buttons>
     <ion-title>{{ modeLabel }}</ion-title>
     <ion-buttons slot="end">
+      <!-- Learning-language flag picker (same as the homepage): shows which
+           language this mode's list belongs to, and lets you switch it. -->
+      <button type="button" class="lang-trigger" id="mode-lang-trigger"
+        aria-label="Change learning language">
+        <img class="flag" [src]="currentLanguage.flagUrl" [alt]="currentLanguage.name" />
+        <ion-icon name="chevron-down" class="lang-caret"></ion-icon>
+      </button>
+      <ion-popover trigger="mode-lang-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
+        <ng-template>
+          <ion-list class="lang-list">
+            <ion-item *ngFor="let lang of availableLanguages" button detail="false" lines="none"
+              [class.active]="lang.code === learningLanguage" (click)="selectLanguage(lang.code)">
+              <img class="flag" slot="start" [src]="lang.flagUrl" [alt]="lang.name" />
+              <ion-label>{{ lang.name }}</ion-label>
+              <ion-icon *ngIf="lang.code === learningLanguage" name="checkmark" slot="end" color="primary"></ion-icon>
+            </ion-item>
+          </ion-list>
+        </ng-template>
+      </ion-popover>
       <ion-button (click)="openMenu()" [attr.aria-label]="'practice.menu' | translate">
         <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
       </ion-button>
@@ -42,9 +61,18 @@
     <!-- Deck list -->
     <div *ngIf="decks.length > 0" class="deck-list">
       <ion-card *ngFor="let deck of decks; trackBy: trackByDeckId" class="deck-card">
-        <ion-card-header (click)="decks.length > 1 && toggleDeckExpand(deck.id)" class="deck-header"
+        <!-- The whole header is hidden for a lone bundled deck: its title is
+             redundant with the header flag and the chevron/subtitle don't apply,
+             so showing it would just leave an empty padded gap above "Níveis".
+             Shown when there are multiple decks or a custom deck (names matter)
+             or custom cards exist (badge). -->
+        <ion-card-header *ngIf="decks.length > 1 || !deck.isBundled || (deckStats.get(deck.id)?.customCount || 0) > 0"
+          (click)="decks.length > 1 && toggleDeckExpand(deck.id)" class="deck-header"
           [class.not-collapsible]="decks.length === 1">
-          <ion-card-title>{{ deck.name }}</ion-card-title>
+          <!-- Deck name hidden for a lone bundled deck (the header flag already
+               says which language it is). Shown when there are multiple decks,
+               where custom deck names matter. -->
+          <ion-card-title *ngIf="decks.length > 1 || !deck.isBundled">{{ deck.name }}</ion-card-title>
           <!-- Level/word counts removed (irrelevant to the user). The subtitle
                now only carries the built-in/custom badges, when relevant. -->
           <ion-card-subtitle *ngIf="(deck.isBundled && hasCustomDecks()) || !deck.isBundled || (deckStats.get(deck.id)?.customCount || 0) > 0">
@@ -84,8 +112,16 @@
               <div class="level-ring" [class.locked]="!level.isUnlocked" [attr.data-rounds]="level.roundsCompleted">
                 <svg viewBox="0 0 40 40" aria-hidden="true">
                   <circle class="ring-track" cx="20" cy="20" r="17"></circle>
+                  <!-- Scored modes: a single arc filling rounds/5. -->
                   <circle class="ring-fill" cx="20" cy="20" r="17" *ngIf="showStars"
                     [style.stroke-dasharray]="ringDashRounds(level.roundsCompleted)"></circle>
+                  <!-- Flashcards: a pie split red/yellow/green by word knowledge
+                       (only once a word in the level has been practised). The
+                       svg is already rotated -90° (start at top) in CSS. -->
+                  <ng-container *ngIf="isFlipMode && level.isUnlocked">
+                    <circle *ngFor="let s of levelPieSegments(deck.id, level)" class="ring-pie" [ngClass]="s.cls"
+                      cx="20" cy="20" r="17" [style.stroke-dasharray]="s.dash" [style.stroke-dashoffset]="s.offset"></circle>
+                  </ng-container>
                 </svg>
                 <span class="ring-num" *ngIf="level.isUnlocked">{{ level.levelNumber }}</span>
                 <ion-icon *ngIf="!level.isUnlocked" name="lock-closed" class="ring-lock"></ion-icon>
@@ -100,6 +136,22 @@
                 </span>
                 <span *ngIf="!level.isUnlocked" class="level-locked-hint">
                   {{ 'practice.unlockHint' | translate }}
+                </span>
+
+                <!-- Flashcards: count legend with a coloured dot before each
+                     part. Grey text (same wording as the flip rating buttons);
+                     the dot carries the colour. Each part only shows when its
+                     count is > 0, joined by "·". Hidden until a word in the
+                     level has been practised. -->
+                <span class="know-legend" *ngIf="isFlipMode && hasKnowledge(deck.id, level)">
+                  <span class="kn" *ngIf="levelKnowledge(deck.id, level).learning">
+                    <i class="dot learning"></i>{{ 'practice.know.learning' | translate:{ n: levelKnowledge(deck.id, level).learning } }}</span><span
+                    class="sep" *ngIf="levelKnowledge(deck.id, level).learning && (levelKnowledge(deck.id, level).familiar || levelKnowledge(deck.id, level).known)"> · </span><span
+                    class="kn" *ngIf="levelKnowledge(deck.id, level).familiar">
+                    <i class="dot familiar"></i>{{ 'practice.know.familiar' | translate:{ n: levelKnowledge(deck.id, level).familiar } }}</span><span
+                    class="sep" *ngIf="levelKnowledge(deck.id, level).familiar && levelKnowledge(deck.id, level).known"> · </span><span
+                    class="kn" *ngIf="levelKnowledge(deck.id, level).known">
+                    <i class="dot known"></i>{{ 'practice.know.known' | translate:{ n: levelKnowledge(deck.id, level).known } }}</span>
                 </span>
 
                 <!-- Match-only: discrete best time + combo, only when set. -->

@@ -221,10 +221,19 @@ ion-list {
     font-size: 0.85rem;
     font-weight: 600;
 
+    // Fixed-width columns so ✓ / ~ / ✗ / % line up vertically from row to row
+    // regardless of the digit count or whether the "so-so" value is shown.
+    .stat {
+      flex: 0 0 auto;
+      min-width: 28px;
+      text-align: left;
+      font-variant-numeric: tabular-nums;
+    }
     .stat.correct { color: var(--ion-color-success); }
     .stat.medium { color: var(--ion-color-warning); }
+    .stat.medium.empty { visibility: hidden; }  // keep the column, hide the text
     .stat.wrong { color: var(--ion-color-danger); }
-    .stat.acc { color: var(--ion-text-color); min-width: 36px; text-align: right; }
+    .stat.acc { color: var(--ion-text-color); min-width: 44px; text-align: right; }
 
     .priority-btn {
       display: inline-flex;

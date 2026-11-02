@@ -17,6 +17,9 @@ import { AddWordService } from '../services/add-word.service';
 /** Deck list ordering preference. */
 type DeckOrder = 'builtinFirst' | 'customFirst';
 
+/** A selectable learning language for the header flag picker. */
+interface LangOption { code: string; name: string; flagUrl: string; }
+
 @Component({
   selector: 'app-flashcards',
   templateUrl: './flashcards.page.html',
@@ -34,6 +37,60 @@ export class FlashcardsPage implements OnInit {
   private settings = inject(SettingsService);
   private addWordService = inject(AddWordService);
   private cdr = inject(ChangeDetectorRef);
+
+  // ── Header language flag (mirrors the homepage selector) ───────────────────
+  /** Languages the user can learn, derived from available decks. */
+  availableLanguages: LangOption[] = [];
+
+  /** Maps a language/course code to its flag country code (same as homepage). */
+  private flagUrl(code: string): string {
+    const toCountry: Record<string, string> = {
+      nl: 'nl', dn: 'nl', fr: 'fr', es: 'es', it: 'it', de: 'de', pt: 'pt',
+      en: 'gb', da: 'dk', el: 'gr', ja: 'jp', ko: 'kr', zs: 'cn', uk: 'ua',
+      nb: 'no', he: 'il', hi: 'in', vi: 'vn', cs: 'cz', sv: 'se', ga: 'ie',
+      gd: 'gb', cy: 'gb', hw: 'us', ht: 'ht', zu: 'za', sw: 'ke',
+    };
+    return `https://flagcdn.com/${toCountry[code] ?? code}.svg`;
+  }
+
+  private refreshLanguages(): void {
+    this.availableLanguages = this.flashcardService
+      .getAvailableLanguages()
+      .map(l => ({ ...l, flagUrl: this.flagUrl(l.code) }));
+  }
+
+  /** Currently selected learning-language code. */
+  get learningLanguage(): string {
+    return this.settings.learningLanguage();
+  }
+
+  /** The flag/name for the currently selected learning language. */
+  get currentLanguage(): LangOption {
+    return (
+      this.availableLanguages.find(l => l.code === this.learningLanguage) ??
+      this.availableLanguages[0] ?? {
+        code: this.learningLanguage,
+        name: this.learningLanguage.toUpperCase(),
+        flagUrl: this.flagUrl(this.learningLanguage),
+      }
+    );
+  }
+
+  /** Switch learning language and reload this mode's deck list for it. */
+  async selectLanguage(code: string): Promise<void> {
+    if (code === this.learningLanguage) return;
+    this.settings.updateSetting('learningLanguage', code);
+    // Mirror the proven load path (ngOnInit / ionViewWillEnter): ensure the
+    // service is initialised (idempotent) BEFORE reloading, then run change
+    // detection. Doing loadDecks() alone raced the deck data and sometimes
+    // rendered an empty list until a manual refresh.
+    this.isLoading = true;
+    this.cdr.detectChanges();
+    await this.flashcardService.initialize();
+    await this.loadDecks();
+    this.isLoading = false;
+    this.cdr.detectChanges();
+  }
 
   /**
    * Header "⋮" menu for the deck list: add a word, and (when there's a custom
@@ -203,8 +260,11 @@ export class FlashcardsPage implements OnInit {
   }
 
   async loadDecks() {
-    // Recompute which level is "current" on every load.
+    // Recompute which level is "current" / its knowledge breakdown on every load.
     this.currentLevelCache.clear();
+    this.knowledgeCache.clear();
+    // Keep the header flag picker's options in sync with available decks.
+    this.refreshLanguages();
 
     // Show only decks for the currently-selected learning language. User-added
     // decks (no languageCode match) and the selected language's bundled deck.
@@ -283,12 +343,58 @@ export class FlashcardsPage implements OnInit {
   }
 
   /**
-   * Flashcards is free practice: no stars/rounds, and no knowledge colouring
-   * either. A single correct pass can't prove mastery, so colours/counts here
-   * were misleading. Kept as a flag only to hide stars / the "current" highlight.
+   * Flashcards is free practice: no stars/rounds, and no "current" highlight.
+   * Instead each level shows a knowledge breakdown (learning/familiar/known) as
+   * a pie ring around the number + a count legend. The level word set is fixed,
+   * so the breakdown is well-defined; it just moves gradually as you practise.
    */
   get isFlipMode(): boolean {
     return this.mode === 'flip';
+  }
+
+  // ── Flashcards knowledge breakdown (pie ring + legend) ─────────────────────
+  // Memoised per deck+level so the OnPush template can call these freely.
+  private knowledgeCache = new Map<string, { total: number; learning: number; familiar: number; known: number; neverStudied: number }>();
+
+  levelKnowledge(deckId: string, level: DeckLevel) {
+    const key = `${deckId}:${level.levelNumber}`;
+    if (!this.knowledgeCache.has(key)) {
+      this.knowledgeCache.set(key, this.flashcardService.getLevelKnowledge(deckId, level.levelNumber));
+    }
+    return this.knowledgeCache.get(key)!;
+  }
+
+  /** True once at least one of the level's words has been practised. */
+  hasKnowledge(deckId: string, level: DeckLevel): boolean {
+    const k = this.levelKnowledge(deckId, level);
+    return k.learning + k.familiar + k.known > 0;
+  }
+
+  /**
+   * Pie-ring arcs for a Flashcards level: one coloured segment per non-empty
+   * bucket, laid end-to-end around the ring (r=17). Each arc carries the
+   * `dasharray` (arc length + gap) and `dashoffset` to position it. Proportions
+   * are over the PRACTISED words only (untouched words don't colour the ring).
+   */
+  levelPieSegments(deckId: string, level: DeckLevel): { cls: string; dash: string; offset: number }[] {
+    const k = this.levelKnowledge(deckId, level);
+    const practised = k.learning + k.familiar + k.known;
+    if (practised === 0) return [];
+    const C = 2 * Math.PI * 17; // circumference ≈ 106.8
+    const buckets: { cls: string; n: number }[] = [
+      { cls: 'seg-known', n: k.known },
+      { cls: 'seg-familiar', n: k.familiar },
+      { cls: 'seg-learning', n: k.learning },
+    ];
+    const segs: { cls: string; dash: string; offset: number }[] = [];
+    let used = 0;
+    for (const b of buckets) {
+      if (b.n <= 0) continue;
+      const len = (b.n / practised) * C;
+      segs.push({ cls: b.cls, dash: `${len} ${C - len}`, offset: -used });
+      used += len;
+    }
+    return segs;
   }
 
   getLevels(deckId: string): DeckLevel[] {
