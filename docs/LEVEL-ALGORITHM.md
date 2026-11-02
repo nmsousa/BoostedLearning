@@ -59,18 +59,23 @@ Rules:
 - A round is **passed** when first-try accuracy ≥ **70%**. A pass is required
   for the round to count toward the 5 (an un-passed round can be retried and
   does not advance the circle).
-- **Stars** reflect the **running average first-try accuracy across the rounds
-  played so far** (not only after all 5 are done). They are stored as `bestStars`
-  on each round save and shown in the level list immediately, so a 3-star first
-  round shows 3 stars right away. Because it's an average, the rating can still
-  move up or down as later rounds are recorded.
-  - **3 stars** — ≥ 95% average first-try accuracy.
+- **Stars** are the **best (highest) rating across the rounds played**, computed
+  per round from that round's first-try accuracy and kept as the max — exactly
+  like best time and best combo. Stored as `bestStars` and shown from the first
+  round on, so a 3-star round shows 3 stars immediately and they **don't drop**
+  if a later round scores lower (once earned, a star count sticks).
+  Thresholds, per round:
+  - **3 stars** — ≥ 95% first-try accuracy.
   - **2 stars** — ≥ 85%.
   - **1 star** — ≥ 70% (the pass line).
   - **0 stars** — below 70%.
-- Rationale: an earlier version only wrote stars once the **whole** level (all 5
-  rounds) was complete, so a level where the user had just scored 3 stars on
-  round 1 still showed 0 stars — confusing. Stars now track progress as you go.
+- `bestScore` separately keeps the running **average** accuracy across rounds,
+  for reference; it does not drive the star display.
+- Rationale: time, combo and stars are all "your best so far", which is
+  motivating (you chase your record) and avoids the confusing case where stars
+  dropped after a weaker round. (An even earlier version only wrote stars once
+  all 5 rounds were complete, so a just-earned 3-star round still showed 0 —
+  also fixed.)
 
 ## 5. Time for 3 stars (Match mode only)
 

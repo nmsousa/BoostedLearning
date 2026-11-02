@@ -1372,8 +1372,17 @@ export class FlashcardService {
     total: number; learning: number; familiar: number; known: number; neverStudied: number;
   } {
     const cards = this.getLevelCards(deckId, levelNumber);
+    // getLevelCards returns cached SNAPSHOT copies (built once for speed), so
+    // their counts go stale after practice. Read the LIVE card (by id) from the
+    // deck so the breakdown reflects the latest ratings without rebuilding the
+    // (expensive) cached structure. Falls back to the snapshot if not found.
+    const deck = this.getDeck(deckId);
+    const liveById = new Map<string, Flashcard>();
+    if (deck) for (const c of deck.cards) liveById.set(c.id, c);
+
     const out = { total: cards.length, learning: 0, familiar: 0, known: 0, neverStudied: 0 };
-    for (const c of cards) {
+    for (const snapshot of cards) {
+      const c = liveById.get(snapshot.id) ?? snapshot;
       if (!this.hasBeenStudied(c)) { out.neverStudied++; continue; }
       out[this.flipKnowledgeBucket(c)]++;
     }
@@ -1517,11 +1526,26 @@ export class FlashcardService {
    */
   private dedupeCache = new Map<string, { cards: Flashcard[]; result: Flashcard[] }>();
 
-  /** Clear the deduped-cards memo (all decks, or one). Call after adding/
-   *  importing/removing cards so the grouped list is rebuilt. */
+  /**
+   * Memo of skill-grouped levels per deck, keyed on the deck's `cards` array
+   * reference. getSkillLevels builds a whole-deck forms map (multiple passes
+   * over every card) + a grouping/dedupe pass — very expensive for large decks
+   * (the French course has 7205 cards). Without this cache it was rebuilt on
+   * every getLevelCards/getLevelKnowledge call, freezing the UI when returning
+   * to the list. Invalidated alongside dedupeCache.
+   */
+  private skillLevelsCache = new Map<string, { cards: Flashcard[]; result: Flashcard[][] }>();
+
+  /** Clear the deduped-cards + skill-levels memos (all decks, or one). Call
+   *  after adding/importing/removing cards so the grouped list is rebuilt. */
   private invalidateDedupe(deckId?: string): void {
-    if (deckId) this.dedupeCache.delete(deckId);
-    else this.dedupeCache.clear();
+    if (deckId) {
+      this.dedupeCache.delete(deckId);
+      this.skillLevelsCache.delete(deckId);
+    } else {
+      this.dedupeCache.clear();
+      this.skillLevelsCache.clear();
+    }
   }
 
   /** Primary-translation key for grouping a card by its English prompt. */
@@ -1606,6 +1630,11 @@ export class FlashcardService {
     const deck = this.getDeck(deckId);
     if (!deck) return [];
 
+    // Memoised: rebuilding this over every card (×7205 for French) on each call
+    // froze the UI. Reuse the cached result while the deck's cards are unchanged.
+    const cached = this.skillLevelsCache.get(deckId);
+    if (cached && cached.cards === deck.cards) return cached.result;
+
     // Accepted forms per English prompt across the WHOLE deck, so a prompt like
     // "your" accepts every French form (ta/ton/tes/votre/vos) no matter which
     // card is shown. Without this, skill-level cards carried no acceptedForms
@@ -1629,9 +1658,11 @@ export class FlashcardService {
       groups.set(skill, g);
     }
 
-    return [...groups.values()]
+    const result = [...groups.values()]
       .sort((a, b) => a.order - b.order)
       .map(g => g.cards);
+    this.skillLevelsCache.set(deckId, { cards: deck.cards, result });
+    return result;
   }
 
   /**
@@ -1954,9 +1985,12 @@ export class FlashcardService {
     const roundScores = [...(existing?.roundScores ?? [])];
     roundScores.push(roundScorePercent);
 
-    // Stars from the average first-try accuracy across recorded rounds.
+    // Stars for THIS round, from its first-try accuracy. The stored bestStars
+    // keeps the best (highest) across rounds — see below. We still track the
+    // running average for bestScore.
     const avg = roundScores.reduce((s, v) => s + v, 0) / roundScores.length;
-    const stars = this.calculateStars(Math.round(avg));
+    const roundStars = this.calculateStars(Math.round(roundScorePercent));
+    const stars = Math.max(existing?.bestStars ?? 0, roundStars);
 
     let bestTimeSeconds = existing?.bestTimeSeconds;
     if (timeSeconds !== undefined) {
@@ -1974,10 +2008,10 @@ export class FlashcardService {
       deckId,
       mode,
       levelNumber,
-      // Stars reflect the running average across the rounds played SO FAR, so
-      // the list shows your rating as you go (e.g. a 3-star first round shows 3
-      // stars immediately) instead of staying at 0 until all 5 rounds are done.
-      // It's the average, so it can still shift as later rounds are recorded.
+      // Stars = the BEST (highest) rating across all rounds of this level, like
+      // best time / best combo. Once you earn a star count it sticks, even if a
+      // later round scores lower. Shown from the first round on. bestScore keeps
+      // the running average for reference.
       bestStars: stars,
       bestScore: Math.round(avg),
       attempts: (existing?.attempts ?? 0) + 1,
