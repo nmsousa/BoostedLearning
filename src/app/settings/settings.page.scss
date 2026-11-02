@@ -20,6 +20,9 @@ ion-item-divider {
 ion-item ion-select {
   max-width: 55%;
   --padding-start: 0;
+  // Controls live in slot="end" now, so right-align the value text to hug the
+  // right edge (there was empty space on the right before).
+  text-align: right;
 }
 ion-item ion-select::part(text) {
   overflow: hidden;

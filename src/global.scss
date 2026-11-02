@@ -67,6 +67,27 @@ ion-app {
   background: var(--ion-background-color);
 }
 
+// Make header toolbars a SOLID toolbar colour (not the translucent blur). The
+// native status bar is painted with --ion-toolbar-background; a translucent
+// header blends toward the page content, so its rendered colour no longer
+// matched the status bar, leaving a visible seam at the top. Forcing the solid
+// colour makes the status bar and header read as one continuous band.
+ion-header ion-toolbar {
+  --background: var(--ion-toolbar-background);
+  --opacity: 1;
+}
+
+// Native (Capacitor) only: we force the status bar OUT of overlay mode
+// (StatusBar.setOverlaysWebView(false) in app.component), so the OS already
+// reserves the status-bar strip and the web view starts BELOW it. On some
+// devices (e.g. MIUI) Ionic ALSO reports a non-zero top safe-area inset, which
+// then padded the header a second time — a tall empty band above the toolbar.
+// Zero the TOP inset on native so there's no double gap. Bottom inset stays
+// (for the gesture/nav bar).
+.plt-hybrid {
+  --ion-safe-area-top: 0px;
+}
+
 /**
  * Accessibility / comfort settings
  * -----------------------------------------------------
@@ -151,6 +172,36 @@ ion-popover .lang-list {
     width: 40px;
     height: 40px;
   }
+}
+
+// Report-a-problem alert (checkbox list + free-text step). Alerts render at the
+// root, so this needs a global rule. Tighten the gap between each checkbox and
+// its label, let labels wrap to a single comfortable block, and pull the
+// textarea's underline up close to the typed text.
+.report-alert {
+  .alert-checkbox-label {
+    padding-inline-start: 8px;        // closer to the box (was a wide gap)
+    white-space: normal;
+    line-height: 1.3;
+  }
+  .alert-checkbox-button .alert-button-inner {
+    align-items: center;
+  }
+  .alert-input-wrapper textarea.alert-input {
+    min-height: 2.2rem;               // underline sits just under the text
+    padding-bottom: 4px;
+  }
+}
+
+// Full-screen modals (e.g. "Add a language") — fill the whole app column so the
+// content boxes reach the edges instead of leaving a wasted strip on the side.
+// Modals render at the ion-app root, so this needs a global rule.
+.fullscreen-modal {
+  --width: 100%;
+  --height: 100%;
+  --max-width: 100%;
+  --max-height: 100%;
+  --border-radius: 0;
 }
 
 // --------------------------------------------------------------------------

@@ -26,6 +26,7 @@
         <ion-icon slot="start" name="color-palette-outline"></ion-icon>
         <ion-label>{{ 'settings.theme' | translate }}</ion-label>
         <ion-select
+          slot="end"
           [value]="colorTheme"
           (ionChange)="onColorThemeChange($event)"
           interface="popover"
@@ -42,6 +43,7 @@
         <ion-icon slot="start" name="text-outline"></ion-icon>
         <ion-label>{{ 'settings.textSize' | translate }}</ion-label>
         <ion-select 
+          slot="end"
           [value]="textSize" 
           (ionChange)="onTextSizeChange($event)"
           interface="popover"
@@ -97,6 +99,7 @@
           <p>{{ 'settings.typingDirectionDesc' | translate }}</p>
         </ion-label>
         <ion-select
+          slot="end"
           [value]="flashcardDirection"
           (ionChange)="onFlashcardDirectionChange($event)"
           interface="popover"
@@ -119,6 +122,7 @@
         <ion-icon slot="start" name="speedometer-outline"></ion-icon>
         <ion-label>{{ 'settings.audioSpeed' | translate }}</ion-label>
         <ion-select 
+          slot="end"
           [value]="audioSpeed" 
           (ionChange)="onAudioSpeedChange($event)"
           interface="popover"
@@ -362,7 +366,7 @@
   </ion-modal>
 
   <!-- Add a language from duome.eu -->
-  <ion-modal [isOpen]="showDuomeModal" (didDismiss)="closeDuomeModal()">
+  <ion-modal class="fullscreen-modal" [isOpen]="showDuomeModal" (didDismiss)="closeDuomeModal()">
     <ng-template>
       <ion-header>
         <ion-toolbar>
@@ -401,12 +405,16 @@
         </ion-item>
 
         <ion-item>
+          <!-- Popover (not action-sheet): the action-sheet took over the whole
+               screen and a hardware-back cascaded (closed the sheet, then the
+               modal, then Settings). A popover dismisses one layer at a time. -->
           <ion-select
             [(ngModel)]="duomeTarget"
             (ionChange)="onDuomeCourseChange()"
             [label]="'settings.languageToLearn' | translate"
             labelPlacement="floating"
-            interface="action-sheet"
+            interface="popover"
+            [interfaceOptions]="{ cssClass: 'course-popover' }"
             [placeholder]="'settings.chooseLanguage' | translate">
             <ion-select-option *ngFor="let c of duomeCourses" [value]="c.code">
               {{ 'settings.courseWords' | translate:{ name: c.name, words: c.words } }}
