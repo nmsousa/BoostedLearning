@@ -4,6 +4,12 @@ import { Router } from '@angular/router';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import {
+  ModalController,
+  PopoverController,
+  ActionSheetController,
+  AlertController,
+} from '@ionic/angular';
 import { SettingsService } from './services/settings.service';
 import { AppUpdateService } from './services/app-update.service';
 
@@ -20,6 +26,10 @@ export class AppComponent {
   private appUpdate = inject(AppUpdateService);
   private location = inject(Location);
   private router = inject(Router);
+  private modalCtrl = inject(ModalController);
+  private popoverCtrl = inject(PopoverController);
+  private actionSheetCtrl = inject(ActionSheetController);
+  private alertCtrl = inject(AlertController);
 
   constructor() {
     // Mark the current OTA bundle as healthy and enable live updates.
@@ -80,7 +90,13 @@ export class AppComponent {
   private registerHardwareBackButton(): void {
     if (!Capacitor.isNativePlatform()) return;
 
-    App.addListener('backButton', ({ canGoBack }) => {
+    App.addListener('backButton', async ({ canGoBack }) => {
+      // FIRST: if any overlay (modal / popover / action sheet / alert) is open,
+      // close just that and stop — a back press/swipe should dismiss the popup
+      // before it ever navigates to the previous page. Only the NEXT back goes
+      // back a page. (We dismiss the top-most overlay across all controllers.)
+      if (await this.dismissTopOverlay()) return;
+
       const onHome = this.router.url === '/' || this.router.url.startsWith('/home');
 
       if (onHome) {
@@ -96,5 +112,29 @@ export class AppComponent {
         void this.router.navigate(['/home']);
       }
     });
+  }
+
+  /**
+   * Dismiss the single top-most open Ionic overlay, if any. Returns true when
+   * one was dismissed (so the caller stops and does NOT also navigate back).
+   * Picks the overlay that is actually on top across the four controllers.
+   */
+  private async dismissTopOverlay(): Promise<boolean> {
+    const tops = await Promise.all([
+      this.alertCtrl.getTop(),
+      this.actionSheetCtrl.getTop(),
+      this.popoverCtrl.getTop(),
+      this.modalCtrl.getTop(),
+    ]);
+    // Keep only the open overlays, then dismiss the one on top (highest
+    // z-index = latest presented).
+    const open = tops.filter(Boolean) as HTMLElement[];
+    if (open.length === 0) return false;
+    let top = open[0];
+    for (const o of open) {
+      if ((Number(o.style.zIndex) || 0) >= (Number(top.style.zIndex) || 0)) top = o;
+    }
+    await (top as unknown as { dismiss: () => Promise<boolean> }).dismiss();
+    return true;
   }
 }
