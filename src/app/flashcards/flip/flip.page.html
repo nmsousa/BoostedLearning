@@ -5,8 +5,9 @@
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
+    <!-- Skill name only (the redundant "Level N ·" prefix is dropped to save
+         header space). Falls back to the mode name when there's no skill. -->
     <ion-title>
-      <span *ngIf="levelNumber > 0">{{ 'mode.levelPrefix' | translate:{ n: levelNumber } }}</span>
       <ng-container *ngIf="levelTitle">{{ levelTitle }}</ng-container>
       <ng-container *ngIf="!levelTitle">{{ 'mode.titleFlip' | translate }}</ng-container>
     </ion-title>

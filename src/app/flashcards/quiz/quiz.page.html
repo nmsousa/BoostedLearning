@@ -5,8 +5,9 @@
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
+    <!-- Skill name only (the redundant "Level N ·" prefix is dropped). The
+         round counter stays — useful progress while playing. -->
     <ion-title>
-      <span *ngIf="levelNumber > 0">{{ 'mode.levelPrefix' | translate:{ n: levelNumber } }}</span>
       <ng-container *ngIf="levelTitle">{{ levelTitle }}</ng-container>
       <ng-container *ngIf="!levelTitle">{{ 'mode.titleQuiz' | translate }}</ng-container>
       <span *ngIf="round > 0" class="round-pill">{{ round }}/{{ totalRounds }}</span>
