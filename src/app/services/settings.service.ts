@@ -51,7 +51,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   textSize: 'medium',
   audioSpeed: 1.0,
   reducedMotion: false,
-  explanationLanguage: 'pt',
+  explanationLanguage: 'en',
   sessionLength: 15,
   dailyGoal: 20,
   notificationsEnabled: false,
@@ -202,12 +202,15 @@ export class SettingsService {
   }
 
   /**
-   * Set the learner's base/origin language. Updates both `appLanguage` (which
-   * also drives the app UI language via the i18n service) and
-   * `explanationLanguage`, keeping them in sync from a single call.
+   * Set the learner's base/origin language.
+   *
+   * NOTE: for now the app UI language (`appLanguage`) is PINNED to English, so
+   * this intentionally does NOT change it — it only records the base language
+   * used for course imports. Once a real base-language picker exists, restore
+   * updating `appLanguage`/`explanationLanguage` here so the UI follows it.
    */
-  setBaseLanguage(code: AppLanguage): void {
-    this.updateSettings({ appLanguage: code, explanationLanguage: code });
+  setBaseLanguage(_code: AppLanguage): void {
+    this.updateSettings({ appLanguage: 'en', explanationLanguage: 'en' });
   }
 
   /**
@@ -261,24 +264,25 @@ export class SettingsService {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        return { ...DEFAULT_SETTINGS, ...parsed };
+        // Base/UI language is pinned to English for now. Coerce any previously
+        // persisted non-English value (e.g. an old system-detected 'pt') so the
+        // UI is consistently English until the user can choose a base language.
+        return {
+          ...DEFAULT_SETTINGS,
+          ...parsed,
+          appLanguage: 'en' as AppLanguage,
+          explanationLanguage: 'en' as ExplanationLanguage,
+        };
       }
     } catch {
       // Ignore parse errors
     }
 
-    // No saved settings yet: default the app language to the system language
-    // if it's one we support, else English.
-    return { ...DEFAULT_SETTINGS, appLanguage: this.getSystemAppLanguage() };
-  }
-
-  /** System UI language if supported (en/pt/es/fr), else English. */
-  private getSystemAppLanguage(): AppLanguage {
-    if (typeof navigator === 'undefined' || !navigator.language) return 'en';
-    const code = navigator.language.slice(0, 2).toLowerCase();
-    return (['en', 'pt', 'es', 'fr'] as const).includes(code as AppLanguage)
-      ? (code as AppLanguage)
-      : 'en';
+    // No saved settings yet: the base/UI language is pinned to English for now
+    // (the user will later pick it alongside the language they want to learn).
+    // We intentionally do NOT auto-detect the device language — that made the
+    // UI show e.g. Portuguese on a PT device instead of the intended English.
+    return { ...DEFAULT_SETTINGS };
   }
 
   private saveSettings(settings: AppSettings): void {
