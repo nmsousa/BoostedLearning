@@ -22,7 +22,10 @@ import { AddWordService } from '../../services/add-word.service';
 
 /** A chapter = a contiguous run of levels shown as one trail. */
 interface Chapter {
-  title: string;
+  /** Chapter number (1-based), shown as a small badge. */
+  number: number;
+  /** Skill/range name, shown on its own line (may wrap, never truncated). */
+  name: string;
   levels: DeckLevel[];
   /** 0..1 completion (levels with >=1 star / total). */
   progress: number;
@@ -102,6 +105,7 @@ export class JourneyPage implements OnInit {
             void this.addWordService.reportProblem({
               languageCode: this.settings.learningLanguage(),
               modeName: 'Journey',
+              reportContext: 'generic',
             });
           },
         },
@@ -179,14 +183,15 @@ export class JourneyPage implements OnInit {
       const total = levelsInChapter.length;
       const done = levelsInChapter.filter(l => l.bestStars >= 1).length;
       const allLocked = levelsInChapter.every(l => !l.isUnlocked);
-      // A chapter title: use the first level's skill if present, else a range.
+      // Chapter name: the first level's skill if present, else a level range.
       const first = levelsInChapter[0];
       const last = levelsInChapter[total - 1];
-      const title = first?.skill
+      const name = first?.skill
         ? first.skill
         : this.t('journey.chapterRange', { from: first?.levelNumber ?? 0, to: last?.levelNumber ?? 0 });
       return {
-        title: `${this.t('journey.chapter')} ${idx + 1} · ${title}`,
+        number: idx + 1,
+        name,
         levels: levelsInChapter,
         progress: total ? done / total : 0,
         done,

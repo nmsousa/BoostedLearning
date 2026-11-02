@@ -54,7 +54,8 @@
     <div class="chapter" *ngFor="let chapter of chapters; let ci = index"
       [class.locked]="chapter.allLocked">
       <div class="chapter-head">
-        <span class="chapter-title">{{ chapter.title }}</span>
+        <span class="chapter-badge">{{ chapter.number }}</span>
+        <span class="chapter-name">{{ chapter.name }}</span>
         <span class="chapter-progress" *ngIf="!chapter.allLocked">{{ chapter.done }}/{{ chapter.total }}</span>
         <ion-icon *ngIf="chapter.allLocked" name="lock-closed" class="chapter-lock"></ion-icon>
       </div>

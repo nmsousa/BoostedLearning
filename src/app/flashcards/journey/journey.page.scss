@@ -114,20 +114,35 @@
   .chapter-head {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
-  .chapter-title {
-    font-size: 0.82rem;
+  // Chapter number in a circular badge (like the level-list rings), so the
+  // name has the full remaining width and never needs truncating.
+  .chapter-badge {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--ion-color-primary);
+    border: 2px solid var(--ion-color-primary);
+  }
+  .chapter-name {
+    font-size: 0.9rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
     color: var(--ion-text-color);
     flex: 1 1 auto;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
+    // Wrap instead of truncating — the full skill name is always readable.
+    white-space: normal;
+    line-height: 1.25;
   }
   .chapter-progress {
+    flex: 0 0 auto;
     font-size: 0.78rem;
     font-weight: 700;
     color: var(--ion-color-primary);
@@ -148,12 +163,27 @@
   gap: 30px;   // room so the star pill under a node clears the next one
   padding: 12px 0 20px;
   position: relative;
+
+  // A dashed path running down the middle, BEHIND the nodes, so the nodes read
+  // as connected stops on a trail (the nodes zig-zag left/right around it).
+  &::before {
+    content: "";
+    position: absolute;
+    top: 24px;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 3px dashed var(--ion-color-step-250, #33465c);
+    z-index: 0;
+  }
 }
 
 // Each row positions its node horizontally by data-offset (0=left..2=right)
-// to create a gentle zig-zag like a path.
+// to create a gentle zig-zag like a path. Above the dashed connector.
 .node-row {
   display: flex;
+  position: relative;
+  z-index: 1;
   &[data-offset="0"] { justify-content: flex-start; padding-left: 10%; }
   &[data-offset="1"] { justify-content: center; }
   &[data-offset="2"] { justify-content: flex-end; padding-right: 10%; }
