@@ -238,6 +238,7 @@ export class HomePage implements OnInit {
     void this.addWordService.reportProblem({
       languageCode: this.settings.learningLanguage(),
       modeName: 'Homepage',
+      reportContext: 'generic',
     });
   }
 

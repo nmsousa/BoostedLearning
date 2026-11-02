@@ -137,6 +137,7 @@ export class FlashcardsPage implements OnInit {
         void this.addWordService.reportProblem({
           languageCode: this.settings.learningLanguage(),
           modeName: this.modeLabel,
+          reportContext: 'generic',
         });
       },
     });

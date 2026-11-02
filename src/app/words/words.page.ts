@@ -236,6 +236,7 @@ export class WordsPage implements OnInit {
     void this.addWordService.reportProblem({
       languageCode: this.settings.learningLanguage(),
       modeName: 'Your words',
+      reportContext: 'generic',
     });
   }
 

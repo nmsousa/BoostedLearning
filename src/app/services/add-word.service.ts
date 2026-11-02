@@ -29,6 +29,13 @@ export interface ModeMenuOptions {
   /** The expected/correct answer for the current word (for a report). */
   correctAnswer?: string | null;
   /**
+   * Which set of report reasons to show. 'exercise' (default) lists word/
+   * translation/audio problems; 'generic' is for pages with no current word
+   * (home, settings, your words) and lists visual-bug / generic-feedback
+   * options instead.
+   */
+  reportContext?: 'exercise' | 'generic';
+  /**
    * Whether to offer "Add a new word" in this menu. Off by default: adding a
    * word mid-exercise is out of place, so that action lives on the levels list
    * page instead. Only the in-game menus use this service, hence the default.
@@ -143,17 +150,29 @@ export class AddWordService {
     const t = (k: string, p?: Record<string, string | number>) => this.i18n.t(k, p);
     const lang = langCode ?? opts.languageCode ?? this.settings.learningLanguage();
 
-    const reasons: { value: string; labelKey: string }[] = [
-      { value: 'translationWrong', labelKey: 'feedback.reason.translationWrong' },
-      { value: 'answerShouldCount', labelKey: 'feedback.reason.answerShouldCount' },
-      { value: 'audioWrong', labelKey: 'feedback.reason.audioWrong' },
-      { value: 'audioMissing', labelKey: 'feedback.reason.audioMissing' },
-      { value: 'optionsConfusing', labelKey: 'feedback.reason.optionsConfusing' },
-      { value: 'other', labelKey: 'feedback.reason.other' },
-    ];
+    // Reasons depend on context: word/translation/audio problems only make
+    // sense in an exercise. On generic pages (home, settings, your words) offer
+    // visual-bug / generic-feedback options instead.
+    const reasons: { value: string; labelKey: string }[] =
+      opts.reportContext === 'generic'
+        ? [
+            { value: 'visualBug', labelKey: 'feedback.reason.visualBug' },
+            { value: 'confusing', labelKey: 'feedback.reason.confusing' },
+            { value: 'suggestion', labelKey: 'feedback.reason.suggestion' },
+            { value: 'other', labelKey: 'feedback.reason.other' },
+          ]
+        : [
+            { value: 'translationWrong', labelKey: 'feedback.reason.translationWrong' },
+            { value: 'answerShouldCount', labelKey: 'feedback.reason.answerShouldCount' },
+            { value: 'audioWrong', labelKey: 'feedback.reason.audioWrong' },
+            { value: 'audioMissing', labelKey: 'feedback.reason.audioMissing' },
+            { value: 'optionsConfusing', labelKey: 'feedback.reason.optionsConfusing' },
+            { value: 'other', labelKey: 'feedback.reason.other' },
+          ];
 
     const alert = await this.alertCtrl.create({
       header: t('feedback.report'),
+      cssClass: 'report-alert',
       message: opts.currentWord
         ? t('feedback.aboutWord', { word: opts.currentWord })
         : t('feedback.intro'),
@@ -185,6 +204,7 @@ export class AddWordService {
 
     const alert = await this.alertCtrl.create({
       header: t('feedback.report'),
+      cssClass: 'report-alert',
       message: t('feedback.noteIntro'),
       inputs: [
         { name: 'note', type: 'textarea', placeholder: t('feedback.notePlaceholder') },
