@@ -63,6 +63,7 @@
           <p>{{ 'settings.reducedMotionDesc' | translate }}</p>
         </ion-label>
         <ion-toggle 
+          slot="end"
           mode="ios"
           [checked]="reducedMotion"
           (ionChange)="onReducedMotionChange($event)"
@@ -78,6 +79,7 @@
           <p>{{ 'settings.reducedDistractionDesc' | translate }}</p>
         </ion-label>
         <ion-toggle 
+          slot="end"
           mode="ios"
           [checked]="reducedDistraction"
           (ionChange)="onReducedDistractionChange($event)"
@@ -205,7 +207,7 @@
           {{ 'settings.adminMode' | translate }}
           <p>{{ 'settings.adminModeDesc' | translate }}</p>
         </ion-label>
-        <ion-toggle mode="ios" [checked]="adminMode" (ionChange)="onAdminModeChange($event)"></ion-toggle>
+        <ion-toggle slot="end" mode="ios" [checked]="adminMode" (ionChange)="onAdminModeChange($event)"></ion-toggle>
       </ion-item>
 
       <ion-item button detail="true" (click)="openAdminPage()" *ngIf="adminMode">

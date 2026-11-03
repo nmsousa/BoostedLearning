@@ -12,7 +12,7 @@
  * @module app/flashcards/journey
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { ActionSheetController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck, DeckLevel } from '../../services/flashcard.service';
@@ -122,6 +122,8 @@ export class JourneyPage implements OnInit {
   chapters: Chapter[] = [];
   /** The level the user should play next (first unlocked & not 3-star). */
   current: DeckLevel | null = null;
+  /** Index of the chapter containing `current` (for auto-scroll on enter). */
+  currentChapterIndex = 0;
   isLoading = true;
 
   t(key: string, params?: Record<string, string | number>): string {
@@ -157,8 +159,54 @@ export class JourneyPage implements OnInit {
       this.levels.find(l => l.isUnlocked) ??
       this.levels[0] ??
       null;
+    // Which chapter contains the current level (for auto-scroll on enter).
+    this.currentChapterIndex = this.current
+      ? this.chapters.findIndex(c => c.levels.some(l => l.levelNumber === this.current!.levelNumber))
+      : 0;
     this.isLoading = false;
     this.cdr.detectChanges();
+    // Measure the trail width (for scale-correct line offsets) + jump to the
+    // chapter being played, once the view has painted.
+    setTimeout(() => {
+      this.measureTrail();
+      this.cdr.detectChanges();
+      this.scrollToCurrentChapter();
+    }, 150);
+  }
+
+  /** Recompute line geometry when the window resizes (width changes the X%). */
+  @HostListener('window:resize')
+  onResize(): void {
+    this.measureTrail();
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Scroll the content so the chapter being played is in view on entry, with a
+   * custom EASE-OUT (fast at the start, slowing as it arrives). Ionic's
+   * scrollToPoint uses ease-in-out, so we animate scrollTop ourselves.
+   */
+  private async scrollToCurrentChapter(): Promise<void> {
+    if (this.currentChapterIndex <= 0) return; // chapter 1 is already at top
+    const el = document.getElementById(`journey-chapter-${this.currentChapterIndex}`);
+    const content = document.querySelector('ion-content.journey-content') as HTMLIonContentElement | null;
+    if (!el || !content) return;
+    const scrollEl = await content.getScrollElement();
+    const box = el.getBoundingClientRect();
+    const from = scrollEl.scrollTop;
+    const to = Math.max(0, Math.min(from + box.top - 90, scrollEl.scrollHeight - scrollEl.clientHeight));
+    if (Math.abs(to - from) < 4) return;
+
+    const duration = 650;
+    const start = performance.now();
+    // easeOutCubic: fast then gently decelerating.
+    const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      scrollEl.scrollTop = from + (to - from) * ease(t);
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
   }
 
   /** Group levels into chapters: one per skill when the deck has skills,
@@ -202,10 +250,87 @@ export class JourneyPage implements OnInit {
   }
 
   /** Horizontal offset for a node in the winding trail (alternating). */
-  nodeOffset(indexInChapter: number): number {
-    // 0, 1, 2, 3, 4 -> left, mid-right, right, mid-right, left (sine-ish)
-    const pattern = [0, 1, 2, 1, 0];
+  // Trail geometry — MUST match the SCSS (.node 64px, .trail gap 30px). The SVG
+  // viewBox is "0 0 100 H" with preserveAspectRatio=none: X is a 0..100 percent
+  // and Y is actual pixels so the dashed path lines up 1:1 with the laid-out
+  // node rows.
+  private static readonly NODE = 64;
+  private static readonly GAP = 30;
+
+  /**
+   * Node centre X (0..100): a balanced left→centre→right→centre→left zig-zag
+   * (the well-liked original layout), spread across the width. Same pattern in
+   * every chapter; the dashed line connects the nodes.
+   */
+  nodeX(indexInChapter: number): number {
+    // Gentler amplitude (28..72, not 20..80) so the centre node isn't a sharp
+    // triangular peak — especially on the wide desktop column.
+    const pattern = [28, 50, 72, 50, 28];
     return pattern[indexInChapter % pattern.length];
+  }
+  /** Node centre X% for the template's inline positioning. */
+  nodeLeftPercent(indexInChapter: number): number {
+    return this.nodeX(indexInChapter);
+  }
+
+  /** Node centre Y in px for row i (half a node down each row pitch). */
+  private nodeY(i: number): number {
+    return i * (JourneyPage.NODE + JourneyPage.GAP) + JourneyPage.NODE / 2;
+  }
+
+  /** Total trail SVG height in px for n nodes (no trailing gap). */
+  trailHeight(levels: DeckLevel[]): number {
+    const n = Math.max(1, levels.length);
+    return (n - 1) * (JourneyPage.NODE + JourneyPage.GAP) + JourneyPage.NODE;
+  }
+  trailViewBox(levels: DeckLevel[]): string {
+    return `0 0 100 ${this.trailHeight(levels)}`;
+  }
+
+  /** Measured px width of a trail column (all are equal). Updated on render /
+   *  resize so edge offsets convert correctly at any screen width. */
+  private trailWidthPx = 320;
+
+  /** Re-measure the trail column width (called after render and on resize). */
+  private measureTrail(): void {
+    const el = document.querySelector('.journey .trail') as HTMLElement | null;
+    if (el && el.clientWidth > 0) this.trailWidthPx = el.clientWidth;
+  }
+
+  /**
+   * SVG path: the line LEAVES a node from the side facing the next node and
+   * ARRIVES at the next node's TOP, with a gentle tilde curve — the hand-drawn
+   * "exit right → enter top, then exit left → enter top" pattern.
+   *
+   * The viewBox X is 0..100 (percent) and Y is px, stretched with
+   * preserveAspectRatio="none". A node's radius is 32px in BOTH axes on screen,
+   * so to offset by the node radius we convert: X% offset = 32 / trailWidthPx *
+   * 100 (re-measured on render/resize, so it stays correct at any width); Y is
+   * just 32px. This is what makes it scale-stable (the old fixed 9% broke on
+   * wide desktop).
+   */
+  trailPath(levels: DeckLevel[]): string {
+    const n = levels.length;
+    if (n < 2) return '';
+    const RY = JourneyPage.NODE / 2;                         // 32px
+    const RX = (RY / Math.max(1, this.trailWidthPx)) * 100;  // same radius, in X%
+    const segs: string[] = [];
+    for (let i = 1; i < n; i++) {
+      const ax = this.nodeX(i - 1), ay = this.nodeY(i - 1);
+      const bx = this.nodeX(i), by = this.nodeY(i);
+      const dir = bx > ax ? 1 : (bx < ax ? -1 : 0);
+      // Start: on node A's side facing B, slightly below its centre.
+      const sx = ax + dir * RX;
+      const sy = ay + RY * 0.45;
+      // End: the TOP of node B.
+      const ex = bx;
+      const ey = by - RY;
+      // Gentle tilde: control points at mid-height keep its own X, so the line
+      // eases out sideways and eases into the top — soft, not a semicircle.
+      const midY = (sy + ey) / 2;
+      segs.push(`M ${sx} ${sy} C ${sx} ${midY}, ${ex} ${midY}, ${ex} ${ey}`);
+    }
+    return segs.join(' ');
   }
 
   isCurrent(level: DeckLevel): boolean {

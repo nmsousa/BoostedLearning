@@ -104,11 +104,11 @@
   background: var(--ion-color-step-100, #13263c);
   border: 1px solid var(--ion-color-step-150, #1e3550);
 
-  // Locked chapters: dim, dashed, collapsed to just the header + hint.
+  // Locked chapters still show their (locked) nodes; just dim the card a touch
+  // and use a dashed border so they read as "not yet reached".
   &.locked {
-    background: transparent;
     border-style: dashed;
-    opacity: 0.7;
+    opacity: 0.85;
   }
 
   .chapter-head {
@@ -160,33 +160,34 @@
 .trail {
   display: flex;
   flex-direction: column;
-  gap: 30px;   // room so the star pill under a node clears the next one
+  gap: 30px;   // MUST equal JourneyPage.GAP (trail path geometry depends on it)
   padding: 12px 0 20px;
   position: relative;
-
-  // A dashed path running down the middle, BEHIND the nodes, so the nodes read
-  // as connected stops on a trail (the nodes zig-zag left/right around it).
-  &::before {
-    content: "";
-    position: absolute;
-    top: 24px;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 3px dashed var(--ion-color-step-250, #33465c);
-    z-index: 0;
-  }
 }
 
-// Each row positions its node horizontally by data-offset (0=left..2=right)
-// to create a gentle zig-zag like a path. Above the dashed connector.
+// The dashed curve that threads THROUGH every node (drawn behind them). It
+// starts at the trail's top padding (12px) so its y=0 matches the first row's
+// top; the component sizes its height in px to the exact row layout.
+.trail-path {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  width: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+// Each row places its node's CENTRE at the percentage the component computes
+// (an arc that alternates side per chapter, matching the SVG path's nodeX).
+// Height = node height so the px row pitch matches the path geometry.
 .node-row {
-  display: flex;
   position: relative;
   z-index: 1;
-  &[data-offset="0"] { justify-content: flex-start; padding-left: 10%; }
-  &[data-offset="1"] { justify-content: center; }
-  &[data-offset="2"] { justify-content: flex-end; padding-right: 10%; }
+  height: 64px;   // MUST equal JourneyPage.NODE
+
+  // `left` is set inline per node (style.left.%); centre it on that point.
+  .node { position: absolute; top: 0; transform: translateX(-50%); }
 }
 
 .node {
