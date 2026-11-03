@@ -12,7 +12,7 @@
  * @module app/flashcards/journey
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { ActionSheetController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck, DeckLevel, PracticeMode } from '../../services/flashcard.service';
@@ -20,8 +20,9 @@ import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
 
-/** The five node types of a chapter, in play order. */
-type NodeType = 'flip' | 'quiz' | 'match' | 'write' | 'builder';
+/** The five node types of a chapter, in play order:
+ *  Flashcards -> Quiz -> Write -> Match -> Builder. */
+type NodeType = 'flip' | 'quiz' | 'write' | 'match' | 'builder';
 
 /** One node (activity) within a chapter. */
 interface JourneyNode {
@@ -173,16 +174,29 @@ export class JourneyPage implements OnInit {
     );
     this.isLoading = false;
     this.cdr.detectChanges();
-    // Jump (smoothly) to the chapter being played once the view has painted.
-    setTimeout(() => this.scrollToCurrentChapter(), 150);
+    // Measure the trail width (for scale-correct dashed-path offsets) and jump
+    // (smoothly) to the chapter being played once the view has painted.
+    setTimeout(() => {
+      this.measureTrail();
+      this.cdr.detectChanges();
+      this.scrollToCurrentChapter();
+    }, 150);
   }
 
-  /** Node definitions in play order (type → mode / route / icon / colour). */
+  /** Re-measure trail width + redraw the dashed path when the window resizes. */
+  @HostListener('window:resize')
+  onResize(): void {
+    this.measureTrail();
+    this.cdr.detectChanges();
+  }
+
+  /** Node definitions in play order (type → mode / route / icon / colour):
+   *  Flashcards → Quiz → Write → Match → Builder. */
   private static readonly NODE_DEFS: { type: NodeType; mode: PracticeMode; route: string; icon: string; color: string }[] = [
     { type: 'flip',    mode: 'journey-flip',    route: '/practice/flip',            icon: 'albums-outline',      color: 'primary' },
     { type: 'quiz',    mode: 'journey-quiz',    route: '/practice/quiz',            icon: 'help-circle-outline', color: 'success' },
-    { type: 'match',   mode: 'journey-match',   route: '/practice/match',           icon: 'git-compare-outline', color: 'tertiary' },
     { type: 'write',   mode: 'journey-write',   route: '/practice/journey-play',    icon: 'create-outline',      color: 'secondary' },
+    { type: 'match',   mode: 'journey-match',   route: '/practice/match',           icon: 'git-compare-outline', color: 'tertiary' },
     { type: 'builder', mode: 'journey-builder', route: '/practice/journey-builder', icon: 'construct-outline',   color: 'warning' },
   ];
 
@@ -254,6 +268,80 @@ export class JourneyPage implements OnInit {
       if (t < 1) requestAnimationFrame(stepFn);
     };
     requestAnimationFrame(stepFn);
+  }
+
+  // ── Serpentine trail geometry ──────────────────────────────────────────────
+  // Each chapter draws its 5 nodes on a soft zig-zag arc (28/50/72/50/28) with
+  // a dashed tilde path threading through them. MUST match the SCSS (.node is
+  // NODE px, .trail gap is GAP px). The SVG viewBox is "0 0 100 H" with
+  // preserveAspectRatio=none: X is a 0..100 percent and Y is actual pixels, so
+  // the dashed path lines up 1:1 with the laid-out node rows.
+  private static readonly NODE = 56;
+  private static readonly GAP = 34;
+  private static readonly ARC = [28, 50, 72, 50, 28];
+
+  /** Node centre X (0..100) for its position in the 5-node chapter. */
+  nodeX(indexInChapter: number): number {
+    return JourneyPage.ARC[indexInChapter % JourneyPage.ARC.length];
+  }
+  /** Node centre X% for the template's inline positioning. */
+  nodeLeftPercent(indexInChapter: number): number {
+    return this.nodeX(indexInChapter);
+  }
+  /** Node centre Y in px for row i (half a node down each row pitch). */
+  private nodeY(i: number): number {
+    return i * (JourneyPage.NODE + JourneyPage.GAP) + JourneyPage.NODE / 2;
+  }
+  /** Total trail SVG height in px for the chapter's nodes (no trailing gap). */
+  trailHeight(nodes: JourneyNode[]): number {
+    const n = Math.max(1, nodes.length);
+    return (n - 1) * (JourneyPage.NODE + JourneyPage.GAP) + JourneyPage.NODE;
+  }
+  trailViewBox(nodes: JourneyNode[]): string {
+    return `0 0 100 ${this.trailHeight(nodes)}`;
+  }
+
+  /** Measured px width of a trail column (all equal); keeps the radius offset
+   *  scale-correct at any screen width. */
+  private trailWidthPx = 320;
+  private measureTrail(): void {
+    const el = document.querySelector('.journey .trail') as HTMLElement | null;
+    if (el && el.clientWidth > 0) this.trailWidthPx = el.clientWidth;
+  }
+
+  /**
+   * Dashed tilde path: the line LEAVES a node from the side facing the next
+   * node and ARRIVES at the next node's TOP, with a gentle curve. The viewBox
+   * X is 0..100 (percent) and Y is px (preserveAspectRatio="none"), so to
+   * offset by the node radius we convert X% = NODE/2 / trailWidthPx * 100 and
+   * keep Y in px. This makes it scale-stable at any width.
+   */
+  trailPath(nodes: JourneyNode[]): string {
+    const n = nodes.length;
+    if (n < 2) return '';
+    const RY = JourneyPage.NODE / 2;
+    const RX = (RY / Math.max(1, this.trailWidthPx)) * 100;
+    const segs: string[] = [];
+    for (let i = 1; i < n; i++) {
+      const ax = this.nodeX(i - 1), ay = this.nodeY(i - 1);
+      const bx = this.nodeX(i), by = this.nodeY(i);
+      const dir = bx > ax ? 1 : (bx < ax ? -1 : 0);
+      const sx = ax + dir * RX;
+      const sy = ay + RY * 0.45;
+      const ex = bx;
+      const ey = by - RY;
+      const midY = (sy + ey) / 2;
+      segs.push(`M ${sx} ${sy} C ${sx} ${midY}, ${ex} ${midY}, ${ex} ${ey}`);
+    }
+    return segs.join(' ');
+  }
+
+  /** The next node to play in a chapter (first unlocked, not-yet-passed) — gets
+   *  the pulsing "current" highlight. Only the active chapter has one. */
+  isCurrentNode(chapter: Chapter, node: JourneyNode): boolean {
+    if (!chapter.unlocked || chapter.complete) return false;
+    const next = chapter.nodes.find(n => n.unlocked && !n.passed);
+    return next === node;
   }
 
   /** Human label for a node's activity (for the a11y label / tooltip). */

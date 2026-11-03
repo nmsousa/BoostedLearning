@@ -164,9 +164,16 @@ changes them. The map is a vertical list of **chapters**, and:
 - **A chapter = ONE skill** (one level). Its title is the skill name and it
   carries a 1-based chapter number badge.
 - **Each chapter has 5 fixed nodes**, always in the same order and the same in
-  every chapter: **Flashcards → Quiz → Match → Write → Builder**. Each node is a
+  every chapter: **Flashcards → Quiz → Write → Match → Builder**. Each node is a
   **single pass** of that activity (no 5-round loop, no interstitial) — so a
   chapter is 5 distinct one-pass activities rather than five Write levels.
+- The nodes are drawn on the original **serpentine trail** (a soft zig-zag arc,
+  28/50/72/50/28, with a dashed tilde path threading through them); only the
+  node *content* changed — each node is now a different mode, shown with that
+  mode's homepage icon/colour instead of a level number.
+- Chapter N reuses skill N's words; as in every other mode the exercise's round
+  composition mixes in weaker/earlier words, so later chapters naturally revisit
+  earlier vocabulary.
 
 Each node uses its own progress namespace so Journey scoring stays fully
 independent of the standalone modes:
@@ -175,8 +182,8 @@ independent of the standalone modes:
 |------|----------|----------------|---------------|
 | Flashcards | `journey-flip`    | `/practice/flip`            | `albums-outline` / primary |
 | Quiz       | `journey-quiz`    | `/practice/quiz`            | `help-circle-outline` / success |
-| Match      | `journey-match`   | `/practice/match`           | `git-compare-outline` / tertiary |
 | Write      | `journey-write`   | `/practice/journey-play`    | `create-outline` / secondary |
+| Match      | `journey-match`   | `/practice/match`           | `git-compare-outline` / tertiary |
 | Builder    | `journey-builder` | `/practice/journey-builder` | `construct-outline` / warning |
 
 Each exercise reads `?mode=journey-*&level=N` from the route, runs one pass,

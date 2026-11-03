@@ -8,7 +8,12 @@
         <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>{{ 'builder.title' | translate }}</ion-title>
+    <ion-title>
+      <span class="mode-title">
+        <ion-icon name="construct-outline" color="tertiary" class="mode-title-icon" aria-hidden="true"></ion-icon>
+        <span class="mode-title-text">{{ 'builder.title' | translate }}</span>
+      </span>
+    </ion-title>
     <ion-buttons slot="end">
       <button type="button" class="lang-trigger" id="builder-lang-trigger"
         aria-label="Change learning language">

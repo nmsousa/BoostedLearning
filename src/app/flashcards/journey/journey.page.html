@@ -3,7 +3,12 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>{{ 'journey.title' | translate }}</ion-title>
+    <ion-title>
+      <span class="mode-title">
+        <ion-icon name="map-outline" color="warning" class="mode-title-icon" aria-hidden="true"></ion-icon>
+        <span class="mode-title-text">{{ 'journey.title' | translate }}</span>
+      </span>
+    </ion-title>
     <ion-buttons slot="end">
       <button type="button" class="lang-trigger" id="journey-lang-trigger"
         aria-label="Change learning language">
@@ -47,19 +52,33 @@
         <ion-icon *ngIf="!chapter.unlocked" name="lock-closed" class="chapter-lock"></ion-icon>
       </div>
 
-      <!-- The 5 activity nodes in a row, each with its mode icon + colour. -->
-      <div class="nodes">
-        <button type="button" class="node" *ngFor="let node of chapter.nodes"
-          [class.passed]="node.passed"
-          [class.locked]="!node.unlocked"
-          [disabled]="!node.unlocked"
-          [attr.aria-label]="nodeLabel(node.type)"
-          (click)="startNode(chapter, node)">
-          <ion-icon *ngIf="node.unlocked && !node.passed" [name]="node.icon" [color]="node.color"></ion-icon>
-          <ion-icon *ngIf="node.passed" name="checkmark" class="node-check"></ion-icon>
-          <ion-icon *ngIf="!node.unlocked" name="lock-closed" class="node-lock"></ion-icon>
-          <span class="node-label">{{ nodeLabel(node.type) }}</span>
-        </button>
+      <!-- Serpentine trail of the 5 activity nodes (same winding layout as the
+           original design), each node a different game mode in fixed order:
+           Flashcards → Quiz → Write → Match → Builder. -->
+      <div class="trail">
+        <!-- Dashed tilde path threading through the nodes, drawn behind them.
+             X is a 0-100 percent; Y is in px (1:1 with the laid-out rows). -->
+        <svg class="trail-path" [attr.viewBox]="trailViewBox(chapter.nodes)"
+          [style.height.px]="trailHeight(chapter.nodes)" preserveAspectRatio="none" aria-hidden="true">
+          <path [attr.d]="trailPath(chapter.nodes)" fill="none"
+            stroke="var(--ion-color-step-250, #33465c)" stroke-width="3"
+            stroke-linecap="round" stroke-dasharray="4 9" vector-effect="non-scaling-stroke"></path>
+        </svg>
+        <div class="node-row" *ngFor="let node of chapter.nodes; let ni = index">
+          <button type="button" class="node"
+            [style.left.%]="nodeLeftPercent(ni)"
+            [class.passed]="node.passed"
+            [class.current]="isCurrentNode(chapter, node)"
+            [class.locked]="!node.unlocked"
+            [disabled]="!node.unlocked"
+            [attr.aria-label]="nodeLabel(node.type)"
+            (click)="startNode(chapter, node)">
+            <ion-icon *ngIf="node.unlocked && !node.passed" [name]="node.icon" [color]="node.color"></ion-icon>
+            <ion-icon *ngIf="node.passed" name="checkmark" class="node-check"></ion-icon>
+            <ion-icon *ngIf="!node.unlocked" name="lock-closed" class="node-lock"></ion-icon>
+            <span class="node-label">{{ nodeLabel(node.type) }}</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

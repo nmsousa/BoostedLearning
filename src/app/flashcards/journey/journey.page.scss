@@ -1,3 +1,20 @@
+// Mode title with its icon (matches the homepage / other mode-list headers).
+.mode-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  .mode-title-icon {
+    font-size: 1.1em;
+    flex-shrink: 0;
+  }
+  // The label text sits optically a touch higher than the icon; nudge it down.
+  .mode-title-text {
+    position: relative;
+    top: 2px;
+  }
+}
+
 // Learning-language flag picker in the header (same look as the homepage).
 .lang-trigger {
   display: inline-flex;
@@ -93,64 +110,103 @@
   .chapter-lock { color: var(--ion-color-medium); font-size: 18px; }
 }
 
-// ── The 5 activity nodes (one row per chapter) ──────────────────────────────
-.nodes {
-  display: flex;
-  justify-content: space-between;
-  gap: 6px;
-  margin-top: 12px;
-}
-
-// Each node is a compact icon + label button. Unlocked nodes show their mode
-// icon in its homepage colour; passed nodes show a green check; locked nodes
-// show a padlock and are dimmed.
-.node {
-  flex: 1 1 0;
-  min-width: 0;
+// ── Serpentine trail of the 5 mode-nodes ────────────────────────────────────
+.trail {
   display: flex;
   flex-direction: column;
+  gap: 34px;   // MUST equal JourneyPage.GAP (trail path geometry depends on it)
+  padding: 14px 0 20px;
+  position: relative;
+}
+
+// The dashed curve that threads THROUGH every node (drawn behind them). It
+// starts at the trail's top padding so its y=0 matches the first row's top;
+// the component sizes its height in px to the exact row layout.
+.trail-path {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  width: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+// Each row places its node's CENTRE at the percentage the component computes
+// (the 28/50/72/50/28 arc). Height = node height so the px row pitch matches
+// the path geometry.
+.node-row {
+  position: relative;
+  z-index: 1;
+  height: 56px;   // MUST equal JourneyPage.NODE
+
+  // `left` is set inline per node (style.left.%); centre the node on that point.
+  .node { position: absolute; top: 0; transform: translateX(-50%); }
+}
+
+// A node is a circular icon button sitting on the trail, with its mode icon in
+// its homepage colour and the mode name on a pill just below. Passed nodes show
+// a green check; the next playable node pulses; locked nodes show a padlock.
+.node {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  background: var(--ion-color-step-150, #24405f);
+  display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 10px 4px 8px;
-  border-radius: 14px;
-  background: var(--ion-color-step-150, #1e3550);
-  border: 1px solid var(--ion-color-step-200, #2a3a52);
+  justify-content: center;
   cursor: pointer;
-  transition: transform 0.12s ease, background 0.12s ease;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+  transition: transform 0.12s ease;
 
-  &:active { transform: scale(0.95); }
+  &:active { transform: translateX(-50%) scale(0.94); }
 
-  ion-icon {
-    font-size: 26px;
-  }
+  ion-icon { font-size: 26px; }
+  .node-check { color: #fff; }
+  .node-lock { color: var(--ion-color-medium); font-size: 22px; }
 
-  .node-check { color: var(--ion-color-success, #2dd36f); }
-  .node-lock { color: var(--ion-color-medium); }
-
+  // Mode name on a pill BELOW the node, clear of the circle's border.
   .node-label {
-    font-size: 0.64rem;
-    font-weight: 700;
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--ion-background-color);
+    border: 1px solid var(--ion-color-step-200, #2a3a52);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
     color: var(--ion-color-medium);
-    text-align: center;
-    line-height: 1.1;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+    z-index: 2;
   }
 
-  // Passed node: green tint + solid green border so it stands out.
+  // Passed node: solid green fill + white check.
   &.passed {
-    background: rgba(45, 211, 111, 0.12);
-    border-color: var(--ion-color-success, #2dd36f);
-    .node-label { color: var(--ion-color-success, #2dd36f); }
+    background: linear-gradient(145deg, #34d399, #059669);
+    border-color: rgba(255, 255, 255, 0.9);
+    .node-label { color: var(--ion-color-success, #2dd36f); border-color: var(--ion-color-success, #2dd36f); }
+  }
+
+  // Current node (next to play): larger with a glowing ring so the eye lands
+  // on it immediately.
+  &.current {
+    width: 66px;
+    height: 66px;
+    box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.25), 0 6px 16px rgba(0, 0, 0, 0.35);
+    ion-icon { font-size: 30px; }
   }
 
   // Locked node: dimmed, non-interactive.
   &.locked {
-    opacity: 0.45;
+    background: var(--ion-color-step-100, #1b3047);
+    border-color: rgba(255, 255, 255, 0.25);
     cursor: not-allowed;
-    background: var(--ion-color-step-100, #13263c);
-    &:active { transform: none; }
+    &:active { transform: translateX(-50%); }
+    .node-label { opacity: 0.7; }
   }
 }
