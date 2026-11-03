@@ -48,7 +48,6 @@
       <div class="chapter-head">
         <span class="chapter-badge">{{ chapter.number }}</span>
         <span class="chapter-name">{{ chapter.name }}</span>
-        <span class="chapter-progress">{{ chapter.done }}/5</span>
         <ion-icon *ngIf="!chapter.unlocked" name="lock-closed" class="chapter-lock"></ion-icon>
       </div>
 
@@ -73,7 +72,13 @@
             [disabled]="!node.unlocked"
             [attr.aria-label]="nodeLabel(node.type)"
             (click)="startNode(chapter, node)">
-            <ion-icon *ngIf="node.unlocked && !node.passed" [name]="node.icon" [color]="node.color"></ion-icon>
+            <!-- Mode icon: its homepage colour only when it's a plain playable
+                 node; the current node turns it white (light-blue fill) and the
+                 passed node shows a white check on green. -->
+            <ion-icon *ngIf="node.unlocked && !node.passed && !isCurrentNode(chapter, node)"
+              [name]="node.icon" [color]="node.color"></ion-icon>
+            <ion-icon *ngIf="node.unlocked && !node.passed && isCurrentNode(chapter, node)"
+              [name]="node.icon" class="node-current-icon"></ion-icon>
             <ion-icon *ngIf="node.passed" name="checkmark" class="node-check"></ion-icon>
             <ion-icon *ngIf="!node.unlocked" name="lock-closed" class="node-lock"></ion-icon>
             <span class="node-label">{{ nodeLabel(node.type) }}</span>
