@@ -705,15 +705,20 @@ export class StudyPage implements OnInit, OnDestroy {
   }
 
   /**
-   * Normalize text for comparison - removes accents and converts to lowercase.
-   * This allows "belgie" to match "belgië" and "cafe" to match "café".
+   * Normalize text for comparison. Accent-insensitive, case-insensitive, and
+   * punctuation-insensitive so e.g. "cafe" == "café" and "ça va" == "ça va?".
+   * We strip sentence punctuation (? ! . , ; : « » " and the ¿¡ marks) and
+   * collapse whitespace, but KEEP in-word apostrophes/hyphens (s'il, au-revoir)
+   * since those change the word.
    */
   private normalizeForComparison(text: string): string {
     return text
       .toLowerCase()
-      .trim()
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');  // Remove diacritical marks
+      .replace(/[\u0300-\u036f]/g, '')          // drop diacritical marks
+      .replace(/[?!.,;:«»"¿¡]/g, '')             // drop sentence punctuation
+      .replace(/\s+/g, ' ')                       // collapse whitespace
+      .trim();
   }
 
   private levenshteinDistance(a: string, b: string): number {

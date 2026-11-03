@@ -77,16 +77,11 @@ ion-header ion-toolbar {
   --opacity: 1;
 }
 
-// Native (Capacitor) only: we force the status bar OUT of overlay mode
-// (StatusBar.setOverlaysWebView(false) in app.component), so the OS already
-// reserves the status-bar strip and the web view starts BELOW it. On some
-// devices (e.g. MIUI) Ionic ALSO reports a non-zero top safe-area inset, which
-// then padded the header a second time — a tall empty band above the toolbar.
-// Zero the TOP inset on native so there's no double gap. Bottom inset stays
-// (for the gesture/nav bar).
-.plt-hybrid {
-  --ion-safe-area-top: 0px;
-}
+// NOTE: we do NOT override --ion-safe-area-top. An earlier attempt zeroed it on
+// native to remove a tall empty band seen on some phones (MIUI), but that made
+// the header sit UNDER the status bar on other phones (mixed/overlapping). The
+// safe-area inset is device-correct as Ionic reports it, so leave it alone; the
+// status bar is kept non-overlay + colour-matched in app.component instead.
 
 /**
  * Accessibility / comfort settings

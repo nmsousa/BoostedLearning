@@ -275,12 +275,13 @@
         </div>
 
         <ion-item>
+          <ion-label>{{ 'settings.importLanguage' | translate }}</ion-label>
           <ion-select
+            slot="end"
             [value]="importLanguage"
             (ionChange)="onImportLanguageChange($event)"
-            [label]="'settings.importLanguage' | translate"
-            labelPlacement="floating"
             interface="action-sheet"
+            [attr.aria-label]="'settings.importLanguage' | translate"
             [placeholder]="'settings.chooseLanguage' | translate">
             <ion-select-option *ngFor="let opt of importLanguageOptions" [value]="opt.code">
               {{ opt.name }}
@@ -297,7 +298,7 @@
           </ion-input>
         </ion-item>
 
-        <ion-item>
+        <ion-item class="modal-last-item">
           <ion-textarea
             [(ngModel)]="importJson"
             [label]="'settings.pasteJson' | translate"
@@ -344,7 +345,7 @@
           </ion-input>
         </ion-item>
 
-        <ion-item>
+        <ion-item class="modal-last-item">
           <ion-input
             [(ngModel)]="manualTranslations"
             [label]="'settings.translationsField' | translate"
@@ -393,12 +394,13 @@
         <!-- Base/origin language: the one you already know and translate FROM.
              It also becomes the app's UI language. -->
         <ion-item>
+          <ion-label>{{ 'settings.baseLanguage' | translate }}</ion-label>
           <ion-select
+            slot="end"
             [value]="duomeBase"
             (ionChange)="onDuomeBaseChange($event)"
-            [label]="'settings.baseLanguage' | translate"
-            labelPlacement="floating"
             interface="popover"
+            [attr.aria-label]="'settings.baseLanguage' | translate"
             [placeholder]="'settings.chooseLanguage' | translate">
             <ion-select-option *ngFor="let opt of baseLanguageOptions" [value]="opt.value">
               {{ opt.label }}
@@ -410,13 +412,14 @@
           <!-- Popover (not action-sheet): the action-sheet took over the whole
                screen and a hardware-back cascaded (closed the sheet, then the
                modal, then Settings). A popover dismisses one layer at a time. -->
+          <ion-label>{{ 'settings.languageToLearn' | translate }}</ion-label>
           <ion-select
+            slot="end"
             [(ngModel)]="duomeTarget"
             (ionChange)="onDuomeCourseChange()"
-            [label]="'settings.languageToLearn' | translate"
-            labelPlacement="floating"
             interface="popover"
             [interfaceOptions]="{ cssClass: 'course-popover' }"
+            [attr.aria-label]="'settings.languageToLearn' | translate"
             [placeholder]="'settings.chooseLanguage' | translate">
             <ion-select-option *ngFor="let c of duomeCourses" [value]="c.code">
               {{ 'settings.courseWords' | translate:{ name: c.name, words: c.words } }}
@@ -424,7 +427,7 @@
           </ion-select>
         </ion-item>
 
-        <ion-item>
+        <ion-item class="duome-url-item">
           <ion-input
             [(ngModel)]="duomeUrl"
             [label]="'settings.urlField' | translate"

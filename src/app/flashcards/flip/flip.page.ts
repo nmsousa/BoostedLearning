@@ -120,7 +120,11 @@ export class FlipPage implements OnInit {
         this.router.navigate(['/practice']);
         return;
       }
-      this.cards = this.flashcardService.getLevelCards(deckId, this.levelNumber);
+      // Exclude words the user hid from practice (getLevelCards returns the
+      // fixed level set, which still includes hidden words).
+      this.cards = this.flashcardService.excludeHiddenCards(
+        this.flashcardService.getLevelCards(deckId, this.levelNumber)
+      );
     } else {
       this.cards = this.flashcardService.getFlashcardQueue(deckId, 20);
     }

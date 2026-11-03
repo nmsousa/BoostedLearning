@@ -69,6 +69,14 @@ ion-select {
 }
 
 // ---------------------------------------------------------------------------
+// Last input row in the vocab modals (Add a language / Import / Add a word):
+// pad the item's NATIVE part so the input's underline sits ABOVE the padding —
+// the line stays, with breathing room below it inside the grouped area.
+.duome-url-item::part(native),
+.modal-last-item::part(native) {
+  padding-bottom: 14px;
+}
+
 // Vocabulary modals (import / manual add)
 // ---------------------------------------------------------------------------
 .vocab-instructions {

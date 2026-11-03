@@ -66,13 +66,14 @@
              so showing it would just leave an empty padded gap above "Níveis".
              Shown when there are multiple decks or a custom deck (names matter)
              or custom cards exist (badge). -->
-        <ion-card-header *ngIf="decks.length > 1 || !deck.isBundled || (deckStats.get(deck.id)?.customCount || 0) > 0"
+        <ion-card-header *ngIf="!deck.isBundled || (deckStats.get(deck.id)?.customCount || 0) > 0"
           (click)="decks.length > 1 && toggleDeckExpand(deck.id)" class="deck-header"
           [class.not-collapsible]="decks.length === 1">
-          <!-- Deck name hidden for a lone bundled deck (the header flag already
-               says which language it is). Shown when there are multiple decks,
-               where custom deck names matter. -->
-          <ion-card-title *ngIf="decks.length > 1 || !deck.isBundled">{{ deck.name }}</ion-card-title>
+          <!-- Deck name shown ONLY for custom (user) decks. A bundled deck's
+               name is just the language (e.g. "French"), which the header flag
+               already conveys — so it's hidden to avoid the redundant label
+               under the toolbar. -->
+          <ion-card-title *ngIf="!deck.isBundled">{{ deck.name }}</ion-card-title>
           <!-- Level/word counts removed (irrelevant to the user). The subtitle
                now only carries the built-in/custom badges, when relevant. -->
           <ion-card-subtitle *ngIf="(deck.isBundled && hasCustomDecks()) || !deck.isBundled || (deckStats.get(deck.id)?.customCount || 0) > 0">

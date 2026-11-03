@@ -770,6 +770,12 @@ export class FlashcardService {
     return cards.filter(c => c.priority !== 'hide');
   }
 
+  /** Public form of excludeHidden, for pages that serve level cards directly
+   *  (e.g. Flashcards flip) so hidden words don't appear in a level session. */
+  excludeHiddenCards(cards: Flashcard[]): Flashcard[] {
+    return this.excludeHidden(cards);
+  }
+
   /** Extra score added to 'boost' words so they surface sooner. */
   private readonly BOOST_SCORE = 600;
 
@@ -1903,7 +1909,8 @@ export class FlashcardService {
     round: number,
     missedThisLevel: string[] = []
   ): Flashcard[] {
-    const levelCards = this.getLevelCards(deckId, levelNumber);
+    // Exclude words hidden from practice (getLevelCards returns the fixed set).
+    const levelCards = this.excludeHidden(this.getLevelCards(deckId, levelNumber));
     if (levelCards.length === 0) return [];
 
     const r = Math.max(1, Math.min(this.ROUNDS_PER_LEVEL, round));

@@ -106,6 +106,7 @@ export class BuilderPage implements OnInit {
    */
   async openMenu(): Promise<void> {
     const sheet = await this.actionSheet.create({
+      cssClass: 'mode-menu-sheet',   // shared tightened icon↔label gap
       buttons: [
         {
           text: this.i18n.t('feedback.report'),
