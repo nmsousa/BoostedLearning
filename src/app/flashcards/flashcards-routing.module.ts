@@ -48,6 +48,12 @@ const routes: Routes = [
     // EXPERIMENTAL: Builder mode (grammar groups -> phrases). Its own page.
     path: 'builder',
     loadChildren: () => import('./builder/builder.module').then(m => m.BuilderPageModule)
+  },
+  {
+    // Journey BUILDER node: the Builder page in journey-phrase mode, scored
+    // under 'journey-builder' (via ?mode=journey-builder&level=N).
+    path: 'journey-builder/:id',
+    loadChildren: () => import('./builder/builder.module').then(m => m.BuilderPageModule)
   }
 ];
 

@@ -35,61 +35,32 @@
   </div>
 
   <div *ngIf="!isLoading && deck" class="journey">
-    <!-- Hero: continue the current level -->
-    <div class="hero" *ngIf="current" (click)="continueCurrent()">
-      <span class="hero-kicker">{{ 'journey.continue' | translate }}</span>
-      <span class="hero-level">
-        {{ 'practice.level' | translate:{ n: current.levelNumber } }}<span *ngIf="current.skill"> · {{ current.skill }}</span>
-      </span>
-      <div class="hero-foot">
-        <span class="hero-play">▶ {{ 'journey.play' | translate }}</span>
-        <span class="hero-stars">
-          <ion-icon *ngFor="let s of starArray(current.bestStars)" name="star" class="star filled"></ion-icon>
-          <ion-icon *ngFor="let s of emptyStarArray(current.bestStars)" name="star-outline" class="star empty"></ion-icon>
-        </span>
-      </div>
-    </div>
-
-    <!-- Chapters — ALL shown (including locked ones), each with its nodes on a
-         smooth arc. The dashed arc direction alternates per chapter so they
-         read as one continuous serpentine. -->
+    <!-- One chapter per skill. Each has 5 fixed nodes (flip → quiz → match →
+         write → builder). Locked chapters are shown dimmed with locked nodes. -->
     <div class="chapter" *ngFor="let chapter of chapters; let ci = index"
-      [id]="'journey-chapter-' + ci" [class.locked]="chapter.allLocked">
+      [id]="'journey-chapter-' + ci" [class.locked]="!chapter.unlocked"
+      [class.complete]="chapter.complete">
       <div class="chapter-head">
         <span class="chapter-badge">{{ chapter.number }}</span>
         <span class="chapter-name">{{ chapter.name }}</span>
-        <span class="chapter-progress">{{ chapter.done }}/{{ chapter.total }}</span>
-        <ion-icon *ngIf="chapter.allLocked" name="lock-closed" class="chapter-lock"></ion-icon>
+        <span class="chapter-progress">{{ chapter.done }}/5</span>
+        <ion-icon *ngIf="!chapter.unlocked" name="lock-closed" class="chapter-lock"></ion-icon>
       </div>
 
-      <!-- Serpentine trail of nodes (always shown, even when locked). -->
-      <div class="trail">
-        <!-- Near-straight dashed path following the arc of nodes, behind them.
-             X is a 0-100 percent; Y is in px (1:1 with the laid-out rows). -->
-        <svg class="trail-path" [attr.viewBox]="trailViewBox(chapter.levels)"
-          [style.height.px]="trailHeight(chapter.levels)" preserveAspectRatio="none" aria-hidden="true">
-          <path [attr.d]="trailPath(chapter.levels)" fill="none"
-            stroke="var(--ion-color-step-250, #33465c)" stroke-width="3"
-            stroke-linecap="round" stroke-dasharray="4 9" vector-effect="non-scaling-stroke"></path>
-        </svg>
-        <div class="node-row" *ngFor="let level of chapter.levels; let li = index">
-          <button type="button" class="node"
-            [style.left.%]="nodeLeftPercent(li)"
-            [class.done]="level.bestStars >= 1 && !isCurrent(level)"
-            [class.current]="isCurrent(level)"
-            [class.locked]="!level.isUnlocked"
-            [disabled]="!level.isUnlocked"
-            (click)="startLevel(level)">
-            <span class="node-num" *ngIf="level.isUnlocked">{{ level.levelNumber }}</span>
-            <ion-icon *ngIf="!level.isUnlocked" name="lock-closed"></ion-icon>
-            <span class="node-stars" *ngIf="level.isUnlocked && level.bestStars > 0">
-              <ion-icon *ngFor="let s of starArray(level.bestStars)" name="star"></ion-icon>
-            </span>
-          </button>
-        </div>
+      <!-- The 5 activity nodes in a row, each with its mode icon + colour. -->
+      <div class="nodes">
+        <button type="button" class="node" *ngFor="let node of chapter.nodes"
+          [class.passed]="node.passed"
+          [class.locked]="!node.unlocked"
+          [disabled]="!node.unlocked"
+          [attr.aria-label]="nodeLabel(node.type)"
+          (click)="startNode(chapter, node)">
+          <ion-icon *ngIf="node.unlocked && !node.passed" [name]="node.icon" [color]="node.color"></ion-icon>
+          <ion-icon *ngIf="node.passed" name="checkmark" class="node-check"></ion-icon>
+          <ion-icon *ngIf="!node.unlocked" name="lock-closed" class="node-lock"></ion-icon>
+          <span class="node-label">{{ nodeLabel(node.type) }}</span>
+        </button>
       </div>
-
-      <!-- (locked chapters now show their nodes; no collapsed hint) -->
     </div>
   </div>
 </ion-content>

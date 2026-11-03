@@ -16,13 +16,15 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ActionSheetController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
 import { AddWordService } from '../../services/add-word.service';
+import { FlashcardService } from '../../services/flashcard.service';
+import { buildTokens, generatePhrases, type GeneratedPhrase } from '../../../core/phrase-builder/phrase-builder';
 
 interface BuilderWord { text: string; translations: string[]; article?: string; lemma?: string; }
 interface BuilderGroup { id: string; category: string; name: string; order: number; words: BuilderWord[]; }
@@ -44,12 +46,23 @@ type Stage =
 export class BuilderPage implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private i18n = inject(I18nAngularService);
   private audio = inject(AudioService);
   private settings = inject(SettingsService);
   private addWordService = inject(AddWordService);
+  private flashcards = inject(FlashcardService);
   private actionSheet = inject(ActionSheetController);
   private cdr = inject(ChangeDetectorRef);
+
+  // ── Journey Builder node: generated phrases from a skill's words ───────────
+  /** True when opened as a Journey node (?mode=journey-builder&level=N). */
+  journeyMode = false;
+  private journeyDeckId = '';
+  private journeyLevel = 0;
+  /** The generated phrases to play through, and our position in them. */
+  private journeyPhrases: GeneratedPhrase[] = [];
+  private journeyIndex = 0;
 
   /**
    * Builder datasets per learning language. Each is a hand-categorised set in
@@ -148,14 +161,80 @@ export class BuilderPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    // If the selected app language has a Builder dataset use it; otherwise fall
-    // back to the first language the Builder does support, so the mode is never
-    // just "unavailable" when opened from a language without content.
+    // Journey Builder node: generate phrases from a skill's words (+ earlier)
+    // and play straight through them — no dataset/map.
+    if (this.route.snapshot.queryParamMap.get('mode') === 'journey-builder') {
+      await this.startJourneyBuilder();
+      return;
+    }
+    // Standalone Builder: use the selected language's dataset, else the first
+    // language the Builder supports (so it's never just "unavailable").
     const appLang = this.settings.learningLanguage();
     this.langCode = BuilderPage.DATASETS[appLang] ? appLang : Object.keys(BuilderPage.DATASETS)[0];
     await this.loadDataset();
     this.isLoading = false;
     this.cdr.detectChanges();
+  }
+
+  /**
+   * Set up the Journey Builder node: gather the chapter skill's cards (+ all
+   * earlier skills for review), generate simple phrases via the phrase-builder,
+   * and start the first one. If none can be generated (no nouns to anchor), the
+   * node auto-passes so the chapter isn't blocked.
+   */
+  private async startJourneyBuilder(): Promise<void> {
+    await this.flashcards.initialize();
+    this.journeyMode = true;
+    this.langCode = this.settings.learningLanguage();
+    const deckId = this.route.snapshot.paramMap.get('id') ?? '';
+    const level = Number(this.route.snapshot.queryParamMap.get('level') ?? 0);
+    this.journeyDeckId = deckId;
+    this.journeyLevel = level;
+
+    const toSrc = (c: { text: string; translations: string[] }) => ({ text: c.text, translations: c.translations });
+    const current = this.flashcards.getLevelCards(deckId, level).map(toSrc);
+    const earlier: { text: string; translations: string[] }[] = [];
+    for (let n = 1; n < level; n++) {
+      for (const c of this.flashcards.getLevelCards(deckId, n)) earlier.push(toSrc(c));
+    }
+    const tokens = buildTokens(current, earlier);
+    this.journeyPhrases = generatePhrases(tokens, 5);
+
+    if (this.journeyPhrases.length === 0) {
+      // Nothing to build — auto-pass so the chapter can continue.
+      await this.flashcards.saveRoundProgress(deckId, 'journey-builder', level, 100);
+      this.router.navigate(['/practice/journey'], { replaceUrl: true });
+      return;
+    }
+
+    this.journeyIndex = 0;
+    this.isLoading = false;
+    this.openJourneyPhrase();
+  }
+
+  /** Load the current generated phrase into the phrase stage. */
+  private openJourneyPhrase(): void {
+    const p = this.journeyPhrases[this.journeyIndex];
+    const phrase: BuilderPhrase = {
+      id: `journey-${this.journeyIndex}`, unlockAfter: [],
+      target: p.target, en: p.en, tokens: p.tokens,
+    };
+    this.clearWrong();
+    this.bank = this.shuffle([...phrase.tokens]);
+    this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
+    this.cdr.detectChanges();
+  }
+
+  /** Advance to the next generated phrase, or finish the node. */
+  async journeyNext(): Promise<void> {
+    this.journeyIndex++;
+    if (this.journeyIndex < this.journeyPhrases.length) {
+      this.openJourneyPhrase();
+      return;
+    }
+    // All phrases done → pass the node and return to the map.
+    await this.flashcards.saveRoundProgress(this.journeyDeckId, 'journey-builder', this.journeyLevel, 100);
+    this.router.navigate(['/practice/journey'], { replaceUrl: true });
   }
 
   /** (Re)load the Builder dataset + progress for the current `langCode`. */
@@ -300,7 +379,13 @@ export class BuilderPage implements OnInit {
   }
 
   close(): void {
-    this.router.navigate(['/home']);
+    // As a Journey node, the X returns to the map; standalone goes home.
+    this.router.navigate([this.journeyMode ? '/practice/journey' : '/home']);
+  }
+
+  /** "n / total" progress label for the Journey Builder node. */
+  get journeyPosition(): string {
+    return `${this.journeyIndex + 1} / ${this.journeyPhrases.length}`;
   }
 
   private shuffle<T>(a: T[]): T[] {

@@ -12,27 +12,45 @@
  * @module app/flashcards/journey
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, HostListener } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { ActionSheetController } from '@ionic/angular';
-import { FlashcardService, FlashcardDeck, DeckLevel } from '../../services/flashcard.service';
+import { FlashcardService, FlashcardDeck, DeckLevel, PracticeMode } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
 
-/** A chapter = a contiguous run of levels shown as one trail. */
+/** The five node types of a chapter, in play order. */
+type NodeType = 'flip' | 'quiz' | 'match' | 'write' | 'builder';
+
+/** One node (activity) within a chapter. */
+interface JourneyNode {
+  type: NodeType;
+  /** The per-node progress mode ('journey-flip', …). */
+  mode: PracticeMode;
+  /** The exercise route to navigate to. */
+  route: string;
+  icon: string;
+  color: string;
+  passed: boolean;
+  unlocked: boolean;
+}
+
+/** A chapter = ONE skill, played as five fixed single-pass nodes. */
 interface Chapter {
   /** Chapter number (1-based), shown as a small badge. */
   number: number;
-  /** Skill/range name, shown on its own line (may wrap, never truncated). */
+  /** Skill name (shown as the chapter title). */
   name: string;
-  levels: DeckLevel[];
-  /** 0..1 completion (levels with >=1 star / total). */
-  progress: number;
+  /** The skill's level number (the shared level index used by every node mode). */
+  levelNumber: number;
+  nodes: JourneyNode[];
+  /** How many of the 5 nodes are passed. */
   done: number;
-  total: number;
-  /** True when every level in it is still locked. */
-  allLocked: boolean;
+  /** True when the chapter is reachable (chapter 1, or prev chapter complete). */
+  unlocked: boolean;
+  /** True when all 5 nodes are passed. */
+  complete: boolean;
 }
 
 @Component({
@@ -50,8 +68,6 @@ export class JourneyPage implements OnInit {
   private addWordService = inject(AddWordService);
   private actionSheet = inject(ActionSheetController);
   private cdr = inject(ChangeDetectorRef);
-
-  private static readonly MODE = 'journey' as const;
 
   // ── Header language flag (mirrors the homepage / mode-list selector) ───────
   availableLanguages: { code: string; name: string; flagUrl: string }[] = [];
@@ -115,15 +131,9 @@ export class JourneyPage implements OnInit {
     });
     await sheet.present();
   }
-  /** Levels per chapter for chunked decks (skill decks chapter per skill). */
-  private static readonly LEVELS_PER_CHAPTER = 5;
-
   deck: FlashcardDeck | null = null;
-  levels: DeckLevel[] = [];
   chapters: Chapter[] = [];
-  /** The level the user should play next (first unlocked & not 3-star). */
-  current: DeckLevel | null = null;
-  /** Index of the chapter containing `current` (for auto-scroll on enter). */
+  /** Index of the chapter currently in progress (for auto-scroll on enter). */
   currentChapterIndex = 0;
   isLoading = true;
 
@@ -153,42 +163,80 @@ export class JourneyPage implements OnInit {
       return;
     }
 
-    this.levels = await this.flashcards.getDeckLevels(this.deck.id, JourneyPage.MODE);
-    this.chapters = this.buildChapters(this.levels);
-    this.current =
-      this.levels.find(l => l.isUnlocked && l.bestStars < 3) ??
-      this.levels.find(l => l.isUnlocked) ??
-      this.levels[0] ??
-      null;
-    // Which chapter contains the current level (for auto-scroll on enter).
-    this.currentChapterIndex = this.current
-      ? this.chapters.findIndex(c => c.levels.some(l => l.levelNumber === this.current!.levelNumber))
-      : 0;
+    // One chapter per skill level. Node modes share this skill level index.
+    const levels = await this.flashcards.getDeckLevels(this.deck.id, 'journey-flip');
+    this.chapters = await this.buildChapters(this.deck.id, levels);
+    // Current chapter = first not-yet-complete unlocked chapter.
+    this.currentChapterIndex = Math.max(
+      0,
+      this.chapters.findIndex(c => c.unlocked && !c.complete),
+    );
     this.isLoading = false;
     this.cdr.detectChanges();
-    // Measure the trail width (for scale-correct line offsets) + jump to the
-    // chapter being played, once the view has painted.
-    setTimeout(() => {
-      this.measureTrail();
-      this.cdr.detectChanges();
-      this.scrollToCurrentChapter();
-    }, 150);
+    // Jump (smoothly) to the chapter being played once the view has painted.
+    setTimeout(() => this.scrollToCurrentChapter(), 150);
   }
 
-  /** Recompute line geometry when the window resizes (width changes the X%). */
-  @HostListener('window:resize')
-  onResize(): void {
-    this.measureTrail();
-    this.cdr.detectChanges();
-  }
+  /** Node definitions in play order (type → mode / route / icon / colour). */
+  private static readonly NODE_DEFS: { type: NodeType; mode: PracticeMode; route: string; icon: string; color: string }[] = [
+    { type: 'flip',    mode: 'journey-flip',    route: '/practice/flip',            icon: 'albums-outline',      color: 'primary' },
+    { type: 'quiz',    mode: 'journey-quiz',    route: '/practice/quiz',            icon: 'help-circle-outline', color: 'success' },
+    { type: 'match',   mode: 'journey-match',   route: '/practice/match',           icon: 'git-compare-outline', color: 'tertiary' },
+    { type: 'write',   mode: 'journey-write',   route: '/practice/journey-play',    icon: 'create-outline',      color: 'secondary' },
+    { type: 'builder', mode: 'journey-builder', route: '/practice/journey-builder', icon: 'construct-outline',   color: 'warning' },
+  ];
 
   /**
-   * Scroll the content so the chapter being played is in view on entry, with a
-   * custom EASE-OUT (fast at the start, slowing as it arrives). Ionic's
-   * scrollToPoint uses ease-in-out, so we animate scrollTop ourselves.
+   * Build one chapter per skill. Each chapter has the 5 fixed nodes; a node is
+   * `passed` when its LevelProgress bestScore ≥ 70. Nodes unlock left→right
+   * (node 1, else previous node passed). A chapter unlocks when the previous
+   * chapter's 5 nodes are all passed (chapter 1 always unlocked).
    */
+  private async buildChapters(deckId: string, levels: DeckLevel[]): Promise<Chapter[]> {
+    const chapters: Chapter[] = [];
+    let prevComplete = true; // chapter 1 is always reachable
+    for (let i = 0; i < levels.length; i++) {
+      const level = levels[i];
+      const chapterUnlocked = prevComplete;
+
+      // Determine each node's passed state from its per-node progress.
+      const passed: boolean[] = [];
+      for (const def of JourneyPage.NODE_DEFS) {
+        const p = await this.flashcards.getLevelProgress(deckId, def.mode, level.levelNumber);
+        passed.push((p?.bestScore ?? 0) >= 70);
+      }
+
+      const nodes: JourneyNode[] = JourneyPage.NODE_DEFS.map((def, n) => ({
+        type: def.type,
+        mode: def.mode,
+        route: def.route,
+        icon: def.icon,
+        color: def.color,
+        passed: passed[n],
+        // Unlocked if the chapter is reachable AND (first node or previous passed).
+        unlocked: chapterUnlocked && (n === 0 || passed[n - 1]),
+      }));
+
+      const doneCount = passed.filter(Boolean).length;
+      const complete = doneCount === JourneyPage.NODE_DEFS.length;
+      chapters.push({
+        number: i + 1,
+        name: level.skill ?? this.t('practice.level', { n: level.levelNumber }),
+        levelNumber: level.levelNumber,
+        nodes,
+        done: doneCount,
+        unlocked: chapterUnlocked,
+        complete,
+      });
+      prevComplete = complete;
+    }
+    return chapters;
+  }
+
+  /** Scroll the content so the chapter being played is in view on entry, with
+   *  a custom EASE-OUT (fast at the start, slowing as it arrives). */
   private async scrollToCurrentChapter(): Promise<void> {
-    if (this.currentChapterIndex <= 0) return; // chapter 1 is already at top
+    if (this.currentChapterIndex <= 0) return;
     const el = document.getElementById(`journey-chapter-${this.currentChapterIndex}`);
     const content = document.querySelector('ion-content.journey-content') as HTMLIonContentElement | null;
     if (!el || !content) return;
@@ -197,160 +245,28 @@ export class JourneyPage implements OnInit {
     const from = scrollEl.scrollTop;
     const to = Math.max(0, Math.min(from + box.top - 90, scrollEl.scrollHeight - scrollEl.clientHeight));
     if (Math.abs(to - from) < 4) return;
-
     const duration = 650;
     const start = performance.now();
-    // easeOutCubic: fast then gently decelerating.
     const ease = (t: number) => 1 - Math.pow(1 - t, 3);
-    const step = (now: number) => {
+    const stepFn = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
       scrollEl.scrollTop = from + (to - from) * ease(t);
-      if (t < 1) requestAnimationFrame(step);
+      if (t < 1) requestAnimationFrame(stepFn);
     };
-    requestAnimationFrame(step);
+    requestAnimationFrame(stepFn);
   }
 
-  /** Group levels into chapters: one per skill when the deck has skills,
-   *  otherwise fixed runs of LEVELS_PER_CHAPTER. */
-  private buildChapters(levels: DeckLevel[]): Chapter[] {
-    const hasSkills = levels.some(l => !!l.skill);
-    const groups: DeckLevel[][] = [];
+  /** Human label for a node's activity (for the a11y label / tooltip). */
+  nodeLabel(type: NodeType): string {
+    return this.t(`journey.node.${type}`);
+  }
 
-    if (hasSkills) {
-      // Each skill is already one level; chunk skills into chapters so the
-      // page isn't one node per chapter.
-      for (let i = 0; i < levels.length; i += JourneyPage.LEVELS_PER_CHAPTER) {
-        groups.push(levels.slice(i, i + JourneyPage.LEVELS_PER_CHAPTER));
-      }
-    } else {
-      for (let i = 0; i < levels.length; i += JourneyPage.LEVELS_PER_CHAPTER) {
-        groups.push(levels.slice(i, i + JourneyPage.LEVELS_PER_CHAPTER));
-      }
-    }
-
-    return groups.map((levelsInChapter, idx) => {
-      const total = levelsInChapter.length;
-      const done = levelsInChapter.filter(l => l.bestStars >= 1).length;
-      const allLocked = levelsInChapter.every(l => !l.isUnlocked);
-      // Chapter name: the first level's skill if present, else a level range.
-      const first = levelsInChapter[0];
-      const last = levelsInChapter[total - 1];
-      const name = first?.skill
-        ? first.skill
-        : this.t('journey.chapterRange', { from: first?.levelNumber ?? 0, to: last?.levelNumber ?? 0 });
-      return {
-        number: idx + 1,
-        name,
-        levels: levelsInChapter,
-        progress: total ? done / total : 0,
-        done,
-        total,
-        allLocked,
-      };
+  /** Start a node: navigate to its exercise with the per-node mode + level. */
+  startNode(chapter: Chapter, node: JourneyNode): void {
+    if (!node.unlocked || !this.deck) return;
+    this.router.navigate([node.route, this.deck.id], {
+      queryParams: { level: chapter.levelNumber, mode: node.mode },
     });
-  }
-
-  /** Horizontal offset for a node in the winding trail (alternating). */
-  // Trail geometry — MUST match the SCSS (.node 64px, .trail gap 30px). The SVG
-  // viewBox is "0 0 100 H" with preserveAspectRatio=none: X is a 0..100 percent
-  // and Y is actual pixels so the dashed path lines up 1:1 with the laid-out
-  // node rows.
-  private static readonly NODE = 64;
-  private static readonly GAP = 30;
-
-  /**
-   * Node centre X (0..100): a balanced left→centre→right→centre→left zig-zag
-   * (the well-liked original layout), spread across the width. Same pattern in
-   * every chapter; the dashed line connects the nodes.
-   */
-  nodeX(indexInChapter: number): number {
-    // Gentler amplitude (28..72, not 20..80) so the centre node isn't a sharp
-    // triangular peak — especially on the wide desktop column.
-    const pattern = [28, 50, 72, 50, 28];
-    return pattern[indexInChapter % pattern.length];
-  }
-  /** Node centre X% for the template's inline positioning. */
-  nodeLeftPercent(indexInChapter: number): number {
-    return this.nodeX(indexInChapter);
-  }
-
-  /** Node centre Y in px for row i (half a node down each row pitch). */
-  private nodeY(i: number): number {
-    return i * (JourneyPage.NODE + JourneyPage.GAP) + JourneyPage.NODE / 2;
-  }
-
-  /** Total trail SVG height in px for n nodes (no trailing gap). */
-  trailHeight(levels: DeckLevel[]): number {
-    const n = Math.max(1, levels.length);
-    return (n - 1) * (JourneyPage.NODE + JourneyPage.GAP) + JourneyPage.NODE;
-  }
-  trailViewBox(levels: DeckLevel[]): string {
-    return `0 0 100 ${this.trailHeight(levels)}`;
-  }
-
-  /** Measured px width of a trail column (all are equal). Updated on render /
-   *  resize so edge offsets convert correctly at any screen width. */
-  private trailWidthPx = 320;
-
-  /** Re-measure the trail column width (called after render and on resize). */
-  private measureTrail(): void {
-    const el = document.querySelector('.journey .trail') as HTMLElement | null;
-    if (el && el.clientWidth > 0) this.trailWidthPx = el.clientWidth;
-  }
-
-  /**
-   * SVG path: the line LEAVES a node from the side facing the next node and
-   * ARRIVES at the next node's TOP, with a gentle tilde curve — the hand-drawn
-   * "exit right → enter top, then exit left → enter top" pattern.
-   *
-   * The viewBox X is 0..100 (percent) and Y is px, stretched with
-   * preserveAspectRatio="none". A node's radius is 32px in BOTH axes on screen,
-   * so to offset by the node radius we convert: X% offset = 32 / trailWidthPx *
-   * 100 (re-measured on render/resize, so it stays correct at any width); Y is
-   * just 32px. This is what makes it scale-stable (the old fixed 9% broke on
-   * wide desktop).
-   */
-  trailPath(levels: DeckLevel[]): string {
-    const n = levels.length;
-    if (n < 2) return '';
-    const RY = JourneyPage.NODE / 2;                         // 32px
-    const RX = (RY / Math.max(1, this.trailWidthPx)) * 100;  // same radius, in X%
-    const segs: string[] = [];
-    for (let i = 1; i < n; i++) {
-      const ax = this.nodeX(i - 1), ay = this.nodeY(i - 1);
-      const bx = this.nodeX(i), by = this.nodeY(i);
-      const dir = bx > ax ? 1 : (bx < ax ? -1 : 0);
-      // Start: on node A's side facing B, slightly below its centre.
-      const sx = ax + dir * RX;
-      const sy = ay + RY * 0.45;
-      // End: the TOP of node B.
-      const ex = bx;
-      const ey = by - RY;
-      // Gentle tilde: control points at mid-height keep its own X, so the line
-      // eases out sideways and eases into the top — soft, not a semicircle.
-      const midY = (sy + ey) / 2;
-      segs.push(`M ${sx} ${sy} C ${sx} ${midY}, ${ex} ${midY}, ${ex} ${ey}`);
-    }
-    return segs.join(' ');
-  }
-
-  isCurrent(level: DeckLevel): boolean {
-    return this.current?.levelNumber === level.levelNumber;
-  }
-
-  starArray(n: number): number[] { return Array(Math.max(0, n)).fill(0); }
-  emptyStarArray(n: number): number[] { return Array(Math.max(0, 3 - n)).fill(0); }
-
-  startLevel(level: DeckLevel): void {
-    if (!level.isUnlocked || !this.deck) return;
-    // Journey uses the Write exercise under its own mode namespace.
-    this.router.navigate(['/practice/journey-play', this.deck.id], {
-      queryParams: { level: level.levelNumber, mode: 'journey' },
-    });
-  }
-
-  continueCurrent(): void {
-    if (this.current) this.startLevel(this.current);
   }
 
   close(): void {

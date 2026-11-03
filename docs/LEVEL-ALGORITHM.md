@@ -156,6 +156,57 @@ So a pass of 9 "know" / 7 "so-so" / 8 "don't know" reads ≈ 9 green · 7 yellow
 Other modes (Write / Quiz / Match) keep the round ring + stars and the
 "current level" highlight; those already convey performance.
 
+## 6c. Journey mode — one skill, five activity nodes
+
+Journey is a game-style map built **on top of** the other modes; it never
+changes them. The map is a vertical list of **chapters**, and:
+
+- **A chapter = ONE skill** (one level). Its title is the skill name and it
+  carries a 1-based chapter number badge.
+- **Each chapter has 5 fixed nodes**, always in the same order and the same in
+  every chapter: **Flashcards → Quiz → Match → Write → Builder**. Each node is a
+  **single pass** of that activity (no 5-round loop, no interstitial) — so a
+  chapter is 5 distinct one-pass activities rather than five Write levels.
+
+Each node uses its own progress namespace so Journey scoring stays fully
+independent of the standalone modes:
+
+| Node | Mode key | Exercise route | Icon / colour |
+|------|----------|----------------|---------------|
+| Flashcards | `journey-flip`    | `/practice/flip`            | `albums-outline` / primary |
+| Quiz       | `journey-quiz`    | `/practice/quiz`            | `help-circle-outline` / success |
+| Match      | `journey-match`   | `/practice/match`           | `git-compare-outline` / tertiary |
+| Write      | `journey-write`   | `/practice/journey-play`    | `create-outline` / secondary |
+| Builder    | `journey-builder` | `/practice/journey-builder` | `construct-outline` / warning |
+
+Each exercise reads `?mode=journey-*&level=N` from the route, runs one pass,
+saves its result under the node mode via the normal `saveRoundProgress`
+(reusing `LevelProgressEntity` — no separate store), then returns to the map.
+
+### Unlocking (Journey gates it itself)
+
+- A node is **passed** when its `LevelProgress.bestScore ≥ 70` (same 70% bar as
+  everywhere else).
+- Nodes unlock **left → right**: node 1 is open once the chapter is reachable;
+  each later node opens when the previous node is passed.
+- A **chapter** is reachable when the **previous chapter's 5 nodes are all
+  passed** (chapter 1 is always reachable). A chapter is **complete** when all
+  5 nodes are passed, and gets a green accent.
+- Because the node modes are `journey-*`, `isLevelUnlocked` returns `true` for
+  them (the Journey page owns the gating), so the per-mode round-unlock rule
+  does not interfere.
+
+### Node specifics
+
+- **Flashcards node** has no real fail (it's self-rated), so going through the
+  cards forces `max(score, 70)` — the pass is guaranteed once you finish.
+- **Builder node** teaches grammar groups then has you assemble short phrases.
+  Phrases are produced by the phrase-builder core (`src/core/phrase-builder`),
+  which classifies the chapter's French words by closed-class lists + heuristics
+  and fills simple templates (possessive+noun, article+noun[+adj],
+  verb+article+noun). If it can generate **no** phrases for a chapter, the node
+  **auto-passes** (saves 100) so the chapter is never blocked.
+
 ## 7. Admin tools (dev/testing)
 
 - **Settings → Admin → Admin mode** (toggle, default ON for now, hidden in
