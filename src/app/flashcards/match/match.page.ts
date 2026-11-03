@@ -11,7 +11,7 @@
 
 import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
+import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
 
@@ -58,13 +58,16 @@ export class MatchPage implements OnInit, OnDestroy {
   /** DEV-only: finish the current level with a chosen star count, then exit. */
   private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
     if (this.levelNumber > 0 && this.deck) {
-      await this.flashcardService.adminForceComplete(this.deck.id, 'match', this.levelNumber, stars);
+      await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
     }
-    this.router.navigate(['/practice'], { replaceUrl: true });
+    this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 
   deck: FlashcardDeck | null = null;
   levelNumber = 0;
+  /** Progress namespace: 'match' normally, 'journey-match' as a Journey node. */
+  private mode: PracticeMode = 'match';
+  private backUrl = '/practice';
 
   // How many pairs are visible on the board at once. As each correct match is
   // made, the cleared pair is immediately replaced with a fresh one (if any
@@ -119,23 +122,29 @@ export class MatchPage implements OnInit, OnDestroy {
     const deckId = this.route.snapshot.paramMap.get('id');
     const levelParam = this.route.snapshot.queryParamMap.get('level');
     this.levelNumber = levelParam ? parseInt(levelParam, 10) : 0;
+    // Journey Match node: score under 'journey-match', back to the map. (Match
+    // is already single-pass — one board is one play.)
+    if (this.route.snapshot.queryParamMap.get('mode') === 'journey-match') {
+      this.mode = 'journey-match';
+      this.backUrl = '/practice/journey';
+    }
 
     if (!deckId) {
-      this.router.navigate(['/practice']);
+      this.router.navigate([this.backUrl]);
       return;
     }
 
     this.deck = this.flashcardService.getDeck(deckId);
     if (!this.deck) {
-      this.router.navigate(['/practice']);
+      this.router.navigate([this.backUrl]);
       return;
     }
 
     let cards: Flashcard[];
     if (this.levelNumber > 0) {
-      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, 'match', this.levelNumber);
+      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
       if (!isUnlocked) {
-        this.router.navigate(['/practice']);
+        this.router.navigate([this.backUrl]);
         return;
       }
       // Match uses a longer session: the level's words + weak words from
@@ -470,7 +479,7 @@ export class MatchPage implements OnInit, OnDestroy {
       // the levels list fills as rounds accumulate.)
       const result = await this.flashcardService.saveRoundProgress(
         this.deck.id,
-        'match',
+        this.mode,
         this.levelNumber,
         scorePercent,
         this.elapsedSeconds,
@@ -497,10 +506,10 @@ export class MatchPage implements OnInit, OnDestroy {
   }
 
   finish() {
-    this.router.navigate(['/practice'], { replaceUrl: true });
+    this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 
   close() {
-    this.router.navigate(['/practice'], { replaceUrl: true });
+    this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 }

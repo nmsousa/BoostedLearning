@@ -3,7 +3,12 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>{{ modeLabel }}</ion-title>
+    <ion-title>
+      <span class="mode-title">
+        <ion-icon [name]="modeIcon" [color]="modeIconColor" class="mode-title-icon" aria-hidden="true"></ion-icon>
+        <span class="mode-title-text">{{ modeLabel }}</span>
+      </span>
+    </ion-title>
     <ion-buttons slot="end">
       <!-- Learning-language flag picker (same as the homepage): shows which
            language this mode's list belongs to, and lets you switch it. -->

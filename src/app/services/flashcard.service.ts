@@ -26,8 +26,25 @@ export type FlashcardRating = 'hard' | 'medium' | 'easy';
  * A practice mode. Level stars/progress are tracked PER MODE so that, e.g.,
  * clearing a level in Flashcards does not mark it complete in Match.
  * 'journey' and 'builder' are EXPERIMENTAL modes added alongside the originals.
+ *
+ * The `journey-*` modes are the Journey redesign: a chapter is ONE skill played
+ * as five fixed SINGLE-PASS nodes (flip → quiz → match → write → builder). Each
+ * node records its own LevelProgress under its own mode, so the standalone
+ * flip/quiz/match/write mode lists keep their 5-round behaviour untouched. The
+ * old single 'journey' mode is kept for back-compat (unused by the new page).
  */
-export type PracticeMode = 'flip' | 'write' | 'match' | 'quiz' | 'journey' | 'builder';
+export type PracticeMode =
+  | 'flip' | 'write' | 'match' | 'quiz' | 'journey' | 'builder'
+  | 'journey-flip' | 'journey-quiz' | 'journey-match' | 'journey-write' | 'journey-builder';
+
+/** The five node modes of a Journey chapter, in order. */
+export const JOURNEY_NODE_MODES: PracticeMode[] =
+  ['journey-flip', 'journey-quiz', 'journey-match', 'journey-write', 'journey-builder'];
+
+/** True for any Journey single-pass node mode. */
+export function isJourneyNodeMode(mode: PracticeMode): boolean {
+  return (JOURNEY_NODE_MODES as string[]).includes(mode);
+}
 
 /**
  * A single flashcard with learning stats
@@ -2063,6 +2080,9 @@ export class FlashcardService {
     // Flashcards is a free practice mode: every level is always open so the
     // user can review anything. No round/unlock gating.
     if (mode === 'flip') return true;
+    // Journey node modes: the Journey PAGE gates node/chapter unlocking, so the
+    // exercise page itself shouldn't block on the generic rule.
+    if (isJourneyNodeMode(mode)) return true;
 
     const previousProgress = await this.getLevelProgress(deckId, mode, levelNumber - 1);
     if (!previousProgress) return false;

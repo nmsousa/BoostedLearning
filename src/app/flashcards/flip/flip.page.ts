@@ -11,7 +11,7 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FlashcardService, Flashcard, FlashcardDeck, FlashcardRating } from '../../services/flashcard.service';
+import { FlashcardService, Flashcard, FlashcardDeck, FlashcardRating, PracticeMode } from '../../services/flashcard.service';
 import { ToastController } from '@ionic/angular';
 import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
@@ -68,6 +68,10 @@ export class FlipPage implements OnInit {
 
   deck: FlashcardDeck | null = null;
   levelNumber = 0;
+  /** Progress namespace: 'flip' normally, 'journey-flip' as a Journey node. */
+  private mode: PracticeMode = 'flip';
+  /** Where the X / finish returns to. */
+  private backUrl = '/practice';
 
   cards: Flashcard[] = [];
   /** Skill/title of the current level (for the header), if any. */
@@ -101,23 +105,28 @@ export class FlipPage implements OnInit {
     const deckId = this.route.snapshot.paramMap.get('id');
     const levelParam = this.route.snapshot.queryParamMap.get('level');
     this.levelNumber = levelParam ? parseInt(levelParam, 10) : 0;
+    // Journey Flashcards node: score under 'journey-flip', return to the map.
+    if (this.route.snapshot.queryParamMap.get('mode') === 'journey-flip') {
+      this.mode = 'journey-flip';
+      this.backUrl = '/practice/journey';
+    }
 
     if (!deckId) {
-      this.router.navigate(['/practice']);
+      this.router.navigate([this.backUrl]);
       return;
     }
 
     this.deck = this.flashcardService.getDeck(deckId);
     if (!this.deck) {
-      this.router.navigate(['/practice']);
+      this.router.navigate([this.backUrl]);
       return;
     }
 
     // Pull cards for this level if given, else an urgency-ordered queue.
     if (this.levelNumber > 0) {
-      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, 'flip', this.levelNumber);
+      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
       if (!isUnlocked) {
-        this.router.navigate(['/practice']);
+        this.router.navigate([this.backUrl]);
         return;
       }
       // Exclude words the user hid from practice (getLevelCards returns the
@@ -254,10 +263,13 @@ export class FlipPage implements OnInit {
     if (this.levelNumber > 0 && this.deck) {
       // Flashcards is free practice (no rounds, no unlock gating). We still
       // record a best score/stars for display via the simple single-pass save.
-      const effectiveCorrect = Math.round((scorePercent / 100) * total);
+      // As a Journey node, flip has no real "fail" (it's self-rated), so going
+      // through all cards passes the node — record at least the pass line.
+      const effectivePct = this.mode === 'journey-flip' ? Math.max(scorePercent, 70) : scorePercent;
+      const effectiveCorrect = Math.round((effectivePct / 100) * total);
       const result = await this.flashcardService.saveLevelProgress(
         this.deck.id,
-        'flip',
+        this.mode,
         this.levelNumber,
         effectiveCorrect,
         total
@@ -272,10 +284,10 @@ export class FlipPage implements OnInit {
   }
 
   finish() {
-    this.router.navigate(['/practice'], { replaceUrl: true });
+    this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 
   close() {
-    this.router.navigate(['/practice'], { replaceUrl: true });
+    this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 }

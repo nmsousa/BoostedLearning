@@ -94,8 +94,10 @@ export class StudyPage implements OnInit, OnDestroy {
   // ── 5-round model ──────────────────────────────────────────────────────────
   /** Current round (1..5) when playing a level. 0 = quick study (no rounds). */
   round = 0;
-  /** Total rounds in a level (from the service). */
-  readonly totalRounds = 5;
+  /** Total rounds in a level. 5 normally; 1 for a Journey single-pass node. */
+  totalRounds = 5;
+  /** True for a Journey node: one pass, no round loop/interstitial. */
+  singlePass = false;
   /** Card ids the user failed across THIS level's rounds (feeds round 5). */
   private missedThisLevel = new Set<string>();
   /** True on the "round complete" interstitial (not the final level summary). */
@@ -146,9 +148,15 @@ export class StudyPage implements OnInit, OnDestroy {
     const levelParam = this.route.snapshot.queryParamMap.get('level');
     this.levelNumber = levelParam ? parseInt(levelParam, 10) : 0;
     // Journey reuses this page under its own mode namespace + return route.
-    if (this.route.snapshot.queryParamMap.get('mode') === 'journey') {
+    const modeParam = this.route.snapshot.queryParamMap.get('mode');
+    if (modeParam === 'journey') {
       this.mode = 'journey';
       this.backUrl = '/practice/journey';
+    } else if (modeParam === 'journey-write') {
+      // Journey WRITE node: a single pass (no 5-round loop), back to the map.
+      this.mode = 'journey-write';
+      this.backUrl = '/practice/journey';
+      this.singlePass = true;
     }
     
     if (!deckId) {
@@ -171,11 +179,19 @@ export class StudyPage implements OnInit, OnDestroy {
         this.router.navigate([this.backUrl]);
         return;
       }
-      // Start the 5-round sequence from where the user left off (so finishing
-      // round 2 earlier resumes at round 3).
-      this.roundsCompleted = await this.flashcardService.getRoundsCompleted(deckId, this.mode, this.levelNumber);
-      this.round = Math.min(this.totalRounds, this.roundsCompleted + 1);
-      cards = this.flashcardService.getRoundCards(deckId, this.levelNumber, this.round);
+      if (this.singlePass) {
+        // Journey node: ONE pass over the level's words, no round sequence.
+        this.totalRounds = 1;
+        this.round = 1;
+        this.roundsCompleted = 0;
+        cards = this.flashcardService.getRoundCards(deckId, this.levelNumber, 1);
+      } else {
+        // Start the 5-round sequence from where the user left off (so finishing
+        // round 2 earlier resumes at round 3).
+        this.roundsCompleted = await this.flashcardService.getRoundsCompleted(deckId, this.mode, this.levelNumber);
+        this.round = Math.min(this.totalRounds, this.roundsCompleted + 1);
+        cards = this.flashcardService.getRoundCards(deckId, this.levelNumber, this.round);
+      }
     } else {
       cards = this.flashcardService.getStudyCards(deckId, 20);
     }
@@ -579,7 +595,13 @@ export class StudyPage implements OnInit, OnDestroy {
     this.roundsCompleted = result.roundsCompleted;
     this.earnedStars = result.stars;
 
-    if (result.levelComplete) {
+    if (this.singlePass) {
+      // Journey node: one pass IS the whole node — go straight to the summary
+      // (no round interstitial). The node counts as passed via bestScore.
+      this.isNewBest = true;
+      this.roundInterstitial = false;
+      this.phase = 'complete';
+    } else if (result.levelComplete) {
       // All 5 rounds done → final level summary.
       this.isNewBest = true;
       this.phase = 'complete';

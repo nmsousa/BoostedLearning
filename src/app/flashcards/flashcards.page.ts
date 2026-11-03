@@ -161,12 +161,31 @@ export class FlashcardsPage implements OnInit {
   /** Human label for the active mode, shown in the header. */
   get modeLabel(): string {
     // Only the four original modes use this page; journey/builder have their
-    // own pages but are part of the PracticeMode union, so cover them here too.
-    const labels: Record<PracticeMode, string> = {
+    // own pages. The journey-* node modes never route here. Partial map + a
+    // sensible fallback covers the whole PracticeMode union.
+    const labels: Partial<Record<PracticeMode, string>> = {
       flip: 'Flashcards', write: 'Write', match: 'Match', quiz: 'Quiz',
       journey: 'Journey', builder: 'Builder',
     };
-    return labels[this.mode];
+    return labels[this.mode] ?? 'Flashcards';
+  }
+
+  /** Icon for the active mode, matching the homepage mode-grid icons. */
+  get modeIcon(): string {
+    const icons: Partial<Record<PracticeMode, string>> = {
+      flip: 'albums-outline', write: 'create-outline', match: 'git-compare-outline',
+      quiz: 'help-circle-outline', journey: 'map-outline', builder: 'construct-outline',
+    };
+    return icons[this.mode] ?? 'albums-outline';
+  }
+
+  /** Icon colour for the active mode — same accent as the homepage cards. */
+  get modeIconColor(): string {
+    const colors: Partial<Record<PracticeMode, string>> = {
+      flip: 'primary', write: 'secondary', match: 'tertiary',
+      quiz: 'success', journey: 'warning', builder: 'tertiary',
+    };
+    return colors[this.mode] ?? 'primary';
   }
 
   decks: FlashcardDeck[] = [];

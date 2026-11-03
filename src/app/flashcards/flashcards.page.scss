@@ -1,3 +1,20 @@
+// Mode title with its icon (matches the homepage mode icons).
+.mode-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  .mode-title-icon {
+    font-size: 1.1em;
+    flex-shrink: 0;
+  }
+  // The label text sits optically a touch higher than the icon; nudge it down.
+  .mode-title-text {
+    position: relative;
+    top: 2px;
+  }
+}
+
 // Learning-language flag picker in the header (same look as the homepage).
 .lang-trigger {
   display: inline-flex;

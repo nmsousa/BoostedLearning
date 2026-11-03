@@ -11,7 +11,7 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FlashcardService, Flashcard, FlashcardDeck } from '../../services/flashcard.service';
+import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
 import { ToastController } from '@ionic/angular';
 import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
@@ -65,9 +65,9 @@ export class QuizPage implements OnInit {
   /** DEV-only: finish the current level with a chosen star count, then exit. */
   private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
     if (this.levelNumber > 0 && this.deck) {
-      await this.flashcardService.adminForceComplete(this.deck.id, 'quiz', this.levelNumber, stars);
+      await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
     }
-    this.router.navigate(['/practice'], { replaceUrl: true });
+    this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 
   /** After hiding the current word, move to the next question. */
@@ -83,10 +83,15 @@ export class QuizPage implements OnInit {
 
   deck: FlashcardDeck | null = null;
   levelNumber = 0;
+  /** Progress namespace: 'quiz' normally, 'journey-quiz' as a Journey node. */
+  private mode: PracticeMode = 'quiz';
+  private backUrl = '/practice';
+  /** True for a Journey node: one pass, no round loop/interstitial. */
+  singlePass = false;
 
   // ── 5-round model ──────────────────────────────────────────────────────────
   round = 0;
-  readonly totalRounds = 5;
+  totalRounds = 5;
   roundsCompleted = 0;
   roundInterstitial = false;
   private missedThisLevel = new Set<string>();
@@ -119,28 +124,41 @@ export class QuizPage implements OnInit {
     const deckId = this.route.snapshot.paramMap.get('id');
     const levelParam = this.route.snapshot.queryParamMap.get('level');
     this.levelNumber = levelParam ? parseInt(levelParam, 10) : 0;
+    // Journey Quiz node: score under 'journey-quiz', single pass, back to map.
+    if (this.route.snapshot.queryParamMap.get('mode') === 'journey-quiz') {
+      this.mode = 'journey-quiz';
+      this.backUrl = '/practice/journey';
+      this.singlePass = true;
+    }
 
     if (!deckId) {
-      this.router.navigate(['/practice']);
+      this.router.navigate([this.backUrl]);
       return;
     }
 
     this.deck = this.flashcardService.getDeck(deckId);
     if (!this.deck) {
-      this.router.navigate(['/practice']);
+      this.router.navigate([this.backUrl]);
       return;
     }
 
     let cards: Flashcard[];
     if (this.levelNumber > 0) {
-      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, 'quiz', this.levelNumber);
+      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
       if (!isUnlocked) {
-        this.router.navigate(['/practice']);
+        this.router.navigate([this.backUrl]);
         return;
       }
-      this.roundsCompleted = await this.flashcardService.getRoundsCompleted(deckId, 'quiz', this.levelNumber);
-      this.round = Math.min(this.totalRounds, this.roundsCompleted + 1);
-      cards = this.flashcardService.getRoundCards(deckId, this.levelNumber, this.round);
+      if (this.singlePass) {
+        this.totalRounds = 1;
+        this.round = 1;
+        this.roundsCompleted = 0;
+        cards = this.flashcardService.getRoundCards(deckId, this.levelNumber, 1);
+      } else {
+        this.roundsCompleted = await this.flashcardService.getRoundsCompleted(deckId, this.mode, this.levelNumber);
+        this.round = Math.min(this.totalRounds, this.roundsCompleted + 1);
+        cards = this.flashcardService.getRoundCards(deckId, this.levelNumber, this.round);
+      }
     } else {
       cards = this.flashcardService.getFlashcardQueue(deckId, 20);
     }
@@ -315,12 +333,13 @@ export class QuizPage implements OnInit {
     }
 
     const result = await this.flashcardService.saveRoundProgress(
-      this.deck.id, 'quiz', this.levelNumber, scorePercent
+      this.deck.id, this.mode, this.levelNumber, scorePercent
     );
     this.roundsCompleted = result.roundsCompleted;
     this.earnedStars = result.stars;
-    this.isNewBest = result.levelComplete;
-    this.roundInterstitial = !result.levelComplete;
+    // Journey node: one pass = done (no interstitial). Otherwise the 5-round rule.
+    this.isNewBest = this.singlePass ? true : result.levelComplete;
+    this.roundInterstitial = this.singlePass ? false : !result.levelComplete;
     this.phase = 'complete';
     this.cdr.detectChanges();
   }
@@ -345,10 +364,10 @@ export class QuizPage implements OnInit {
   }
 
   finish() {
-    this.router.navigate(['/practice'], { replaceUrl: true });
+    this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 
   close() {
-    this.router.navigate(['/practice'], { replaceUrl: true });
+    this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 }
