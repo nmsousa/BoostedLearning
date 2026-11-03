@@ -59,8 +59,10 @@
              X is a 0-100 percent; Y is in px (1:1 with the laid-out rows). -->
         <svg class="trail-path" [attr.viewBox]="trailViewBox(chapter.nodes)"
           [style.height.px]="trailHeight(chapter.nodes)" preserveAspectRatio="none" aria-hidden="true">
-          <path [attr.d]="trailPath(chapter.nodes)" fill="none"
-            stroke="var(--ion-color-step-250, #33465c)" stroke-width="3"
+          <!-- One dashed segment per gap; it turns green once the node it leaves
+               is passed, and blue for the edge into the current node. -->
+          <path *ngFor="let seg of trailSegments(chapter)" [attr.d]="seg.d" fill="none"
+            [attr.stroke]="seg.stroke" stroke-width="3"
             stroke-linecap="round" stroke-dasharray="4 9" vector-effect="non-scaling-stroke"></path>
         </svg>
         <div class="node-row" *ngFor="let node of chapter.nodes; let ni = index">

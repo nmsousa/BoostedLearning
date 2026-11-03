@@ -316,24 +316,44 @@ export class JourneyPage implements OnInit {
    * offset by the node radius we convert X% = NODE/2 / trailWidthPx * 100 and
    * keep Y in px. This makes it scale-stable at any width.
    */
-  trailPath(nodes: JourneyNode[]): string {
-    const n = nodes.length;
-    if (n < 2) return '';
+  /** SVG `d` for the single segment node(i-1) → node(i). */
+  private segmentPath(i: number): string {
     const RY = JourneyPage.NODE / 2;
     const RX = (RY / Math.max(1, this.trailWidthPx)) * 100;
-    const segs: string[] = [];
+    const ax = this.nodeX(i - 1), ay = this.nodeY(i - 1);
+    const bx = this.nodeX(i), by = this.nodeY(i);
+    const dir = bx > ax ? 1 : (bx < ax ? -1 : 0);
+    const sx = ax + dir * RX;
+    const sy = ay + RY * 0.45;
+    const ex = bx;
+    const ey = by - RY;
+    const midY = (sy + ey) / 2;
+    return `M ${sx} ${sy} C ${sx} ${midY}, ${ex} ${midY}, ${ex} ${ey}`;
+  }
+
+  /**
+   * Per-segment trail so each dash between two nodes can show PROGRESS:
+   * - the segment leaving a PASSED node is green (that step is done),
+   * - the segment leading INTO the current node is blue (the active edge),
+   * - otherwise it stays the default grey.
+   * Returns `{ d, stroke }` for each of the n-1 segments.
+   */
+  trailSegments(chapter: Chapter): { d: string; stroke: string }[] {
+    const nodes = chapter.nodes;
+    const n = nodes.length;
+    if (n < 2) return [];
+    const GREEN = 'var(--ion-color-success, #2dd36f)';
+    const BLUE = '#38bdf8';
+    const GREY = 'var(--ion-color-step-250, #33465c)';
+    const segs: { d: string; stroke: string }[] = [];
     for (let i = 1; i < n; i++) {
-      const ax = this.nodeX(i - 1), ay = this.nodeY(i - 1);
-      const bx = this.nodeX(i), by = this.nodeY(i);
-      const dir = bx > ax ? 1 : (bx < ax ? -1 : 0);
-      const sx = ax + dir * RX;
-      const sy = ay + RY * 0.45;
-      const ex = bx;
-      const ey = by - RY;
-      const midY = (sy + ey) / 2;
-      segs.push(`M ${sx} ${sy} C ${sx} ${midY}, ${ex} ${midY}, ${ex} ${ey}`);
+      const from = nodes[i - 1];
+      let stroke = GREY;
+      if (from.passed) stroke = GREEN;
+      else if (this.isCurrentNode(chapter, from)) stroke = BLUE;
+      segs.push({ d: this.segmentPath(i), stroke });
     }
-    return segs.join(' ');
+    return segs;
   }
 
   /** The next node to play in a chapter (first unlocked, not-yet-passed) — gets
