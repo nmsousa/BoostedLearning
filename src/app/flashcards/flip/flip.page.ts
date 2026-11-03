@@ -50,9 +50,38 @@ export class FlipPage implements OnInit {
       correctAnswer: this.currentCard ? this.flashcardService.bestTranslation(this.currentCard) : null,
       modeName: this.t('mode.titleFlip'),
       onHidden: () => this.skipHiddenCard(),
-      // No admin "complete round" for Flashcards: it has no rounds/unlocking
-      // (free practice — all levels open).
+      // Admin shortcut: finish the session now. Like the other modes it writes
+      // progress/stars, and (flip-specific) it also gives each would-be-played
+      // card a RANDOM self-rating so the knowledge breakdown looks played.
+      onAdminComplete: (stars) => this.adminCompleteLevel(stars),
     });
+  }
+
+  /**
+   * DEV-only: finish the Flashcards session immediately with a chosen star
+   * count. Flashcards is self-rated with no real pass/fail, so we also assign
+   * each remaining card a RANDOM rating (hard / medium / easy) — exactly the
+   * cards that would have been played — so the per-level knowledge breakdown
+   * reflects a played session. Then persist stars and return.
+   */
+  private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
+    if (!this.deck) { this.router.navigate([this.backUrl], { replaceUrl: true }); return; }
+
+    // Rate every card that hasn't been played yet this session with a random
+    // flip rating, so the level's red/yellow/green breakdown fills in.
+    const ratings: FlashcardRating[] = ['hard', 'medium', 'easy'];
+    for (let i = this.currentIndex; i < this.cards.length; i++) {
+      const card = this.cards[i];
+      const r = ratings[Math.floor(Math.random() * ratings.length)];
+      await this.flashcardService.rateFlashcard(this.deck.id, card.id, r);
+    }
+
+    // Persist the chosen star rating for the level (if this is a level session).
+    if (this.levelNumber > 0) {
+      await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
+    }
+
+    this.router.navigate([this.backUrl], { replaceUrl: true });
   }
 
   /** After hiding the current word, advance to the next card. */

@@ -42,7 +42,9 @@
 <ion-content [fullscreen]="true" class="builder-content">
   <div *ngIf="isLoading" class="mode-loading"><ion-spinner name="crescent"></ion-spinner></div>
 
-  <div *ngIf="!isLoading && !data" class="builder-empty">
+  <!-- Empty state only for the STANDALONE builder (a journey node has no
+       dataset — it plays generated phrases, so `data` is intentionally null). -->
+  <div *ngIf="!isLoading && !data && !journeyMode" class="builder-empty">
     <ion-icon name="construct-outline"></ion-icon>
     <p>{{ 'builder.unavailable' | translate }}</p>
   </div>
