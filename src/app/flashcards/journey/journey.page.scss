@@ -196,6 +196,8 @@
     border-color: rgba(255, 255, 255, 0.95);
     box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.25), 0 6px 16px rgba(0, 0, 0, 0.35);
     ion-icon { font-size: 32px; }
+    // Blue label to match the blue node (mirrors the green passed state).
+    .node-label { color: var(--ion-color-primary, #38bdf8); border-color: var(--ion-color-primary, #38bdf8); }
   }
 
   // Locked node: dimmed, non-interactive.

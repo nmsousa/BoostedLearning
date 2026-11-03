@@ -10,7 +10,8 @@
     <ion-title>
       <ng-container *ngIf="levelTitle">{{ levelTitle }}</ng-container>
       <ng-container *ngIf="!levelTitle">{{ 'mode.titleWrite' | translate }}</ng-container>
-      <span *ngIf="round > 0" class="round-pill">{{ round }}/{{ totalRounds }}</span>
+      <!-- Hide the round counter for Journey nodes (single pass, no rounds). -->
+      <span *ngIf="round > 0 && !singlePass" class="round-pill">{{ round }}/{{ totalRounds }}</span>
     </ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="openMenu()" [attr.aria-label]="'mode.addWord' | translate">
