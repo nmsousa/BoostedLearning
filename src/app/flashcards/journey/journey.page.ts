@@ -342,9 +342,10 @@ export class JourneyPage implements OnInit {
     const nodes = chapter.nodes;
     const n = nodes.length;
     if (n < 2) return [];
-    const GREEN = 'var(--ion-color-success, #2dd36f)';
+    // SVG `stroke` attribute does NOT resolve CSS var() — use literal colours.
+    const GREEN = '#2dd36f';
     const BLUE = '#38bdf8';
-    const GREY = 'var(--ion-color-step-250, #33465c)';
+    const GREY = '#33465c';
     const segs: { d: string; stroke: string }[] = [];
     for (let i = 1; i < n; i++) {
       const from = nodes[i - 1];
