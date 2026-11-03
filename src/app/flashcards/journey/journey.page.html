@@ -60,7 +60,7 @@
         <svg class="trail-path" [attr.viewBox]="trailViewBox(chapter.nodes)"
           [style.height.px]="trailHeight(chapter.nodes)" preserveAspectRatio="none" aria-hidden="true">
           <!-- One dashed segment per gap; it turns green once the node it leaves
-               is passed, and blue for the edge into the current node. -->
+               is passed, otherwise it stays grey. -->
           <path *ngFor="let seg of trailSegments(chapter)" [attr.d]="seg.d" fill="none"
             [attr.stroke]="seg.stroke" stroke-width="3"
             stroke-linecap="round" stroke-dasharray="4 9" vector-effect="non-scaling-stroke"></path>

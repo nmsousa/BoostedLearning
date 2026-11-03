@@ -334,8 +334,7 @@ export class JourneyPage implements OnInit {
   /**
    * Per-segment trail so each dash between two nodes can show PROGRESS:
    * - the segment leaving a PASSED node is green (that step is done),
-   * - the segment leading INTO the current node is blue (the active edge),
-   * - otherwise it stays the default grey.
+   * - otherwise it stays grey (including the edge into the current node).
    * Returns `{ d, stroke }` for each of the n-1 segments.
    */
   trailSegments(chapter: Chapter): { d: string; stroke: string }[] {
@@ -344,15 +343,11 @@ export class JourneyPage implements OnInit {
     if (n < 2) return [];
     // SVG `stroke` attribute does NOT resolve CSS var() — use literal colours.
     const GREEN = '#2dd36f';
-    const BLUE = '#38bdf8';
     const GREY = '#33465c';
     const segs: { d: string; stroke: string }[] = [];
     for (let i = 1; i < n; i++) {
       const from = nodes[i - 1];
-      let stroke = GREY;
-      if (from.passed) stroke = GREEN;
-      else if (this.isCurrentNode(chapter, from)) stroke = BLUE;
-      segs.push({ d: this.segmentPath(i), stroke });
+      segs.push({ d: this.segmentPath(i), stroke: from.passed ? GREEN : GREY });
     }
     return segs;
   }
