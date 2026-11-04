@@ -337,12 +337,13 @@ export class MatchPage implements OnInit, OnDestroy {
         this.flashcardService.rateFlashcard(this.deck.id, matchedId, 'easy');
       }
 
-      // Matched tiles stay in place as gray placeholders (positions never
-      // shift). After a short beat, try to batch-refill freed slots.
-      this.locked = true;
+      // Do NOT lock on a correct match — the matched tiles are already gray
+      // placeholders (guarded by `item.matched`), so the user can immediately
+      // start the next pair with no input delay. The refill just fills freed
+      // slots after a short beat; it doesn't need to block taps.
+      this.cdr.detectChanges();
       setTimeout(() => {
         this.tryRefill();
-        this.locked = false;
 
         // Done when every tile is matched and the queue is drained.
         if (this.queue.length === 0 && this.leftItems.every(i => i.matched)) {
