@@ -69,21 +69,22 @@
         <div class="node-row" *ngFor="let node of chapter.nodes; let ni = index">
           <button type="button" class="node"
             [style.left.%]="nodeLeftPercent(ni)"
-            [class.passed]="node.passed"
+            [class.passed]="node.unlocked && node.passed"
             [class.current]="isCurrentNode(chapter, node)"
             [class.locked]="!node.unlocked"
             [disabled]="!node.unlocked"
             [attr.aria-label]="nodeLabel(node.type)"
             (click)="startNode(chapter, node)">
-            <!-- Mode icon: its homepage colour only when it's a plain playable
-                 node; the current node turns it white (light-blue fill) and the
-                 passed node shows a white check on green. -->
-            <ion-icon *ngIf="node.unlocked && !node.passed && !isCurrentNode(chapter, node)"
-              [name]="node.icon" [color]="node.color"></ion-icon>
+            <!-- Exactly ONE icon, in priority order so states never overlap:
+                 locked → padlock (even if it happens to be passed underneath);
+                 passed → white check on green; current → white mode icon on the
+                 blue fill; otherwise the plain mode icon in its homepage colour. -->
+            <ion-icon *ngIf="!node.unlocked" name="lock-closed" class="node-lock"></ion-icon>
+            <ion-icon *ngIf="node.unlocked && node.passed" name="checkmark" class="node-check"></ion-icon>
             <ion-icon *ngIf="node.unlocked && !node.passed && isCurrentNode(chapter, node)"
               [name]="node.icon" class="node-current-icon"></ion-icon>
-            <ion-icon *ngIf="node.passed" name="checkmark" class="node-check"></ion-icon>
-            <ion-icon *ngIf="!node.unlocked" name="lock-closed" class="node-lock"></ion-icon>
+            <ion-icon *ngIf="node.unlocked && !node.passed && !isCurrentNode(chapter, node)"
+              [name]="node.icon" [color]="node.color"></ion-icon>
             <span class="node-label">{{ nodeLabel(node.type) }}</span>
           </button>
         </div>
