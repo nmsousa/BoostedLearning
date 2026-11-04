@@ -80,6 +80,15 @@
           <span class="mode-desc">{{ 'home.mode.quiz.desc' | translate }}</span>
         </button>
 
+        <!-- Blanks: fill-in-the-blank. French only (the sentence generator is
+             French), so the card is hidden for other learning languages. -->
+        <button type="button" class="mode-card blanks" *ngIf="learningLanguage === 'fr'" (click)="startBlanks()">
+          <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>
+          <ion-icon name="reorder-four-outline"></ion-icon>
+          <span class="mode-name">{{ 'home.mode.blanks' | translate }}</span>
+          <span class="mode-desc">{{ 'home.mode.blanks.desc' | translate }}</span>
+        </button>
+
         <!-- EXPERIMENTAL modes: a BETA badge marks them as test modes. -->
         <button type="button" class="mode-card journey" (click)="startJourney()">
           <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>

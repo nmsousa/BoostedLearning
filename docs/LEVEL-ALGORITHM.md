@@ -163,10 +163,12 @@ changes them. The map is a vertical list of **chapters**, and:
 
 - **A chapter = ONE skill** (one level). Its title is the skill name and it
   carries a 1-based chapter number badge.
-- **Each chapter has 5 fixed nodes**, always in the same order and the same in
-  every chapter: **Flashcards → Quiz → Write → Match → Builder**. Each node is a
+- **Each chapter has 5 fixed nodes** (6 on French decks — see Blanks below),
+  always in the same order and the same in every chapter:
+  **Flashcards → Quiz → Write → Match → Builder (→ Blanks)**. Each node is a
   **single pass** of that activity (no 5-round loop, no interstitial) — so a
-  chapter is 5 distinct one-pass activities rather than five Write levels.
+  chapter is a handful of distinct one-pass activities rather than five Write
+  levels.
 - The nodes are drawn on the original **serpentine trail** (a soft zig-zag arc,
   28/50/72/50/28, with a dashed tilde path threading through them); only the
   node *content* changed — each node is now a different mode, shown with that
@@ -185,6 +187,7 @@ independent of the standalone modes:
 | Write      | `journey-write`   | `/practice/journey-play`    | `create-outline` / secondary |
 | Match      | `journey-match`   | `/practice/match`           | `git-compare-outline` / tertiary |
 | Builder    | `journey-builder` | `/practice/journey-builder` | `construct-outline` / warning |
+| Blanks (FR only) | `journey-blanks` | `/practice/blanks`      | `reorder-four-outline` / danger |
 
 Each exercise reads `?mode=journey-*&level=N` from the route, runs one pass,
 saves its result under the node mode via the normal `saveRoundProgress`
@@ -196,9 +199,9 @@ saves its result under the node mode via the normal `saveRoundProgress`
   everywhere else).
 - Nodes unlock **left → right**: node 1 is open once the chapter is reachable;
   each later node opens when the previous node is passed.
-- A **chapter** is reachable when the **previous chapter's 5 nodes are all
+- A **chapter** is reachable when the **previous chapter's nodes are all
   passed** (chapter 1 is always reachable). A chapter is **complete** when all
-  5 nodes are passed, and gets a green accent.
+  its nodes are passed (5, or 6 on French decks), and gets a green accent.
 - Because the node modes are `journey-*`, `isLevelUnlocked` returns `true` for
   them (the Journey page owns the gating), so the per-mode round-unlock rule
   does not interfere.
@@ -213,6 +216,13 @@ saves its result under the node mode via the normal `saveRoundProgress`
   and fills simple templates (possessive+noun, article+noun[+adj],
   verb+article+noun). If it can generate **no** phrases for a chapter, the node
   **auto-passes** (saves 100) so the chapter is never blocked.
+- **Blanks node (French only)** is the 6th node and is also powered by the
+  phrase-builder. It generates a sentence, blanks the key content word (the
+  `blankIndex` the generator marks), and offers 4 options (the correct word +
+  distractors of the same grammatical category). It's **French-only** — the
+  generator is French — so non-French chapters simply have 5 nodes; a French
+  chapter that yields no phrases auto-passes like Builder. Standalone, the same
+  page is reachable from Home (`Blanks` card, shown only when learning French).
 
 ## 7. Admin tools (dev/testing)
 

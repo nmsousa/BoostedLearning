@@ -34,12 +34,12 @@ export type FlashcardRating = 'hard' | 'medium' | 'easy';
  * old single 'journey' mode is kept for back-compat (unused by the new page).
  */
 export type PracticeMode =
-  | 'flip' | 'write' | 'match' | 'quiz' | 'journey' | 'builder'
-  | 'journey-flip' | 'journey-quiz' | 'journey-match' | 'journey-write' | 'journey-builder';
+  | 'flip' | 'write' | 'match' | 'quiz' | 'journey' | 'builder' | 'blanks'
+  | 'journey-flip' | 'journey-quiz' | 'journey-match' | 'journey-write' | 'journey-builder' | 'journey-blanks';
 
-/** The five node modes of a Journey chapter, in order. */
+/** The Journey chapter node modes, in play order (French chapters add Blanks). */
 export const JOURNEY_NODE_MODES: PracticeMode[] =
-  ['journey-flip', 'journey-quiz', 'journey-match', 'journey-write', 'journey-builder'];
+  ['journey-flip', 'journey-quiz', 'journey-write', 'journey-match', 'journey-builder', 'journey-blanks'];
 
 /** True for any Journey single-pass node mode. */
 export function isJourneyNodeMode(mode: PracticeMode): boolean {

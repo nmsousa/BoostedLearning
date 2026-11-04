@@ -165,7 +165,7 @@ export class FlashcardsPage implements OnInit {
     // sensible fallback covers the whole PracticeMode union.
     const labels: Partial<Record<PracticeMode, string>> = {
       flip: 'Flashcards', write: 'Write', match: 'Match', quiz: 'Quiz',
-      journey: 'Journey', builder: 'Builder',
+      journey: 'Journey', builder: 'Builder', blanks: 'Blanks',
     };
     return labels[this.mode] ?? 'Flashcards';
   }
@@ -175,6 +175,7 @@ export class FlashcardsPage implements OnInit {
     const icons: Partial<Record<PracticeMode, string>> = {
       flip: 'albums-outline', write: 'create-outline', match: 'git-compare-outline',
       quiz: 'help-circle-outline', journey: 'map-outline', builder: 'construct-outline',
+      blanks: 'reorder-four-outline',
     };
     return icons[this.mode] ?? 'albums-outline';
   }
@@ -183,7 +184,7 @@ export class FlashcardsPage implements OnInit {
   get modeIconColor(): string {
     const colors: Partial<Record<PracticeMode, string>> = {
       flip: 'primary', write: 'secondary', match: 'tertiary',
-      quiz: 'success', journey: 'warning', builder: 'tertiary',
+      quiz: 'success', journey: 'warning', builder: 'tertiary', blanks: 'danger',
     };
     return colors[this.mode] ?? 'primary';
   }
@@ -259,7 +260,7 @@ export class FlashcardsPage implements OnInit {
   async ngOnInit() {
     // Mode chosen on the home page; defaults to Flashcards (flip).
     const modeParam = this.route.snapshot.queryParamMap.get('mode') as PracticeMode | null;
-    if (modeParam && ['flip', 'write', 'match', 'quiz'].includes(modeParam)) {
+    if (modeParam && ['flip', 'write', 'match', 'quiz', 'blanks'].includes(modeParam)) {
       this.mode = modeParam;
     }
 
@@ -548,6 +549,9 @@ export class FlashcardsPage implements OnInit {
         break;
       case 'quiz':
         this.router.navigate(['/practice/quiz', deck.id], { queryParams });
+        break;
+      case 'blanks':
+        this.router.navigate(['/practice/blanks', deck.id], { queryParams });
         break;
     }
   }

@@ -1,0 +1,81 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="close()" [attr.aria-label]="'mode.close' | translate">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      <ng-container *ngIf="levelTitle">{{ levelTitle }}</ng-container>
+      <ng-container *ngIf="!levelTitle">{{ 'mode.titleBlanks' | translate }}</ng-container>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="openMenu()" [attr.aria-label]="'practice.menu' | translate">
+        <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="blanks-content">
+  <div *ngIf="isLoading" class="mode-loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <!-- Play phase -->
+  <div *ngIf="!isLoading && phase === 'play' && current" class="blanks-container">
+    <p class="blanks-hint">{{ 'mode.chooseMissingWord' | translate }}</p>
+
+    <!-- Sentence with the blank in the middle. -->
+    <div class="blanks-sentence">
+      <span *ngIf="current.before" class="part">{{ current.before }}</span>
+      <span class="blank">____</span>
+      <span *ngIf="current.after" class="part">{{ current.after }}</span>
+    </div>
+    <p class="blanks-gloss">{{ current.gloss }}</p>
+
+    <div class="blanks-options">
+      <button
+        *ngFor="let opt of current.options"
+        type="button"
+        class="blanks-option"
+        [class.correct]="opt.revealed && opt.correct"
+        [class.wrong]="opt.revealed && opt.chosen && !opt.correct"
+        [disabled]="opt.revealed"
+        (click)="choose(opt)">
+        {{ opt.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Complete phase -->
+  <div *ngIf="!isLoading && phase === 'complete'" class="complete-container">
+    <!-- Nothing could be generated (non-French deck / too few words). -->
+    <ng-container *ngIf="total === 0">
+      <div class="complete-emoji gamification">🧩</div>
+      <h1>{{ 'mode.blanksUnavailable' | translate }}</h1>
+      <ion-button expand="block" (click)="finish()" class="finish-button">
+        {{ 'mode.done' | translate }}
+      </ion-button>
+    </ng-container>
+
+    <ng-container *ngIf="total > 0">
+      <div *ngIf="levelNumber > 0" class="stars-display gamification">
+        <ion-icon *ngFor="let s of [1,2,3]" [name]="s <= earnedStars ? 'star' : 'star-outline'"
+          class="star" [class.filled]="s <= earnedStars"></ion-icon>
+      </div>
+      <div *ngIf="levelNumber === 0" class="complete-emoji gamification">🎉</div>
+
+      <h1>{{ 'mode.blanksComplete' | translate }}</h1>
+      <p *ngIf="isNewBest" class="new-best gamification">{{ 'mode.newBest' | translate }}</p>
+      <p class="complete-sub">
+        {{ 'mode.correctOfTotal' | translate:{ correct: correctCount, total: total } }}
+      </p>
+
+      <ion-button expand="block" (click)="finish()" class="finish-button">
+        {{ 'mode.done' | translate }}
+      </ion-button>
+    </ng-container>
+  </div>
+</ion-content>

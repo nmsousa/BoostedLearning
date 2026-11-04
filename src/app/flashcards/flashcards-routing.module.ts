@@ -34,6 +34,12 @@ const routes: Routes = [
     loadChildren: () => import('./quiz/quiz.module').then(m => m.QuizPageModule)
   },
   {
+    // Blanks mode (fill-in-the-blank: pick the missing word in a sentence).
+    // Also serves the Journey 'blanks' node via ?mode=journey-blanks.
+    path: 'blanks/:id',
+    loadChildren: () => import('./blanks/blanks.module').then(m => m.BlanksPageModule)
+  },
+  {
     // EXPERIMENTAL: Journey map (game-style level map). Its own page.
     path: 'journey',
     loadChildren: () => import('./journey/journey.module').then(m => m.JourneyPageModule)

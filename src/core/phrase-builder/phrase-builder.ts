@@ -49,6 +49,14 @@ export interface GeneratedPhrase {
   target: string;
   /** A rough English gloss for the prompt. */
   en: string;
+  /**
+   * Index into `tokens` of the "key" word (the content word the phrase is built
+   * around — a current-chapter noun/verb). The Blanks mode blanks this token
+   * and asks the user to choose it from options. Undefined if not identified.
+   */
+  blankIndex?: number;
+  /** Grammatical category of the blanked token, for picking plausible options. */
+  blankCategory?: WordCategory;
 }
 
 /** A raw card the generator consumes (subset of the app's Flashcard). */
@@ -189,11 +197,13 @@ export function generatePhrases(tokens: BuilderToken[], max = 6): GeneratedPhras
 
   const phrases: GeneratedPhrase[] = [];
   const pushed = new Set<string>();
-  const emit = (toks: string[], en: string) => {
+  // `blankIndex`/`blankCategory` mark the content word to blank for the Blanks
+  // mode (the noun or verb the phrase is built around).
+  const emit = (toks: string[], en: string, blankIndex?: number, blankCategory?: WordCategory) => {
     const target = toks.join(' ');
     if (pushed.has(target) || toks.some(t => !t)) return;
     pushed.add(target);
-    phrases.push({ tokens: toks, target, en });
+    phrases.push({ tokens: toks, target, en, blankIndex, blankCategory });
   };
 
   const article = (gender?: 'm' | 'f') =>
@@ -204,26 +214,27 @@ export function generatePhrases(tokens: BuilderToken[], max = 6): GeneratedPhras
   for (const noun of nounPool) {
     if (phrases.length >= max) break;
 
-    // possessive + noun
+    // possessive + noun  (blank the noun, index 1)
     const poss = possessives.find(p => matchesGender(p.text, noun.gender));
-    if (poss) emit([poss.text, noun.text], `${englishPoss(poss.text)} ${noun.translation}`);
+    if (poss) emit([poss.text, noun.text], `${englishPoss(poss.text)} ${noun.translation}`, 1, 'noun');
 
-    // article + noun
+    // article + noun  (blank the noun, index 1)
     const art = article(noun.gender);
     if (art && phrases.length < max) {
-      emit([art.text, noun.text], `the/a ${noun.translation}`);
+      emit([art.text, noun.text], `the/a ${noun.translation}`, 1, 'noun');
     }
 
-    // article + noun + adjective
+    // article + noun + adjective  (blank the noun, index 1)
     if (art && adjectives.length && phrases.length < max) {
       const adj = adjectives[0];
-      emit([art.text, noun.text, adj.text], `a ${adj.translation} ${noun.translation}`);
+      emit([art.text, noun.text, adj.text], `a ${adj.translation} ${noun.translation}`, 1, 'noun');
     }
 
-    // verbPhrase + article + noun  (e.g. "je voudrais un café")
+    // verbPhrase + article + noun  (e.g. "je voudrais un café") — blank the
+    // verb (index 0), a different, often harder target than the noun.
     const verb = verbs.find(v => v.fromCurrentChapter) ?? verbs[0];
     if (verb && art && phrases.length < max) {
-      emit([verb.text, art.text, noun.text], `${verb.translation} ${noun.translation}`);
+      emit([verb.text, art.text, noun.text], `${verb.translation} ${noun.translation}`, 0, 'verbPhrase');
     }
   }
 

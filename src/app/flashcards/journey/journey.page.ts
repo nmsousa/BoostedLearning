@@ -20,9 +20,9 @@ import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
 
-/** The five node types of a chapter, in play order:
- *  Flashcards -> Quiz -> Write -> Match -> Builder. */
-type NodeType = 'flip' | 'quiz' | 'write' | 'match' | 'builder';
+/** The node types of a chapter, in play order:
+ *  Flashcards -> Quiz -> Write -> Match -> Builder (-> Blanks, French only). */
+type NodeType = 'flip' | 'quiz' | 'write' | 'match' | 'builder' | 'blanks';
 
 /** One node (activity) within a chapter. */
 interface JourneyNode {
@@ -191,7 +191,8 @@ export class JourneyPage implements OnInit {
   }
 
   /** Node definitions in play order (type → mode / route / icon / colour):
-   *  Flashcards → Quiz → Write → Match → Builder. */
+   *  Flashcards → Quiz → Write → Match → Builder → Blanks. The Blanks node is
+   *  French-only and is appended per-chapter in buildChapters(). */
   private static readonly NODE_DEFS: { type: NodeType; mode: PracticeMode; route: string; icon: string; color: string }[] = [
     { type: 'flip',    mode: 'journey-flip',    route: '/practice/flip',            icon: 'albums-outline',      color: 'primary' },
     { type: 'quiz',    mode: 'journey-quiz',    route: '/practice/quiz',            icon: 'help-circle-outline', color: 'success' },
@@ -200,13 +201,25 @@ export class JourneyPage implements OnInit {
     { type: 'builder', mode: 'journey-builder', route: '/practice/journey-builder', icon: 'construct-outline',   color: 'warning' },
   ];
 
+  /** The French-only Blanks node, appended to each chapter when the deck is FR. */
+  private static readonly BLANKS_NODE_DEF = {
+    type: 'blanks' as NodeType, mode: 'journey-blanks' as PracticeMode,
+    route: '/practice/blanks', icon: 'reorder-four-outline', color: 'danger',
+  };
+
   /**
-   * Build one chapter per skill. Each chapter has the 5 fixed nodes; a node is
-   * `passed` when its LevelProgress bestScore ≥ 70. Nodes unlock left→right
-   * (node 1, else previous node passed). A chapter unlocks when the previous
-   * chapter's 5 nodes are all passed (chapter 1 always unlocked).
+   * Build one chapter per skill. Each chapter has the fixed nodes (5, +Blanks
+   * on French decks); a node is `passed` when its LevelProgress bestScore ≥ 70.
+   * Nodes unlock left→right (node 1, else previous node passed). A chapter
+   * unlocks when the previous chapter's nodes are all passed (chapter 1 always).
    */
   private async buildChapters(deckId: string, levels: DeckLevel[]): Promise<Chapter[]> {
+    // French decks get the extra Blanks node (the phrase generator is French).
+    const isFrench = (this.deck?.languageCode ?? this.settings.learningLanguage()) === 'fr';
+    const nodeDefs = isFrench
+      ? [...JourneyPage.NODE_DEFS, JourneyPage.BLANKS_NODE_DEF]
+      : JourneyPage.NODE_DEFS;
+
     const chapters: Chapter[] = [];
     let prevComplete = true; // chapter 1 is always reachable
     for (let i = 0; i < levels.length; i++) {
@@ -215,12 +228,12 @@ export class JourneyPage implements OnInit {
 
       // Determine each node's passed state from its per-node progress.
       const passed: boolean[] = [];
-      for (const def of JourneyPage.NODE_DEFS) {
+      for (const def of nodeDefs) {
         const p = await this.flashcards.getLevelProgress(deckId, def.mode, level.levelNumber);
         passed.push((p?.bestScore ?? 0) >= 70);
       }
 
-      const nodes: JourneyNode[] = JourneyPage.NODE_DEFS.map((def, n) => ({
+      const nodes: JourneyNode[] = nodeDefs.map((def, n) => ({
         type: def.type,
         mode: def.mode,
         route: def.route,
@@ -232,7 +245,7 @@ export class JourneyPage implements OnInit {
       }));
 
       const doneCount = passed.filter(Boolean).length;
-      const complete = doneCount === JourneyPage.NODE_DEFS.length;
+      const complete = doneCount === nodeDefs.length;
       chapters.push({
         number: i + 1,
         // Skill name only. Decks without named skills (e.g. Dutch) show nothing
@@ -274,16 +287,17 @@ export class JourneyPage implements OnInit {
   }
 
   // ── Serpentine trail geometry ──────────────────────────────────────────────
-  // Each chapter draws its 5 nodes on a soft zig-zag arc (28/50/72/50/28) with
-  // a dashed tilde path threading through them. MUST match the SCSS (.node is
-  // NODE px, .trail gap is GAP px). The SVG viewBox is "0 0 100 H" with
-  // preserveAspectRatio=none: X is a 0..100 percent and Y is actual pixels, so
-  // the dashed path lines up 1:1 with the laid-out node rows.
+  // Each chapter draws its nodes on a soft zig-zag arc with a dashed tilde path
+  // threading through them. MUST match the SCSS (.node is NODE px, .trail gap is
+  // GAP px). The SVG viewBox is "0 0 100 H" with preserveAspectRatio=none: X is
+  // a 0..100 percent and Y is actual pixels, so the dashed path lines up 1:1
+  // with the laid-out node rows. Six positions cover the FR 6-node chapters;
+  // 5-node chapters just use the first five.
   private static readonly NODE = 56;
   private static readonly GAP = 34;
-  private static readonly ARC = [28, 50, 72, 50, 28];
+  private static readonly ARC = [28, 50, 72, 50, 28, 50];
 
-  /** Node centre X (0..100) for its position in the 5-node chapter. */
+  /** Node centre X (0..100) for its position in the chapter. */
   nodeX(indexInChapter: number): number {
     return JourneyPage.ARC[indexInChapter % JourneyPage.ARC.length];
   }

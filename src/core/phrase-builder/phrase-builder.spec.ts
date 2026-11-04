@@ -83,4 +83,18 @@ describe('phrase-builder generator', () => {
     );
     expect(generatePhrases(tokens)).toEqual([]);
   });
+
+  it('marks a valid blank target (for the Blanks mode)', () => {
+    const tokens = buildTokens(current, earlier);
+    const phrases = generatePhrases(tokens, 10);
+    // At least one phrase must expose a blankIndex pointing at a real token,
+    // with a category — this is what the Blanks mode blanks out.
+    const withBlank = phrases.filter(p => p.blankIndex !== undefined);
+    expect(withBlank.length).toBeGreaterThan(0);
+    for (const p of withBlank) {
+      expect(p.blankIndex).toBeGreaterThanOrEqual(0);
+      expect(p.blankIndex!).toBeLessThan(p.tokens.length);
+      expect(p.blankCategory).toBeDefined();
+    }
+  });
 });

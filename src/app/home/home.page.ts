@@ -256,8 +256,13 @@ export class HomePage implements OnInit {
    * Open the deck/level list for a chosen practice mode. The flashcards page
    * reads the mode and launches each level directly in that mode.
    */
-  startMode(mode: 'flip' | 'write' | 'match' | 'quiz'): void {
+  startMode(mode: 'flip' | 'write' | 'match' | 'quiz' | 'blanks'): void {
     this.router.navigate(['/practice'], { queryParams: { mode } });
+  }
+
+  /** Blanks (fill-in-the-blank) — French only; opens its level list. */
+  startBlanks(): void {
+    this.router.navigate(['/practice'], { queryParams: { mode: 'blanks' } });
   }
 
   /** EXPERIMENTAL modes have their own dedicated pages. */

@@ -40,8 +40,9 @@
   </div>
 
   <div *ngIf="!isLoading && deck" class="journey">
-    <!-- One chapter per skill. Each has 5 fixed nodes (flip → quiz → match →
-         write → builder). Locked chapters are shown dimmed with locked nodes. -->
+    <!-- One chapter per skill. Each has the fixed activity nodes (flip → quiz →
+         write → match → builder, plus Blanks on French decks). Locked chapters
+         are shown dimmed with locked nodes. -->
     <div class="chapter" *ngFor="let chapter of chapters; let ci = index"
       [id]="'journey-chapter-' + ci" [class.locked]="!chapter.unlocked"
       [class.complete]="chapter.complete">
@@ -51,9 +52,9 @@
         <ion-icon *ngIf="!chapter.unlocked" name="lock-closed" class="chapter-lock"></ion-icon>
       </div>
 
-      <!-- Serpentine trail of the 5 activity nodes (same winding layout as the
+      <!-- Serpentine trail of the activity nodes (same winding layout as the
            original design), each node a different game mode in fixed order:
-           Flashcards → Quiz → Write → Match → Builder. -->
+           Flashcards → Quiz → Write → Match → Builder (→ Blanks, French only). -->
       <div class="trail">
         <!-- Dashed tilde path threading through the nodes, drawn behind them.
              X is a 0-100 percent; Y is in px (1:1 with the laid-out rows). -->
