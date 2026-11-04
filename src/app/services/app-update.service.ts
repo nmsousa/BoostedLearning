@@ -97,11 +97,33 @@ export class AppUpdateService {
     try {
       const bundle = await CapacitorUpdater.download({ version, url, checksum });
       await CapacitorUpdater.set({ id: bundle.id });
+      // reload() restarts the webview (lands on Home), wiping any toast we show
+      // now. Persist the applied version so the NEXT boot can confirm it.
+      try { localStorage.setItem(AppUpdateService.JUST_UPDATED_KEY, version); } catch { /* ignore */ }
       await CapacitorUpdater.reload();
       return { status: 'updated', version };
     } catch (err) {
       return { status: 'error', error: err instanceof Error ? err.message : String(err) };
     }
+  }
+
+  private static readonly JUST_UPDATED_KEY = 'boosted-just-updated-version';
+
+  /**
+   * If the app just reloaded into a freshly-applied OTA bundle, return that
+   * version (once) so the UI can show a "Updated to x.y.z" confirmation. Clears
+   * the flag so it only shows on the first boot after the update.
+   */
+  consumeJustUpdatedVersion(): string | null {
+    try {
+      const v = localStorage.getItem(AppUpdateService.JUST_UPDATED_KEY);
+      if (v) {
+        localStorage.removeItem(AppUpdateService.JUST_UPDATED_KEY);
+        // Only confirm if the running bundle is actually that version now.
+        if (v === BUILD_INFO.version) return v;
+      }
+    } catch { /* ignore */ }
+    return null;
   }
 
   /**

@@ -8,12 +8,14 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, effect } from '@angular/core';
 import { Router } from '@angular/router';
+import { ToastController } from '@ionic/angular';
 import { ContentService } from '../services/content.service';
 import { SessionService } from '../services/session.service';
 import { SettingsService } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { FlashcardService } from '../services/flashcard.service';
 import { AddWordService } from '../services/add-word.service';
+import { AppUpdateService } from '../services/app-update.service';
 import { KnowledgeBreakdown } from '../../core/knowledge-level';
 
 interface QuickAction {
@@ -39,6 +41,8 @@ export class HomePage implements OnInit {
   private i18n = inject(I18nAngularService);
   private flashcards = inject(FlashcardService);
   private addWordService = inject(AddWordService);
+  private appUpdate = inject(AppUpdateService);
+  private toast = inject(ToastController);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
@@ -144,6 +148,23 @@ export class HomePage implements OnInit {
     this.loadDashboardData();
     this.wordsReady = true;
     this.cdr.detectChanges();
+
+    // If we just reloaded into a freshly-applied OTA bundle, confirm it (the
+    // "updating…" toast was wiped by the reload that lands here on Home).
+    this.confirmJustUpdated();
+  }
+
+  /** Show a one-time "Updated to x.y.z" toast after an OTA update applied. */
+  private async confirmJustUpdated(): Promise<void> {
+    const v = this.appUpdate.consumeJustUpdatedVersion();
+    if (!v) return;
+    const t = await this.toast.create({
+      message: this.i18n.t('settings.updatedTo', { v }),
+      duration: 3000,
+      position: 'bottom',
+      color: 'success',
+    });
+    await t.present();
   }
 
   /** Recompute when returning to the home tab (e.g. after play or an import). */
