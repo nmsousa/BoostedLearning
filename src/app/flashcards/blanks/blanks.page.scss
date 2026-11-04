@@ -38,12 +38,13 @@
   color: var(--ion-text-color);
   text-align: center;
 
+  // A single underline for the missing word (no literal underscores).
   .blank {
-    color: var(--ion-color-primary);
-    letter-spacing: 1px;
+    display: inline-block;
+    min-width: 72px;
     border-bottom: 3px solid var(--ion-color-primary);
-    padding: 0 10px;
-    line-height: 1;
+    // Nudge the underline down to sit on the text baseline of the words beside it.
+    transform: translateY(-2px);
   }
 }
 

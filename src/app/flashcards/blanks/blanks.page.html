@@ -30,7 +30,9 @@
     <!-- Sentence with the blank in the middle. -->
     <div class="blanks-sentence">
       <span *ngIf="current.before" class="part">{{ current.before }}</span>
-      <span class="blank">____</span>
+      <!-- The blank is a single underline (the SCSS border), not literal
+           underscores — showing both looked like two stacked blanks. -->
+      <span class="blank" aria-label="blank"></span>
       <span *ngIf="current.after" class="part">{{ current.after }}</span>
     </div>
     <p class="blanks-gloss">{{ current.gloss }}</p>
