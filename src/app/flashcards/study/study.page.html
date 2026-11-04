@@ -175,14 +175,16 @@
          (which reuses the question input via tryAgain). -->
     <ion-item class="answer-input" lines="none"
       *ngIf="phase === 'question' || (phase === 'feedback' && feedbackResult !== 'almost')">
-      <!-- Autocorrect/autocapitalize/spell-check OFF: the keyboard was
-           "fixing" foreign words (e.g. turning "café" into "caf"), and
-           inputmode="text" keeps the number row off the keyboard. -->
+      <!-- Autocorrect/autocapitalize/spell-check OFF so the keyboard doesn't
+           "fix" foreign words (e.g. "café" -> "caf"). No `inputmode` so the
+           keyboard doesn't force a number row (we never type digits). The
+           composition handlers let an accented char finish before Enter
+           submits, and submit reads the live DOM value. -->
       <ion-input
         #answerInput
         [(ngModel)]="userAnswer"
         type="text"
-        inputmode="text"
+        enterkeyhint="done"
         autocapitalize="off"
         autocorrect="off"
         spellcheck="false"
@@ -190,6 +192,8 @@
         [readonly]="phase !== 'question'"
         [placeholder]="'mode.typeYourAnswer' | translate"
         (keyup.enter)="onEnter()"
+        (compositionstart)="onCompositionStart()"
+        (compositionend)="onCompositionEnd()"
         [attr.aria-label]="'mode.typeYourAnswer' | translate">
       </ion-input>
     </ion-item>

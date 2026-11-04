@@ -259,13 +259,33 @@ export class StudyPage implements OnInit, OnDestroy {
     }, 100);
   }
 
+  /** True while the IME is composing a character (accents / dead keys). */
+  private composing = false;
+  onCompositionStart(): void { this.composing = true; }
+  onCompositionEnd(): void { this.composing = false; }
+
   /**
-   * Enter key inside the input: submit while typing, else advance to the next
-   * card (the input stays focused through feedback, so Enter still lands here).
+   * Enter key inside the input: submit while typing, else advance. On some
+   * Android keyboards Enter fires DURING composition of an accented char (e.g.
+   * "é"), committing a truncated value ("caf"). If we're mid-composition, let
+   * it finish and don't submit on this keystroke.
    */
   onEnter(): void {
-    if (this.phase === 'question') this.submitAnswer();
+    if (this.composing) return;
+    if (this.phase === 'question') void this.submitAnswer();
     else if (this.phase === 'feedback' && this.feedbackResult !== 'almost') this.nextCard();
+  }
+
+  /**
+   * Read the input's LIVE native value into `userAnswer`. ngModel can lag the
+   * IME on composed characters, so before checking we pull the real DOM value
+   * so "café" isn't read as "caf".
+   */
+  private async syncNativeValue(): Promise<void> {
+    try {
+      const native = await this.answerInput?.getInputElement();
+      if (native && typeof native.value === 'string') this.userAnswer = native.value;
+    } catch { /* fall back to the ngModel value */ }
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -499,7 +519,10 @@ export class StudyPage implements OnInit, OnDestroy {
     }
   }
 
-  submitAnswer(): void {
+  async submitAnswer(): Promise<void> {
+    // Pull the live DOM value first so a composed accent ("café") isn't read as
+    // its pre-composition value ("caf") from a lagging ngModel.
+    await this.syncNativeValue();
     if (!this.userAnswer.trim() || !this.currentCard || !this.deck) return;
 
     this.submittedAnswer = this.userAnswer.trim();

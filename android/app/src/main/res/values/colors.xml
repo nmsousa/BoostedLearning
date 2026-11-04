@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- System-bar colour used by the app theme (status + navigation bars).
-         Matches the default dark "ocean" app background so the bars blend in.
-         The status bar is further refined per theme at runtime by
-         @capacitor/status-bar; the navigation (gesture) bar uses this value. -->
-    <color name="appBackground">#0F1B2D</color>
+         Matches the default dark "ocean" TOOLBAR (header/footer) colour
+         (--ion-toolbar-background: #16263d) so the status bar and the bottom
+         navigation/gesture bar blend with the header/footer — on devices (e.g.
+         Xiaomi) where the runtime status-bar tint doesn't fully take and
+         nothing recolours the nav bar at runtime. The status bar is still
+         refined per theme at runtime by @capacitor/status-bar. -->
+    <color name="appBackground">#16263D</color>
 </resources>
