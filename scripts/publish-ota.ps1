@@ -139,13 +139,29 @@ try {
     $Notes = "OTA web update $Version. Installed testers get it automatically on next launch."
   }
   # Create the release (not a pre-release, so 'latest' resolves to it) and
-  # attach both assets in one call.
-  gh release create $tag $zipPath $manifestPath `
+  # attach both assets in one call. Capture output so gh's progress writes to
+  # stderr don't get mistaken for failure.
+  $createOut = gh release create $tag $zipPath $manifestPath `
     --repo $repo `
     --title $tag `
-    --notes $Notes
-  if ($LASTEXITCODE -ne 0) {
-    throw "gh release create failed (exit $LASTEXITCODE)."
+    --notes $Notes 2>&1
+  $createExit = $LASTEXITCODE
+
+  # gh can exit non-zero on a transient hiccup even after the release landed.
+  # Treat it as success only if the release now exists WITH both assets;
+  # otherwise surface the real error.
+  $assets = & {
+    $ErrorActionPreference = 'SilentlyContinue'
+    gh release view $tag --repo $repo --json assets --jq '.assets[].name' 2>$null
+  }
+  $hasBundle = $assets -contains $zipName
+  $hasManifest = $assets -contains 'updates.json'
+  if (-not ($hasBundle -and $hasManifest)) {
+    Write-Host $createOut
+    throw "Publish failed (exit $createExit): release $tag is missing its assets."
+  }
+  if ($createExit -ne 0) {
+    Write-Host "Note: gh exited $createExit but the release landed with both assets." -ForegroundColor Yellow
   }
 
   Write-Host ""
