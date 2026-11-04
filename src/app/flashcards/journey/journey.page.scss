@@ -108,7 +108,9 @@
   display: flex;
   flex-direction: column;
   gap: 34px;   // MUST equal JourneyPage.GAP (trail path geometry depends on it)
-  padding: 14px 0 20px;
+  // Extra bottom room so the LAST node's label pill (bottom: -18px) clears the
+  // chapter card edge comfortably.
+  padding: 14px 0 40px;
   position: relative;
 }
 
