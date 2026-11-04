@@ -14,7 +14,7 @@
  * @module app/flashcards/builder
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ActionSheetController } from '@ionic/angular';
@@ -44,6 +44,9 @@ type Stage =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BuilderPage implements OnInit {
+  /** The chosen-chips row, used to hit-test the pointer against chips on drag. */
+  @ViewChild('slotsRow') private slotsRow?: ElementRef<HTMLElement>;
+
   private http = inject(HttpClient);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -369,46 +372,91 @@ export class BuilderPage implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // ── Drag-to-reorder the chosen chips ────────────────────────────────────────
+  // ── Pointer-based drag-to-reorder (touch-friendly, with a live-moving chip) ──
+  // HTML5 drag events show no moving "ghost" on touch, so we track the pointer
+  // ourselves: the dragged chip follows the finger (CSS transform), and we
+  // reorder as it crosses another chip's centre.
   /** Index of the chip being dragged, or null. Drives the `.dragging` style. */
   dragIndex: number | null = null;
+  /** Live transform applied to the dragged chip so it follows the finger. */
+  dragTransform: string | null = null;
   /** True briefly after a drag so the trailing click doesn't also unpick. */
   private justDragged = false;
 
-  onDragStart(index: number, ev: DragEvent): void {
+  private dragStartX = 0;
+  private dragStartY = 0;
+  private dragActive = false;        // movement passed the start threshold
+  private readonly DRAG_THRESHOLD = 6; // px before a press becomes a drag
+  private moveHandler?: (e: PointerEvent) => void;
+  private upHandler?: (e: PointerEvent) => void;
+
+  onPointerDown(index: number, ev: PointerEvent): void {
     if (this.stage.kind !== 'phrase' || this.stage.done) return;
+    if (ev.button !== undefined && ev.button !== 0) return; // left/primary only
     this.dragIndex = index;
-    // Firefox needs data set for a drag to start.
-    ev.dataTransfer?.setData('text/plain', String(index));
-    if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move';
+    this.dragActive = false;
+    this.dragStartX = ev.clientX;
+    this.dragStartY = ev.clientY;
+    this.dragTransform = null;
+
+    this.moveHandler = (e: PointerEvent) => this.onPointerMove(e);
+    this.upHandler = (e: PointerEvent) => this.onPointerUp(e);
+    window.addEventListener('pointermove', this.moveHandler, { passive: false });
+    window.addEventListener('pointerup', this.upHandler);
+    window.addEventListener('pointercancel', this.upHandler);
   }
 
-  onDragOver(index: number, ev: DragEvent): void {
-    // Allow dropping (default is to reject).
-    if (this.dragIndex === null) return;
+  private onPointerMove(ev: PointerEvent): void {
+    if (this.dragIndex === null || this.stage.kind !== 'phrase') return;
+    const dx = ev.clientX - this.dragStartX;
+    const dy = ev.clientY - this.dragStartY;
+
+    if (!this.dragActive) {
+      if (Math.hypot(dx, dy) < this.DRAG_THRESHOLD) return; // still a tap
+      this.dragActive = true;
+    }
     ev.preventDefault();
-    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+    // The chip follows the finger.
+    this.dragTransform = `translate(${dx}px, ${dy}px) scale(1.06)`;
+
+    // Reorder when the pointer is over a different chip's centre.
+    const target = this.chipIndexAtPoint(ev.clientX, ev.clientY);
+    if (target !== null && target !== this.dragIndex) {
+      const chosen = [...this.stage.chosen];
+      const [moved] = chosen.splice(this.dragIndex, 1);
+      chosen.splice(target, 0, moved);
+      this.stage = { ...this.stage, chosen, done: false };
+      this.dragIndex = target;
+      this.dragStartX = ev.clientX; // re-anchor so the transform stays small
+      this.dragStartY = ev.clientY;
+      this.dragTransform = 'scale(1.06)';
+    }
+    this.cdr.detectChanges();
   }
 
-  onDrop(targetIndex: number, ev: DragEvent): void {
-    ev.preventDefault();
-    if (this.stage.kind !== 'phrase' || this.dragIndex === null) return;
-    const from = this.dragIndex;
-    if (from === targetIndex) { this.dragIndex = null; return; }
+  private onPointerUp(_ev: PointerEvent): void {
+    window.removeEventListener('pointermove', this.moveHandler!);
+    window.removeEventListener('pointerup', this.upHandler!);
+    window.removeEventListener('pointercancel', this.upHandler!);
+    this.moveHandler = undefined;
+    this.upHandler = undefined;
 
-    const chosen = [...this.stage.chosen];
-    const [moved] = chosen.splice(from, 1);
-    chosen.splice(targetIndex, 0, moved);
-    this.justDragged = true;
+    const wasDrag = this.dragActive;
     this.dragIndex = null;
-    // Reordering is an edit: clear the wrong-order state and re-validate.
-    this.clearWrong();
+    this.dragActive = false;
+    this.dragTransform = null;
 
-    // If the new order completes the phrase correctly, accept it.
+    if (!wasDrag || this.stage.kind !== 'phrase') { this.cdr.detectChanges(); return; }
+
+    // A real drag happened: suppress the trailing click (unpick) and validate
+    // the new order.
+    this.justDragged = true;
+    this.clearWrong();
+    const chosen = this.stage.chosen;
     const correct =
       chosen.length === this.stage.phrase.tokens.length &&
       this.stage.phrase.tokens.every((t, i) => t === chosen[i]);
-    this.stage = { ...this.stage, chosen, done: correct };
+    this.stage = { ...this.stage, done: correct };
     if (correct) {
       this.completed.add(this.stage.phrase.id);
       this.saveProgress();
@@ -417,8 +465,16 @@ export class BuilderPage implements OnInit {
     this.cdr.detectChanges();
   }
 
-  onDragEnd(): void {
-    this.dragIndex = null;
+  /** The index of the chip whose box contains the point, or null. */
+  private chipIndexAtPoint(x: number, y: number): number | null {
+    const row = this.slotsRow?.nativeElement;
+    if (!row) return null;
+    const chips = Array.from(row.querySelectorAll<HTMLElement>('.slot:not(.empty)'));
+    for (let i = 0; i < chips.length; i++) {
+      const r = chips[i].getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
+    }
+    return null;
   }
 
   private clearWrong(): void {

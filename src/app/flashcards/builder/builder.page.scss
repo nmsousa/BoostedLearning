@@ -128,11 +128,16 @@
   // Shared sizing so chosen chips and the empty placeholder read at the SAME
   // height and stay easy to tap. Wrapping to a new line is fine (flex-wrap).
   .slot {
+    position: relative;
     display: inline-flex; align-items: center; justify-content: center;
     min-height: 40px; padding: 8px 16px; border-radius: 12px;
     font-size: 1.05rem; font-weight: 700; line-height: 1;
     background: var(--ion-color-primary); color: #fff;
     border: 2px solid transparent; cursor: pointer;
+    // Prevent the page from scrolling while dragging a chip with the finger.
+    touch-action: none;
+    // Siblings slide smoothly to their new spot as the dragged chip reorders.
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
     &:active:not(:disabled) { transform: scale(0.95); }
     &:disabled { cursor: default; }
     // Empty placeholder: same box, just a dashed outline (no fill) — same
@@ -146,8 +151,15 @@
   &.wrong .slot:not(.empty) { background: var(--ion-color-danger); }
   &.shaking { animation: builder-shake 0.4s ease; }
 
-  // The chip currently being dragged to reorder.
-  .slot.dragging { opacity: 0.5; }
+  // The chip being dragged: lifted above the others, follows the finger (its
+  // transform is set inline per frame), and no transition so it tracks 1:1.
+  .slot.dragging {
+    transition: none;
+    z-index: 5;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    cursor: grabbing;
+    &:active:not(:disabled) { transform: none; } // don't fight the inline transform
+  }
 }
 // Always reserves its line so appearing/disappearing doesn't shift the layout
 // (which pushed the dashed baseline up). `is-hidden` keeps the space.
