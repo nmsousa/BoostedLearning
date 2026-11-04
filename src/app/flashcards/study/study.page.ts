@@ -11,6 +11,8 @@
 import { Component, OnInit, OnDestroy, inject, ViewChild, HostListener, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController, IonInput, ToastController } from '@ionic/angular';
+import { Capacitor } from '@capacitor/core';
+import { Keyboard } from '@capacitor/keyboard';
 import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { SettingsService } from '../../services/settings.service';
@@ -249,15 +251,34 @@ export class StudyPage implements OnInit, OnDestroy {
    * force focus for the "almost" retry card (it has its own flow).
    */
   private focusInput(): void {
+    // Keep the keyboard up while typing (question) and through a CORRECT
+    // answer's flash (so it carries into the next card). Do NOT force it for
+    // incorrect/almost feedback — the input is read-only there and the user is
+    // reading the answer; the keyboard reopens when they tap Continue/Try again.
     const keepUp = () =>
       this.phase === 'question' ||
-      (this.phase === 'feedback' && this.feedbackResult !== 'almost');
-    // Focus ASAP (keeps the already-open keyboard up through an auto-advance)
-    // and again shortly after, in case the DOM/state just changed.
-    if (this.answerInput && keepUp()) this.answerInput.setFocus();
+      (this.phase === 'feedback' && this.feedbackResult === 'correct');
+    if (this.answerInput && keepUp()) {
+      this.answerInput.setFocus();
+      this.forceKeyboard();
+    }
     setTimeout(() => {
-      if (this.answerInput && keepUp()) this.answerInput.setFocus();
+      if (this.answerInput && keepUp()) {
+        this.answerInput.setFocus();
+        this.forceKeyboard();
+      }
     }, 60);
+  }
+
+  /**
+   * On native Android, focusing an input programmatically (not from a user tap)
+   * often does NOT pop the soft keyboard. Explicitly ask the Keyboard plugin to
+   * show it. No-op on web / where the plugin isn't available.
+   */
+  private forceKeyboard(): void {
+    if (!Capacitor.isNativePlatform()) return;
+    // Let the focus settle first, then show.
+    setTimeout(() => { void Keyboard.show().catch(() => { /* ignore */ }); }, 0);
   }
 
   /** True while the IME is composing a character (accents / dead keys). */
