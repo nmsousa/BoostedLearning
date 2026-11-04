@@ -66,6 +66,8 @@ export class BuilderPage implements OnInit {
   /** The generated phrases to play through, and our position in them. */
   private journeyPhrases: GeneratedPhrase[] = [];
   private journeyIndex = 0;
+  /** All word surface-forms available this chapter — the pool for distractors. */
+  private journeyWordPool: string[] = [];
 
   /**
    * Builder datasets per learning language. Each is a hand-categorised set in
@@ -205,6 +207,8 @@ export class BuilderPage implements OnInit {
     }
     const tokens = buildTokens(current, earlier);
     this.journeyPhrases = generatePhrases(tokens, 5);
+    // Pool of every single-word token in the chapter, for bank distractors.
+    this.journeyWordPool = tokens.map(t => t.text).filter(w => w && !/\s/.test(w));
 
     if (this.journeyPhrases.length === 0) {
       // Nothing to build — auto-pass so the chapter can continue.
@@ -226,9 +230,29 @@ export class BuilderPage implements OnInit {
       target: p.target, en: p.en, tokens: p.tokens,
     };
     this.clearWrong();
-    this.bank = this.shuffle([...phrase.tokens]);
+    this.bank = this.buildBank(phrase.tokens, this.journeyWordPool);
     this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
     this.cdr.detectChanges();
+  }
+
+  /**
+   * Build the word bank for a phrase: the exact tokens needed PLUS a few
+   * distractor words drawn from `pool` (words not in the phrase), so the puzzle
+   * isn't trivially "just use every chip". Shuffled. Adds up to a third extra
+   * (min 2, max 4) when enough distractors exist.
+   */
+  private buildBank(tokens: string[], pool: string[]): string[] {
+    const inPhrase = new Set(tokens.map(t => t.toLowerCase()));
+    const seen = new Set(tokens.map(t => t.toLowerCase()));
+    const candidates: string[] = [];
+    for (const w of this.shuffle([...pool])) {
+      const key = w.toLowerCase();
+      if (inPhrase.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      candidates.push(w);
+    }
+    const extra = Math.max(2, Math.min(4, Math.ceil(tokens.length / 2)));
+    return this.shuffle([...tokens, ...candidates.slice(0, extra)]);
   }
 
   /** Advance to the next generated phrase, or finish the node. */
@@ -314,7 +338,11 @@ export class BuilderPage implements OnInit {
   openPhrase(phrase: BuilderPhrase): void {
     if (!this.isPhraseUnlocked(phrase)) return;
     this.clearWrong();
-    this.bank = this.shuffle([...phrase.tokens]);
+    // Pool of every single-word surface form in the dataset, for bank distractors.
+    const pool = (this.data?.groups ?? [])
+      .flatMap(g => g.words.map(w => w.text))
+      .filter(w => w && !/\s/.test(w));
+    this.bank = this.buildBank(phrase.tokens, pool);
     this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
     this.cdr.detectChanges();
   }
