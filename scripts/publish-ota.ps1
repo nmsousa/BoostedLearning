@@ -122,7 +122,9 @@ try {
     checksum = $checksum
   }
   $manifestPath = Join-Path $outDir 'updates.json'
-  $manifest | ConvertTo-Json | Set-Content -Path $manifestPath -Encoding UTF8
+  # Write UTF-8 WITHOUT a BOM. PowerShell's `Set-Content -Encoding UTF8` adds a
+  # BOM, which trips strict JSON parsers (the OTA worker's res.json()).
+  [System.IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json), (New-Object System.Text.UTF8Encoding $false))
 
   if ($NoPublish) {
     Write-Host ""

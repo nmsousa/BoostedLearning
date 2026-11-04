@@ -19,6 +19,8 @@ export interface Env {
   GITHUB_TOKEN: string;
   GITHUB_REPO: string;
   ALLOWED_ORIGIN?: string;
+  /** Where the OTA manifest lives. Defaults to this repo's latest release. */
+  OTA_MANIFEST_URL?: string;
 }
 
 interface Diagnostics {
@@ -66,7 +68,7 @@ function rateLimited(ip: string): boolean {
 function cors(env: Env): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN?.split(',')[0]?.trim() || '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 }
@@ -118,11 +120,126 @@ function buildIssue(p: FeedbackPayload): { title: string; body: string } {
   return { title, body };
 }
 
+// ===========================================================================
+// OTA update endpoint (Capgo capacitor-updater, self-hosted "auto-update")
+// ---------------------------------------------------------------------------
+// The Capgo plugin POSTs an AppInfos body to its `updateUrl` on each launch and
+// expects the SERVER to decide whether an update is due and, if so, return
+// { version, url, checksum }. A static file can't do that (GitHub even rejects
+// the POST with 422), so this endpoint:
+//   1. reads the device's current bundle version from the POST body,
+//   2. fetches the published manifest (GitHub latest-release updates.json),
+//   3. returns the bundle only when the manifest version is strictly newer,
+//      else returns a { message } so the plugin stays on the current bundle.
+// Docs: https://capgo.app/docs/plugins/updater/self-hosted/auto-update/
+// ===========================================================================
+
+/** The POST body Capgo sends (only the fields we use are typed). */
+interface CapgoAppInfos {
+  platform?: string;
+  /** The bundle currently running: a semver, or "builtin" for the APK's own. */
+  version_name?: string;
+  /** The native app version (from build.gradle) — fallback for "builtin". */
+  version_build?: string;
+}
+
+/** Published manifest shape (what publish-ota.ps1 writes to the release). */
+interface OtaManifest {
+  version: string;
+  url: string;
+  checksum: string;
+}
+
+/** Parse a semver "a.b.c" into [a,b,c]; non-numeric parts become 0. */
+function parseSemver(v: string): [number, number, number] {
+  const m = /(\d+)\.(\d+)\.(\d+)/.exec(v ?? '');
+  if (!m) return [0, 0, 0];
+  return [Number(m[1]), Number(m[2]), Number(m[3])];
+}
+
+/** True when `a` is strictly greater than `b` (semver, major.minor.patch). */
+function semverGreater(a: string, b: string): boolean {
+  const pa = parseSemver(a), pb = parseSemver(b);
+  for (let i = 0; i < 3; i++) {
+    if (pa[i] > pb[i]) return true;
+    if (pa[i] < pb[i]) return false;
+  }
+  return false;
+}
+
+async function handleOta(request: Request, env: Env): Promise<Response> {
+  const manifestUrl =
+    env.OTA_MANIFEST_URL ||
+    `https://github.com/${env.GITHUB_REPO}/releases/latest/download/updates.json`;
+
+  // The current running version. On POST it's in the body; allow GET (with an
+  // optional ?current=x.y.z) for easy browser debugging.
+  let current = 'builtin';
+  if (request.method === 'POST') {
+    try {
+      const info = (await request.json()) as CapgoAppInfos;
+      current = info.version_name || info.version_build || 'builtin';
+    } catch {
+      /* tolerate an empty/invalid body — treat as builtin */
+    }
+  } else {
+    current = new URL(request.url).searchParams.get('current') || 'builtin';
+  }
+
+  // Fetch the published manifest (static GET works fine on GitHub releases).
+  let manifest: OtaManifest;
+  try {
+    const res = await fetch(manifestUrl, {
+      headers: { 'User-Agent': 'boostionary-ota-worker' },
+      // Follow GitHub's redirect to the asset.
+      redirect: 'follow',
+    });
+    if (!res.ok) {
+      return json({ message: `manifest fetch failed (${res.status})` }, 200, env);
+    }
+    // Read as text and strip a leading UTF-8 BOM before parsing: PowerShell's
+    // Set-Content -Encoding UTF8 writes a BOM, which res.json() chokes on.
+    const raw = (await res.text()).replace(/^\uFEFF/, '');
+    manifest = JSON.parse(raw) as OtaManifest;
+  } catch (e) {
+    return json({ message: `manifest unavailable: ${String(e)}` }, 200, env);
+  }
+
+  // "builtin" (or anything we can't parse) is treated as oldest, so a device on
+  // the APK's bundled version always gets the first OTA.
+  const isNewer =
+    current === 'builtin' ? semverGreater(manifest.version, '0.0.0')
+                          : semverGreater(manifest.version, current);
+
+  if (!isNewer) {
+    // No update: the plugin keeps the current bundle. A `message` key (per the
+    // Capgo spec) means "don't set a version".
+    return json({ message: 'up-to-date', version: manifest.version }, 200, env);
+  }
+
+  // Update available: returning `url` triggers the download.
+  return json(
+    { version: manifest.version, url: manifest.url, checksum: manifest.checksum },
+    200,
+    env,
+  );
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: cors(env) });
     }
+
+    // Route by path: /ota = OTA update check, everything else = feedback.
+    const path = new URL(request.url).pathname.replace(/\/+$/, '');
+    if (path === '/ota') {
+      if (request.method !== 'POST' && request.method !== 'GET') {
+        return json({ message: 'method not allowed' }, 405, env);
+      }
+      return handleOta(request, env);
+    }
+
     if (request.method !== 'POST') {
       return json({ ok: false, error: 'Method not allowed' }, 405, env);
     }

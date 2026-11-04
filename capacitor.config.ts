@@ -25,8 +25,13 @@ const config: CapacitorConfig = {
       // published (non-pre-release) release, so publishing a new release with
       // an updated updates.json is all it takes to ship an update.
       autoUpdate: true,
-      updateUrl:
-        'https://github.com/nmsousa/BoostedLearning/releases/latest/download/updates.json',
+      // The Capgo plugin POSTs to this URL on launch and expects the SERVER to
+      // compare versions and return the bundle to download. A static file (e.g.
+      // the GitHub release updates.json) can't do that — GitHub even rejects the
+      // POST with 422 — so we point at our Cloudflare Worker's /ota route, which
+      // reads the device's current version, checks the latest release manifest,
+      // and returns { version, url, checksum } only when a newer bundle exists.
+      updateUrl: 'https://boostionary-feedback.nmsousa.workers.dev/ota',
       // NOTE: `directUpdate` is intentionally OFF. With it on, the plugin tried
       // to apply a pending update DURING launch, which made a blocking network
       // call to the update URL — so starting the app OFFLINE hung on the splash
