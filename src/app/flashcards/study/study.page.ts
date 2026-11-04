@@ -62,18 +62,24 @@ export class StudyPage implements OnInit, OnDestroy {
       correctAnswer: this.targetWord ?? null,
       modeName: this.t('mode.titleWrite'),
       onHidden: () => this.nextCard(),
-      onAdminComplete: (stars) => this.adminCompleteLevel(stars),
+      onAdminComplete: (stars) => this.adminCompleteLevel(stars, false),
+      // Write is a 5-round mode (unless a single-pass journey node) → offer
+      // "complete all 5 rounds" for fast testing.
+      onAdminCompleteAll: this.singlePass ? undefined : (stars) => this.adminCompleteLevel(stars, true),
     });
   }
 
   /**
-   * DEV-only: finish the current level immediately with a chosen star count,
-   * persisting progress under the active mode, then return. Skips real play.
+   * DEV-only: finish the current level with a chosen star count, then return.
+   * `allRounds` fills all 5 rounds at once; otherwise just one round.
    */
-  private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
+  private async adminCompleteLevel(stars: 0 | 1 | 2 | 3, allRounds: boolean): Promise<void> {
     if (this.levelNumber > 0 && this.deck) {
-      // Force all 5 rounds complete with the chosen star rating.
-      await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
+      if (allRounds) {
+        await this.flashcardService.adminForceCompleteAllRounds(this.deck.id, this.mode, this.levelNumber, stars);
+      } else {
+        await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
+      }
     }
     this.router.navigate([this.backUrl], { replaceUrl: true });
   }

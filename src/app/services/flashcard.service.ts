@@ -2072,6 +2072,49 @@ export class FlashcardService {
   }
 
   /**
+   * DEV/admin: complete ALL rounds of a level at once (fills the ring to 5/5)
+   * with the chosen star rating, for fast testing of the 5-round modes. Runs
+   * the per-round save enough times to reach ROUNDS_PER_LEVEL from the current
+   * progress. A 0★ round score doesn't pass, so 0★ would never advance — we
+   * floor the pass case to at least the pass score for 1★+, and for 0★ we only
+   * record a (failing) round without looping forever.
+   */
+  async adminForceCompleteAllRounds(deckId: string, mode: PracticeMode, levelNumber: number, stars: 0 | 1 | 2 | 3): Promise<void> {
+    const pct = { 0: 30, 1: 75, 2: 90, 3: 100 }[stars];
+    if (stars === 0) { await this.saveRoundProgress(deckId, mode, levelNumber, pct); return; }
+
+    // Passing rounds advance the counter by one each; loop until 5/5.
+    for (let guard = 0; guard < this.ROUNDS_PER_LEVEL; guard++) {
+      const res = await this.saveRoundProgress(deckId, mode, levelNumber, pct);
+      if (res.levelComplete) break;
+    }
+  }
+
+  /**
+   * DEV-only: SET (not accumulate) a card's flip self-rating counts to a clean
+   * state for a knowledge bucket, so the Flashcards admin "complete level" is
+   * idempotent — picking 3★ marks every word "know it" the same way every time,
+   * instead of nudging counts around. Mirrors `flipKnowledgeBucket`'s rule:
+   *   known    → correct=1, medium=0, incorrect=0
+   *   familiar → correct=1, medium=1, incorrect=0
+   *   learning → correct=0, medium=0, incorrect=1
+   */
+  async adminSetFlipKnowledge(deckId: string, cardId: string, bucket: 'known' | 'familiar' | 'learning'): Promise<void> {
+    const deck = this.getDeck(deckId);
+    if (!deck) return;
+    const card = deck.cards.find(c => c.id === cardId);
+    if (!card) return;
+
+    if (bucket === 'known') { card.correctCount = 1; card.mediumCount = 0; card.incorrectCount = 0; card.streak = 1; }
+    else if (bucket === 'familiar') { card.correctCount = 1; card.mediumCount = 1; card.incorrectCount = 0; card.streak = 0; }
+    else { card.correctCount = 0; card.mediumCount = 0; card.incorrectCount = 1; card.streak = 0; }
+
+    card.lastSeen = new Date().toISOString();
+    await this.saveCardProgress(card);
+    this.decksSignal.update(d => [...d]);
+  }
+
+  /**
    * Get progress for a specific level
    */
   async getLevelProgress(deckId: string, mode: PracticeMode, levelNumber: number): Promise<LevelProgressEntity | null> {

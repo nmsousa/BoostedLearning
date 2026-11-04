@@ -59,21 +59,22 @@ export class FlipPage implements OnInit {
 
   /**
    * DEV-only: finish the Flashcards session immediately with a chosen star
-   * count. Flashcards is self-rated with no real pass/fail, so we also assign
-   * each remaining card a RANDOM rating (hard / medium / easy) — exactly the
-   * cards that would have been played — so the per-level knowledge breakdown
-   * reflects a played session. Then persist stars and return.
+   * count. Flashcards is self-rated, so the rating applied to each remaining
+   * card MUST match the chosen stars (3★ = "know it" everywhere, 0★ = "don't
+   * know"), otherwise the knowledge breakdown contradicts the choice. Earlier
+   * this used a random rating, which made 3★ still lower the green count.
    */
   private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
     if (!this.deck) { this.router.navigate([this.backUrl], { replaceUrl: true }); return; }
 
-    // Rate every card that hasn't been played yet this session with a random
-    // flip rating, so the level's red/yellow/green breakdown fills in.
-    const ratings: FlashcardRating[] = ['hard', 'medium', 'easy'];
+    // Stars → knowledge bucket, applied as a clean SET (not accumulate) so the
+    // action is idempotent: 3★ marks every word "know it" the same way each
+    // time, 0★ "don't know", 1–2★ "so-so".
+    const bucket: 'known' | 'familiar' | 'learning' =
+      stars >= 3 ? 'known' : stars === 0 ? 'learning' : 'familiar';
+
     for (let i = this.currentIndex; i < this.cards.length; i++) {
-      const card = this.cards[i];
-      const r = ratings[Math.floor(Math.random() * ratings.length)];
-      await this.flashcardService.rateFlashcard(this.deck.id, card.id, r);
+      await this.flashcardService.adminSetFlipKnowledge(this.deck.id, this.cards[i].id, bucket);
     }
 
     // Persist the chosen star rating for the level (if this is a level session).

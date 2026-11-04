@@ -114,10 +114,9 @@
     </div>
 
     <div class="phrase-result" *ngIf="stage.done">
+      <!-- Just a success check: the built phrase is already shown in the chips
+           above and the English prompt at the top, so neither is repeated. -->
       <ion-icon name="checkmark-circle" color="success"></ion-icon>
-      <span class="result-nl">{{ stage.phrase.target }}</span>
-      <!-- The English prompt already shows at the top (.phrase-target), so it's
-           not repeated here. -->
       <span class="phrase-progress" *ngIf="journeyMode">{{ journeyPosition }}</span>
     </div>
 

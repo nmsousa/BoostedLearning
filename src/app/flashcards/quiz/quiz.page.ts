@@ -58,14 +58,19 @@ export class QuizPage implements OnInit {
       correctAnswer: this.currentCard ? this.flashcardService.bestTranslation(this.currentCard) : null,
       modeName: this.t('mode.titleQuiz'),
       onHidden: () => this.skipHiddenCard(),
-      onAdminComplete: (stars) => this.adminCompleteLevel(stars),
+      onAdminComplete: (stars) => this.adminCompleteLevel(stars, false),
+      onAdminCompleteAll: this.singlePass ? undefined : (stars) => this.adminCompleteLevel(stars, true),
     });
   }
 
-  /** DEV-only: finish the current level with a chosen star count, then exit. */
-  private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
+  /** DEV-only: finish the level with a chosen star count (one round, or all 5). */
+  private async adminCompleteLevel(stars: 0 | 1 | 2 | 3, allRounds: boolean): Promise<void> {
     if (this.levelNumber > 0 && this.deck) {
-      await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
+      if (allRounds) {
+        await this.flashcardService.adminForceCompleteAllRounds(this.deck.id, this.mode, this.levelNumber, stars);
+      } else {
+        await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
+      }
     }
     this.router.navigate([this.backUrl], { replaceUrl: true });
   }

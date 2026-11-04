@@ -41,11 +41,17 @@ export interface ModeMenuOptions {
    */
   allowAddWord?: boolean;
   /**
-   * DEV-only: when provided (and not a production build), an "Admin" entry is
-   * offered that completes the current level with the chosen star count,
-   * skipping actual play — handy to test level progression quickly.
+   * DEV-only: when provided (and admin mode is on), an "Admin" entry is offered
+   * that completes the current level with the chosen star count, skipping play.
+   * For the flip/journey single-pass modes this fills the level in one go; for
+   * 5-round modes it fills ONE round.
    */
   onAdminComplete?: (stars: 0 | 1 | 2 | 3) => void;
+  /**
+   * DEV-only: for 5-round modes (write/quiz/match), an extra "complete all 5
+   * rounds" entry. Omit for flip / single-pass journey nodes (no rounds).
+   */
+  onAdminCompleteAll?: (stars: 0 | 1 | 2 | 3) => void;
 }
 
 @Injectable({
@@ -112,11 +118,20 @@ export class AddWordService {
     // discreet Settings section), so it also works in production builds for
     // on-device testing.
     if (this.settings.adminMode() && opts.onAdminComplete) {
+      // 5-round modes get "complete 1 round" (the existing behaviour); modes
+      // that pass a complete-all callback also get "complete 5 rounds".
       buttons.push({
-        text: 'Admin: completar nível',
+        text: opts.onAdminCompleteAll ? 'Admin: completar 1 ronda' : 'Admin: completar nível',
         icon: 'construct-outline',
         handler: () => { this.promptAdminComplete(opts.onAdminComplete!); },
       });
+      if (opts.onAdminCompleteAll) {
+        buttons.push({
+          text: 'Admin: completar 5 rondas (nível)',
+          icon: 'construct-outline',
+          handler: () => { this.promptAdminComplete(opts.onAdminCompleteAll!, 'Admin · completar 5 rondas com…'); },
+        });
+      }
     }
 
     buttons.push({ text: t('common.cancel'), icon: 'close-outline', role: 'cancel' });
@@ -125,10 +140,13 @@ export class AddWordService {
     await sheet.present();
   }
 
-  /** DEV-only: finish the current level with a chosen star rating. */
-  private async promptAdminComplete(cb: (stars: 0 | 1 | 2 | 3) => void): Promise<void> {
+  /** DEV-only: pick a star rating, then run the callback. */
+  private async promptAdminComplete(
+    cb: (stars: 0 | 1 | 2 | 3) => void,
+    header = 'Admin · completar nível com…',
+  ): Promise<void> {
     const sheet = await this.actionSheet.create({
-      header: 'Admin · completar nível com…',
+      header,
       cssClass: 'mode-menu-sheet',
       buttons: [
         { text: '0 estrelas (falhei — não conta)', icon: 'ellipse-outline', handler: () => cb(0) },

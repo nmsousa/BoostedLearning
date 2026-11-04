@@ -51,14 +51,21 @@ export class MatchPage implements OnInit, OnDestroy {
     await this.addWordService.openModeMenu({
       languageCode: this.deck?.languageCode,
       modeName: this.t('mode.titleMatch'),
-      onAdminComplete: (stars) => this.adminCompleteLevel(stars),
+      onAdminComplete: (stars) => this.adminCompleteLevel(stars, false),
+      // Match counts each board as one of 5 rounds → offer "complete all 5"
+      // for standalone play (not as a journey single-pass node).
+      onAdminCompleteAll: this.mode === 'journey-match' ? undefined : (stars) => this.adminCompleteLevel(stars, true),
     });
   }
 
-  /** DEV-only: finish the current level with a chosen star count, then exit. */
-  private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
+  /** DEV-only: finish the level with a chosen star count (one round, or all 5). */
+  private async adminCompleteLevel(stars: 0 | 1 | 2 | 3, allRounds: boolean): Promise<void> {
     if (this.levelNumber > 0 && this.deck) {
-      await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
+      if (allRounds) {
+        await this.flashcardService.adminForceCompleteAllRounds(this.deck.id, this.mode, this.levelNumber, stars);
+      } else {
+        await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
+      }
     }
     this.router.navigate([this.backUrl], { replaceUrl: true });
   }
