@@ -43,6 +43,7 @@ export interface AppSettings {
   learningLanguage: string; // code of the language being learned, e.g. 'nl'
   adminMode: boolean; // dev/test tools (hidden in production builds)
   autoPlayAudio: boolean; // auto-play the word's audio on a correct answer (Write/Quiz)
+  testerName: string; // optional name/nick attached to feedback reports
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -64,6 +65,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   // normal users never turn this on. Existing installs keep their saved value.
   adminMode: false,
   autoPlayAudio: true,
+  testerName: '',
 };
 
 const STORAGE_KEY = 'boosted-learning-settings';
@@ -100,6 +102,8 @@ export class SettingsService {
   readonly adminMode = computed(() => this.settingsSignal().adminMode);
   /** Auto-play the word audio on a correct answer (Write/Quiz). */
   readonly autoPlayAudio = computed(() => this.settingsSignal().autoPlayAudio);
+  /** Optional tester name/nick attached to feedback reports. */
+  readonly testerName = computed(() => this.settingsSignal().testerName);
 
   // Computed effective theme (resolves 'system')
   readonly effectiveTheme = computed<'light' | 'dark'>(() => {

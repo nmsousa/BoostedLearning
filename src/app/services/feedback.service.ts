@@ -35,6 +35,8 @@ export interface FeedbackReport {
   learningLanguage?: string | null;
   /** Optional free-text detail typed by the user. */
   note?: string | null;
+  /** 'bug' (default) or 'suggestion'. */
+  kind?: 'bug' | 'suggestion';
 }
 
 /** Device + app diagnostics attached automatically to every report. */
@@ -96,7 +98,11 @@ export class FeedbackService {
    */
   async submit(report: FeedbackReport): Promise<boolean> {
     const diagnostics = await this.collectDiagnostics();
-    const payload = { ...report, diagnostics };
+    // Attach the tester's name (set in Settings) so GitHub issues show WHO
+    // reported them — the Worker opens issues under one token, so without this
+    // every report looks like it came from the repo owner.
+    const testerName = this.settings.testerName()?.trim() || null;
+    const payload = { ...report, kind: report.kind ?? 'bug', testerName, diagnostics };
 
     const url = environment.feedbackEndpoint?.trim();
     if (url) {

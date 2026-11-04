@@ -47,7 +47,19 @@ interface FeedbackPayload {
   modeName?: string | null;
   learningLanguage?: string | null;
   note?: string | null;
+  /** Free-text name/nick the tester set in Settings, so issues show who sent it. */
+  testerName?: string | null;
+  /** Kind of report: 'bug' (default) or 'suggestion'. */
+  kind?: string | null;
   diagnostics?: Diagnostics;
+}
+
+/** Sanitize a tester name into a short, label-safe token. */
+function cleanTester(name: unknown): string {
+  return String(name ?? '')
+    .trim()
+    .replace(/[\r\n]+/g, ' ')
+    .slice(0, 40);
 }
 
 // --- Simple in-memory rate limit (per isolate). Not bulletproof, but enough
@@ -84,19 +96,24 @@ function clamp(s: unknown, max: number): string {
   return String(s ?? '').slice(0, max);
 }
 
-function buildIssue(p: FeedbackPayload): { title: string; body: string } {
+function buildIssue(p: FeedbackPayload): { title: string; body: string; labels: string[] } {
   const word = clamp(p.word, 120);
   const mode = clamp(p.modeName, 40);
   const reasons = Array.isArray(p.reasons) ? p.reasons.map(r => clamp(r, 40)) : [];
   const d = p.diagnostics ?? {};
+  const tester = cleanTester(p.testerName);
+  const kind = clamp(p.kind, 20).toLowerCase() === 'suggestion' ? 'suggestion' : 'bug';
+  const kindLabel = kind === 'suggestion' ? 'Suggestion' : 'Bug';
 
-  // Title context: the word if there is one, else the screen/mode it came
-  // from (e.g. "Homepage"), else a generic placeholder.
+  // Title: "[tester] Suggestion/Bug: <context>" so the list shows WHO + WHAT.
   const context = word || (mode ? `(${mode})` : '(no word)');
-  const title = `Feedback: ${context}${reasons.length ? ` — ${reasons[0]}` : ''}`;
+  const who = tester ? `[${tester}] ` : '';
+  const title = `${who}${kindLabel}: ${context}${reasons.length ? ` — ${reasons[0]}` : ''}`;
 
   const note = clamp(p.note, 1000);
   const body = [
+    `**Reporter:** ${tester || '(anonymous tester)'}`,
+    `**Type:** ${kindLabel}`,
     `**Word:** ${word || '-'}`,
     `**Expected answer:** ${clamp(p.correctAnswer, 200) || '-'}`,
     `**Mode:** ${clamp(p.modeName, 40) || '-'}`,
@@ -117,7 +134,11 @@ function buildIssue(p: FeedbackPayload): { title: string; body: string } {
     '</details>',
   ].join('\n');
 
-  return { title, body };
+  // Labels: 'feedback' + the kind; plus a per-tester label to filter by who.
+  const labels = ['feedback', kind];
+  if (tester) labels.push(`tester:${tester}`);
+
+  return { title, body, labels };
 }
 
 // ===========================================================================
@@ -263,7 +284,7 @@ export default {
       return json({ ok: false, error: 'Empty report' }, 422, env);
     }
 
-    const { title, body } = buildIssue(payload);
+    const { title, body, labels } = buildIssue(payload);
 
     const ghRes = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/issues`, {
       method: 'POST',
@@ -273,7 +294,7 @@ export default {
         'User-Agent': 'boostionary-feedback-worker',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ title, body, labels: ['feedback'] }),
+      body: JSON.stringify({ title, body, labels }),
     });
 
     if (!ghRes.ok) {

@@ -147,6 +147,7 @@ export class SettingsPage {
   get reducedDistraction() { return this.settingsService.reducedDistraction(); }
   get flashcardDirection() { return this.settingsService.flashcardDirection(); }
   get adminMode() { return this.settingsService.adminMode(); }
+  get testerName() { return this.settingsService.testerName(); }
 
   /**
    * Whether the Admin group is shown. Kept visible in production too (it's a
@@ -251,6 +252,11 @@ export class SettingsPage {
 
   onAdminModeChange(event: CustomEvent): void {
     this.settingsService.updateSetting('adminMode', event.detail.checked);
+  }
+
+  onTesterNameChange(event: CustomEvent): void {
+    const value = String((event.detail as { value?: unknown }).value ?? '').slice(0, 40);
+    this.settingsService.updateSetting('testerName', value);
   }
 
   /** Open the in-app Admin / debug info page. */
