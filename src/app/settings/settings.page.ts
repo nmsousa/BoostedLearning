@@ -589,6 +589,58 @@ export class SettingsPage {
     }
   }
 
+  /** Localized display name of the currently selected learning language. */
+  private currentLanguageName(): string {
+    const code = this.settingsService.learningLanguage();
+    const key = `langName.${code}`;
+    const name = this.i18n.t(key);
+    return name === key ? code.toUpperCase() : name;
+  }
+
+  /**
+   * Delete all learning progress + custom/imported words for the CURRENT
+   * language only, after a confirmation prompt. Other languages and the app
+   * settings are untouched.
+   */
+  async deleteLanguageData(): Promise<void> {
+    const code = this.settingsService.learningLanguage();
+    const langName = this.currentLanguageName();
+
+    const alert = await this.alertController.create({
+      header: this.t('settings.deleteDataTitle'),
+      message: this.t('settings.deleteDataConfirm', { lang: langName }),
+      buttons: [
+        { text: this.t('common.cancel'), role: 'cancel' },
+        {
+          text: this.t('settings.deleteDataConfirmBtn'),
+          role: 'destructive',
+          handler: () => { void this.confirmDeleteLanguageData(code, langName); },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  /** Perform the deletion and toast the outcome. */
+  private async confirmDeleteLanguageData(code: string, langName: string): Promise<void> {
+    try {
+      await this.flashcardService.resetLanguageData(code);
+      const t = await this.toast.create({
+        message: this.t('settings.deleteDataDone', { lang: langName }),
+        duration: 2500,
+        position: 'bottom',
+      });
+      await t.present();
+    } catch {
+      const t = await this.toast.create({
+        message: this.t('settings.deleteDataError'),
+        duration: 2500,
+        position: 'bottom',
+      });
+      await t.present();
+    }
+  }
+
   async resetSettings(): Promise<void> {
     const alert = await this.alertController.create({
       header: 'Reset Settings',

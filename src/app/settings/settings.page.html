@@ -192,6 +192,16 @@
         <ion-label>{{ 'settings.secData' | translate }}</ion-label>
       </ion-item-divider>
 
+      <!-- Delete all learning progress + custom words for the CURRENT language
+           only. Shows a confirmation prompt before wiping anything. -->
+      <ion-item button (click)="deleteLanguageData()" detail="false">
+        <ion-icon slot="start" name="trash-outline" color="danger"></ion-icon>
+        <ion-label color="danger">
+          {{ 'settings.deleteData' | translate }}
+          <p>{{ 'settings.deleteDataDesc' | translate }}</p>
+        </ion-label>
+      </ion-item>
+
       <ion-item button (click)="resetSettings()" detail="false">
         <ion-icon slot="start" name="refresh-outline" color="danger"></ion-icon>
         <ion-label color="danger">{{ 'settings.resetSettings' | translate }}</ion-label>

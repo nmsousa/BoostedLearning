@@ -989,6 +989,61 @@ export class FlashcardService {
     this.decksSignal.update(decks => [...decks]);
   }
 
+  /**
+   * Delete ALL learning data for one language, as triggered by the Settings
+   * "Delete learning data" action. This:
+   *  - resets every card's progress (counters, streak, review dates, FSRS
+   *    spaced-repetition state) for that language's decks,
+   *  - clears per-deck level/star progress,
+   *  - deletes any user-imported / manually-added (non-bundled) decks for the
+   *    language, including their custom cards,
+   *  - clears the Phrase Builder progress stored for the language.
+   * Bundled decks remain (so the language itself stays available to study
+   * again from scratch).
+   */
+  async resetLanguageData(languageCode: string): Promise<void> {
+    await this.initialize();
+
+    const decks = this.getAllDecks().filter(d => d.languageCode === languageCode);
+
+    for (const deck of decks) {
+      if (deck.isBundled) {
+        // Wipe progress but keep the bundled deck + its cards.
+        for (const card of deck.cards) {
+          card.correctCount = 0;
+          card.incorrectCount = 0;
+          card.mediumCount = 0;
+          card.lastSeen = null;
+          card.nextReview = null;
+          card.streak = 0;
+          card.fsrs = undefined;
+          card.priority = undefined;
+          await this.saveCardProgress(card);
+          // saveCardProgress preserves the old fsrs/priority when the in-memory
+          // value is undefined, so clear those stored fields explicitly.
+          await this.db.flashcards.update(card.id, { fsrs: undefined, priority: undefined });
+        }
+        await this.db.levelProgress.where('deckId').equals(deck.id).delete();
+        this.invalidateDedupe(deck.id);
+      } else {
+        // User-imported / manual deck: remove it entirely (cards + deck + levels).
+        await this.db.flashcards.where('deckId').equals(deck.id).delete();
+        await this.db.flashcardDecks.delete(deck.id);
+        await this.db.levelProgress.where('deckId').equals(deck.id).delete();
+        this.invalidateDedupe(deck.id);
+      }
+    }
+
+    // Drop deleted user decks from the in-memory list; keep the rest.
+    const removedIds = new Set(decks.filter(d => !d.isBundled).map(d => d.id));
+    this.decksSignal.update(list => [...list.filter(d => !removedIds.has(d.id))]);
+
+    // Phrase Builder keeps its own per-language progress in localStorage.
+    try {
+      localStorage.removeItem(`boosted-builder-progress-${languageCode}`);
+    } catch { /* ignore storage errors */ }
+  }
+
   // ============================================
   // Flashcards (flip + self-rating) mode - FSRS
   // ============================================
