@@ -22,10 +22,11 @@
       </ion-item-divider>
 
       <!-- Theme (single appearance control: Light + dark palettes) -->
-      <ion-item>
+      <ion-item button detail="false" (click)="themeSel.open()">
         <ion-icon slot="start" name="color-palette-outline"></ion-icon>
         <ion-label>{{ 'settings.theme' | translate }}</ion-label>
         <ion-select
+          #themeSel
           slot="end"
           [value]="colorTheme"
           (ionChange)="onColorThemeChange($event)"
@@ -39,10 +40,11 @@
       </ion-item>
 
       <!-- Text Size -->
-      <ion-item>
+      <ion-item button detail="false" (click)="textSizeSel.open()">
         <ion-icon slot="start" name="text-outline"></ion-icon>
         <ion-label>{{ 'settings.textSize' | translate }}</ion-label>
         <ion-select 
+          #textSizeSel
           slot="end"
           [value]="textSize" 
           (ionChange)="onTextSizeChange($event)"
@@ -55,36 +57,35 @@
         </ion-select>
       </ion-item>
 
-      <!-- Reduced Motion -->
+      <!-- Reduced Motion. The toggle wraps the whole row content
+           (justify=space-between) so tapping anywhere on the item flips it. -->
       <ion-item>
         <ion-icon slot="start" name="sparkles-outline"></ion-icon>
-        <ion-label>
-          {{ 'settings.reducedMotion' | translate }}
-          <p>{{ 'settings.reducedMotionDesc' | translate }}</p>
-        </ion-label>
-        <ion-toggle 
-          slot="end"
+        <ion-toggle
           mode="ios"
+          justify="space-between"
           [checked]="reducedMotion"
           (ionChange)="onReducedMotionChange($event)"
           aria-label="Reduced motion"
-        ></ion-toggle>
+        >
+          {{ 'settings.reducedMotion' | translate }}
+          <p>{{ 'settings.reducedMotionDesc' | translate }}</p>
+        </ion-toggle>
       </ion-item>
 
       <!-- Reduced Distraction -->
       <ion-item>
         <ion-icon slot="start" name="eye-off-outline"></ion-icon>
-        <ion-label>
-          {{ 'settings.reducedDistraction' | translate }}
-          <p>{{ 'settings.reducedDistractionDesc' | translate }}</p>
-        </ion-label>
-        <ion-toggle 
-          slot="end"
+        <ion-toggle
           mode="ios"
+          justify="space-between"
           [checked]="reducedDistraction"
           (ionChange)="onReducedDistractionChange($event)"
           aria-label="Reduced distraction mode"
-        ></ion-toggle>
+        >
+          {{ 'settings.reducedDistraction' | translate }}
+          <p>{{ 'settings.reducedDistractionDesc' | translate }}</p>
+        </ion-toggle>
       </ion-item>
     </ion-item-group>
 
@@ -94,13 +95,14 @@
         <ion-label>{{ 'settings.secFlashcards' | translate }}</ion-label>
       </ion-item-divider>
 
-      <ion-item>
+      <ion-item button detail="false" (click)="dirSel.open()">
         <ion-icon slot="start" name="swap-horizontal-outline"></ion-icon>
         <ion-label>
           {{ 'settings.typingDirection' | translate }}
           <p>{{ 'settings.typingDirectionDesc' | translate }}</p>
         </ion-label>
         <ion-select
+          #dirSel
           slot="end"
           [value]="flashcardDirection"
           (ionChange)="onFlashcardDirectionChange($event)"
@@ -120,10 +122,11 @@
         <ion-label>{{ 'settings.secAudio' | translate }}</ion-label>
       </ion-item-divider>
 
-      <ion-item>
+      <ion-item button detail="false" (click)="audioSel.open()">
         <ion-icon slot="start" name="speedometer-outline"></ion-icon>
         <ion-label>{{ 'settings.audioSpeed' | translate }}</ion-label>
         <ion-select 
+          #audioSel
           slot="end"
           [value]="audioSpeed" 
           (ionChange)="onAudioSpeedChange($event)"
@@ -204,11 +207,10 @@
 
       <ion-item>
         <ion-icon slot="start" name="construct-outline"></ion-icon>
-        <ion-label>
+        <ion-toggle mode="ios" justify="space-between" [checked]="adminMode" (ionChange)="onAdminModeChange($event)">
           {{ 'settings.adminMode' | translate }}
           <p>{{ 'settings.adminModeDesc' | translate }}</p>
-        </ion-label>
-        <ion-toggle slot="end" mode="ios" [checked]="adminMode" (ionChange)="onAdminModeChange($event)"></ion-toggle>
+        </ion-toggle>
       </ion-item>
 
       <ion-item button detail="true" (click)="openAdminPage()" *ngIf="adminMode">
@@ -408,9 +410,10 @@
 
         <!-- Base/origin language: the one you already know and translate FROM.
              It also becomes the app's UI language. -->
-        <ion-item>
+        <ion-item button detail="false" (click)="baseSel.open()">
           <ion-label>{{ 'settings.baseLanguage' | translate }}</ion-label>
           <ion-select
+            #baseSel
             slot="end"
             [value]="duomeBase"
             (ionChange)="onDuomeBaseChange($event)"
@@ -423,12 +426,13 @@
           </ion-select>
         </ion-item>
 
-        <ion-item>
+        <ion-item button detail="false" (click)="targetSel.open()">
           <!-- Popover (not action-sheet): the action-sheet took over the whole
                screen and a hardware-back cascaded (closed the sheet, then the
                modal, then Settings). A popover dismisses one layer at a time. -->
           <ion-label>{{ 'settings.languageToLearn' | translate }}</ion-label>
           <ion-select
+            #targetSel
             slot="end"
             [(ngModel)]="duomeTarget"
             (ionChange)="onDuomeCourseChange()"

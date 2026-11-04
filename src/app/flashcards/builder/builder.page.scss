@@ -105,20 +105,30 @@
 .group-next { width: 100%; max-width: 420px; min-height: 52px; font-weight: 700; }
 
 // ── Phrase building ─────────────────────────────────────────────────────────
-.builder-phrase { display: flex; flex-direction: column; align-items: center; gap: 18px; padding-top: 24px; }
+// Centre the whole phrase area in the available space (it used to hug the top).
+.builder-phrase {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; min-height: 60vh; padding: 24px 8px;
+}
 .phrase-target { font-size: 1.2rem; font-weight: 700; color: var(--ion-text-color); text-align: center; }
 
 .phrase-slots {
-  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-  min-height: 48px; width: 100%; padding: 10px;
+  display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center;
+  width: 100%; padding: 12px 10px;
   border-bottom: 2px dashed var(--ion-color-step-250, #33465c);
+  // Shared sizing so chosen chips and the empty placeholder read at the SAME
+  // height and stay easy to tap. Wrapping to a new line is fine (flex-wrap).
   .slot {
-    padding: 8px 14px; border-radius: 10px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 40px; padding: 8px 16px; border-radius: 12px;
+    font-size: 1.05rem; font-weight: 700; line-height: 1;
     background: var(--ion-color-primary); color: #fff;
-    border: none; cursor: pointer;
+    border: 2px solid transparent; cursor: pointer;
     &:active:not(:disabled) { transform: scale(0.95); }
     &:disabled { cursor: default; }
-    &.empty { background: transparent; border: 2px dashed var(--ion-color-step-250, #33465c); min-width: 40px; }
+    // Empty placeholder: same box, just a dashed outline (no fill) — same
+    // height as the chips so the row reads evenly.
+    &.empty { background: transparent; border: 2px dashed var(--ion-color-step-250, #33465c); min-width: 48px; }
   }
 
   // Full phrase but wrong order: shake the chosen slots red to prompt a fix.
