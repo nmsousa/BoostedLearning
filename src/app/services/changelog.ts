@@ -21,6 +21,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.1',
+    notes: [
+      'Builder: the word bank now includes a few extra words, so building a phrase isn\'t just "tap every chip".',
+      'Builder: dragging a word to reorder it is smoother and you can see the word move with your finger.',
+      'Settings: new "Delete learning data" option wipes progress and added words for the current language (with a confirmation).',
+    ],
+  },
+  {
     version: '1.3.0',
     notes: [
       'New: patch notes — see what changed after each update (here and in Settings → About → What\'s new).',
