@@ -24,7 +24,10 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: '1.3.0',
     notes: [
       'New: patch notes — see what changed after each update (here and in Settings → About → What\'s new).',
-      'Updates now reliably confirm with a "What\'s new" dialog after applying.',
+      'Updates now confirm with a "What\'s new" dialog after applying.',
+      'Journey now looks right in the Light theme (chapters were dark).',
+      'Match: you can tap the next pair immediately after a correct match.',
+      'Write: the answer field stays editable after a wrong answer so the keyboard stays open.',
       'Feedback reports carry your tester name so issues show who reported them.',
     ],
   },

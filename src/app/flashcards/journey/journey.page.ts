@@ -434,15 +434,28 @@ export class JourneyPage implements OnInit {
     const nodes = chapter.nodes;
     const n = nodes.length;
     if (n < 2) return [];
-    // SVG `stroke` attribute does NOT resolve CSS var() — use literal colours.
+    // SVG `stroke` attribute does NOT resolve CSS var(), so resolve the theme's
+    // medium colour to a literal here — a dark-only grey was near-invisible on
+    // the light theme.
     const GREEN = '#2dd36f';
-    const GREY = '#33465c';
+    const GREY = this.resolveColor('--ion-color-medium', '#8a94a6');
     const segs: { d: string; stroke: string }[] = [];
     for (let i = 1; i < n; i++) {
       const from = nodes[i - 1];
       segs.push({ d: this.segmentPath(i), stroke: from.passed ? GREEN : GREY });
     }
     return segs;
+  }
+
+  /** Resolve a CSS custom property to a literal colour (for SVG stroke, which
+   *  can't use var()). Falls back to `fallback` when unavailable. */
+  private resolveColor(varName: string, fallback: string): string {
+    try {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+      return v || fallback;
+    } catch {
+      return fallback;
+    }
   }
 
   /** The next node to play in a chapter (first unlocked, not-yet-passed) — gets
