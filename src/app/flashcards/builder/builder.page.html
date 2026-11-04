@@ -96,11 +96,19 @@
   <div *ngIf="stage.kind === 'phrase'" class="builder-phrase">
     <span class="phrase-target">{{ stage.phrase.en }}</span>
 
-    <!-- Chosen words. Tap one to remove it (and send it back to the bank).
-         When the phrase is full but out of order, the slots flash red. -->
-    <div class="phrase-slots" [class.wrong]="wrongOrder">
+    <!-- Chosen words. Tap one to remove it (back to the bank), or DRAG one onto
+         another to reorder. When the phrase is full but out of order the slots
+         stay red (with the hint) until you edit; `shaking` replays the shake. -->
+    <div class="phrase-slots" [class.wrong]="wrongOrder" [class.shaking]="shaking">
       <button type="button" class="slot" *ngFor="let w of stage.chosen; let i = index"
-        [disabled]="stage.done" (click)="unpick(i)">{{ w }}</button>
+        [disabled]="stage.done"
+        [attr.draggable]="!stage.done"
+        [class.dragging]="dragIndex === i"
+        (click)="unpick(i)"
+        (dragstart)="onDragStart(i, $event)"
+        (dragover)="onDragOver(i, $event)"
+        (drop)="onDrop(i, $event)"
+        (dragend)="onDragEnd()">{{ w }}</button>
       <!-- Placeholder for the NEXT word — only while there are still words left
            in the bank to place (hidden once every word has been chosen). -->
       <span class="slot empty" *ngIf="!stage.done && bank.length"></span>

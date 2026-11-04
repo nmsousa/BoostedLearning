@@ -131,11 +131,14 @@
     &.empty { background: transparent; border: 2px dashed var(--ion-color-step-250, #33465c); min-width: 48px; }
   }
 
-  // Full phrase but wrong order: shake the chosen slots red to prompt a fix.
-  &.wrong {
-    animation: builder-shake 0.4s ease;
-    .slot:not(.empty) { background: var(--ion-color-danger); }
-  }
+  // Full phrase but wrong order: the chosen slots stay RED (persistent) until
+  // the user edits. The shake is a separate, short-lived class so it can replay
+  // on each wrong attempt without clearing the red state.
+  &.wrong .slot:not(.empty) { background: var(--ion-color-danger); }
+  &.shaking { animation: builder-shake 0.4s ease; }
+
+  // The chip currently being dragged to reorder.
+  .slot.dragging { opacity: 0.5; }
 }
 .phrase-hint { font-size: 0.78rem; color: var(--ion-color-medium); margin-top: -8px; }
 

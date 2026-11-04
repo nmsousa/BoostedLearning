@@ -73,12 +73,35 @@ export class AppUpdateService {
       return { status: 'unsupported' };
     }
 
-    // Use the plugin's own auto-update pipeline (triggerUpdateCheck) rather than
-    // a manual getLatest()+download()+set(): with autoUpdate enabled the manual
-    // path fights the background flow and, on an "up-to-date" server reply,
-    // getLatest() can reject — which surfaced as a false "error" to the user.
-    // triggerUpdateCheck() queues a native check and the outcome arrives via
-    // events (downloadComplete / noNeedUpdate / downloadFailed).
+    // Guard against re-downloading the version we already run. The native
+    // auto-update check compares the server version against the APK's BUILTIN
+    // version, not the currently-applied OTA bundle — so right after applying
+    // 1.2.0 it can still think it's on the older builtin and try to download
+    // 1.2.0 again, which fails ("a bundle with that version already exists").
+    // So first ask the server for the latest version and compare it to the
+    // bundle actually running; if they match, we're done.
+    try {
+      const [latest, cur] = await Promise.all([
+        CapacitorUpdater.getLatest().catch(() => null),
+        CapacitorUpdater.current().catch(() => null),
+      ]);
+      const latestV = latest?.version;
+      const runningV = cur?.bundle?.version;
+      // `cur.bundle.version` is 'builtin' for the APK bundle; a real OTA bundle
+      // carries its semver. If the running bundle already equals the latest, or
+      // the server reports no newer url, report up-to-date without downloading.
+      if (latestV && runningV && latestV === runningV) {
+        return { status: 'uptodate', version: latestV };
+      }
+      if (latest && !latest.url) {
+        return { status: 'uptodate', version: latestV };
+      }
+    } catch {
+      // Fall through to the event-driven path below.
+    }
+
+    // Otherwise use the plugin's own auto-update pipeline (triggerUpdateCheck)
+    // and resolve from events (downloadComplete / noNeedUpdate / downloadFailed).
     const listeners: { remove: () => void }[] = [];
     const cleanup = () => { for (const l of listeners) { try { l.remove(); } catch { /* ignore */ } } };
 
@@ -101,7 +124,10 @@ export class AppUpdateService {
           done({ status: 'uptodate' });
         }).then(h => listeners.push(h));
 
-        // Download/apply failed.
+        // Download failed. The most common cause after a successful update is
+        // the plugin re-attempting a version it already has; the upfront guard
+        // catches that, so here we still surface a (soft) error for genuine
+        // network failures.
         void CapacitorUpdater.addListener('downloadFailed', info => {
           done({ status: 'error', error: `download failed${info.version ? ' (' + info.version + ')' : ''}` });
         }).then(h => listeners.push(h));

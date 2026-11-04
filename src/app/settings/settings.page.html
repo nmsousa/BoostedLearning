@@ -440,8 +440,10 @@
             [interfaceOptions]="{ cssClass: 'course-popover' }"
             [attr.aria-label]="'settings.languageToLearn' | translate"
             [placeholder]="'settings.chooseLanguage' | translate">
+            <!-- Just the language name — the word count only ate horizontal
+                 space and crowded small screens. -->
             <ion-select-option *ngFor="let c of duomeCourses" [value]="c.code">
-              {{ 'settings.courseWords' | translate:{ name: c.name, words: c.words } }}
+              {{ c.name }}
             </ion-select-option>
           </ion-select>
         </ion-item>

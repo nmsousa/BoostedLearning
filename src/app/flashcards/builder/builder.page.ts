@@ -154,6 +154,9 @@ export class BuilderPage implements OnInit {
    * or Reset and try again. Cleared on a timer / on any edit.
    */
   wrongOrder = false;
+  /** Short-lived: drives the shake animation (re-armed on each wrong attempt)
+   *  without clearing the persistent `wrongOrder` red state. */
+  shaking = false;
   private wrongTimer: ReturnType<typeof setTimeout> | null = null;
 
   t(key: string, params?: Record<string, string | number>): string {
@@ -335,15 +338,18 @@ export class BuilderPage implements OnInit {
       this.saveProgress();
       void this.audio.playWord(this.stage.phrase.target, undefined, this.langCode);
     } else if (full) {
-      // Full but wrong order: flag it so the slots flash, prompting the user to
-      // tap a word to remove it (or Reset) and try a different order.
+      // Full but wrong order: mark it wrong and KEEP it (red chips + message)
+      // until the user edits — removes/reorders a word (unpick / drop) or Reset.
+      // A short-lived `shaking` flag replays just the shake animation on each
+      // new wrong attempt without clearing the persistent red state.
       this.wrongOrder = true;
+      this.shaking = true;
       if (this.wrongTimer) clearTimeout(this.wrongTimer);
       this.wrongTimer = setTimeout(() => {
-        this.wrongOrder = false;
+        this.shaking = false;
         this.wrongTimer = null;
         this.cdr.detectChanges();
-      }, 800);
+      }, 450);
     }
     this.cdr.detectChanges();
   }
@@ -351,6 +357,9 @@ export class BuilderPage implements OnInit {
   /** Remove a chosen word (tap-to-undo) and return it to the bank. */
   unpick(index: number): void {
     if (this.stage.kind !== 'phrase' || this.stage.done) return;
+    // A drag that ends on the SAME chip fires a click too — ignore it so a
+    // reorder gesture doesn't also remove the word.
+    if (this.justDragged) { this.justDragged = false; return; }
     if (index < 0 || index >= this.stage.chosen.length) return;
     const chosen = [...this.stage.chosen];
     const [removed] = chosen.splice(index, 1);
@@ -360,9 +369,62 @@ export class BuilderPage implements OnInit {
     this.cdr.detectChanges();
   }
 
+  // ── Drag-to-reorder the chosen chips ────────────────────────────────────────
+  /** Index of the chip being dragged, or null. Drives the `.dragging` style. */
+  dragIndex: number | null = null;
+  /** True briefly after a drag so the trailing click doesn't also unpick. */
+  private justDragged = false;
+
+  onDragStart(index: number, ev: DragEvent): void {
+    if (this.stage.kind !== 'phrase' || this.stage.done) return;
+    this.dragIndex = index;
+    // Firefox needs data set for a drag to start.
+    ev.dataTransfer?.setData('text/plain', String(index));
+    if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move';
+  }
+
+  onDragOver(index: number, ev: DragEvent): void {
+    // Allow dropping (default is to reject).
+    if (this.dragIndex === null) return;
+    ev.preventDefault();
+    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+  }
+
+  onDrop(targetIndex: number, ev: DragEvent): void {
+    ev.preventDefault();
+    if (this.stage.kind !== 'phrase' || this.dragIndex === null) return;
+    const from = this.dragIndex;
+    if (from === targetIndex) { this.dragIndex = null; return; }
+
+    const chosen = [...this.stage.chosen];
+    const [moved] = chosen.splice(from, 1);
+    chosen.splice(targetIndex, 0, moved);
+    this.justDragged = true;
+    this.dragIndex = null;
+    // Reordering is an edit: clear the wrong-order state and re-validate.
+    this.clearWrong();
+
+    // If the new order completes the phrase correctly, accept it.
+    const correct =
+      chosen.length === this.stage.phrase.tokens.length &&
+      this.stage.phrase.tokens.every((t, i) => t === chosen[i]);
+    this.stage = { ...this.stage, chosen, done: correct };
+    if (correct) {
+      this.completed.add(this.stage.phrase.id);
+      this.saveProgress();
+      void this.audio.playWord(this.stage.phrase.target, undefined, this.langCode);
+    }
+    this.cdr.detectChanges();
+  }
+
+  onDragEnd(): void {
+    this.dragIndex = null;
+  }
+
   private clearWrong(): void {
     if (this.wrongTimer) { clearTimeout(this.wrongTimer); this.wrongTimer = null; }
     this.wrongOrder = false;
+    this.shaking = false;
   }
 
   resetPhrase(): void {
