@@ -106,9 +106,13 @@
 
 // ── Phrase building ─────────────────────────────────────────────────────────
 // Centre the whole phrase area in the available space (it used to hug the top).
+// TOP-aligned (not centred): the prompt + slots above the dashed line have
+// fixed heights, so the line sits at a CONSTANT position in every state. The
+// content below the line (hint, word bank, or result + button) varies freely
+// without moving the line — centring the whole block made the line jump.
 .builder-phrase {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px; min-height: 60vh; padding: 24px 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 18px; min-height: 60vh; padding: 72px 8px 24px;
 }
 .phrase-target { font-size: 1.2rem; font-weight: 700; color: var(--ion-text-color); text-align: center; }
 
