@@ -235,7 +235,10 @@ export class JourneyPage implements OnInit {
       const complete = doneCount === JourneyPage.NODE_DEFS.length;
       chapters.push({
         number: i + 1,
-        name: level.skill ?? this.t('practice.level', { n: level.levelNumber }),
+        // Skill name only. Decks without named skills (e.g. Dutch) show nothing
+        // here — the purple chapter number already identifies the chapter, so
+        // the "Level N" fallback is redundant and was dropped.
+        name: level.skill ?? '',
         levelNumber: level.levelNumber,
         nodes,
         done: doneCount,
