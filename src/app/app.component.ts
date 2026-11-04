@@ -6,6 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SettingsService } from './services/settings.service';
 import { AppUpdateService } from './services/app-update.service';
+import { FlashcardService } from './services/flashcard.service';
 
 @Component({
   selector: 'app-root',
@@ -18,12 +19,19 @@ export class AppComponent {
   // theme effect runs, applying the saved light/dark palette immediately.
   private settings = inject(SettingsService);
   private appUpdate = inject(AppUpdateService);
+  private flashcards = inject(FlashcardService);
   private location = inject(Location);
   private router = inject(Router);
 
   constructor() {
     // Mark the current OTA bundle as healthy and enable live updates.
     void this.appUpdate.init();
+
+    // Start loading decks NOW (app boot), so the heavy one-time DB/JSON work
+    // overlaps the splash/startup instead of stalling the first mode the user
+    // opens. initialize() is idempotent + shares one in-flight promise, so the
+    // pages that also await it just join this same load.
+    void this.flashcards.initialize();
 
     this.registerHardwareBackButton();
     this.syncStatusBarWithTheme();

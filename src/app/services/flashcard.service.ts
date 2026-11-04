@@ -222,6 +222,9 @@ const LANGUAGE_NAMES: Record<string, string> = {
 export class FlashcardService {
   private decksSignal = signal<FlashcardDeck[]>([]);
   private initialized = false;
+  /** Shared in-flight init promise so concurrent first-callers (app boot +
+   *  the first page) don't each start the heavy load. */
+  private initPromise: Promise<void> | null = null;
   private db = getDatabase();
   
   readonly decks = computed(() => this.decksSignal());
@@ -232,36 +235,35 @@ export class FlashcardService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Initialize the service - load bundled decks and user data
+   * Initialize the service - load bundled decks and user data. Idempotent:
+   * runs at most once per session, and concurrent callers share one promise.
+   * Kick it off as early as possible (app boot) so the work overlaps the
+   * splash screen instead of stalling the first mode the user opens.
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    
+    if (this.initPromise) return this.initPromise;
+    this.initPromise = this.doInitialize();
+    return this.initPromise;
+  }
+
+  private async doInitialize(): Promise<void> {
     try {
-      console.log('[FlashcardService] Starting initialization...');
-      
-      // Load bundled decks from JSON files
-      console.log('[FlashcardService] Loading bundled decks...');
-      const bundledDecks = await this.loadBundledDecks();
-      console.log('[FlashcardService] Loaded bundled decks:', bundledDecks.length);
-      
-      // Load user-imported decks from IndexedDB
-      console.log('[FlashcardService] Loading user decks...');
-      const userDecks = await this.loadUserDecks();
-      console.log('[FlashcardService] Loaded user decks:', userDecks.length);
-      
-      // Load progress for all cards from IndexedDB
-      console.log('[FlashcardService] Loading progress for bundled decks...');
-      await this.loadProgress(bundledDecks);
-      console.log('[FlashcardService] Loading progress for user decks...');
-      await this.loadProgress(userDecks);
-      
-      // Combine all decks
+      // Load bundled decks (JSON assets) and user decks (IndexedDB) in
+      // parallel, then merge saved progress with a single bulk read per deck.
+      const [bundledDecks, userDecks] = await Promise.all([
+        this.loadBundledDecks(),
+        this.loadUserDecks(),
+      ]);
+
+      await Promise.all([
+        this.loadProgress(bundledDecks),
+        this.loadProgress(userDecks),
+      ]);
+
       this.decksSignal.set([...bundledDecks, ...userDecks]);
       this.invalidateDedupe();
       this.initialized = true;
-      console.log('[FlashcardService] Initialization complete!');
-      
     } catch (e) {
       console.error('[FlashcardService] Failed to initialize:', e);
       this.initialized = true; // Prevent infinite retries
@@ -362,9 +364,17 @@ export class FlashcardService {
   private async loadProgress(decks: FlashcardDeck[]): Promise<void> {
     for (const deck of decks) {
       if (!deck.isBundled) continue;
-      
+
+      // ONE bulk read per deck instead of one IndexedDB get() per card. The old
+      // per-card loop did ~7205 serial round-trips for the French deck, which
+      // stalled startup for many seconds on slow phones. Here we read all saved
+      // rows for this deck once and merge them in memory via a Map lookup.
+      const saved = await this.db.flashcards.where('deckId').equals(deck.id).toArray();
+      if (saved.length === 0) continue;
+      const byId = new Map(saved.map(s => [s.id, s]));
+
       for (const card of deck.cards) {
-        const savedProgress = await this.db.flashcards.get(card.id);
+        const savedProgress = byId.get(card.id);
         if (savedProgress) {
           card.correctCount = savedProgress.correctCount;
           card.incorrectCount = savedProgress.incorrectCount;
