@@ -237,6 +237,14 @@
           <p>{{ buildDate }}</p>
         </ion-label>
       </ion-item>
+
+      <!-- Manually check for an OTA update and apply it immediately (more
+           reliable than waiting for the background check). -->
+      <ion-item button detail="false" [disabled]="isCheckingUpdate" (click)="checkForUpdate()">
+        <ion-icon slot="start" name="cloud-download-outline"></ion-icon>
+        <ion-label>{{ 'settings.checkUpdate' | translate }}</ion-label>
+        <ion-spinner slot="end" name="crescent" *ngIf="isCheckingUpdate"></ion-spinner>
+      </ion-item>
     </ion-item-group>
   </ion-list>
 

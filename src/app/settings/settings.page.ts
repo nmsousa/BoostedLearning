@@ -11,11 +11,12 @@
 
 import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController } from '@ionic/angular';
+import { AlertController, ToastController } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
 import { SettingsService, Theme, ColorTheme, AppLanguage, TextSize, AudioSpeed, AppSettings, FlashcardDirection } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { FlashcardService, DuolingoResponse, DuolingoLexeme } from '../services/flashcard.service';
+import { AppUpdateService } from '../services/app-update.service';
 import { DUOME_COURSES } from '../services/duome-courses';
 import { BUILD_INFO } from '../../build-info';
 import { environment } from '../../environments/environment';
@@ -29,9 +30,11 @@ import { environment } from '../../environments/environment';
 export class SettingsPage {
   private router = inject(Router);
   private alertController = inject(AlertController);
+  private toast = inject(ToastController);
   private settingsService = inject(SettingsService);
   private i18n = inject(I18nAngularService);
   private flashcardService = inject(FlashcardService);
+  private appUpdate = inject(AppUpdateService);
   private cdr = inject(ChangeDetectorRef);
 
   // --- Vocabulary management (import / manual add / export) ---
@@ -63,6 +66,47 @@ export class SettingsPage {
   // App version + build date for the About section (helps with debugging).
   readonly appVersion = BUILD_INFO.version;
   readonly buildDate = new Date(BUILD_INFO.buildDate).toLocaleString();
+
+  /** True while a manual OTA update check is running (disables the button). */
+  isCheckingUpdate = false;
+
+  /**
+   * Manually check for an OTA update and apply it immediately. More reliable
+   * than the background flow: it asks the server now, downloads, and reloads
+   * into the new bundle. Gives the user a toast for each outcome.
+   */
+  async checkForUpdate(): Promise<void> {
+    if (this.isCheckingUpdate) return;
+    this.isCheckingUpdate = true;
+    this.cdr.detectChanges();
+
+    const showToast = async (msg: string) => {
+      const t = await this.toast.create({ message: msg, duration: 2500, position: 'bottom' });
+      await t.present();
+    };
+
+    try {
+      const res = await this.appUpdate.checkForUpdateNow();
+      switch (res.status) {
+        case 'updated':
+          // reload() is in-flight; a brief toast before the webview reloads.
+          await showToast(this.i18n.t('settings.updateApplying', { v: res.version }));
+          break;
+        case 'uptodate':
+          await showToast(this.i18n.t('settings.updateNone'));
+          break;
+        case 'unsupported':
+          await showToast(this.i18n.t('settings.updateUnsupported'));
+          break;
+        case 'error':
+          await showToast(this.i18n.t('settings.updateError'));
+          break;
+      }
+    } finally {
+      this.isCheckingUpdate = false;
+      this.cdr.detectChanges();
+    }
+  }
 
   // Settings accessors
   get theme() { return this.settingsService.theme(); }

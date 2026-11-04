@@ -17,7 +17,15 @@
  */
 
 import { Injectable } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
+
+/** Outcome of a manual "check for updates" so the UI can message the user. */
+export type ManualUpdateResult =
+  | { status: 'updated'; version: string }     // downloaded + applied (reloading)
+  | { status: 'uptodate'; version?: string }   // already on the latest bundle
+  | { status: 'unsupported' }                   // web/no native plugin
+  | { status: 'error'; error: string };
 
 @Injectable({
   providedIn: 'root',
@@ -51,6 +59,47 @@ export class AppUpdateService {
     } catch (err) {
       // Web/no-plugin environments land here; nothing to do.
       console.debug('OTA updater not active:', err);
+    }
+  }
+
+  /**
+   * Manually check for an update RIGHT NOW and, if one exists, download, apply
+   * and reload into it — no cold start needed. Backs the Settings "Check for
+   * updates" button, which is more reliable than waiting for the background
+   * flow. Safe no-op on web (returns 'unsupported').
+   */
+  async checkForUpdateNow(): Promise<ManualUpdateResult> {
+    if (!Capacitor.isNativePlatform()) {
+      return { status: 'unsupported' };
+    }
+    try {
+      // Ask the server (our /ota Worker) what the latest bundle is.
+      const latest = await CapacitorUpdater.getLatest();
+
+      // No download URL means the server said we're up-to-date.
+      if (!latest.url) {
+        return { status: 'uptodate', version: latest.version };
+      }
+
+      // If the latest already matches what's running, nothing to do.
+      const cur = await CapacitorUpdater.current();
+      if (cur.bundle?.version && cur.bundle.version === latest.version) {
+        return { status: 'uptodate', version: latest.version };
+      }
+
+      // Download the new bundle, set it as next, and reload into it now.
+      const bundle = await CapacitorUpdater.download({
+        version: latest.version,
+        url: latest.url,
+        checksum: latest.checksum,
+      });
+      await CapacitorUpdater.set({ id: bundle.id });
+      // notifyAppReady runs on the next boot via init(); reload applies the
+      // new bundle immediately.
+      await CapacitorUpdater.reload();
+      return { status: 'updated', version: latest.version };
+    } catch (err) {
+      return { status: 'error', error: err instanceof Error ? err.message : String(err) };
     }
   }
 }
