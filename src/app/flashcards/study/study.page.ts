@@ -534,8 +534,14 @@ export class StudyPage implements OnInit, OnDestroy {
       this.autoAdvanceTimer = setTimeout(() => {
         this.autoAdvanceTimer = null;
         // Only auto-advance if still on this correct card (user didn't act).
-        if (this.phase === 'feedback' && this.feedbackResult === 'correct') this.nextCard();
+        if (this.phase === 'feedback' && this.feedbackResult === 'correct') {
+          this.nextCard();
+          // OnPush: a bare setTimeout doesn't re-render this component, so mark
+          // it explicitly after advancing.
+          this.cdr.detectChanges();
+        }
       }, 900);
+      this.cdr.detectChanges();
       return;
     }
 
@@ -609,6 +615,7 @@ export class StudyPage implements OnInit, OnDestroy {
     } else {
       this.phase = 'question';
       this.focusInput();
+      this.cdr.detectChanges();
     }
   }
 
