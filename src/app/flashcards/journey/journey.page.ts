@@ -368,7 +368,7 @@ export class JourneyPage implements OnInit {
   // with the laid-out node rows. Six positions cover the FR 6-node chapters;
   // 5-node chapters just use the first five.
   private static readonly NODE = 64;  // MUST equal the SCSS .node-row height / .node size
-  private static readonly GAP = 22;   // MUST equal the SCSS .trail gap
+  private static readonly GAP = 30;   // MUST equal the SCSS .trail gap
   // Gentler horizontal spread (was 28/50/72) so the zig-zag is tighter, closer
   // to the Duolingo path. 6 positions cover the FR 6-node chapters.
   private static readonly ARC = [36, 50, 64, 50, 36, 50];

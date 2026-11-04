@@ -52,6 +52,11 @@ export interface ModeMenuOptions {
    * rounds" entry. Omit for flip / single-pass journey nodes (no rounds).
    */
   onAdminCompleteAll?: (stars: 0 | 1 | 2 | 3) => void;
+  /**
+   * When true, the menu offers an "auto-play audio on correct" toggle that
+   * flips the persisted `autoPlayAudio` setting. Used by Write/Quiz.
+   */
+  showAutoPlayToggle?: boolean;
 }
 
 @Injectable({
@@ -84,6 +89,17 @@ export class AddWordService {
     const t = (k: string, p?: Record<string, string | number>) => this.i18n.t(k, p);
 
     const buttons: any[] = [];
+
+    // Auto-play audio toggle (Write/Quiz): reflects + flips the persisted
+    // setting, so the label shows the CURRENT state.
+    if (opts.showAutoPlayToggle) {
+      const on = this.settings.autoPlayAudio();
+      buttons.push({
+        text: on ? t('mode.autoPlayOn') : t('mode.autoPlayOff'),
+        icon: on ? 'volume-high-outline' : 'volume-mute-outline',
+        handler: () => { this.settings.updateSetting('autoPlayAudio', !on); },
+      });
+    }
 
     if (opts.allowAddWord) {
       buttons.push({

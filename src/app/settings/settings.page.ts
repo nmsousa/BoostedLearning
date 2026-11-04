@@ -66,13 +66,37 @@ export class SettingsPage {
   readonly appVersion = BUILD_INFO.version;
   readonly buildDate = new Date(BUILD_INFO.buildDate).toLocaleString();
 
-  /** True while a manual OTA update check is running (disables the button). */
+  /** True while a manual OTA update check / download is running. */
   isCheckingUpdate = false;
+  /** True once a passive check found a newer version (drives the red badge). */
+  updateAvailable = false;
+  /** The newer version + its download info, when available. */
+  private pendingUpdate: { version: string; url: string; checksum?: string } | null = null;
 
   /**
-   * Manually check for an OTA update and apply it immediately. More reliable
-   * than the background flow: it asks the server now, downloads, and reloads
-   * into the new bundle. Gives the user a toast for each outcome.
+   * Passively check for a newer version when the Settings page opens, WITHOUT
+   * downloading. If one exists, `updateAvailable` lights up the "new version"
+   * badge; the user taps "Check for updates" to download it.
+   */
+  async ionViewWillEnter(): Promise<void> {
+    try {
+      const s = await this.appUpdate.getUpdateStatus();
+      if (s.available && s.url && s.version) {
+        this.pendingUpdate = { version: s.version, url: s.url, checksum: s.checksum };
+        this.updateAvailable = true;
+      } else {
+        this.pendingUpdate = null;
+        this.updateAvailable = false;
+      }
+    } catch {
+      this.updateAvailable = false;
+    }
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Tap handler for the update row. Downloads + applies the pending update when
+   * one was found; otherwise does a fresh check. Toasts each outcome.
    */
   async checkForUpdate(): Promise<void> {
     if (this.isCheckingUpdate) return;
@@ -85,21 +109,22 @@ export class SettingsPage {
     };
 
     try {
-      const res = await this.appUpdate.checkForUpdateNow();
+      const res = this.pendingUpdate
+        ? await this.appUpdate.downloadAndApply(this.pendingUpdate.version, this.pendingUpdate.url, this.pendingUpdate.checksum)
+        : await this.appUpdate.checkForUpdateNow();
       switch (res.status) {
         case 'updated':
-          // reload() is in-flight; a brief toast before the webview reloads.
           await showToast(this.i18n.t('settings.updateApplying', { v: res.version }));
           break;
         case 'uptodate':
+          this.updateAvailable = false;
+          this.pendingUpdate = null;
           await showToast(this.i18n.t('settings.updateNone'));
           break;
         case 'unsupported':
           await showToast(this.i18n.t('settings.updateUnsupported'));
           break;
         case 'error':
-          // Include the underlying reason so a real failure is diagnosable
-          // (the generic message alone looked alarming for a normal check).
           await showToast(this.i18n.t('settings.updateError') + (res.error ? ` (${res.error})` : ''));
           break;
       }

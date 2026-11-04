@@ -121,7 +121,7 @@
 .trail {
   display: flex;
   flex-direction: column;
-  gap: 22px;   // MUST equal JourneyPage.GAP (trail path geometry depends on it)
+  gap: 30px;   // MUST equal JourneyPage.GAP (trail path geometry depends on it)
   padding: 14px 0 24px;
   position: relative;
 }
@@ -188,7 +188,7 @@
     background: linear-gradient(145deg, var(--ion-color-primary-tint, #38bdf8), var(--ion-color-primary-shade, #0369a1));
     border-color: rgba(255, 255, 255, 0.95);
     ion-icon { font-size: 36px; }
-    animation: journey-node-pulse 2.4s ease-out infinite;
+    animation: journey-node-pulse 1.8s ease-out infinite;
   }
 
   // Locked node: dimmed, non-interactive.
@@ -201,10 +201,16 @@
 }
 
 // One-way pulse (inwards → outwards): the ring starts tight + visible and
-// expands outward while fading, then snaps back to the start for the next
-// cycle (no reverse shrink). Slower than before.
+// expands outward while fading, reaching fully faded at 100% so the next cycle
+// starts immediately (no long pause between pulses).
 @keyframes journey-node-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.5), 0 6px 16px rgba(0, 0, 0, 0.35); }
-  70%  { box-shadow: 0 0 0 14px rgba(56, 189, 248, 0), 0 6px 16px rgba(0, 0, 0, 0.35); }
-  100% { box-shadow: 0 0 0 14px rgba(56, 189, 248, 0), 0 6px 16px rgba(0, 0, 0, 0.35); }
+  0%   { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.55), 0 6px 16px rgba(0, 0, 0, 0.35); }
+  100% { box-shadow: 0 0 0 16px rgba(56, 189, 248, 0), 0 6px 16px rgba(0, 0, 0, 0.35); }
+}
+
+// Raise the "jump to current" FAB off the very bottom edge so it sits
+// comfortably above the safe-area / navigation bar.
+.jump-fab {
+  margin-bottom: 24px;
+  margin-right: 8px;
 }

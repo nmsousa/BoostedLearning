@@ -19,6 +19,7 @@
 import { Injectable } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { BUILD_INFO } from '../../build-info';
 
 /** Outcome of a manual "check for updates" so the UI can message the user. */
 export type ManualUpdateResult =
@@ -63,93 +64,71 @@ export class AppUpdateService {
   }
 
   /**
-   * Manually check for an update RIGHT NOW and, if one exists, download, apply
-   * and reload into it — no cold start needed. Backs the Settings "Check for
-   * updates" button, which is more reliable than waiting for the background
-   * flow. Safe no-op on web (returns 'unsupported').
+   * Passively check whether a NEWER bundle than the one running is available,
+   * WITHOUT downloading anything. Used to show a "new version" badge when the
+   * Settings page opens. Compares the server manifest version against
+   * BUILD_INFO.version (the version actually baked into the running web bundle)
+   * — this is reliable, unlike the native plugin's `current()` which reports
+   * 'builtin' and caused false "update available / download failed" loops.
+   */
+  async getUpdateStatus(): Promise<{ available: boolean; version?: string; url?: string; checksum?: string }> {
+    if (!Capacitor.isNativePlatform()) return { available: false };
+    try {
+      const latest = await CapacitorUpdater.getLatest();
+      const latestV = latest?.version;
+      if (!latestV || !latest.url) return { available: false, version: latestV };
+      const available = this.isNewer(latestV, BUILD_INFO.version);
+      return { available, version: latestV, url: latest.url, checksum: latest.checksum };
+    } catch {
+      return { available: false };
+    }
+  }
+
+  /**
+   * Download the given bundle, set it as next, and reload into it immediately.
+   * Called when the user taps the "new version available" badge. Guards against
+   * re-downloading the version already running (BUILD_INFO.version).
+   */
+  async downloadAndApply(version: string, url: string, checksum?: string): Promise<ManualUpdateResult> {
+    if (!Capacitor.isNativePlatform()) return { status: 'unsupported' };
+    if (!this.isNewer(version, BUILD_INFO.version)) {
+      return { status: 'uptodate', version };
+    }
+    try {
+      const bundle = await CapacitorUpdater.download({ version, url, checksum });
+      await CapacitorUpdater.set({ id: bundle.id });
+      await CapacitorUpdater.reload();
+      return { status: 'updated', version };
+    } catch (err) {
+      return { status: 'error', error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  /**
+   * Manually check + apply in one go (the Settings button). Checks passively
+   * first (no download if we're already on the latest), then downloads only
+   * when there's genuinely a newer version.
    */
   async checkForUpdateNow(): Promise<ManualUpdateResult> {
-    if (!Capacitor.isNativePlatform()) {
-      return { status: 'unsupported' };
+    if (!Capacitor.isNativePlatform()) return { status: 'unsupported' };
+    const s = await this.getUpdateStatus();
+    if (!s.available || !s.url || !s.version) {
+      return { status: 'uptodate', version: s.version };
     }
+    return this.downloadAndApply(s.version, s.url, s.checksum);
+  }
 
-    // Guard against re-downloading the version we already run. The native
-    // auto-update check compares the server version against the APK's BUILTIN
-    // version, not the currently-applied OTA bundle — so right after applying
-    // 1.2.0 it can still think it's on the older builtin and try to download
-    // 1.2.0 again, which fails ("a bundle with that version already exists").
-    // So first ask the server for the latest version and compare it to the
-    // bundle actually running; if they match, we're done.
-    try {
-      const [latest, cur] = await Promise.all([
-        CapacitorUpdater.getLatest().catch(() => null),
-        CapacitorUpdater.current().catch(() => null),
-      ]);
-      const latestV = latest?.version;
-      const runningV = cur?.bundle?.version;
-      // `cur.bundle.version` is 'builtin' for the APK bundle; a real OTA bundle
-      // carries its semver. If the running bundle already equals the latest, or
-      // the server reports no newer url, report up-to-date without downloading.
-      if (latestV && runningV && latestV === runningV) {
-        return { status: 'uptodate', version: latestV };
-      }
-      if (latest && !latest.url) {
-        return { status: 'uptodate', version: latestV };
-      }
-    } catch {
-      // Fall through to the event-driven path below.
+  /** True when semver `a` is strictly greater than `b` (major.minor.patch). */
+  private isNewer(a: string, b: string): boolean {
+    const p = (v: string) => {
+      const m = /(\d+)\.(\d+)\.(\d+)/.exec(v ?? '');
+      return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [0, 0, 0];
+    };
+    const pa = p(a), pb = p(b);
+    for (let i = 0; i < 3; i++) {
+      if (pa[i] > pb[i]) return true;
+      if (pa[i] < pb[i]) return false;
     }
-
-    // Otherwise use the plugin's own auto-update pipeline (triggerUpdateCheck)
-    // and resolve from events (downloadComplete / noNeedUpdate / downloadFailed).
-    const listeners: { remove: () => void }[] = [];
-    const cleanup = () => { for (const l of listeners) { try { l.remove(); } catch { /* ignore */ } } };
-
-    try {
-      const result = await new Promise<ManualUpdateResult>(resolve => {
-        let settled = false;
-        const done = (r: ManualUpdateResult) => { if (!settled) { settled = true; resolve(r); } };
-
-        // A new bundle finished downloading → apply it now with a reload.
-        void CapacitorUpdater.addListener('downloadComplete', info => {
-          const version = info.bundle?.version ?? '';
-          CapacitorUpdater.set({ id: info.bundle!.id })
-            .then(() => CapacitorUpdater.reload())
-            .then(() => done({ status: 'updated', version }))
-            .catch(err => done({ status: 'error', error: err instanceof Error ? err.message : String(err) }));
-        }).then(h => listeners.push(h));
-
-        // Server said there's nothing newer.
-        void CapacitorUpdater.addListener('noNeedUpdate', () => {
-          done({ status: 'uptodate' });
-        }).then(h => listeners.push(h));
-
-        // Download failed. The most common cause after a successful update is
-        // the plugin re-attempting a version it already has; the upfront guard
-        // catches that, so here we still surface a (soft) error for genuine
-        // network failures.
-        void CapacitorUpdater.addListener('downloadFailed', info => {
-          done({ status: 'error', error: `download failed${info.version ? ' (' + info.version + ')' : ''}` });
-        }).then(h => listeners.push(h));
-        void CapacitorUpdater.addListener('updateFailed', info => {
-          done({ status: 'error', error: `update failed${info.bundle?.version ? ' (' + info.bundle.version + ')' : ''}` });
-        }).then(h => listeners.push(h));
-
-        // Kick off the native check. If it can't even queue (auto-update off /
-        // web), resolve immediately.
-        CapacitorUpdater.triggerUpdateCheck()
-          .then(r => {
-            if (r.status === 'unavailable') done({ status: 'unsupported' });
-          })
-          .catch(err => done({ status: 'error', error: err instanceof Error ? err.message : String(err) }));
-
-        // Safety timeout: if no event arrives (e.g. offline), report up-to-date
-        // rather than hanging — nothing was downloaded, so the app is unchanged.
-        setTimeout(() => done({ status: 'uptodate' }), 20000);
-      });
-      return result;
-    } finally {
-      cleanup();
-    }
+    return false;
   }
 }

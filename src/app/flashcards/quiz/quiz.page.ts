@@ -58,6 +58,7 @@ export class QuizPage implements OnInit {
       correctAnswer: this.currentCard ? this.flashcardService.bestTranslation(this.currentCard) : null,
       modeName: this.t('mode.titleQuiz'),
       onHidden: () => this.skipHiddenCard(),
+      showAutoPlayToggle: true,
       onAdminComplete: (stars) => this.adminCompleteLevel(stars, false),
       onAdminCompleteAll: this.singlePass ? undefined : (stars) => this.adminCompleteLevel(stars, true),
     });
@@ -292,6 +293,7 @@ export class QuizPage implements OnInit {
 
     if (option.correct) {
       this.correctCount++;
+      if (this.settings.autoPlayAudio()) void this.playWord();
       if (this.deck) {
         this.flashcardService.rateFlashcard(this.deck.id, this.cards[this.currentIndex].id, 'easy');
       }

@@ -148,3 +148,15 @@ ion-select {
     flex-shrink: 0;
   }
 }
+
+// Bottom breathing room so the last settings item (Check for updates) isn't
+// flush against / clipped by the screen edge.
+.settings-bottom-spacer {
+  height: 40px;
+}
+
+// Small green note under "Check for updates" when a newer version is available.
+.update-available {
+  color: var(--ion-color-success);
+  font-size: 0.78rem;
+}

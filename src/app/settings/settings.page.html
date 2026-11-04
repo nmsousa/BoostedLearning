@@ -241,14 +241,21 @@
         </ion-label>
       </ion-item>
 
-      <!-- Manually check for an OTA update and apply it immediately (more
-           reliable than waiting for the background check). -->
+      <!-- OTA update. A passive check on page-enter lights up a red "new
+           version" badge; tapping downloads + applies. -->
       <ion-item button detail="false" [disabled]="isCheckingUpdate" (click)="checkForUpdate()">
         <ion-icon slot="start" name="cloud-download-outline"></ion-icon>
-        <ion-label>{{ 'settings.checkUpdate' | translate }}</ion-label>
+        <ion-label>
+          {{ 'settings.checkUpdate' | translate }}
+          <p *ngIf="updateAvailable" class="update-available">{{ 'settings.updateAvailable' | translate }}</p>
+        </ion-label>
+        <ion-badge slot="end" color="danger" *ngIf="updateAvailable && !isCheckingUpdate">{{ 'settings.updateNew' | translate }}</ion-badge>
         <ion-spinner slot="end" name="crescent" *ngIf="isCheckingUpdate"></ion-spinner>
       </ion-item>
     </ion-item-group>
+
+    <!-- Breathing room so the last item isn't flush against the screen edge. -->
+    <div class="settings-bottom-spacer"></div>
   </ion-list>
 
   <!-- Import Modal -->

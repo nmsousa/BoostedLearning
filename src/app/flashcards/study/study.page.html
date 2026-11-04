@@ -205,11 +205,9 @@
       </ion-button>
     </div>
 
-    <!-- Correct / Incorrect: a single Continue button (input stays above). -->
-    <ion-button *ngIf="phase === 'feedback' && feedbackResult === 'correct'"
-      expand="block" color="success" (click)="nextCard()" class="submit-button">
-      {{ 'mode.continue' | translate }}
-    </ion-button>
+    <!-- Correct: no Continue button — it auto-advances (brief green flash, the
+         keyboard stays up). Incorrect: a Continue button so the user can read
+         the right answer before moving on. -->
     <ion-button *ngIf="phase === 'feedback' && feedbackResult === 'incorrect'"
       expand="block" color="danger" (click)="nextCard()" class="submit-button">
       {{ 'mode.continue' | translate }}

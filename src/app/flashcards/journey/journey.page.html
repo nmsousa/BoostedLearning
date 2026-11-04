@@ -100,7 +100,7 @@
   </div>
 
   <!-- Jump back to the chapter in progress when it's scrolled out of view. -->
-  <ion-fab *ngIf="!isLoading && showJumpFab" slot="fixed" vertical="bottom" horizontal="end">
+  <ion-fab *ngIf="!isLoading && showJumpFab" slot="fixed" vertical="bottom" horizontal="end" class="jump-fab">
     <ion-fab-button color="primary" (click)="jumpToCurrent()" [attr.aria-label]="'journey.jumpToCurrent' | translate">
       <ion-icon name="locate-outline"></ion-icon>
     </ion-fab-button>

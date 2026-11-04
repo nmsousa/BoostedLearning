@@ -62,6 +62,7 @@ export class StudyPage implements OnInit, OnDestroy {
       correctAnswer: this.targetWord ?? null,
       modeName: this.t('mode.titleWrite'),
       onHidden: () => this.nextCard(),
+      showAutoPlayToggle: true,
       onAdminComplete: (stars) => this.adminCompleteLevel(stars, false),
       // Write is a 5-round mode (unless a single-pass journey node) → offer
       // "complete all 5 rounds" for fast testing.
@@ -96,6 +97,9 @@ export class StudyPage implements OnInit, OnDestroy {
   
   // Level info
   levelNumber = 0;
+
+  /** Timer that auto-advances after a correct answer (no Continue tap). */
+  private autoAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ── 5-round model ──────────────────────────────────────────────────────────
   /** Current round (1..5) when playing a level. 0 = quick study (no rounds). */
@@ -231,7 +235,7 @@ export class StudyPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    // Cleanup if needed
+    if (this.autoAdvanceTimer) clearTimeout(this.autoAdvanceTimer);
   }
 
   ngAfterViewInit() {
@@ -521,7 +525,17 @@ export class StudyPage implements OnInit, OnDestroy {
       this.markCompleted();
       this.correctAnswer = validAnswers[0];
       this.phase = 'feedback';
-      this.focusInput(); // keep the keyboard up for the next card
+      // Correct answers DON'T need a "Continue" tap: show a brief green flash,
+      // keep the keyboard up, optionally play the word, then auto-advance. This
+      // also removes the keyboard open/close flicker between cards.
+      this.focusInput();
+      if (this.settings.autoPlayAudio()) this.playWord();
+      if (this.autoAdvanceTimer) clearTimeout(this.autoAdvanceTimer);
+      this.autoAdvanceTimer = setTimeout(() => {
+        this.autoAdvanceTimer = null;
+        // Only auto-advance if still on this correct card (user didn't act).
+        if (this.phase === 'feedback' && this.feedbackResult === 'correct') this.nextCard();
+      }, 900);
       return;
     }
 
@@ -576,6 +590,7 @@ export class StudyPage implements OnInit, OnDestroy {
   }
 
   nextCard(): void {
+    if (this.autoAdvanceTimer) { clearTimeout(this.autoAdvanceTimer); this.autoAdvanceTimer = null; }
     this.currentIndex++;
     this.userAnswer = '';
     this.submittedAnswer = '';

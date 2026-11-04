@@ -42,6 +42,7 @@ export interface AppSettings {
   flashcardDirection: FlashcardDirection; // typing direction in flashcard study
   learningLanguage: string; // code of the language being learned, e.g. 'nl'
   adminMode: boolean; // dev/test tools (hidden in production builds)
+  autoPlayAudio: boolean; // auto-play the word's audio on a correct answer (Write/Quiz)
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -62,6 +63,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   // be enabled for on-device testing), so the admin shortcuts must be opt-in —
   // normal users never turn this on. Existing installs keep their saved value.
   adminMode: false,
+  autoPlayAudio: true,
 };
 
 const STORAGE_KEY = 'boosted-learning-settings';
@@ -96,6 +98,8 @@ export class SettingsService {
   readonly learningLanguage = computed(() => this.settingsSignal().learningLanguage);
   /** Dev/test tools enabled. The Settings toggle is hidden in production. */
   readonly adminMode = computed(() => this.settingsSignal().adminMode);
+  /** Auto-play the word audio on a correct answer (Write/Quiz). */
+  readonly autoPlayAudio = computed(() => this.settingsSignal().autoPlayAudio);
 
   // Computed effective theme (resolves 'system')
   readonly effectiveTheme = computed<'light' | 'dark'>(() => {
