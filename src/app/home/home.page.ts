@@ -190,8 +190,12 @@ export class HomePage implements OnInit {
       }
     }
 
-    const bullets = (entry?.notes ?? []).map(n => `• ${n}`).join('<br><br>');
+    // Join with real newlines; the `.whats-new-alert` class renders them via
+    // `white-space: pre-line` (Ionic escapes the message, so inline HTML like
+    // <br> would show up literally).
+    const bullets = (entry?.notes ?? []).map(n => `• ${n}`).join('\n\n');
     const alert = await this.alertCtrl.create({
+      cssClass: 'whats-new-alert',
       header,
       message: bullets || this.i18n.t('settings.whatsNewNone'),
       buttons: [{ text: this.i18n.t('common.close') }],

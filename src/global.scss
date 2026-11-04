@@ -291,3 +291,16 @@ ion-popover .lang-list {
   }
 
 }
+
+/**
+ * "What's new" patch-notes alert.
+ * Ionic escapes the alert `message`, so we join the bullet points with real
+ * newlines and preserve them here instead of using inline <br> (which would
+ * show up literally). Left-align so the bullets read as a list.
+ */
+.whats-new-alert {
+  .alert-message {
+    white-space: pre-line;
+    text-align: left;
+  }
+}
