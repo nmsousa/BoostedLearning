@@ -168,39 +168,44 @@
      (mobile). Holds the input + buttons for the question/feedback phases. -->
 <ion-footer *ngIf="!isLoading && phase !== 'complete' && currentCard" class="study-footer">
   <div class="footer-inner">
-    <!-- Question: input + CHECK + hint. -->
-    <ng-container *ngIf="phase === 'question'">
-      <ion-item class="answer-input" lines="none">
-        <!-- Autocorrect/autocapitalize/spell-check OFF: the keyboard was
-             "fixing" foreign words (e.g. turning "café" into "caf"), and
-             inputmode="text" keeps the number row off the keyboard. -->
-        <ion-input
-          #answerInput
-          [(ngModel)]="userAnswer"
-          type="text"
-          inputmode="text"
-          autocapitalize="off"
-          autocorrect="off"
-          spellcheck="false"
-          autocomplete="off"
-          [placeholder]="'mode.typeYourAnswer' | translate"
-          (keyup.enter)="submitAnswer()"
-          [attr.aria-label]="'mode.typeYourAnswer' | translate">
-        </ion-input>
-      </ion-item>
+    <!-- The input stays MOUNTED across question + correct/incorrect feedback so
+         the keyboard doesn't close and reopen between cards. It's read-only
+         during feedback (the answer is being shown) but keeps focus; Enter then
+         advances to the next card. It's only hidden for the "almost" retry flow
+         (which reuses the question input via tryAgain). -->
+    <ion-item class="answer-input" lines="none"
+      *ngIf="phase === 'question' || (phase === 'feedback' && feedbackResult !== 'almost')">
+      <!-- Autocorrect/autocapitalize/spell-check OFF: the keyboard was
+           "fixing" foreign words (e.g. turning "café" into "caf"), and
+           inputmode="text" keeps the number row off the keyboard. -->
+      <ion-input
+        #answerInput
+        [(ngModel)]="userAnswer"
+        type="text"
+        inputmode="text"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+        autocomplete="off"
+        [readonly]="phase !== 'question'"
+        [placeholder]="'mode.typeYourAnswer' | translate"
+        (keyup.enter)="onEnter()"
+        [attr.aria-label]="'mode.typeYourAnswer' | translate">
+      </ion-input>
+    </ion-item>
 
-      <div class="button-row">
-        <ion-button expand="block" (click)="submitAnswer()" [disabled]="!userAnswer.trim()" class="submit-button">
-          {{ 'mode.check' | translate }}
-        </ion-button>
-        <ion-button fill="outline" color="medium" (click)="showHint()" class="hint-button"
-          [disabled]="hintExhausted" [attr.aria-label]="'mode.showHint' | translate">
-          <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
-        </ion-button>
-      </div>
-    </ng-container>
+    <!-- Question: CHECK + hint. -->
+    <div class="button-row" *ngIf="phase === 'question'">
+      <ion-button expand="block" (click)="submitAnswer()" [disabled]="!userAnswer.trim()" class="submit-button">
+        {{ 'mode.check' | translate }}
+      </ion-button>
+      <ion-button fill="outline" color="medium" (click)="showHint()" class="hint-button"
+        [disabled]="hintExhausted" [attr.aria-label]="'mode.showHint' | translate">
+        <ion-icon slot="icon-only" name="bulb-outline"></ion-icon>
+      </ion-button>
+    </div>
 
-    <!-- Correct / Incorrect: a single Continue button. -->
+    <!-- Correct / Incorrect: a single Continue button (input stays above). -->
     <ion-button *ngIf="phase === 'feedback' && feedbackResult === 'correct'"
       expand="block" color="success" (click)="nextCard()" class="submit-button">
       {{ 'mode.continue' | translate }}

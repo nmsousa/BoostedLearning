@@ -232,27 +232,46 @@ export class StudyPage implements OnInit, OnDestroy {
     this.focusInput();
   }
 
+  /**
+   * Keep the keyboard up by holding focus on the input. We focus during the
+   * question AND during correct/incorrect feedback (the input stays mounted,
+   * read-only), so the keyboard doesn't close + reopen between cards. We do NOT
+   * force focus for the "almost" retry card (it has its own flow).
+   */
   private focusInput(): void {
     setTimeout(() => {
-      if (this.answerInput && this.phase === 'question') {
+      const keepUp =
+        this.phase === 'question' ||
+        (this.phase === 'feedback' && this.feedbackResult !== 'almost');
+      if (this.answerInput && keepUp) {
         this.answerInput.setFocus();
       }
     }, 100);
   }
 
+  /**
+   * Enter key inside the input: submit while typing, else advance to the next
+   * card (the input stays focused through feedback, so Enter still lands here).
+   */
+  onEnter(): void {
+    if (this.phase === 'question') this.submitAnswer();
+    else if (this.phase === 'feedback' && this.feedbackResult !== 'almost') this.nextCard();
+  }
+
   @HostListener('document:keydown', ['$event'])
   handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter') {
-      if (this.phase === 'feedback' && this.feedbackResult === 'almost') {
-        event.preventDefault();
-        this.tryAgain();
-      } else if (this.phase === 'feedback') {
-        event.preventDefault();
-        this.nextCard();
-      } else if (this.phase === 'complete') {
-        event.preventDefault();
-        this.finishStudy();
-      }
+    if (event.key !== 'Enter') return;
+
+    // When the answer input is focused it has its own (keyup.enter)="onEnter()"
+    // for question + correct/incorrect feedback, so skip those here to avoid a
+    // double advance. We still handle the cases the input can't: the "almost"
+    // retry and the final complete screen.
+    if (this.phase === 'feedback' && this.feedbackResult === 'almost') {
+      event.preventDefault();
+      this.tryAgain();
+    } else if (this.phase === 'complete') {
+      event.preventDefault();
+      this.finishStudy();
     }
   }
 
@@ -496,6 +515,7 @@ export class StudyPage implements OnInit, OnDestroy {
       this.markCompleted();
       this.correctAnswer = validAnswers[0];
       this.phase = 'feedback';
+      this.focusInput(); // keep the keyboard up for the next card
       return;
     }
 
@@ -516,6 +536,7 @@ export class StudyPage implements OnInit, OnDestroy {
     this.recordAttempt(false);
     this.correctAnswer = validAnswers[0];
     this.phase = 'feedback';
+    this.focusInput(); // keep the keyboard up for the next card
     this.markFailedAndRequeue();
   }
 
