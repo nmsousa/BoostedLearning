@@ -34,7 +34,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="journey-content">
+<ion-content [fullscreen]="true" class="journey-content" [scrollEvents]="true" (ionScroll)="onContentScroll()">
   <div *ngIf="isLoading" class="mode-loading">
     <ion-spinner name="crescent"></ion-spinner>
   </div>
@@ -98,4 +98,11 @@
       <ion-infinite-scroll-content></ion-infinite-scroll-content>
     </ion-infinite-scroll>
   </div>
+
+  <!-- Jump back to the chapter in progress when it's scrolled out of view. -->
+  <ion-fab *ngIf="!isLoading && showJumpFab" slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button color="primary" (click)="jumpToCurrent()" [attr.aria-label]="'journey.jumpToCurrent' | translate">
+      <ion-icon name="locate-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>

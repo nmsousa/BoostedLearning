@@ -87,16 +87,20 @@
   }
   // Chapter number in a circular badge (like the level-list rings), so the
   // name has the full remaining width and never needs truncating.
+  // A pill, not a fixed circle, so 3-digit chapter numbers (100+) don't
+  // overflow or clip — it stays a circle for 1–2 digits and widens for 3.
   .chapter-badge {
     flex: 0 0 auto;
-    width: 26px;
+    min-width: 26px;
     height: 26px;
-    border-radius: 50%;
+    padding: 0 7px;
+    border-radius: 999px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 0.8rem;
     font-weight: 800;
+    line-height: 1;
     color: var(--ion-color-primary);
     border: 2px solid var(--ion-color-primary);
   }
@@ -141,7 +145,7 @@
 .node-row {
   position: relative;
   z-index: 1;
-  height: 56px;   // MUST equal JourneyPage.NODE
+  height: 64px;   // MUST equal JourneyPage.NODE
 
   // `left` is set inline per node (style.left.%); centre the node on that point.
   .node { position: absolute; top: 0; transform: translateX(-50%); }
@@ -151,8 +155,8 @@
 // nodes are green, the next playable node is blue and pulses, locked nodes show
 // a padlock. No text label — the icon identifies the mode.
 .node {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   border: 3px solid rgba(255, 255, 255, 0.85);
   background: var(--ion-color-step-150, #24405f);
@@ -165,10 +169,10 @@
 
   &:active { transform: translateX(-50%) scale(0.94); }
 
-  ion-icon { font-size: 26px; }
+  ion-icon { font-size: 30px; }
   .node-check { color: #fff; }
   .node-current-icon { color: #fff; }
-  .node-lock { color: var(--ion-color-medium); font-size: 22px; }
+  .node-lock { color: var(--ion-color-medium); font-size: 24px; }
 
   // Passed node: solid green fill (white mode icon).
   &.passed {
@@ -179,12 +183,12 @@
   // Current node (next to play): LIGHT-BLUE fill, larger, with a CONSTANT
   // pulsing ring so the eye lands on it. The mode icon is white on the blue.
   &.current {
-    width: 68px;
-    height: 68px;
+    width: 76px;
+    height: 76px;
     background: linear-gradient(145deg, var(--ion-color-primary-tint, #38bdf8), var(--ion-color-primary-shade, #0369a1));
     border-color: rgba(255, 255, 255, 0.95);
-    ion-icon { font-size: 32px; }
-    animation: journey-node-pulse 1.6s ease-in-out infinite;
+    ion-icon { font-size: 36px; }
+    animation: journey-node-pulse 2.4s ease-out infinite;
   }
 
   // Locked node: dimmed, non-interactive.
@@ -196,9 +200,11 @@
   }
 }
 
-// Constant pulse for the current node's glow ring. We animate box-shadow (the
-// ring) rather than transform so the node doesn't jump around on the trail.
+// One-way pulse (inwards → outwards): the ring starts tight + visible and
+// expands outward while fading, then snaps back to the start for the next
+// cycle (no reverse shrink). Slower than before.
 @keyframes journey-node-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.45), 0 6px 16px rgba(0, 0, 0, 0.35); }
-  50%      { box-shadow: 0 0 0 10px rgba(56, 189, 248, 0), 0 6px 16px rgba(0, 0, 0, 0.35); }
+  0%   { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.5), 0 6px 16px rgba(0, 0, 0, 0.35); }
+  70%  { box-shadow: 0 0 0 14px rgba(56, 189, 248, 0), 0 6px 16px rgba(0, 0, 0, 0.35); }
+  100% { box-shadow: 0 0 0 14px rgba(56, 189, 248, 0), 0 6px 16px rgba(0, 0, 0, 0.35); }
 }

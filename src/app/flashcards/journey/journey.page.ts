@@ -303,9 +303,15 @@ export class JourneyPage implements OnInit {
   }
 
   /** Scroll the content so the chapter being played is in view on entry, with
-   *  a custom EASE-OUT (fast at the start, slowing as it arrives). */
-  private async scrollToCurrentChapter(): Promise<void> {
-    if (this.currentChapterIndex <= 0) return;
+   *  a custom EASE-OUT (fast at the start, slowing as it arrives). Also backs
+   *  the "jump to current" FAB, so it allows forcing even for chapter 0. */
+  async scrollToCurrentChapter(force = false): Promise<void> {
+    if (this.currentChapterIndex <= 0 && !force) return;
+    // Make sure the target chapter is actually rendered (lazy window).
+    if (this.renderCount <= this.currentChapterIndex) {
+      this.renderCount = Math.min(this.chapters.length, this.currentChapterIndex + 1 + JourneyPage.RENDER_BATCH);
+      this.cdr.detectChanges();
+    }
     const el = document.getElementById(`journey-chapter-${this.currentChapterIndex}`);
     const content = document.querySelector('ion-content.journey-content') as HTMLIonContentElement | null;
     if (!el || !content) return;
@@ -313,7 +319,7 @@ export class JourneyPage implements OnInit {
     const box = el.getBoundingClientRect();
     const from = scrollEl.scrollTop;
     const to = Math.max(0, Math.min(from + box.top - 90, scrollEl.scrollHeight - scrollEl.clientHeight));
-    if (Math.abs(to - from) < 4) return;
+    if (Math.abs(to - from) < 4) { this.showJumpFab = false; this.cdr.detectChanges(); return; }
     const duration = 650;
     const start = performance.now();
     const ease = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -325,6 +331,35 @@ export class JourneyPage implements OnInit {
     requestAnimationFrame(stepFn);
   }
 
+  // ── "Jump to current" FAB ───────────────────────────────────────────────────
+  /** True when the current chapter is scrolled well out of view. */
+  showJumpFab = false;
+
+  /** Scroll handler on ion-content: show the FAB when the current chapter is
+   *  off-screen (above or below the viewport by a margin). */
+  onContentScroll(): void {
+    if (this.currentChapterIndex < 0 || this.isLoading) return;
+    const el = document.getElementById(`journey-chapter-${this.currentChapterIndex}`);
+    if (!el) {
+      // Current chapter isn't even rendered yet → it's below; show the FAB.
+      if (!this.showJumpFab) { this.showJumpFab = true; this.cdr.detectChanges(); }
+      return;
+    }
+    const box = el.getBoundingClientRect();
+    const vh = window.innerHeight;
+    // Off-screen if its whole box is above the top or below the bottom.
+    const offscreen = box.bottom < 80 || box.top > vh - 80;
+    if (offscreen !== this.showJumpFab) {
+      this.showJumpFab = offscreen;
+      this.cdr.detectChanges();
+    }
+  }
+
+  /** FAB tap: smooth-scroll back to the current chapter. */
+  jumpToCurrent(): void {
+    void this.scrollToCurrentChapter(true);
+  }
+
   // ── Serpentine trail geometry ──────────────────────────────────────────────
   // Each chapter draws its nodes on a soft zig-zag arc with a dashed tilde path
   // threading through them. MUST match the SCSS (.node is NODE px, .trail gap is
@@ -332,7 +367,7 @@ export class JourneyPage implements OnInit {
   // a 0..100 percent and Y is actual pixels, so the dashed path lines up 1:1
   // with the laid-out node rows. Six positions cover the FR 6-node chapters;
   // 5-node chapters just use the first five.
-  private static readonly NODE = 56;
+  private static readonly NODE = 64;  // MUST equal the SCSS .node-row height / .node size
   private static readonly GAP = 22;   // MUST equal the SCSS .trail gap
   // Gentler horizontal spread (was 28/50/72) so the zig-zag is tighter, closer
   // to the Duolingo path. 6 positions cover the FR 6-node chapters.
