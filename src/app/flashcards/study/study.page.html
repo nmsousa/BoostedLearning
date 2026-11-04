@@ -169,10 +169,12 @@
 <ion-footer *ngIf="!isLoading && phase !== 'complete' && currentCard" class="study-footer">
   <div class="footer-inner">
     <!-- The input stays MOUNTED across question + correct/incorrect feedback so
-         the keyboard doesn't close and reopen between cards. It's read-only
-         during feedback (the answer is being shown) but keeps focus; Enter then
-         advances to the next card. It's only hidden for the "almost" retry flow
-         (which reuses the question input via tryAgain). -->
+         the keyboard doesn't close and reopen between cards. For a CORRECT
+         answer it stays editable+focused (readonly would close the Android
+         keyboard, and re-focusing after the timer can't reopen it), so the
+         keyboard carries straight into the next card. Only incorrect feedback
+         is readonly. Hidden for the "almost" retry flow (reuses it via
+         tryAgain). -->
     <ion-item class="answer-input" lines="none"
       *ngIf="phase === 'question' || (phase === 'feedback' && feedbackResult !== 'almost')">
       <!-- Autocorrect/autocapitalize/spell-check OFF so the keyboard doesn't
@@ -189,7 +191,7 @@
         autocorrect="off"
         spellcheck="false"
         autocomplete="off"
-        [readonly]="phase !== 'question'"
+        [readonly]="phase === 'feedback' && feedbackResult === 'incorrect'"
         [placeholder]="'mode.typeYourAnswer' | translate"
         (keyup.enter)="onEnter()"
         (compositionstart)="onCompositionStart()"

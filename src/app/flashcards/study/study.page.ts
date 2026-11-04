@@ -249,14 +249,15 @@ export class StudyPage implements OnInit, OnDestroy {
    * force focus for the "almost" retry card (it has its own flow).
    */
   private focusInput(): void {
+    const keepUp = () =>
+      this.phase === 'question' ||
+      (this.phase === 'feedback' && this.feedbackResult !== 'almost');
+    // Focus ASAP (keeps the already-open keyboard up through an auto-advance)
+    // and again shortly after, in case the DOM/state just changed.
+    if (this.answerInput && keepUp()) this.answerInput.setFocus();
     setTimeout(() => {
-      const keepUp =
-        this.phase === 'question' ||
-        (this.phase === 'feedback' && this.feedbackResult !== 'almost');
-      if (this.answerInput && keepUp) {
-        this.answerInput.setFocus();
-      }
-    }, 100);
+      if (this.answerInput && keepUp()) this.answerInput.setFocus();
+    }, 60);
   }
 
   /** True while the IME is composing a character (accents / dead keys). */
