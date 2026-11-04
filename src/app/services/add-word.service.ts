@@ -14,7 +14,6 @@ import { FlashcardService } from './flashcard.service';
 import { SettingsService } from './settings.service';
 import { I18nAngularService } from './i18n.service';
 import { FeedbackService } from './feedback.service';
-import { environment } from '../../environments/environment';
 
 /** Options for the practice-page header menu. */
 export interface ModeMenuOptions {
@@ -108,11 +107,13 @@ export class AddWordService {
       handler: () => { this.reportProblem(opts, lang); },
     });
 
-    // Admin shortcut: complete the level with a chosen star count. Shown only
-    // in non-production builds AND when the Admin-mode setting is on.
-    if (!environment.production && this.settings.adminMode() && opts.onAdminComplete) {
+    // Admin shortcut: complete the level with a chosen star count. Gated ONLY
+    // by the Admin-mode setting (which is off by default and lives in a
+    // discreet Settings section), so it also works in production builds for
+    // on-device testing.
+    if (this.settings.adminMode() && opts.onAdminComplete) {
       buttons.push({
-        text: 'Admin: completar 1 ronda',
+        text: 'Admin: completar nível',
         icon: 'construct-outline',
         handler: () => { this.promptAdminComplete(opts.onAdminComplete!); },
       });
@@ -124,10 +125,10 @@ export class AddWordService {
     await sheet.present();
   }
 
-  /** DEV-only: simulate ONE round with a chosen star rating (fills 1/5). */
+  /** DEV-only: finish the current level with a chosen star rating. */
   private async promptAdminComplete(cb: (stars: 0 | 1 | 2 | 3) => void): Promise<void> {
     const sheet = await this.actionSheet.create({
-      header: 'Admin · completar 1 ronda com…',
+      header: 'Admin · completar nível com…',
       cssClass: 'mode-menu-sheet',
       buttons: [
         { text: '0 estrelas (falhei — não conta)', icon: 'ellipse-outline', handler: () => cb(0) },

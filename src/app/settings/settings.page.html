@@ -195,7 +195,8 @@
       </ion-item>
     </ion-item-group>
 
-    <!-- Admin / dev section (hidden in production builds) -->
+    <!-- Admin / dev section. Visible in all builds but OFF by default; the
+         admin shortcuts only appear once the toggle below is enabled. -->
     <ion-item-group *ngIf="showAdminGroup">
       <ion-item-divider>
         <ion-label>{{ 'settings.secAdmin' | translate }}</ion-label>

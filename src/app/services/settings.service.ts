@@ -58,9 +58,10 @@ const DEFAULT_SETTINGS: AppSettings = {
   reducedDistraction: false,
   flashcardDirection: 'target-only',
   learningLanguage: 'nl',
-  // Defaults ON for now (dev/test phase). Will default off / be removed for
-  // production. The Settings toggle itself is hidden in production builds.
-  adminMode: true,
+  // OFF by default. The Admin section is visible in all builds now (so it can
+  // be enabled for on-device testing), so the admin shortcuts must be opt-in —
+  // normal users never turn this on. Existing installs keep their saved value.
+  adminMode: false,
 };
 
 const STORAGE_KEY = 'boosted-learning-settings';
