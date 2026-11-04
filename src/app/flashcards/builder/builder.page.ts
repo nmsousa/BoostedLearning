@@ -427,14 +427,6 @@ export class BuilderPage implements OnInit {
     this.shaking = false;
   }
 
-  resetPhrase(): void {
-    if (this.stage.kind !== 'phrase') return;
-    this.clearWrong();
-    this.bank = this.shuffle([...this.stage.phrase.tokens]);
-    this.stage = { ...this.stage, chosen: [], done: false };
-    this.cdr.detectChanges();
-  }
-
   backToMap(): void {
     this.stage = { kind: 'map' };
     this.cdr.detectChanges();

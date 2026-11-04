@@ -115,6 +115,11 @@
 .phrase-slots {
   display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center;
   width: 100%; padding: 12px 10px;
+  // Fixed height so the dashed baseline DOESN'T jump when chips are added or
+  // removed (it sits in the same place whether empty or filled). Sized for two
+  // rows of chips; content is centred within it.
+  min-height: 112px;
+  box-sizing: border-box;
   border-bottom: 2px dashed var(--ion-color-step-250, #33465c);
   // Shared sizing so chosen chips and the empty placeholder read at the SAME
   // height and stay easy to tap. Wrapping to a new line is fine (flex-wrap).

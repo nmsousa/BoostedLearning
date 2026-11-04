@@ -129,7 +129,7 @@
     </div>
 
     <div class="phrase-actions">
-      <ion-button fill="outline" *ngIf="!stage.done" (click)="resetPhrase()">{{ 'builder.reset' | translate }}</ion-button>
+      <!-- No Reset button: tapping a chosen word already removes it. -->
       <!-- Journey node: advance through the generated phrases; standalone: back to map. -->
       <ion-button *ngIf="stage.done && journeyMode" expand="block" color="success" (click)="journeyNext()">{{ 'mode.continue' | translate }}</ion-button>
       <ion-button *ngIf="stage.done && !journeyMode" expand="block" color="success" (click)="backToMap()">{{ 'builder.done' | translate }}</ion-button>
