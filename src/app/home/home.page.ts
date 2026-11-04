@@ -8,7 +8,7 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, effect } from '@angular/core';
 import { Router } from '@angular/router';
-import { ToastController } from '@ionic/angular';
+import { AlertController, ToastController } from '@ionic/angular';
 import { ContentService } from '../services/content.service';
 import { SessionService } from '../services/session.service';
 import { SettingsService } from '../services/settings.service';
@@ -16,6 +16,7 @@ import { I18nAngularService } from '../services/i18n.service';
 import { FlashcardService } from '../services/flashcard.service';
 import { AddWordService } from '../services/add-word.service';
 import { AppUpdateService } from '../services/app-update.service';
+import { changelogFor } from '../services/changelog';
 import { KnowledgeBreakdown } from '../../core/knowledge-level';
 
 interface QuickAction {
@@ -43,6 +44,7 @@ export class HomePage implements OnInit {
   private addWordService = inject(AddWordService);
   private appUpdate = inject(AppUpdateService);
   private toast = inject(ToastController);
+  private alertCtrl = inject(AlertController);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
@@ -154,17 +156,47 @@ export class HomePage implements OnInit {
     this.confirmJustUpdated();
   }
 
-  /** Show a one-time "Updated to x.y.z" toast after an OTA update applied. */
-  private async confirmJustUpdated(): Promise<void> {
+  /**
+   * After an OTA update applied, confirm it once: show a "What's new in x.y.z"
+   * dialog with this version's patch notes (or a simple toast if none are
+   * recorded). Deferred a tick so it fires after the post-reload boot settles.
+   */
+  private confirmJustUpdated(): void {
     const v = this.appUpdate.consumeJustUpdatedVersion();
     if (!v) return;
-    const t = await this.toast.create({
-      message: this.i18n.t('settings.updatedTo', { v }),
-      duration: 3000,
-      position: 'bottom',
-      color: 'success',
+    setTimeout(() => void this.showWhatsNew(v, true), 400);
+  }
+
+  /**
+   * Show the "What's new" dialog for a version. `afterUpdate` tweaks the header
+   * to confirm the update just applied. Reused by Settings → What's new.
+   */
+  async showWhatsNew(version: string, afterUpdate = false): Promise<void> {
+    const entry = changelogFor(version);
+    const header = afterUpdate
+      ? this.i18n.t('settings.updatedTo', { v: version })
+      : this.i18n.t('settings.whatsNewTitle', { v: version });
+
+    // No recorded notes → a lightweight toast (only meaningful right after an
+    // update; for the Settings tap we still open a minimal dialog).
+    if (!entry || entry.notes.length === 0) {
+      if (afterUpdate) {
+        const t = await this.toast.create({
+          message: this.i18n.t('settings.updatedTo', { v: version }),
+          duration: 3000, position: 'bottom', color: 'success',
+        });
+        await t.present();
+        return;
+      }
+    }
+
+    const bullets = (entry?.notes ?? []).map(n => `• ${n}`).join('<br><br>');
+    const alert = await this.alertCtrl.create({
+      header,
+      message: bullets || this.i18n.t('settings.whatsNewNone'),
+      buttons: [{ text: this.i18n.t('common.close') }],
     });
-    await t.present();
+    await alert.present();
   }
 
   /** Recompute when returning to the home tab (e.g. after play or an import). */

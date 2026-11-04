@@ -18,6 +18,7 @@ import { I18nAngularService } from '../services/i18n.service';
 import { FlashcardService, DuolingoResponse, DuolingoLexeme } from '../services/flashcard.service';
 import { AppUpdateService } from '../services/app-update.service';
 import { DUOME_COURSES } from '../services/duome-courses';
+import { changelogFor } from '../services/changelog';
 import { BUILD_INFO } from '../../build-info';
 
 @Component({
@@ -257,6 +258,19 @@ export class SettingsPage {
   onTesterNameChange(event: CustomEvent): void {
     const value = String((event.detail as { value?: unknown }).value ?? '').slice(0, 40);
     this.settingsService.updateSetting('testerName', value);
+  }
+
+  /** Show the patch notes for the currently-running version. */
+  async showWhatsNew(): Promise<void> {
+    const v = this.appVersion;
+    const entry = changelogFor(v);
+    const bullets = (entry?.notes ?? []).map(n => `• ${n}`).join('<br><br>');
+    const alert = await this.alertController.create({
+      header: this.i18n.t('settings.whatsNewTitle', { v }),
+      message: bullets || this.i18n.t('settings.whatsNewNone'),
+      buttons: [{ text: this.i18n.t('common.close') }],
+    });
+    await alert.present();
   }
 
   /** Open the in-app Admin / debug info page. */

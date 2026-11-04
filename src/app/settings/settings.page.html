@@ -256,6 +256,12 @@
         </ion-label>
       </ion-item>
 
+      <!-- Patch notes for the current version. -->
+      <ion-item button detail="true" (click)="showWhatsNew()">
+        <ion-icon slot="start" name="sparkles-outline"></ion-icon>
+        <ion-label>{{ 'settings.whatsNew' | translate }}</ion-label>
+      </ion-item>
+
       <!-- OTA update. A passive check on page-enter lights up a red "new
            version" badge; tapping downloads + applies. -->
       <ion-item button detail="false" [disabled]="isCheckingUpdate" (click)="checkForUpdate()">
