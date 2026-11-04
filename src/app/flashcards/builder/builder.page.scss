@@ -147,11 +147,18 @@
 }
 // Always reserves its line so appearing/disappearing doesn't shift the layout
 // (which pushed the dashed baseline up). `is-hidden` keeps the space.
+// Single line, fixed height: the hint never wraps (which would change the
+// block height and shift the dashed baseline). `is-hidden` keeps the space.
 .phrase-hint {
   font-size: 0.78rem;
   color: var(--ion-color-medium);
   margin-top: -8px;
   min-height: 1.1em;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
   &.is-hidden { visibility: hidden; }
 }
 
