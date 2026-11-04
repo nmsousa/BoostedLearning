@@ -113,7 +113,9 @@
            in the bank to place (hidden once every word has been chosen). -->
       <span class="slot empty" *ngIf="!stage.done && bank.length"></span>
     </div>
-    <span class="phrase-hint" *ngIf="!stage.done && stage.chosen.length">
+    <!-- Always in the layout (just invisible when empty) so showing/hiding the
+         hint doesn't change the block height and shift the dashed line. -->
+    <span class="phrase-hint" [class.is-hidden]="stage.done || !stage.chosen.length">
       {{ (wrongOrder ? 'builder.wrongOrder' : 'builder.tapToRemove') | translate }}
     </span>
 

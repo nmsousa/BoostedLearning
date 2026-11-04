@@ -145,7 +145,15 @@
   // The chip currently being dragged to reorder.
   .slot.dragging { opacity: 0.5; }
 }
-.phrase-hint { font-size: 0.78rem; color: var(--ion-color-medium); margin-top: -8px; }
+// Always reserves its line so appearing/disappearing doesn't shift the layout
+// (which pushed the dashed baseline up). `is-hidden` keeps the space.
+.phrase-hint {
+  font-size: 0.78rem;
+  color: var(--ion-color-medium);
+  margin-top: -8px;
+  min-height: 1.1em;
+  &.is-hidden { visibility: hidden; }
+}
 
 .phrase-bank { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .bank-word {
