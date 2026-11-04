@@ -72,34 +72,58 @@ export class AppUpdateService {
     if (!Capacitor.isNativePlatform()) {
       return { status: 'unsupported' };
     }
+
+    // Use the plugin's own auto-update pipeline (triggerUpdateCheck) rather than
+    // a manual getLatest()+download()+set(): with autoUpdate enabled the manual
+    // path fights the background flow and, on an "up-to-date" server reply,
+    // getLatest() can reject — which surfaced as a false "error" to the user.
+    // triggerUpdateCheck() queues a native check and the outcome arrives via
+    // events (downloadComplete / noNeedUpdate / downloadFailed).
+    const listeners: { remove: () => void }[] = [];
+    const cleanup = () => { for (const l of listeners) { try { l.remove(); } catch { /* ignore */ } } };
+
     try {
-      // Ask the server (our /ota Worker) what the latest bundle is.
-      const latest = await CapacitorUpdater.getLatest();
+      const result = await new Promise<ManualUpdateResult>(resolve => {
+        let settled = false;
+        const done = (r: ManualUpdateResult) => { if (!settled) { settled = true; resolve(r); } };
 
-      // No download URL means the server said we're up-to-date.
-      if (!latest.url) {
-        return { status: 'uptodate', version: latest.version };
-      }
+        // A new bundle finished downloading → apply it now with a reload.
+        void CapacitorUpdater.addListener('downloadComplete', info => {
+          const version = info.bundle?.version ?? '';
+          CapacitorUpdater.set({ id: info.bundle!.id })
+            .then(() => CapacitorUpdater.reload())
+            .then(() => done({ status: 'updated', version }))
+            .catch(err => done({ status: 'error', error: err instanceof Error ? err.message : String(err) }));
+        }).then(h => listeners.push(h));
 
-      // If the latest already matches what's running, nothing to do.
-      const cur = await CapacitorUpdater.current();
-      if (cur.bundle?.version && cur.bundle.version === latest.version) {
-        return { status: 'uptodate', version: latest.version };
-      }
+        // Server said there's nothing newer.
+        void CapacitorUpdater.addListener('noNeedUpdate', () => {
+          done({ status: 'uptodate' });
+        }).then(h => listeners.push(h));
 
-      // Download the new bundle, set it as next, and reload into it now.
-      const bundle = await CapacitorUpdater.download({
-        version: latest.version,
-        url: latest.url,
-        checksum: latest.checksum,
+        // Download/apply failed.
+        void CapacitorUpdater.addListener('downloadFailed', info => {
+          done({ status: 'error', error: `download failed${info.version ? ' (' + info.version + ')' : ''}` });
+        }).then(h => listeners.push(h));
+        void CapacitorUpdater.addListener('updateFailed', info => {
+          done({ status: 'error', error: `update failed${info.bundle?.version ? ' (' + info.bundle.version + ')' : ''}` });
+        }).then(h => listeners.push(h));
+
+        // Kick off the native check. If it can't even queue (auto-update off /
+        // web), resolve immediately.
+        CapacitorUpdater.triggerUpdateCheck()
+          .then(r => {
+            if (r.status === 'unavailable') done({ status: 'unsupported' });
+          })
+          .catch(err => done({ status: 'error', error: err instanceof Error ? err.message : String(err) }));
+
+        // Safety timeout: if no event arrives (e.g. offline), report up-to-date
+        // rather than hanging — nothing was downloaded, so the app is unchanged.
+        setTimeout(() => done({ status: 'uptodate' }), 20000);
       });
-      await CapacitorUpdater.set({ id: bundle.id });
-      // notifyAppReady runs on the next boot via init(); reload applies the
-      // new bundle immediately.
-      await CapacitorUpdater.reload();
-      return { status: 'updated', version: latest.version };
-    } catch (err) {
-      return { status: 'error', error: err instanceof Error ? err.message : String(err) };
+      return result;
+    } finally {
+      cleanup();
     }
   }
 }

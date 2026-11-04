@@ -98,7 +98,9 @@ export class SettingsPage {
           await showToast(this.i18n.t('settings.updateUnsupported'));
           break;
         case 'error':
-          await showToast(this.i18n.t('settings.updateError'));
+          // Include the underlying reason so a real failure is diagnosable
+          // (the generic message alone looked alarming for a normal check).
+          await showToast(this.i18n.t('settings.updateError') + (res.error ? ` (${res.error})` : ''));
           break;
       }
     } finally {

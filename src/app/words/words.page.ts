@@ -14,7 +14,7 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
-import { ActionSheetController } from '@ionic/angular';
+import { ActionSheetController, ViewWillEnter } from '@ionic/angular';
 import { FlashcardService, StudiedWord, WordPriority } from '../services/flashcard.service';
 import { SettingsService } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
@@ -31,7 +31,7 @@ type SortKey = 'needsPractice' | 'mostSeen' | 'leastSeen' | 'accuracyHigh' | 'ac
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WordsPage implements OnInit {
+export class WordsPage implements OnInit, ViewWillEnter {
   private router = inject(Router);
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
@@ -64,9 +64,22 @@ export class WordsPage implements OnInit {
     { value: 'hiddenLast', labelKey: 'words.sort.hiddenLast' },
   ];
 
+  /** True once the service is ready, so ionViewWillEnter can safely reload. */
+  private initialized = false;
+
   async ngOnInit() {
     await this.flashcards.initialize();
+    this.initialized = true;
     this.reload();
+  }
+
+  /**
+   * Ionic reuses page components in the nav stack, so ngOnInit does NOT run
+   * again on re-entry. Re-read the word stats every time the page is shown so
+   * counts reflect the session the user just played (no app restart needed).
+   */
+  ionViewWillEnter(): void {
+    if (this.initialized) this.reload();
   }
 
   /** Bumped on each reload so the memoized `words` list recomputes even when
