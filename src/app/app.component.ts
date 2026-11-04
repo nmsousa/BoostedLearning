@@ -62,9 +62,12 @@ export class AppComponent {
       // Defer a tick so the CSS variables for the new theme are in place.
       setTimeout(() => {
         const styles = getComputedStyle(document.documentElement);
+        // Match the APP BACKGROUND (the content area that fills most screens),
+        // so the status bar blends with the page rather than standing out as a
+        // slightly different toolbar shade.
         const bar =
-          styles.getPropertyValue('--ion-toolbar-background').trim() ||
           styles.getPropertyValue('--ion-background-color').trim() ||
+          styles.getPropertyValue('--ion-toolbar-background').trim() ||
           (isDark ? '#0e1113' : '#ffffff');
 
         void StatusBar.setOverlaysWebView({ overlay: false });

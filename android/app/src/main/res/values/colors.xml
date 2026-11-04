@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- System-bar colour used by the app theme (status + navigation bars).
-         Matches the default dark "ocean" TOOLBAR (header/footer) colour so the
-         status bar and the bottom navigation/gesture bar blend with the
-         header/footer, including on devices (e.g. Xiaomi) where the runtime
-         status-bar tint doesn't fully take and nothing recolours the nav bar at
-         runtime. The status bar is still refined per theme at runtime by the
-         status-bar plugin. -->
-    <color name="appBackground">#16263D</color>
+         Matches the default dark "ocean" APP BACKGROUND (#0f1b2d) so the status
+         bar and the bottom navigation/gesture bar blend with the content area
+         that fills most screens, including on devices (e.g. Xiaomi) where the
+         runtime status-bar tint doesn't fully take and nothing recolours the nav
+         bar at runtime. The status bar is still refined per theme at runtime by
+         the status-bar plugin. -->
+    <color name="appBackground">#0F1B2D</color>
 </resources>

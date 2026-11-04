@@ -213,17 +213,19 @@
 
 .next-star-hint {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  align-items: center;          // vertically centre the icon against the text
+  gap: 8px;
   justify-content: center;
   color: var(--ion-color-warning);
   font-size: 0.9rem;
   margin: 0 0 24px;
-  max-width: 320px;
+  max-width: 340px;
+  text-align: left;             // text block reads as one unit beside the icon
 
   ion-icon {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     flex-shrink: 0;
+    align-self: center;         // stay centred even when the text wraps to 2 lines
   }
 }
 
