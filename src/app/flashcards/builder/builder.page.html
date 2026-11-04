@@ -116,7 +116,8 @@
     <div class="phrase-result" *ngIf="stage.done">
       <ion-icon name="checkmark-circle" color="success"></ion-icon>
       <span class="result-nl">{{ stage.phrase.target }}</span>
-      <span class="result-en">{{ stage.phrase.en }}</span>
+      <!-- The English prompt already shows at the top (.phrase-target), so it's
+           not repeated here. -->
       <span class="phrase-progress" *ngIf="journeyMode">{{ journeyPosition }}</span>
     </div>
 
