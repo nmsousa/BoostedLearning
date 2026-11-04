@@ -133,10 +133,25 @@ export class JourneyPage implements OnInit {
     await sheet.present();
   }
   deck: FlashcardDeck | null = null;
+  /** All chapters (built once — the unlock chain needs every previous one). */
   chapters: Chapter[] = [];
   /** Index of the chapter currently in progress (for auto-scroll on enter). */
   currentChapterIndex = 0;
   isLoading = true;
+
+  // ── Incremental rendering ───────────────────────────────────────────────────
+  // Rendering ~300 chapters (each an SVG trail + 6 buttons) at once is slow, so
+  // we only render a window of them and grow it as the user scrolls.
+  private static readonly RENDER_BATCH = 12;
+  /** How many chapters are currently rendered (grows via infinite scroll). */
+  renderCount = JourneyPage.RENDER_BATCH;
+  /** The chapters actually rendered (a prefix of `chapters`). */
+  get visibleChapters(): Chapter[] {
+    return this.chapters.slice(0, this.renderCount);
+  }
+  get hasMoreChapters(): boolean {
+    return this.renderCount < this.chapters.length;
+  }
 
   t(key: string, params?: Record<string, string | number>): string {
     return this.i18n.t(key, params);
@@ -172,6 +187,12 @@ export class JourneyPage implements OnInit {
       0,
       this.chapters.findIndex(c => c.unlocked && !c.complete),
     );
+    // Render at least up to the current chapter (+ a batch) so the auto-scroll
+    // target exists, without rendering all chapters up front.
+    this.renderCount = Math.min(
+      this.chapters.length,
+      Math.max(JourneyPage.RENDER_BATCH, this.currentChapterIndex + 1 + JourneyPage.RENDER_BATCH),
+    );
     this.isLoading = false;
     this.cdr.detectChanges();
     // Measure the trail width (for scale-correct dashed-path offsets) and jump
@@ -188,6 +209,20 @@ export class JourneyPage implements OnInit {
   onResize(): void {
     this.measureTrail();
     this.cdr.detectChanges();
+  }
+
+  /** trackBy so Angular reuses chapter DOM instead of re-creating it. */
+  trackChapter(_index: number, chapter: Chapter): number {
+    return chapter.number;
+  }
+
+  /** Render the next batch of chapters as the user nears the bottom. */
+  loadMoreChapters(ev: Event): void {
+    this.renderCount = Math.min(this.chapters.length, this.renderCount + JourneyPage.RENDER_BATCH);
+    this.cdr.detectChanges();
+    // ion-infinite-scroll expects its `complete()` to be called.
+    const target = ev.target as unknown as { complete?: () => void };
+    target.complete?.();
   }
 
   /** Node definitions in play order (type → mode / route / icon / colour):
@@ -220,18 +255,22 @@ export class JourneyPage implements OnInit {
       ? [...JourneyPage.NODE_DEFS, JourneyPage.BLANKS_NODE_DEF]
       : JourneyPage.NODE_DEFS;
 
+    // ONE bulk read of all level progress for the deck, then Map lookups — was
+    // ~1 DB read per node (hundreds of chapters × 6 nodes), which was slow.
+    const progress = await this.flashcards.getDeckLevelProgressMap(deckId);
+    const PASS = 70;
+
     const chapters: Chapter[] = [];
     let prevComplete = true; // chapter 1 is always reachable
     for (let i = 0; i < levels.length; i++) {
       const level = levels[i];
       const chapterUnlocked = prevComplete;
 
-      // Determine each node's passed state from its per-node progress.
-      const passed: boolean[] = [];
-      for (const def of nodeDefs) {
-        const p = await this.flashcards.getLevelProgress(deckId, def.mode, level.levelNumber);
-        passed.push((p?.bestScore ?? 0) >= 70);
-      }
+      // Determine each node's passed state from the bulk progress map.
+      const passed: boolean[] = nodeDefs.map(def => {
+        const p = progress.get(`${def.mode}-${level.levelNumber}`);
+        return (p?.bestScore ?? 0) >= PASS;
+      });
 
       const nodes: JourneyNode[] = nodeDefs.map((def, n) => ({
         type: def.type,
@@ -294,8 +333,10 @@ export class JourneyPage implements OnInit {
   // with the laid-out node rows. Six positions cover the FR 6-node chapters;
   // 5-node chapters just use the first five.
   private static readonly NODE = 56;
-  private static readonly GAP = 34;
-  private static readonly ARC = [28, 50, 72, 50, 28, 50];
+  private static readonly GAP = 22;   // MUST equal the SCSS .trail gap
+  // Gentler horizontal spread (was 28/50/72) so the zig-zag is tighter, closer
+  // to the Duolingo path. 6 positions cover the FR 6-node chapters.
+  private static readonly ARC = [36, 50, 64, 50, 36, 50];
 
   /** Node centre X (0..100) for its position in the chapter. */
   nodeX(indexInChapter: number): number {

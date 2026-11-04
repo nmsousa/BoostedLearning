@@ -2123,6 +2123,19 @@ export class FlashcardService {
   }
 
   /**
+   * Bulk-read ALL level progress for a deck in ONE query, keyed by
+   * `"<mode>-<levelNumber>"`. The Journey page needs every node's bestScore
+   * across hundreds of chapters; doing one DB read + Map lookups is far faster
+   * than ~1 read per node (which stalled the map on big decks / slow phones).
+   */
+  async getDeckLevelProgressMap(deckId: string): Promise<Map<string, LevelProgressEntity>> {
+    const rows = await this.db.levelProgress.where('deckId').equals(deckId).toArray();
+    const map = new Map<string, LevelProgressEntity>();
+    for (const r of rows) map.set(`${r.mode}-${r.levelNumber}`, r);
+    return map;
+  }
+
+  /**
    * Check if a level is unlocked
    */
   /** Minimum score on the previous level to unlock the next one (= 1 star). */

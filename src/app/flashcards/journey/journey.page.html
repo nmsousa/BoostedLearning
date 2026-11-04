@@ -41,9 +41,9 @@
 
   <div *ngIf="!isLoading && deck" class="journey">
     <!-- One chapter per skill. Each has the fixed activity nodes (flip → quiz →
-         write → match → builder, plus Blanks on French decks). Locked chapters
-         are shown dimmed with locked nodes. -->
-    <div class="chapter" *ngFor="let chapter of chapters; let ci = index"
+         write → match → builder, plus Blanks on French decks). Only a window of
+         chapters is rendered (visibleChapters); more load on scroll. -->
+    <div class="chapter" *ngFor="let chapter of visibleChapters; let ci = index; trackBy: trackChapter"
       [id]="'journey-chapter-' + ci" [class.locked]="!chapter.unlocked"
       [class.complete]="chapter.complete">
       <div class="chapter-head">
@@ -76,24 +76,26 @@
             [attr.aria-label]="nodeLabel(node.type)"
             (click)="startNode(chapter, node)">
             <!-- Exactly ONE icon, in priority order so states never overlap:
-                 locked → padlock (even if it happens to be passed underneath);
-                 passed → white check on green; current → white mode icon on the
-                 blue fill; otherwise the plain mode icon in its homepage colour.
-                 EXPERIMENT (chapter 2 only, ci===1): passed nodes show the MODE
-                 icon in white instead of a check, to compare styles. -->
+                 locked  → padlock;
+                 passed  → the MODE icon (white) on green — no check;
+                 current → the MODE icon (white) on the blue fill;
+                 else    → the plain mode icon in its homepage colour.
+                 Labels are not shown (the icon identifies the mode). -->
             <ion-icon *ngIf="!node.unlocked" name="lock-closed" class="node-lock"></ion-icon>
-            <ion-icon *ngIf="node.unlocked && node.passed && ci === 1"
+            <ion-icon *ngIf="node.unlocked && node.passed"
               [name]="node.icon" class="node-current-icon"></ion-icon>
-            <ion-icon *ngIf="node.unlocked && node.passed && ci !== 1" name="checkmark" class="node-check"></ion-icon>
             <ion-icon *ngIf="node.unlocked && !node.passed && isCurrentNode(chapter, node)"
               [name]="node.icon" class="node-current-icon"></ion-icon>
             <ion-icon *ngIf="node.unlocked && !node.passed && !isCurrentNode(chapter, node)"
               [name]="node.icon" [color]="node.color"></ion-icon>
-            <!-- EXPERIMENT: hide the mode-name label on chapter 2 to compare. -->
-            <span class="node-label" *ngIf="ci !== 1">{{ nodeLabel(node.type) }}</span>
           </button>
         </div>
       </div>
     </div>
+
+    <!-- Load more chapters as the user scrolls, instead of rendering all ~300. -->
+    <ion-infinite-scroll *ngIf="hasMoreChapters" (ionInfinite)="loadMoreChapters($event)">
+      <ion-infinite-scroll-content></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
   </div>
 </ion-content>
