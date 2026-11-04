@@ -254,7 +254,9 @@
       <ion-header>
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-button (click)="closeImportModal()">{{ 'common.cancel' | translate }}</ion-button>
+            <ion-button (click)="closeImportModal()" [attr.aria-label]="'common.cancel' | translate">
+              <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+            </ion-button>
           </ion-buttons>
           <ion-title>{{ 'settings.importDuolingo' | translate }}</ion-title>
           <ion-buttons slot="end">
@@ -331,7 +333,9 @@
       <ion-header>
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-button (click)="closeManualModal()">{{ 'common.cancel' | translate }}</ion-button>
+            <ion-button (click)="closeManualModal()" [attr.aria-label]="'common.cancel' | translate">
+              <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+            </ion-button>
           </ion-buttons>
           <ion-title>{{ 'settings.addAWord' | translate }}</ion-title>
           <ion-buttons slot="end">
@@ -382,7 +386,9 @@
       <ion-header>
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-button (click)="closeDuomeModal()">{{ 'common.cancel' | translate }}</ion-button>
+            <ion-button (click)="closeDuomeModal()" [attr.aria-label]="'common.cancel' | translate">
+              <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+            </ion-button>
           </ion-buttons>
           <ion-title>{{ 'settings.addLanguage' | translate }}</ion-title>
           <ion-buttons slot="end">
