@@ -168,19 +168,16 @@
      (mobile). Holds the input + buttons for the question/feedback phases. -->
 <ion-footer *ngIf="!isLoading && phase !== 'complete' && currentCard" class="study-footer">
   <div class="footer-inner">
-    <!-- The input stays MOUNTED across question + correct/incorrect feedback so
-         the keyboard doesn't close and reopen between cards. For a CORRECT
-         answer it stays editable+focused (readonly would close the Android
-         keyboard, and re-focusing after the timer can't reopen it), so the
-         keyboard carries straight into the next card. Only incorrect feedback
-         is readonly. Hidden for the "almost" retry flow (reuses it via
-         tryAgain). -->
+    <!-- The input stays MOUNTED and EDITABLE across question + correct/incorrect
+         feedback so the keyboard never closes (a readonly field closes the
+         Android keyboard, and re-focusing after can't reopen it). Hidden only
+         for the "almost" retry flow (reuses it via tryAgain). -->
     <ion-item class="answer-input" lines="none"
       *ngIf="phase === 'question' || (phase === 'feedback' && feedbackResult !== 'almost')">
       <!-- Autocorrect/autocapitalize/spell-check OFF so the keyboard doesn't
-           "fix" foreign words (e.g. "café" -> "caf"). No `inputmode` so the
-           keyboard doesn't force a number row (we never type digits). The
-           composition handlers let an accented char finish before Enter
+           "fix" foreign words (e.g. "café" -> "caf"). No `inputmode` (requesting
+           one can make some keyboards show a number row; we never type digits).
+           The composition handlers let an accented char finish before Enter
            submits, and submit reads the live DOM value. -->
       <ion-input
         #answerInput
@@ -191,7 +188,6 @@
         autocorrect="off"
         spellcheck="false"
         autocomplete="off"
-        [readonly]="phase === 'feedback' && feedbackResult === 'incorrect'"
         [placeholder]="'mode.typeYourAnswer' | translate"
         (keyup.enter)="onEnter()"
         (compositionstart)="onCompositionStart()"

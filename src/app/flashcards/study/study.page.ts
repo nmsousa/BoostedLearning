@@ -251,13 +251,13 @@ export class StudyPage implements OnInit, OnDestroy {
    * force focus for the "almost" retry card (it has its own flow).
    */
   private focusInput(): void {
-    // Keep the keyboard up while typing (question) and through a CORRECT
-    // answer's flash (so it carries into the next card). Do NOT force it for
-    // incorrect/almost feedback — the input is read-only there and the user is
-    // reading the answer; the keyboard reopens when they tap Continue/Try again.
+    // Keep the keyboard up while typing (question) and through correct/incorrect
+    // feedback — the input is now editable in both, so holding focus keeps the
+    // keyboard open into the next card. Only the "almost" retry flow is excluded
+    // (it has its own handling).
     const keepUp = () =>
       this.phase === 'question' ||
-      (this.phase === 'feedback' && this.feedbackResult === 'correct');
+      (this.phase === 'feedback' && this.feedbackResult !== 'almost');
     if (this.answerInput && keepUp()) {
       this.answerInput.setFocus();
       this.forceKeyboard();
