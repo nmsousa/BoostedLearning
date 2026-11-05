@@ -4,6 +4,64 @@ Tracked tasks that are deferred or in progress.
 
 ## Deferred (on standby)
 
+### Rename the app identity to "Boostionary" everywhere
+Status: **not implemented** — planned.
+
+The product is now **Boostionary**, but the old "Boosted Learning" / "boostedlearning"
+name is still baked into identifiers and metadata. Replace it everywhere so the
+app is Boostionary end to end.
+
+Known spots to change (audit for more before doing it):
+- `capacitor.config.ts` → `appId: 'com.boostedlearning.app'` should become a
+  Boostionary id, e.g. `com.boostionary.app`. `appName` is already `Boostionary`.
+- Android native: `applicationId` in `android/app/build.gradle`, the package
+  path under `android/app/src/main/java/...`, `android/app/src/main/res/values/strings.xml`
+  (`app_name`, `package_name`, `custom_url_scheme`), and `AndroidManifest.xml`
+  references.
+- `package.json` `name` ("boosted-learning"), and any workspace folder naming.
+- Source references/comments and docs that say "Boosted Learning" where the
+  user-facing product name is meant (keep historical notes intact).
+- Storage keys that embed the old name — e.g. localStorage
+  `boosted-learning-settings`, `boosted-builder-progress-*`, and the IndexedDB
+  database name `BoostedLearningDB`. ⚠️ CAUTION: renaming these is a DATA
+  MIGRATION — changing them without migrating loses existing users' settings and
+  progress. Either keep the old keys/DB name as-is, or add a one-time migration
+  that copies old → new on first launch.
+
+⚠️ Changing `appId` / Android `applicationId` makes the store treat it as a
+DIFFERENT app (no in-place upgrade over an existing install). Decide whether to
+do this before any public release, and coordinate with the OTA setup.
+
+### Keyboard: try removing `android.captureInput` (swipe typing + dictionary)
+Status: **not implemented — experiment to validate on a real device.**
+
+The Write keyboard still has no glide/swipe typing and no suggestion dictionary
+on Android (unlike Duolingo on the same phone). The remaining suspect is the
+native setting `android.captureInput: true` in `capacitor.config.ts`.
+
+Why it's plausible: `captureInput: true` makes the native WebView intercept key
+input. That was originally a workaround (Capacitor issue #1753) for Android 8+
+where typed text didn't reach the web input until the keyboard closed. The same
+report documents a side effect: with it on, the keyboard's autocomplete/
+suggestion behaviour goes abnormal. Swipe typing and the suggestion strip both
+need the IME to drive the field directly, which `captureInput` interferes with —
+so this likely explains why the HTML-attribute changes alone didn't fix it.
+
+Experiment to run (needs a device build — can't be verified in CI/web):
+- Set `android.captureInput` to `false` (or remove it) in `capacitor.config.ts`,
+  `npx cap sync android`, build the APK, and test on the real phone:
+  1. swipe/glide typing works in Write,
+  2. the suggestion dictionary appears,
+  3. typing an accented word still REGISTERS correctly (e.g. "café" is accepted).
+- #3 is the original reason `captureInput` was turned on. We since added
+  `syncNativeValue()` (reads the live DOM value at submit) + composition
+  handlers, so the original problem may already be covered without it — but this
+  MUST be confirmed on-device before shipping, because it's exactly the kind of
+  regression `captureInput` was meant to prevent.
+- Note: the Gboard "number row" is a keyboard user-preference and is NOT
+  controllable by the app — don't expect removing `captureInput` to change it.
+
+
 ### Duolingo-style "no-fail" practice (reveal translation, keep going)
 Status: **not implemented** — planned.
 
