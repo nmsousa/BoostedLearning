@@ -33,6 +33,13 @@
        pinned to the bottom on desktop AND ride just above the keyboard on
        mobile, consistently on both platforms. -->
   <div *ngIf="!isLoading && phase !== 'complete' && currentCard" class="study-stage">
+    <!-- "Previous mistake": this card is a requeued one the learner missed
+         earlier in the session (shown while answering it again). -->
+    <div class="prev-mistake" *ngIf="isPreviousMistake && phase === 'question'">
+      <ion-icon name="refresh-circle" aria-hidden="true"></ion-icon>
+      <span>{{ 'mode.previousMistake' | translate }}</span>
+    </div>
+
     <!-- Prompt card: only while typing. After answering, the result card
          already shows both languages, so this is hidden to avoid duplication.
          Still shown for the "almost" case (which has no result card). -->
@@ -49,11 +56,17 @@
       </div>
     </div>
 
-    <!-- Correct: two-language answer card (green). -->
-    <div class="result-card correct" *ngIf="phase === 'feedback' && feedbackResult === 'correct'">
+    <!-- Correct: two-language answer card (green). When accepted with a small
+         slip (accent or typo), we still mark it correct but show a note. -->
+    <div class="result-card correct" [class.near-miss]="nearMiss !== 'none'"
+      *ngIf="phase === 'feedback' && feedbackResult === 'correct'">
       <div class="result-badge">
-        <ion-icon name="checkmark-circle"></ion-icon>
-        <span>{{ 'mode.correctLabel' | translate }}</span>
+        <ion-icon [name]="nearMiss === 'none' ? 'checkmark-circle' : 'information-circle'"></ion-icon>
+        <span>
+          {{ (nearMiss === 'accent' ? 'mode.mindAccents'
+             : nearMiss === 'typo' ? 'mode.hasTypo'
+             : 'mode.correctLabel') | translate }}
+        </span>
       </div>
       <ng-container *ngTemplateOutlet="answerPair"></ng-container>
     </div>
@@ -208,9 +221,14 @@
       </ion-button>
     </div>
 
-    <!-- Correct: no Continue button — it auto-advances (brief green flash, the
-         keyboard stays up). Incorrect: a Continue button so the user can read
-         the right answer before moving on. -->
+    <!-- Correct: a PERFECT answer auto-advances (no button). When accepted with
+         a note (accent/typo), show Continue so the user can read it first. -->
+    <ion-button *ngIf="phase === 'feedback' && feedbackResult === 'correct' && nearMiss !== 'none'"
+      expand="block" color="success" (click)="nextCard()" class="submit-button">
+      {{ 'mode.continue' | translate }}
+    </ion-button>
+
+    <!-- Incorrect: a Continue button so the user can read the right answer. -->
     <ion-button *ngIf="phase === 'feedback' && feedbackResult === 'incorrect'"
       expand="block" color="danger" (click)="nextCard()" class="submit-button">
       {{ 'mode.continue' | translate }}

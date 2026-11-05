@@ -34,6 +34,20 @@
   padding: 20px 12px;
 }
 
+// "Previous mistake" banner — a requeued card the learner missed earlier.
+.prev-mistake {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: center;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ion-color-warning-shade, #dbb220);
+  ion-icon { font-size: 18px; }
+}
+
 // ── Footer action bar ──────────────────────────────────────────────────────
 // Ionic keeps <ion-footer> pinned below <ion-content>; on mobile the keyboard
 // pushes it up, so the input + buttons always sit just above the keys.
@@ -404,6 +418,13 @@
   }
   &.correct .result-badge { color: var(--ion-color-success); }
   &.incorrect .result-badge { color: var(--ion-color-danger); }
+
+  // Accepted-with-a-note (accent slip or typo): keep it clearly "accepted" but
+  // use a warning amber so the user notices the correction, not a plain green.
+  &.correct.near-miss {
+    border-color: var(--ion-color-warning, #f9ca24);
+    .result-badge { color: var(--ion-color-warning-shade, #dbb220); }
+  }
 
   .you-typed {
     display: flex;

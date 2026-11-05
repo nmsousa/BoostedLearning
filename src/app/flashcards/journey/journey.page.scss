@@ -198,12 +198,16 @@
     animation: journey-node-pulse 1.8s ease-out infinite;
   }
 
-  // Locked node: dimmed, non-interactive.
+  // Locked node: dimmed, non-interactive. We DON'T use `opacity` on the node
+  // itself — that made the whole circle translucent so the dashed trail line
+  // showed through it. Instead keep the background fully OPAQUE (so it occludes
+  // the line) and dim only the icon + border for the "locked" look.
   &.locked {
     background: var(--ion-item-background);
     border-color: var(--ion-color-light-shade);
-    opacity: 0.6;
     cursor: not-allowed;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    ion-icon { color: var(--ion-color-medium); opacity: 0.55; }
     &:active { transform: translateX(-50%); }
   }
 }

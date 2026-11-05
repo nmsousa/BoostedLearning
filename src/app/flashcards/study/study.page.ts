@@ -131,6 +131,13 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
   submittedAnswer = '';
   correctAnswer = '';
   isRetryAttempt = false;
+  /**
+   * When an answer is ACCEPTED but wasn't a perfect match, how it differed from
+   * the expected answer — so we can show a Duolingo-style note while still
+   * accepting it: 'accent' (only diacritics differ, e.g. cafe vs café),
+   * 'typo' (a single small spelling slip). 'none' = perfect match.
+   */
+  nearMiss: 'none' | 'accent' | 'typo' = 'none';
   
   // Hint system - each click reveals one more character of the answer.
   // When all characters are revealed, the answer is shown.
@@ -395,6 +402,12 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
     return this.currentStudyCard?.card ?? null;
   }
 
+  /** True when this card is a requeued one the learner got wrong earlier in the
+   *  session — drives the "Previous mistake" banner (like Duolingo). */
+  get isPreviousMistake(): boolean {
+    return this.currentStudyCard?.isRetry === true;
+  }
+
   get currentDirection(): CardDirection {
     return this.currentStudyCard?.direction ?? 'en-to-target';
   }
@@ -612,11 +625,16 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
     const validAnswers = this.validAnswers;
 
     // Check for exact match (accent-insensitive)
-    const isExactMatch = validAnswers.some(
+    const accentMatch = validAnswers.find(
       t => this.normalizeForComparison(t) === normalizedSubmitted
     );
+    const isExactMatch = accentMatch !== undefined;
 
     if (isExactMatch) {
+      // Accepted. If it matched only after stripping accents (e.g. "cafe" for
+      // "café"), flag an accent note — still correct, Duolingo-style.
+      this.nearMiss = this.isAccentOnlyDiff(this.submittedAnswer, accentMatch!) ? 'accent' : 'none';
+      this.correctAnswer = accentMatch!;
       this.feedbackResult = 'correct';
       // Only count as correct if no hints were used
       if (!this.usedHint) {
@@ -628,31 +646,56 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
       }
       // A correct answer completes this unique card (progress advances).
       this.markCompleted();
-      this.correctAnswer = validAnswers[0];
       this.phase = 'feedback';
-      // Correct answers DON'T need a "Continue" tap: show a brief green flash,
-      // keep the keyboard up, optionally play the word, then auto-advance. This
-      // also removes the keyboard open/close flicker between cards.
       this.focusInput();
       if (this.settings.autoPlayAudio()) this.playWord();
-      if (this.autoAdvanceTimer) clearTimeout(this.autoAdvanceTimer);
-      this.autoAdvanceTimer = setTimeout(() => {
-        this.autoAdvanceTimer = null;
-        // Only auto-advance if still on this correct card (user didn't act).
-        if (this.phase === 'feedback' && this.feedbackResult === 'correct') {
-          this.nextCard();
-          // OnPush: a bare setTimeout doesn't re-render this component, so mark
-          // it explicitly after advancing.
-          this.cdr.detectChanges();
-        }
-      }, 900);
+      // A perfect answer auto-advances after a brief green flash. But when we
+      // ACCEPTED it with a note (accent slip), DON'T auto-advance — give the
+      // user time to read the note and tap Continue (like Duolingo).
+      if (this.nearMiss === 'none') {
+        if (this.autoAdvanceTimer) clearTimeout(this.autoAdvanceTimer);
+        this.autoAdvanceTimer = setTimeout(() => {
+          this.autoAdvanceTimer = null;
+          if (this.phase === 'feedback' && this.feedbackResult === 'correct') {
+            this.nextCard();
+            this.cdr.detectChanges();
+          }
+        }, 900);
+      }
       this.cdr.detectChanges();
       return;
     }
 
-    // Check for close match (only on first attempt)
+    // Accept a genuine TYPO as correct (Duolingo-style): the normalized forms
+    // are a hair apart (a single small spelling slip), not a real wrong word.
+    // Only on the first attempt — a retry should be typed correctly.
     if (!this.isRetryAttempt) {
       const closestMatch = this.findClosestMatch(normalizedSubmitted, validAnswers);
+      const normalizedTarget = this.normalizeForComparison(closestMatch.answer);
+      const distance = this.levenshteinDistance(normalizedSubmitted, normalizedTarget);
+      const isTypo =
+        closestMatch.answer !== '' &&
+        normalizedTarget.length >= 3 &&
+        distance <= (normalizedTarget.length >= 8 ? 2 : 1);
+
+      if (isTypo) {
+        this.nearMiss = 'typo';
+        this.correctAnswer = closestMatch.answer;
+        this.feedbackResult = 'correct';
+        // Count as correct for progress (a typo shouldn't block the learner),
+        // but it does NOT earn the "no-mistake" star bonus.
+        this.incorrectCount++;
+        this.recordAttempt(false);
+        this.markCompleted();
+        this.phase = 'feedback';
+        this.focusInput();
+        if (this.settings.autoPlayAudio()) this.playWord();
+        this.cdr.detectChanges();
+        return;
+      }
+
+      // A looser near-miss (recognisably close but more than a typo) keeps the
+      // existing "almost — try again" flow.
       if (closestMatch.similarity >= 0.7) {
         this.feedbackResult = 'almost';
         this.correctAnswer = closestMatch.answer;
@@ -685,6 +728,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
   tryAgain(): void {
     this.isRetryAttempt = true;
     this.userAnswer = '';
+    this.nearMiss = 'none';
     this.phase = 'question';
     // Only keep a hint if the user actually revealed one; otherwise clear it
     // so no empty "______" mask shows up unprompted.
@@ -706,6 +750,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
     this.userAnswer = '';
     this.submittedAnswer = '';
     this.isRetryAttempt = false;
+    this.nearMiss = 'none';
     this.hintRevealed = 0;
     this.hintText = '';
     this.usedHint = false;
@@ -895,6 +940,21 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
       .replace(/[?!.,;:«»"¿¡]/g, '')             // drop sentence punctuation
       .replace(/\s+/g, ' ')                       // collapse whitespace
       .trim();
+  }
+
+  /**
+   * True when `submitted` and `expected` are the SAME word apart from accents
+   * (e.g. "cafe" vs "café", "ca va" vs "ça va") — i.e. they're equal once
+   * diacritics are stripped, but NOT equal with case/diacritics preserved. Used
+   * to show "mind the accents" while still accepting the answer.
+   */
+  private isAccentOnlyDiff(submitted: string, expected: string): boolean {
+    const strip = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[?!.,;:«»"¿¡]/g, '').replace(/\s+/g, ' ').trim();
+    const keepAccents = (s: string) =>
+      s.toLowerCase().replace(/[?!.,;:«»"¿¡]/g, '').replace(/\s+/g, ' ').trim();
+    return strip(submitted) === strip(expected) && keepAccents(submitted) !== keepAccents(expected);
   }
 
   private levenshteinDistance(a: string, b: string): number {
