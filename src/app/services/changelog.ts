@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.11',
+    notes: [
+      'Fixed the "What\'s new" page crashing when opened. It now opens correctly and shows the full version history.',
+    ],
+  },
+  {
     version: '1.3.10',
     notes: [
       'Fixed the blank screen on launch — a startup crash introduced with the "What\'s new" page is resolved, so the app opens reliably every time.',

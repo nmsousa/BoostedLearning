@@ -13,7 +13,7 @@
  */
 
 import { Component, Input, inject } from '@angular/core';
-import { ModalController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular/lazy';
 import { I18nAngularService } from '../services/i18n.service';
 import { CHANGELOG, type ChangelogEntry } from '../services/changelog';
 

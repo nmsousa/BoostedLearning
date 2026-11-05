@@ -8,7 +8,7 @@
 
 import { Component, OnInit, inject, Injector, ChangeDetectorRef, ChangeDetectionStrategy, effect } from '@angular/core';
 import { Router } from '@angular/router';
-import { ModalController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular/lazy';
 import { ContentService } from '../services/content.service';
 import { SessionService } from '../services/session.service';
 import { SettingsService } from '../services/settings.service';

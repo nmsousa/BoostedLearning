@@ -11,7 +11,8 @@
 
 import { Component, inject, Injector, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController, ToastController, ModalController } from '@ionic/angular';
+import { AlertController, ToastController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular/lazy';
 import { Capacitor } from '@capacitor/core';
 import { SettingsService, Theme, ColorTheme, AppLanguage, TextSize, AudioSpeed, AppSettings, FlashcardDirection } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
