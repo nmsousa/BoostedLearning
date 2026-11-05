@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.9',
+    notes: [
+      'Fixed the blank screen on relaunch: the app now always runs the version built into the installed app and no longer auto-downloads web updates in the background.',
+    ],
+  },
+  {
     version: '1.3.8',
     notes: [
       'Fixed a black screen that could appear after installing a new app build — the app now always falls back to its built-in version instead of getting stuck on an old downloaded update.',

@@ -16,15 +16,14 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
     CapacitorUpdater: {
-      // Self-hosted over-the-air updates. The plugin checks this URL in the
-      // BACKGROUND; if it advertises a newer bundle, it downloads it and
-      // applies it on the NEXT cold start. This lets you ship updates to
-      // testers without distributing a new APK.
-      // Served as a "latest release" asset on this GitHub repo. The
-      // `releases/latest/download/<asset>` URL always resolves to the newest
-      // published (non-pre-release) release, so publishing a new release with
-      // an updated updates.json is all it takes to ship an update.
-      autoUpdate: true,
+      // OTA auto-update is DISABLED. Background download + apply of a web bundle
+      // was leaving the app on a blank screen after a relaunch on-device (the
+      // served bundle is identical to the builtin, yet applying it via the
+      // updater blanked the app). Until that's root-caused on a device, the app
+      // only ever runs the bundle baked into the APK; updates ship as new APKs.
+      // (AppUpdateService also resets any active OTA bundle back to builtin on
+      // launch, so a previously-downloaded bundle can't keep the app blank.)
+      autoUpdate: false,
       // The Capgo plugin POSTs to this URL on launch and expects the SERVER to
       // compare versions and return the bundle to download. A static file (e.g.
       // the GitHub release updates.json) can't do that — GitHub even rejects the

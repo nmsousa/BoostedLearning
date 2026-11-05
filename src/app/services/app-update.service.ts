@@ -47,54 +47,23 @@ export class AppUpdateService {
       // Confirm the running bundle is healthy so the plugin keeps it.
       await CapacitorUpdater.notifyAppReady();
 
-      // Guard against a STALE OTA bundle shadowing a newer builtin (APK).
-      // When a new APK is installed, the plugin may still have an older OTA
-      // bundle set as "current" from before; it keeps serving that old bundle
-      // instead of the APK's freshly-shipped builtin. That both hides the new
-      // native code AND, when the app then "updates" to re-fetch the same
-      // version, has produced a black screen on reload. If the active bundle is
-      // an applied OTA that is NOT newer than the builtin we're shipping, drop
-      // back to builtin so the APK always wins.
-      await this.resetStaleBundleToBuiltin();
-
-      // Optional visibility into the OTA lifecycle.
-      CapacitorUpdater.addListener('updateAvailable', info => {
-        console.log('OTA: update available', info.bundle?.version);
-      });
-      CapacitorUpdater.addListener('downloadComplete', info => {
-        console.log('OTA: new bundle downloaded', info.bundle?.version);
-      });
-      CapacitorUpdater.addListener('updateFailed', info => {
-        console.warn('OTA: update failed', info.bundle?.version);
-      });
+      // IMPORTANT: we no longer download/apply OTA bundles automatically, and we
+      // force the app back to the BUILTIN (APK) bundle on every launch. Applying
+      // an OTA bundle on-device was blanking the app after a relaunch (the web
+      // bundle is byte-identical to the builtin, yet serving it via the updater
+      // left a blank screen). Until that's root-caused on a real device, the app
+      // always runs the bundle shipped inside the APK — so a launch can never
+      // land on a broken downloaded bundle. Updates ship as new APKs.
+      try {
+        const cur = await CapacitorUpdater.current();
+        if (cur?.bundle?.id && cur.bundle.id !== 'builtin') {
+          await CapacitorUpdater.reset();   // → builtin (reloads); stops here
+          return;
+        }
+      } catch { /* already builtin / not native → fine */ }
     } catch (err) {
       // Web/no-plugin environments land here; nothing to do.
       console.debug('OTA updater not active:', err);
-    }
-  }
-
-  /**
-   * If an applied OTA bundle is active but is NOT newer than the builtin
-   * (APK-shipped) version, reset to builtin. This prevents a stale OTA bundle
-   * from an earlier install shadowing a freshly-installed/updated APK — the
-   * situation that left the app on a black screen after an "update" that
-   * re-applied the same version. No-op when already on builtin, or when the
-   * active OTA bundle is genuinely newer than the APK.
-   *
-   * reset() reloads the app, so if we do reset, execution here stops.
-   */
-  private async resetStaleBundleToBuiltin(): Promise<void> {
-    try {
-      const cur = await CapacitorUpdater.current();
-      const id = cur?.bundle?.id;
-      // 'builtin' = the APK's own bundle; nothing to do.
-      if (!id || id === 'builtin') return;
-      const activeVersion = cur.bundle.version;
-      // Keep the OTA bundle ONLY if it's strictly newer than the APK builtin.
-      if (this.isNewer(activeVersion, BUILD_INFO.version)) return;
-      await CapacitorUpdater.reset();   // → builtin, then reloads
-    } catch {
-      /* non-native / API unavailable → ignore */
     }
   }
 
