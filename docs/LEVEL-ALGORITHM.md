@@ -269,6 +269,74 @@ Clears any override: default scheduling, no badge.
 Hiding/boosting is a pure practice-queue override and does not unlock levels,
 award stars, or alter round composition.
 
+## 9. Typed-answer acceptance: typos, accents & the amber "close" state
+
+Applies to **typed** answers (the **Write** mode — and Journey's Write node).
+Multiple-choice (Quiz) and tile modes don't type free text, so this doesn't
+apply there. Implemented by the pure grader `src/core/answer-validator/
+typo-grader.ts` (unit-tested in `typo-grader.spec.ts`).
+
+A submission is graded against each accepted answer and the best result wins
+(`exact` > `accent` > `typo` > `wrong`). **`exact`, `accent` and `typo` are all
+ACCEPTED** (the card completes); only `wrong` is a miss.
+
+### What counts as a typo (accepted, "You have a typo in your answer")
+
+A typo is **at most one letter wrong**, measured **per word** and summed over
+the whole answer (so the whole answer may carry a single typo). Per word, any
+ONE of these is the single allowed edit:
+
+- one extra letter — `gath → gaath`
+- one missing letter — `gath → gth`
+- one changed letter — `gath → cath` (so most, but not all, wrong-letter slips pass)
+- two **adjacent** letters swapped — `gath → gaht`
+
+Further rules (deliberately the same for every language — the grader does not
+know what's "important" in a given language):
+
+- **Word boundaries are respected.** The two answers must have the **same number
+  of words**. Two words joined, one word split, one extra word, or one missing
+  word (even a one-letter word) are **errors, not typos**.
+- **Accents are ignored** for the edit count. If everything else is perfect and
+  **only accents differ**, the result is `accent` (accepted, "Pay attention to
+  the accents"). An accent difference plus a letter edit is still just a `typo`.
+- **Apostrophes count as word separators.** `i'r` is two words; typing `ir` is
+  one word, so they don't align → **wrong**. (A human teacher would call a
+  missing apostrophe a typo; the grader does not — it's consistent, not clever.)
+- **A "letter" is a single character** (English notion). Digraphs like Welsh
+  `ch`/`ll` are two letters, so `gath → chath` is two letters in place of one →
+  **wrong**, even though Welsh treats `ch` as one letter.
+
+Scoring: an accepted typo/accent still counts as a **mistake** for stars (it does
+not earn the perfect-first-try bonus), but the card **completes** so the learner
+is never blocked. A perfect `exact` first try (no hint) is the only "clean"
+correct.
+
+### The amber "close but not quite" state — reserved for the tile trap
+
+The yellow/amber "almost" state (fix-it-and-retry) is **only** appropriate when
+the learner has been marked slightly off **but cannot edit the text to fix it**.
+That is the **word-bank / tile** situation, not free typing:
+
+- **The word-bank trap** — the answer is built from preset word tiles, so a
+  detected typo/accent can't be corrected by the user. The app must either
+  accept it or clearly explain, rather than demand an impossible edit.
+- **Gender/article mismatch** — e.g. a wrong article (`el` vs `la`) where the
+  validator accepts the article but flags the noun, which confuses the learner.
+- **System accents / hidden characters** — smart quotes, mixed keyboard input,
+  or trailing spaces that trick the validator into "slightly off".
+
+In free-text **Write**, none of these apply (the user can always retype), so
+Write never shows the amber retry — it simply accepts (`exact`/`accent`/`typo`)
+or marks `wrong`. The amber path is retained only for the tile-based flow.
+
+### "Previous mistake" banner
+
+When a card the learner got **wrong earlier in the same session** is requeued
+and comes around again, the Write screen shows a small amber **"Previous
+mistake"** badge above the prompt (Duolingo-style), so they know this one bit
+them before.
+
 ---
 
 ## Current behaviour (shipped, pre-5-round)

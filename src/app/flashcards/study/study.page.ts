@@ -19,6 +19,7 @@ import { SettingsService } from '../../services/settings.service';
 import { AudioService } from '../../services/audio.service';
 import { AddWordService } from '../../services/add-word.service';
 import { journeyBackUrl } from '../journey/journey-back';
+import { gradeAnswer } from '../../../core/answer-validator/typo-grader';
 
 type StudyPhase = 'question' | 'feedback' | 'complete';
 type FeedbackResult = 'correct' | 'almost' | 'incorrect';
@@ -621,37 +622,35 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
     if (!this.userAnswer.trim() || !this.currentCard || !this.deck) return;
 
     this.submittedAnswer = this.userAnswer.trim();
-    const normalizedSubmitted = this.normalizeForComparison(this.submittedAnswer);
     const validAnswers = this.validAnswers;
 
-    // Check for exact match (accent-insensitive)
-    const accentMatch = validAnswers.find(
-      t => this.normalizeForComparison(t) === normalizedSubmitted
-    );
-    const isExactMatch = accentMatch !== undefined;
+    // Grade against every accepted answer with the shared typo grader
+    // (docs/LEVEL-ALGORITHM.md §9): exact / accent / typo are all ACCEPTED;
+    // only 'wrong' is a miss. Write has a free-text keyboard, so there is no
+    // "can't edit the tile" trap — we never show the amber retry here; we just
+    // accept with a note (accent/typo) or mark it wrong.
+    const { grade, matched } = gradeAnswer(this.submittedAnswer, validAnswers);
 
-    if (isExactMatch) {
-      // Accepted. If it matched only after stripping accents (e.g. "cafe" for
-      // "café"), flag an accent note — still correct, Duolingo-style.
-      this.nearMiss = this.isAccentOnlyDiff(this.submittedAnswer, accentMatch!) ? 'accent' : 'none';
-      this.correctAnswer = accentMatch!;
+    if (grade !== 'wrong') {
+      this.nearMiss = grade === 'accent' ? 'accent' : grade === 'typo' ? 'typo' : 'none';
+      this.correctAnswer = matched || validAnswers[0];
       this.feedbackResult = 'correct';
-      // Only count as correct if no hints were used
-      if (!this.usedHint) {
+      // A perfect first-try answer (no hint, no typo/accent slip) earns the
+      // "correct" stat; an accepted slip OR a hint counts as a mistake for
+      // scoring, but the card still completes so the learner isn't blocked.
+      if (grade === 'exact' && !this.usedHint) {
         this.correctCount++;
         this.recordAttempt(true);
       } else {
         this.incorrectCount++;
         this.recordAttempt(false);
       }
-      // A correct answer completes this unique card (progress advances).
       this.markCompleted();
       this.phase = 'feedback';
       this.focusInput();
       if (this.settings.autoPlayAudio()) this.playWord();
-      // A perfect answer auto-advances after a brief green flash. But when we
-      // ACCEPTED it with a note (accent slip), DON'T auto-advance — give the
-      // user time to read the note and tap Continue (like Duolingo).
+      // A clean answer auto-advances after a brief green flash. When accepted
+      // with a note, DON'T auto-advance — let the user read it and tap Continue.
       if (this.nearMiss === 'none') {
         if (this.autoAdvanceTimer) clearTimeout(this.autoAdvanceTimer);
         this.autoAdvanceTimer = setTimeout(() => {
@@ -664,44 +663,6 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
       }
       this.cdr.detectChanges();
       return;
-    }
-
-    // Accept a genuine TYPO as correct (Duolingo-style): the normalized forms
-    // are a hair apart (a single small spelling slip), not a real wrong word.
-    // Only on the first attempt — a retry should be typed correctly.
-    if (!this.isRetryAttempt) {
-      const closestMatch = this.findClosestMatch(normalizedSubmitted, validAnswers);
-      const normalizedTarget = this.normalizeForComparison(closestMatch.answer);
-      const distance = this.levenshteinDistance(normalizedSubmitted, normalizedTarget);
-      const isTypo =
-        closestMatch.answer !== '' &&
-        normalizedTarget.length >= 3 &&
-        distance <= (normalizedTarget.length >= 8 ? 2 : 1);
-
-      if (isTypo) {
-        this.nearMiss = 'typo';
-        this.correctAnswer = closestMatch.answer;
-        this.feedbackResult = 'correct';
-        // Count as correct for progress (a typo shouldn't block the learner),
-        // but it does NOT earn the "no-mistake" star bonus.
-        this.incorrectCount++;
-        this.recordAttempt(false);
-        this.markCompleted();
-        this.phase = 'feedback';
-        this.focusInput();
-        if (this.settings.autoPlayAudio()) this.playWord();
-        this.cdr.detectChanges();
-        return;
-      }
-
-      // A looser near-miss (recognisably close but more than a typo) keeps the
-      // existing "almost — try again" flow.
-      if (closestMatch.similarity >= 0.7) {
-        this.feedbackResult = 'almost';
-        this.correctAnswer = closestMatch.answer;
-        this.phase = 'feedback';
-        return;
-      }
     }
 
     // Incorrect
@@ -903,85 +864,6 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
   
   getEmptyStarArray(count: number): number[] {
     return Array(3 - count).fill(0);
-  }
-
-  private findClosestMatch(submitted: string, answers: string[]): { answer: string; similarity: number } {
-    let bestMatch = { answer: '', similarity: 0 };
-
-    for (const answer of answers) {
-      const normalized = this.normalizeForComparison(answer);
-      const maxLen = Math.max(submitted.length, normalized.length);
-
-      if (maxLen === 0) continue;
-
-      const distance = this.levenshteinDistance(submitted, normalized);
-      const similarity = 1 - (distance / maxLen);
-
-      if (similarity > bestMatch.similarity) {
-        bestMatch = { answer, similarity };
-      }
-    }
-
-    return bestMatch;
-  }
-
-  /**
-   * Normalize text for comparison. Accent-insensitive, case-insensitive, and
-   * punctuation-insensitive so e.g. "cafe" == "café" and "ça va" == "ça va?".
-   * We strip sentence punctuation (? ! . , ; : « » " and the ¿¡ marks) and
-   * collapse whitespace, but KEEP in-word apostrophes/hyphens (s'il, au-revoir)
-   * since those change the word.
-   */
-  private normalizeForComparison(text: string): string {
-    return text
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')          // drop diacritical marks
-      .replace(/[?!.,;:«»"¿¡]/g, '')             // drop sentence punctuation
-      .replace(/\s+/g, ' ')                       // collapse whitespace
-      .trim();
-  }
-
-  /**
-   * True when `submitted` and `expected` are the SAME word apart from accents
-   * (e.g. "cafe" vs "café", "ca va" vs "ça va") — i.e. they're equal once
-   * diacritics are stripped, but NOT equal with case/diacritics preserved. Used
-   * to show "mind the accents" while still accepting the answer.
-   */
-  private isAccentOnlyDiff(submitted: string, expected: string): boolean {
-    const strip = (s: string) =>
-      s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[?!.,;:«»"¿¡]/g, '').replace(/\s+/g, ' ').trim();
-    const keepAccents = (s: string) =>
-      s.toLowerCase().replace(/[?!.,;:«»"¿¡]/g, '').replace(/\s+/g, ' ').trim();
-    return strip(submitted) === strip(expected) && keepAccents(submitted) !== keepAccents(expected);
-  }
-
-  private levenshteinDistance(a: string, b: string): number {
-    const matrix: number[][] = [];
-
-    for (let i = 0; i <= b.length; i++) {
-      matrix[i] = [i];
-    }
-    for (let j = 0; j <= a.length; j++) {
-      matrix[0][j] = j;
-    }
-
-    for (let i = 1; i <= b.length; i++) {
-      for (let j = 1; j <= a.length; j++) {
-        if (b.charAt(i - 1) === a.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1,
-            matrix[i][j - 1] + 1,
-            matrix[i - 1][j] + 1
-          );
-        }
-      }
-    }
-
-    return matrix[b.length][a.length];
   }
 
   t(key: string, params?: Record<string, string | number>): string {

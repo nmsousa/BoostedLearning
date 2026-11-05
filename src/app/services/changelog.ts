@@ -21,6 +21,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.12',
+    notes: [
+      'Write mode: small typos (one letter off) and missing accents are now accepted, with a note — like Duolingo — so a slip no longer blocks you.',
+      'Write mode: a "Previous mistake" marker shows when a word you missed earlier comes back around.',
+      'Journey: the connecting line no longer shows through the locked stops.',
+    ],
+  },
+  {
     version: '1.3.11',
     notes: [
       'Fixed the "What\'s new" page crashing when opened. It now opens correctly and shows the full version history.',
