@@ -21,6 +21,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.2',
+    notes: [
+      'Flashcards: the level ring now shows your progress over the whole level — unstudied words stay grey instead of one word filling the whole circle.',
+      'Builder: the group tiles are now the same size, so a long name no longer towers over its row.',
+      'Fixed the "What\'s new" dialog showing "<br>" instead of line breaks.',
+    ],
+  },
+  {
     version: '1.3.1',
     notes: [
       'Builder: the word bank now includes a few extra words, so building a phrase isn\'t just "tap every chip".',
