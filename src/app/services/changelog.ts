@@ -21,6 +21,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.4',
+    notes: [
+      'Write mode: the keyboard no longer closes when you tap elsewhere (e.g. to hear the audio) — only tapping the header closes it.',
+      'Write mode: the keyboard no longer shows a number row.',
+      'Write mode: the wrong answer is no longer repeated inside the card — it stays visible in the input below.',
+    ],
+  },
+  {
     version: '1.3.3',
     notes: [
       'Flashcards: simpler rating — tap 👎 (don\'t know) or 👍 (know it). The "so-so" option was removed.',

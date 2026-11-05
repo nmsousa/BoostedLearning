@@ -75,10 +75,8 @@
         <span>{{ revealedViaHint ? ('mode.theAnswerIs' | translate) : ('mode.incorrectLabel' | translate) }}</span>
       </div>
       <ng-container *ngTemplateOutlet="answerPair"></ng-container>
-      <p *ngIf="!revealedViaHint && submittedAnswer" class="you-typed">
-        <ion-icon name="arrow-forward"></ion-icon>
-        <span class="wrong-answer">{{ submittedAnswer }}</span>
-      </p>
+      <!-- The wrong answer the user typed is NOT repeated here: it's still
+           visible in the input field just below the card. -->
     </div>
   </div>
 
