@@ -35,12 +35,17 @@ export class AdminPage {
     { round: '5', newPct: '~80%', reviewPct: '~20% (words you missed this level)', emphasis: 'Consolidation.' },
   ];
 
+  // Stars are computed PER ROUND from that round's first-try accuracy, and the
+  // stored rating is the BEST (highest) across the rounds played (it never
+  // drops). Thresholds match calculateStars() in flashcard.service.ts.
   readonly stars: StarRow[] = [
-    { stars: '★★★', rule: '≥ 95% average first-try accuracy across the 5 rounds' },
+    { stars: '★★★', rule: '100% first-try accuracy in a round' },
     { stars: '★★☆', rule: '≥ 85%' },
     { stars: '★☆☆', rule: '≥ 70% (pass line)' },
-    { stars: '☆☆☆', rule: 'below 70% — level not complete yet' },
+    { stars: '☆☆☆', rule: 'below 70% — round not passed' },
   ];
+  readonly starsNote =
+    'Stars = the BEST single round\'s rating (kept like best time / best combo), from that round\'s first-try accuracy — not an average. Once earned, a star count sticks even if a later round scores lower.';
 
   readonly timeRule =
     'Match only: 3-star time = pairs × seconds-per-pair. Seconds-per-pair starts at 2.2s and tightens by 0.2s every 3 levels (floor 1.1s), so deeper levels demand faster play. Other modes are untimed.';
@@ -48,8 +53,30 @@ export class AdminPage {
   readonly frequencyRule =
     'A word appears in review proportionally to its weakness: missRate × recency × priority. missRate = incorrect / seen (unseen = 0.5). Missed recently adds +50%. "Boost" ×1.5, "Hide" never shows.';
 
-  readonly pending =
-    'NOTE: the 5-round model is the agreed target and is being implemented. The shipped engine still uses a single pass (unlock at ≥70%, stars 100/85/70). See docs/LEVEL-ALGORITHM.md.';
+  // ── Typed-answer acceptance (Write): typos & accents ──────────────────────
+  readonly typoIntro =
+    'Typed answers (Write) accept small slips, Duolingo-style. A submission is graded against every accepted answer; exact, accent and typo all COUNT AS CORRECT (the card completes) — only a real miss is wrong. An accepted typo/accent still counts as a mistake for stars (no perfect-first-try bonus).';
+
+  readonly typoAccepted: string[] = [
+    'One extra letter (gath → gaath).',
+    'One missing letter (gath → gth).',
+    'One changed letter (gath → cath).',
+    'Two ADJACENT letters swapped (gath → gaht).',
+    'Only accents differ → accepted with "Pay attention to the accents".',
+  ];
+
+  readonly typoRejected: string[] = [
+    'More than one letter off in a word, or a typo in more than one word.',
+    'Different number of words — two words joined, one split, an extra or missing word (even a 1-letter word).',
+    'Apostrophes count as word separators: "ir" ≠ "i\'r" (1 word vs 2) → wrong.',
+    'A letter = one character (English): "chath" vs "gath" is two letters for one → wrong.',
+  ];
+
+  readonly typoAmber =
+    'The amber "close, but fix it" state is reserved for tile/word-bank answers you CAN\'T edit (the word-bank trap, gender/article mismatch, system-accent/hidden-character glitches). Free-text Write never shows it — it just accepts or marks wrong.';
+
+  readonly previousMistakeNote =
+    '"Previous mistake" badge: shown on Write when a word you got wrong earlier in the session comes back around.';
 
   close(): void {
     this.router.navigate(['/settings']);

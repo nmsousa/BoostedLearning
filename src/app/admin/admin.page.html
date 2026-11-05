@@ -8,8 +8,6 @@
 </ion-header>
 
 <ion-content class="admin-content ion-padding">
-  <p class="admin-pending">{{ pending }}</p>
-
   <h2>Unlocking</h2>
   <p>{{ unlockRule }}</p>
 
@@ -31,10 +29,24 @@
       <tr *ngFor="let s of stars"><td class="stars-cell">{{ s.stars }}</td><td>{{ s.rule }}</td></tr>
     </tbody>
   </table>
+  <p class="admin-note">{{ starsNote }}</p>
 
   <h2>Time for 3 stars (Match)</h2>
   <p>{{ timeRule }}</p>
 
   <h2>Why is a word shown so often?</h2>
   <p>{{ frequencyRule }}</p>
+
+  <h2>Typed answers: typos &amp; accents (Write)</h2>
+  <p>{{ typoIntro }}</p>
+  <h3>Accepted</h3>
+  <ul class="admin-list">
+    <li *ngFor="let a of typoAccepted">{{ a }}</li>
+  </ul>
+  <h3>Not accepted (wrong)</h3>
+  <ul class="admin-list">
+    <li *ngFor="let r of typoRejected">{{ r }}</li>
+  </ul>
+  <p class="admin-note">{{ typoAmber }}</p>
+  <p class="admin-note">{{ previousMistakeNote }}</p>
 </ion-content>

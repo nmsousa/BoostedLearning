@@ -5,9 +5,9 @@ This document specifies how levels work: how a level session is built, how the
 the next level unlocks, and why a given word is shown. It is the source of
 truth for the engine and is surfaced in-app on the **Admin** page.
 
-> Status: **PROPOSED / under review.** The current shipped engine still uses the
-> single-pass model (see "Current behaviour" at the bottom). The 5-round model
-> below is the agreed target; it is being implemented next.
+> Status: **IMPLEMENTED.** The 5-round model described below is the shipped
+> behaviour (`flashcard.service.ts`: `ROUNDS_PER_LEVEL`, `ROUND_NEW_FRACTION`,
+> `getRoundCards`, `getRoundsCompleted`, `isLevelUnlocked`, `calculateStars`).
 
 ---
 
@@ -70,8 +70,8 @@ Rules:
   like best time and best combo. Stored as `bestStars` and shown from the first
   round on, so a 3-star round shows 3 stars immediately and they **don't drop**
   if a later round scores lower (once earned, a star count sticks).
-  Thresholds, per round:
-  - **3 stars** — ≥ 95% first-try accuracy.
+  Thresholds, per round (match `calculateStars` in code):
+  - **3 stars** — **100%** first-try accuracy (a flawless round).
   - **2 stars** — ≥ 85%.
   - **1 star** — ≥ 70% (the pass line).
   - **0 stars** — below 70%.
@@ -339,12 +339,9 @@ them before.
 
 ---
 
-## Current behaviour (shipped, pre-5-round)
+## Legacy fallback (pre-rounds records)
 
-For transparency, today the engine does NOT yet do the 5-round model:
-- A level is a single pass (one representative card per unique prompt).
-- Unlock = previous level best score ≥ 70%.
-- Stars = 100 / 85 / 70 thresholds on that single pass.
-- Match mixes in weakest review words up to a cap of 50; other modes do not.
-
-The 5-round model in §2–§4 replaces this once implemented.
+Progress saved before the 5-round model has no `roundsCompleted`. For those
+records, unlocking falls back to the old rule (previous level `bestScore ≥ 70%`)
+so existing progress keeps the next level open. New progress always uses the
+5-round model above.
