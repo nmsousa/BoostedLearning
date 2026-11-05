@@ -172,6 +172,30 @@ export class BuilderPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    await this.setup();
+  }
+
+  /**
+   * Ionic keeps page instances cached in the router outlet and REUSES them on
+   * re-entry, so `ngOnInit` runs only once per instance. Re-running setup on
+   * every view-enter means a reused instance (e.g. a journey node re-opened
+   * after failing to generate phrases) always re-initialises instead of being
+   * stuck on whatever stale/blank state it was left in.
+   */
+  async ionViewWillEnter(): Promise<void> {
+    // ngOnInit already ran setup for a fresh instance; only re-run on reuse.
+    if (this.didSetup) await this.setup();
+  }
+
+  private didSetup = false;
+
+  private async setup(): Promise<void> {
+    this.didSetup = true;
+    this.isLoading = true;
+    this.journeyMode = false;
+    this.stage = { kind: 'map' };
+    this.cdr.detectChanges();
+
     // Journey Builder node: generate phrases from a skill's words (+ earlier)
     // and play straight through them — no dataset/map.
     if (this.route.snapshot.queryParamMap.get('mode') === 'journey-builder') {
@@ -214,9 +238,14 @@ export class BuilderPage implements OnInit {
     this.journeyWordPool = tokens.map(t => t.text).filter(w => w && !/\s/.test(w));
 
     if (this.journeyPhrases.length === 0) {
-      // Nothing to build — auto-pass so the chapter can continue.
+      // Nothing to build (no noun to anchor a phrase, or the level had no
+      // usable cards) — auto-pass so the chapter is never blocked, and leave
+      // loading on so the user sees the spinner (not a blank frame) during the
+      // brief async gap before the navigation swaps the page out.
+      this.isLoading = true;
+      this.cdr.detectChanges();
       await this.flashcards.saveRoundProgress(deckId, 'journey-builder', level, 100);
-      this.router.navigate([this.journeyBack], { replaceUrl: true });
+      await this.router.navigate([this.journeyBack], { replaceUrl: true });
       return;
     }
 
@@ -496,16 +525,29 @@ export class BuilderPage implements OnInit {
     this.cdr.detectChanges();
   }
 
-  /** The index of the chip whose box contains the point, or null. */
+  /**
+   * The drop index for the pointer among the chosen chips. First try a direct
+   * hit (pointer inside a chip). Otherwise fall back to the NEAREST chip by
+   * centre distance so dragging into the gaps — or past the last chip toward
+   * the empty placeholder — still reorders (previously this returned null, so
+   * you could never drag a word to a LATER position / to the end).
+   */
   private chipIndexAtPoint(x: number, y: number): number | null {
     const row = this.slotsRow?.nativeElement;
     if (!row) return null;
     const chips = Array.from(row.querySelectorAll<HTMLElement>('.slot:not(.empty)'));
+    if (!chips.length) return null;
+    let nearest = 0;
+    let best = Infinity;
     for (let i = 0; i < chips.length; i++) {
       const r = chips[i].getBoundingClientRect();
       if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const d = Math.hypot(x - cx, y - cy);
+      if (d < best) { best = d; nearest = i; }
     }
-    return null;
+    return nearest;
   }
 
   private clearWrong(): void {

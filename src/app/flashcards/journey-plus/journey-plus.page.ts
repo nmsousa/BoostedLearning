@@ -165,9 +165,10 @@ export class JourneyPlusPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /** Returning from an exercise: refresh progress, stay on the same chapter
-   *  unless the learner just finished it (then follow them forward). */
+   *  unless the learner just finished it (then follow them forward), and always
+   *  bring the new active node into view (it may have moved below the fold). */
   async ionViewWillEnter(): Promise<void> {
-    if (this.deck) await this.load(false);
+    if (this.deck) await this.load(false, true);
   }
 
   private observeMap(): void {
@@ -188,7 +189,7 @@ export class JourneyPlusPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ── Data ────────────────────────────────────────────────────────────────────
-  private async load(initial: boolean): Promise<void> {
+  private async load(initial: boolean, returning = false): Promise<void> {
     this.availableLanguages = this.flashcards
       .getAvailableLanguages()
       .map(l => ({ ...l, flagUrl: this.flagUrl(l.code) }));
@@ -219,11 +220,14 @@ export class JourneyPlusPage implements OnInit, AfterViewInit, OnDestroy {
     this.isLoading = false;
     this.rebuild();
     this.cdr.detectChanges();
-    // The map element only exists once loading is done.
+    // The map element only exists once loading is done. Scroll to the active
+    // node on first load, and also when returning from a finished exercise
+    // (the new active node often sits below the fold).
     setTimeout(() => {
       this.observeMap();
       this.measure();
       if (!this.scrolledOnce) { this.scrolledOnce = true; void this.scrollToActive(); }
+      else if (returning) void this.scrollToActive();
     }, 150);
   }
 

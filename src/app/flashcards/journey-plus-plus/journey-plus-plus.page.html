@@ -1,6 +1,7 @@
 <!-- Painted scene behind everything: starry night sky + the illustration as a
-     skyline band toward the bottom. Purely decorative. -->
-<div class="pp-scene" aria-hidden="true">
+     skyline band toward the bottom. Fixed, purely decorative. The scene element
+     is also what we measure for the map width. -->
+<div class="pp-scene" aria-hidden="true" #scene>
   <div class="pp-skyline"></div>
 </div>
 
@@ -11,31 +12,11 @@
         <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
       </button>
 
-      <span class="pp-emoji" aria-hidden="true">{{ emoji }}</span>
-
-      <div class="pp-title-block">
-        <h1 class="pp-title">{{ title }}</h1>
-        <div class="pp-sub" *ngIf="chapter">
-          <button type="button" class="pp-step" (click)="prevChapter()" [disabled]="!hasPrev"
-            [attr.aria-label]="'journeyPlus.prevChapter' | translate">
-            <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
-          </button>
-          <span class="pp-sub-text">{{ subtitle }}</span>
-          <button type="button" class="pp-step" (click)="nextChapter()" [disabled]="!hasNext"
-            [attr.aria-label]="'journeyPlus.nextChapterAria' | translate">
-            <ion-icon name="chevron-forward" aria-hidden="true"></ion-icon>
-          </button>
-          <button type="button" class="pp-step locate" *ngIf="!viewingCurrent" (click)="goToCurrent()"
-            [attr.aria-label]="'journeyPlus.goToCurrent' | translate">
-            <ion-icon name="locate" aria-hidden="true"></ion-icon>
-          </button>
-        </div>
-      </div>
+      <h1 class="pp-title">{{ 'journeyPP.title' | translate }}</h1>
 
       <button type="button" class="pp-lang" id="jpp-lang-trigger"
         [attr.aria-label]="'journeyPlus.changeLanguage' | translate">
         <span class="pp-flag"><img [src]="currentLanguage.flagUrl" alt="" /></span>
-        <span class="pp-lang-name">{{ currentLanguage.name }}</span>
         <ion-icon name="chevron-down" class="pp-lang-caret" aria-hidden="true"></ion-icon>
       </button>
       <ion-popover trigger="jpp-lang-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
@@ -55,57 +36,87 @@
 </ion-header>
 
 <!-- Not fullscreen: content ends above the HUD, so it never covers a node. -->
-<ion-content class="pp-content" #content>
+<ion-content class="pp-content" #content [scrollEvents]="true" (ionScroll)="onContentScroll()">
   <div *ngIf="isLoading" class="pp-loading"><ion-spinner name="crescent"></ion-spinner></div>
-  <p *ngIf="!isLoading && !chapter" class="pp-empty">{{ 'journeyPlus.empty' | translate }}</p>
+  <p *ngIf="!isLoading && !deck" class="pp-empty">{{ 'journeyPlus.empty' | translate }}</p>
 
-  <div *ngIf="!isLoading && chapter" class="pp-map" #map [style.height.px]="mapHeight">
-    <svg class="pp-route" [attr.viewBox]="'0 0 ' + mapWidth + ' ' + mapHeight"
-      [attr.width]="mapWidth" [attr.height]="mapHeight" aria-hidden="true">
-      <defs>
-        <linearGradient id="ppDone" x1="0" y1="0" x2="0" [attr.y2]="mapHeight" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="#5dfaa6" />
-          <stop offset="1" stop-color="#3fd8ff" />
-        </linearGradient>
-      </defs>
-      <path *ngIf="pathAhead" class="ahead-glow" [attr.d]="pathAhead" />
-      <path *ngIf="pathAhead" class="ahead" [attr.d]="pathAhead" />
-      <path *ngIf="pathDone" class="done-glow" [attr.d]="pathDone" />
-      <path *ngIf="pathDone" class="done" [attr.d]="pathDone" stroke="url(#ppDone)" />
-    </svg>
+  <!-- All chapters stacked in one continuous scroll: a light header per chapter
+       then its node route, then the next chapter below. -->
+  <div *ngIf="!isLoading && deck" class="pp-stream">
+    <section class="pp-chapter" *ngFor="let block of mapChapters; trackBy: trackChapter"
+      [id]="'jpp-chapter-' + block.index" [class.is-current]="block.current"
+      [class.is-locked]="!block.chapter.unlocked">
 
-    <div class="pp-stop" *ngFor="let stop of stops; trackBy: trackStop"
-      [ngClass]="'state-' + stop.state"
-      [style.top.px]="stop.y" [style.--x]="stop.xPct + '%'" [style.--i]="stop.index">
+      <header class="pp-chapter-head">
+        <span class="pp-chapter-badge">{{ block.chapter.number }}</span>
+        <span class="pp-chapter-emoji" aria-hidden="true">{{ block.emoji }}</span>
+        <span class="pp-chapter-name">{{ block.title }}</span>
+        <ion-icon *ngIf="!block.chapter.unlocked" name="lock-closed" class="pp-chapter-lock" aria-hidden="true"></ion-icon>
+        <span class="pp-chapter-sub">{{ block.subtitle }}</span>
+      </header>
 
-      <!-- Pill panel anchored at the node centre, extending right; the node
-           sits on top of its leading end. Mirrors the node's tap. -->
-      <div class="pp-panel" aria-hidden="true" (click)="openStop(stop)">
-        <div class="pp-panel-text">
-          <span class="pp-panel-title">
-            <span *ngIf="stop.state === 'done'" class="pp-tick"><ion-icon name="checkmark"></ion-icon></span>
-            {{ stop.label }}
-          </span>
-          <span class="pp-panel-detail">
-            <ion-icon *ngIf="stop.state === 'active'" name="time-outline"></ion-icon>
-            {{ stop.detail }}
-          </span>
+      <div class="pp-map" [style.height.px]="block.mapHeight">
+        <svg class="pp-route" [attr.viewBox]="'0 0 ' + mapWidth + ' ' + block.mapHeight"
+          [attr.width]="mapWidth" [attr.height]="block.mapHeight" aria-hidden="true">
+          <defs>
+            <linearGradient [attr.id]="'ppDone-' + block.index" x1="0" y1="0" x2="0"
+              [attr.y2]="block.mapHeight" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#5dfaa6" />
+              <stop offset="1" stop-color="#3fd8ff" />
+            </linearGradient>
+          </defs>
+          <path *ngIf="block.pathAhead" class="ahead-glow" [attr.d]="block.pathAhead" />
+          <path *ngIf="block.pathAhead" class="ahead" [attr.d]="block.pathAhead" />
+          <path *ngIf="block.pathDone" class="done-glow" [attr.d]="block.pathDone" />
+          <path *ngIf="block.pathDone" class="done" [attr.d]="block.pathDone"
+            [attr.stroke]="'url(#ppDone-' + block.index + ')'" />
+        </svg>
+
+        <div class="pp-stop" *ngFor="let stop of block.stops; trackBy: trackStop"
+          [ngClass]="'state-' + stop.state"
+          [style.top.px]="stop.y" [style.--x]="stop.xPct + '%'" [style.--i]="stop.index">
+
+          <!-- Pill panel anchored at the node centre, extending right; the node
+               sits on top of its leading end. Mirrors the node's tap. -->
+          <div class="pp-panel" aria-hidden="true" (click)="openStop(block, stop)">
+            <div class="pp-panel-text">
+              <span class="pp-panel-title">
+                <span *ngIf="stop.state === 'done'" class="pp-tick"><ion-icon name="checkmark"></ion-icon></span>
+                {{ stop.label }}
+              </span>
+              <span class="pp-panel-detail">
+                <ion-icon *ngIf="stop.state === 'active'" name="time-outline"></ion-icon>
+                {{ stop.detail }}
+              </span>
+            </div>
+            <span *ngIf="stop.state === 'active'" class="pp-go"><ion-icon name="chevron-forward"></ion-icon></span>
+          </div>
+
+          <button type="button" class="pp-node" [disabled]="stop.state === 'locked'"
+            [attr.aria-label]="stop.aria" (click)="openStop(block, stop)">
+            <ion-icon *ngIf="stop.state !== 'locked'" [name]="stop.node.icon" class="pp-node-icon" aria-hidden="true"></ion-icon>
+            <ion-icon *ngIf="stop.state === 'locked'" name="lock-closed" class="pp-node-icon lock" aria-hidden="true"></ion-icon>
+          </button>
         </div>
-        <span *ngIf="stop.state === 'active'" class="pp-go"><ion-icon name="chevron-forward"></ion-icon></span>
       </div>
+    </section>
 
-      <button type="button" class="pp-node" [disabled]="stop.state === 'locked'"
-        [attr.aria-label]="stop.aria" (click)="openStop(stop)">
-        <ion-icon *ngIf="stop.state !== 'locked'" [name]="stop.node.icon" class="pp-node-icon" aria-hidden="true"></ion-icon>
-        <ion-icon *ngIf="stop.state === 'locked'" name="lock-closed" class="pp-node-icon lock" aria-hidden="true"></ion-icon>
-      </button>
-    </div>
+    <!-- Load more chapters as the user scrolls, instead of building all at once. -->
+    <ion-infinite-scroll *ngIf="hasMoreChapters" (ionInfinite)="loadMoreChapters($event)">
+      <ion-infinite-scroll-content></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
   </div>
+
+  <!-- Jump back to the chapter in progress when it's scrolled out of view. -->
+  <button type="button" class="pp-jump" *ngIf="!isLoading && showJumpFab" (click)="jumpToCurrent()"
+    [attr.aria-label]="'journeyPlus.goToCurrent' | translate">
+    <ion-icon name="locate" aria-hidden="true"></ion-icon>
+  </button>
 </ion-content>
 
-<ion-footer class="pp-footer ion-no-border" *ngIf="!isLoading && chapter">
+<ion-footer class="pp-footer ion-no-border" *ngIf="!isLoading && currentChapter">
   <div class="pp-hud">
-    <div class="pp-ring" role="img" [attr.aria-label]="chapter.done + ' / ' + chapter.nodes.length">
+    <div class="pp-ring" role="img" [attr.aria-label]="currentChapter.done + ' / ' + currentChapter.nodes.length">
       <svg viewBox="0 0 64 64" aria-hidden="true">
         <defs>
           <linearGradient id="ppRing" x1="0" y1="0" x2="1" y2="1">
@@ -117,7 +128,7 @@
         <circle class="fill" cx="32" cy="32" r="25" stroke="url(#ppRing)"
           [attr.stroke-dasharray]="ringCircumference" [style.stroke-dashoffset]="ringOffset" />
       </svg>
-      <span class="pp-ring-text">{{ chapter.done }} / {{ chapter.nodes.length }}</span>
+      <span class="pp-ring-text">{{ currentChapter.done }} / {{ currentChapter.nodes.length }}</span>
     </div>
 
     <span class="pp-divider" aria-hidden="true"></span>

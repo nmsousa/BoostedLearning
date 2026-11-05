@@ -49,6 +49,15 @@
     <p>{{ 'builder.unavailable' | translate }}</p>
   </div>
 
+  <!-- Safety net: a journey node that reached no playable stage (shouldn't
+       happen — it auto-passes and navigates back — but never leave the user
+       staring at a blank screen with no way out). -->
+  <div *ngIf="!isLoading && journeyMode && stage.kind === 'map'" class="builder-empty">
+    <ion-icon name="construct-outline"></ion-icon>
+    <p>{{ 'builder.unavailable' | translate }}</p>
+    <ion-button fill="clear" (click)="close()">{{ 'common.close' | translate }}</ion-button>
+  </div>
+
   <!-- MAP: grammar groups that merge into phrase nodes -->
   <div *ngIf="!isLoading && data && stage.kind === 'map'" class="builder-map">
     <p class="builder-intro">{{ 'builder.intro' | translate }}</p>
