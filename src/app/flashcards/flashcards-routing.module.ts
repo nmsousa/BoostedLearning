@@ -45,6 +45,12 @@ const routes: Routes = [
     loadChildren: () => import('./journey/journey.module').then(m => m.JourneyPageModule)
   },
   {
+    // EXPERIMENTAL: Journey+ — redesigned map, kept alongside the classic
+    // Journey for comparison. Same journey-* progress.
+    path: 'journey-plus',
+    loadChildren: () => import('./journey-plus/journey-plus.module').then(m => m.JourneyPlusPageModule)
+  },
+  {
     // EXPERIMENTAL: a Journey level reuses the Write exercise, scored under
     // the 'journey' mode (via ?mode=journey).
     path: 'journey-play/:id',

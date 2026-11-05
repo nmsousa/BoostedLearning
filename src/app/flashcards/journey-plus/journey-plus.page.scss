@@ -1,0 +1,488 @@
+// Journey+ — immersive chapter map.
+// The page always uses its own night palette (it's an illustrated scene, so it
+// doesn't follow the app's light/dark theme). Geometry tokens (--row, node
+// sizes) MUST match JourneyPlusPage.ROW / PAD_* in the component.
+
+:host {
+  // ── Design tokens ──────────────────────────────────────────────────────────
+  --jp-bg: #070d24;
+  --jp-text: #ffffff;
+  --jp-muted: rgba(214, 220, 255, 0.72);
+  --jp-glass: rgba(14, 22, 58, 0.74);
+  --jp-glass-border: rgba(255, 255, 255, 0.12);
+  --jp-done-a: #3ef08f;
+  --jp-done-b: #0fa968;
+  --jp-done-glow: rgba(52, 245, 161, 0.5);
+  --jp-active-a: #67e8f9;
+  --jp-active-b: #0ea5e9;
+  --jp-active-c: #2563eb;
+  --jp-active-glow: rgba(34, 211, 238, 0.7);
+  --jp-locked-a: #2a2d63;
+  --jp-locked-b: #181b44;
+  --jp-locked-ink: rgba(196, 190, 255, 0.6);
+  --jp-gold: #fcd34d;
+  --jp-radius: 18px;
+  --jp-shadow: 0 10px 26px rgba(0, 0, 0, 0.38);
+  --jp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --node: 76px;
+  --node-active: 96px;
+
+  color: var(--jp-text);
+  // Illustrated background (independent asset, no UI baked in) under a navy
+  // wash: darker at the top (header) and bottom (HUD) for contrast.
+  background:
+    linear-gradient(180deg, rgba(7, 13, 36, 0.94) 0%, rgba(9, 16, 48, 0.7) 22%,
+      rgba(12, 20, 60, 0.5) 55%, rgba(7, 13, 36, 0.92) 100%),
+    url('/assets/images/international-background.jpg') 20% 100% / cover no-repeat,
+    var(--jp-bg);
+
+  // Faint stars in the upper sky.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 55% 0;
+    pointer-events: none;
+    opacity: 0.55;
+    background:
+      radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 28% 8%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 46% 26%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 63% 12%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 81% 22%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 92% 6%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 6% 40%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 72% 44%, #fff 50%, transparent 51%);
+  }
+}
+
+// ── Header ───────────────────────────────────────────────────────────────────
+.jp-header ion-toolbar {
+  --background: transparent;
+  --border-width: 0;
+  --min-height: 72px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+.jp-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.jp-icon-btn {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--jp-text);
+  background: rgba(20, 32, 82, 0.72);
+  border: 1px solid var(--jp-glass-border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  font-size: 22px;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s var(--jp-ease), opacity 0.2s;
+  &:active { transform: scale(0.92); }
+  &:disabled { opacity: 0.35; }
+  &.small { width: 36px; height: 36px; font-size: 18px; }
+}
+.jp-title-block { flex: 1 1 auto; min-width: 0; }
+.jp-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(1.15rem, 5vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.jp-emoji { font-size: 1.1em; flex: 0 0 auto; }
+.jp-title-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jp-subtitle {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  color: var(--jp-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jp-lang {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 10px 0 8px;
+  border-radius: 999px;
+  color: var(--jp-text);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.jp-flag {
+  width: 24px;
+  height: 17px;
+  border-radius: 3px;
+  object-fit: cover;
+  display: block;
+}
+.jp-lang-caret { font-size: 13px; opacity: 0.8; }
+// On narrow phones the pill shows the flag only.
+@media (max-width: 380px) { .jp-lang-name { display: none; } }
+
+// ── Content ──────────────────────────────────────────────────────────────────
+.jp-content { --background: transparent; }
+.jp-loading { display: grid; place-items: center; height: 60%; }
+.jp-empty { text-align: center; color: var(--jp-muted); padding: 40px 24px; }
+
+.jp-chapter-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 4px auto 0;
+}
+.jp-chapter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: var(--jp-glass);
+  border: 1px solid var(--jp-glass-border);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.jp-chapter-state { font-size: 15px; color: var(--jp-locked-ink); &.done { color: var(--jp-done-a); } }
+.jp-current-chip-row { display: flex; justify-content: center; margin-top: 10px; }
+.jp-current-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 0;
+  color: #04202b;
+  font: inherit;
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+  background: linear-gradient(90deg, var(--jp-done-a), var(--jp-active-a));
+}
+
+// ── Map (route + stops share one coordinate system) ──────────────────────────
+.jp-map {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+}
+.jp-route {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  path { fill: none; stroke-linecap: round; }
+  .route-ahead { stroke: rgba(190, 182, 255, 0.4); stroke-width: 5; stroke-dasharray: 1 13; }
+  .route-glow { stroke: rgba(52, 245, 161, 0.2); stroke-width: 16; }
+  .route-done {
+    stroke-width: 6;
+    stroke-dasharray: 1 13;
+    animation: jp-flow 1.4s linear infinite;
+  }
+}
+
+// A stop is a zero-height anchor at the node's centre line.
+.jp-stop {
+  --r: calc(var(--node) / 2);
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  &.state-active { --r: calc(var(--node-active) / 2); }
+}
+
+.jp-node {
+  position: absolute;
+  left: var(--x);
+  top: 0;
+  width: var(--node);
+  height: var(--node);
+  margin: calc(var(--node) / -2) 0 0 calc(var(--node) / -2);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 4px solid rgba(255, 255, 255, 0.92);
+  box-shadow: var(--jp-shadow);
+  color: #fff;
+  z-index: 2;
+  transition: transform 0.18s var(--jp-ease);
+  padding: 0;
+  cursor: pointer;
+  // `backwards` (not `both`) so the finished entrance doesn't pin `transform`
+  // and the press-scale below still works.
+  animation: jp-pop 0.5s var(--jp-ease) backwards;
+  animation-delay: calc(var(--i) * 70ms);
+  &:active:not(:disabled) { transform: scale(0.92); }
+  .jp-node-icon { font-size: 34px; }
+}
+
+.state-done .jp-node {
+  background: radial-gradient(circle at 30% 25%, var(--jp-done-a), var(--jp-done-b));
+  box-shadow: 0 0 22px var(--jp-done-glow), var(--jp-shadow);
+}
+
+.state-active .jp-node {
+  width: var(--node-active);
+  height: var(--node-active);
+  margin: calc(var(--node-active) / -2) 0 0 calc(var(--node-active) / -2);
+  border-width: 5px;
+  border-color: #fff;
+  background: radial-gradient(circle at 30% 25%, var(--jp-active-a), var(--jp-active-b) 55%, var(--jp-active-c));
+  box-shadow: 0 0 0 7px rgba(34, 211, 238, 0.22), 0 0 34px var(--jp-active-glow), var(--jp-shadow);
+  animation: jp-pop 0.5s var(--jp-ease) backwards, jp-breathe 2.6s ease-in-out 0.6s infinite;
+  .jp-node-icon { font-size: 44px; }
+  // Expanding halo ring.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    border: 2px solid rgba(103, 232, 249, 0.7);
+    animation: jp-halo 2.2s ease-out infinite;
+  }
+}
+
+.state-locked .jp-node {
+  border: 3px solid rgba(167, 160, 255, 0.28);
+  background: linear-gradient(160deg, var(--jp-locked-a), var(--jp-locked-b));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  color: var(--jp-locked-ink);
+  cursor: not-allowed;
+  .jp-node-icon { font-size: 30px; }
+}
+
+.jp-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  &.done { background: #fff; color: var(--jp-done-b); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+  &.lock {
+    background: var(--jp-locked-b);
+    color: var(--jp-locked-ink);
+    border: 1px solid rgba(167, 160, 255, 0.35);
+    font-size: 13px;
+  }
+}
+
+// ── Info panels (beside the node, on the side facing the map centre) ─────────
+.jp-panel {
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--jp-radius);
+  background: var(--jp-glass);
+  border: 1px solid var(--jp-glass-border);
+  box-shadow: var(--jp-shadow);
+  cursor: pointer;
+  transform: translateY(-50%);
+  animation: jp-rise 0.55s var(--jp-ease) both;
+  animation-delay: calc(var(--i) * 70ms + 80ms);
+}
+.side-right .jp-panel {
+  left: calc(var(--x) + var(--r) + 14px);
+  width: min(270px, calc(100% - var(--x) - var(--r) - 26px));
+}
+.side-left .jp-panel {
+  right: calc(100% - var(--x) + var(--r) + 14px);
+  width: min(270px, calc(var(--x) - var(--r) - 26px));
+}
+.jp-panel-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.jp-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+  .ic-done { color: var(--jp-done-a); font-size: 18px; flex: 0 0 auto; }
+}
+.jp-panel-detail {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  color: var(--jp-muted);
+  ion-icon { font-size: 14px; flex: 0 0 auto; }
+}
+
+.state-done .jp-panel-detail { color: var(--jp-done-a); font-weight: 700; }
+
+.state-active .jp-panel {
+  padding: 14px 12px 14px 16px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.34), rgba(37, 99, 235, 0.32));
+  border-color: rgba(125, 230, 255, 0.55);
+  box-shadow: 0 0 26px rgba(34, 211, 238, 0.28), var(--jp-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  .jp-panel-title { font-size: 1.12rem; }
+  .jp-panel-detail { color: rgba(236, 250, 255, 0.9); }
+}
+.jp-panel-go {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: var(--jp-active-c);
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.state-locked .jp-panel {
+  cursor: default;
+  background: rgba(16, 20, 52, 0.66);
+  .jp-panel-title { color: rgba(226, 224, 255, 0.78); }
+}
+
+// ── Progress HUD ─────────────────────────────────────────────────────────────
+.jp-footer { background: transparent; }
+.jp-hud {
+  max-width: 540px;
+  margin: 0 auto calc(10px + var(--ion-safe-area-bottom, 0px));
+  margin-inline: max(12px, calc((100% - 540px) / 2));
+  padding: 14px;
+  border-radius: 24px;
+  background: rgba(12, 20, 54, 0.8);
+  border: 1px solid var(--jp-glass-border);
+  box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.jp-hud-row { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.jp-ring {
+  position: relative;
+  flex: 0 0 auto;
+  width: 60px;
+  height: 60px;
+  svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  circle { fill: none; stroke-width: 6; }
+  .ring-track { stroke: rgba(255, 255, 255, 0.12); }
+  .ring-fill {
+    stroke: var(--jp-done-a);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s var(--jp-ease);
+  }
+}
+.jp-ring-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  small { font-size: 0.7rem; color: var(--jp-muted); font-weight: 700; }
+}
+.jp-hud-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.jp-hud-title { font-weight: 800; font-size: 0.95rem; }
+.jp-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(30, 44, 104, 0.9);
+  overflow: hidden;
+}
+.jp-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--jp-done-a), var(--jp-active-a));
+  transition: width 0.8s var(--jp-ease);
+}
+.jp-hud-pct { font-size: 0.74rem; color: var(--jp-muted); }
+.jp-reward {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--jp-gold);
+  font-weight: 800;
+  font-size: 0.85rem;
+  ion-icon { font-size: 26px; filter: drop-shadow(0 0 8px rgba(252, 211, 77, 0.45)); }
+}
+.jp-cta {
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  color: #04202b;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 900;
+  cursor: pointer;
+  background: linear-gradient(90deg, var(--jp-done-a), var(--jp-active-a));
+  box-shadow: 0 0 24px rgba(52, 245, 161, 0.35), 0 6px 16px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s var(--jp-ease), opacity 0.2s;
+  ion-icon { font-size: 20px; }
+  &:active:not(:disabled) { transform: scale(0.97); }
+  &:disabled { opacity: 0.55; box-shadow: none; }
+}
+
+// Short screens: a compact HUD so the map keeps most of the height.
+@media (max-height: 700px) {
+  .jp-hud { padding: 10px 12px; }
+  .jp-hud-row { margin-bottom: 8px; gap: 10px; }
+  .jp-ring { width: 46px; height: 46px; }
+  .jp-hud-pct { display: none; }
+  .jp-cta { min-height: 44px; font-size: 0.95rem; }
+}
+
+// ── Motion ───────────────────────────────────────────────────────────────────
+@keyframes jp-flow { to { stroke-dashoffset: -28; } }
+@keyframes jp-pop { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+@keyframes jp-rise {
+  from { opacity: 0; transform: translateY(calc(-50% + 12px)); }
+  to { opacity: 1; transform: translateY(-50%); }
+}
+@keyframes jp-breathe { 50% { transform: scale(1.04); } }
+@keyframes jp-halo {
+  from { opacity: 0.9; transform: scale(0.92); }
+  to { opacity: 0; transform: scale(1.3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jp-node, .jp-panel, .jp-route .route-done, .state-active .jp-node,
+  .state-active .jp-node::after { animation: none !important; }
+}
+:host-context(.reduced-motion) {
+  .jp-node, .jp-panel, .jp-route .route-done, .state-active .jp-node,
+  .state-active .jp-node::after { animation: none !important; }
+}

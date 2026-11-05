@@ -17,6 +17,7 @@ import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
+import { journeyBackUrl } from '../journey/journey-back';
 
 type FlipPhase = 'card' | 'complete';
 
@@ -138,7 +139,7 @@ export class FlipPage implements OnInit {
     // Journey Flashcards node: score under 'journey-flip', return to the map.
     if (this.route.snapshot.queryParamMap.get('mode') === 'journey-flip') {
       this.mode = 'journey-flip';
-      this.backUrl = '/practice/journey';
+      this.backUrl = journeyBackUrl(this.route.snapshot.queryParamMap);
     }
 
     if (!deckId) {

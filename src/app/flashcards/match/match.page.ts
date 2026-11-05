@@ -14,6 +14,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
+import { journeyBackUrl } from '../journey/journey-back';
 
 type Side = 'left' | 'right';
 type MatchPhase = 'play' | 'complete';
@@ -133,7 +134,7 @@ export class MatchPage implements OnInit, OnDestroy {
     // is already single-pass — one board is one play.)
     if (this.route.snapshot.queryParamMap.get('mode') === 'journey-match') {
       this.mode = 'journey-match';
-      this.backUrl = '/practice/journey';
+      this.backUrl = journeyBackUrl(this.route.snapshot.queryParamMap);
     }
 
     if (!deckId) {

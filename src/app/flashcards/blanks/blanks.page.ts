@@ -21,6 +21,7 @@ import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
+import { journeyBackUrl } from '../journey/journey-back';
 import {
   buildTokens, generatePhrases, type BuilderToken, type GeneratedPhrase, type WordCategory,
 } from '../../../core/phrase-builder/phrase-builder';
@@ -119,7 +120,7 @@ export class BlanksPage implements OnInit {
     this.levelNumber = levelParam ? parseInt(levelParam, 10) : 0;
     if (this.route.snapshot.queryParamMap.get('mode') === 'journey-blanks') {
       this.mode = 'journey-blanks';
-      this.backUrl = '/practice/journey';
+      this.backUrl = journeyBackUrl(this.route.snapshot.queryParamMap);
       this.singlePass = true;
     }
 

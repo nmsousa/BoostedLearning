@@ -1,0 +1,164 @@
+<!-- Premium header: circular back button, thematic emoji + chapter title with
+     a short subtitle, and the learning-language pill. Transparent so the
+     page's illustrated background shows through. -->
+<ion-header class="jp-header ion-no-border">
+  <ion-toolbar>
+    <div class="jp-head">
+      <button type="button" class="jp-icon-btn" (click)="close()" [attr.aria-label]="'journeyPlus.back' | translate">
+        <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
+      </button>
+
+      <div class="jp-title-block">
+        <h1 class="jp-title">
+          <span class="jp-emoji" aria-hidden="true">{{ emoji }}</span>
+          <span class="jp-title-text">{{ title }}</span>
+        </h1>
+        <p class="jp-subtitle" *ngIf="chapter">{{ subtitle }}</p>
+      </div>
+
+      <button type="button" class="jp-lang" id="jplus-lang-trigger"
+        [attr.aria-label]="'journeyPlus.changeLanguage' | translate">
+        <img class="jp-flag" [src]="currentLanguage.flagUrl" alt="" />
+        <span class="jp-lang-name">{{ currentLanguage.name }}</span>
+        <ion-icon name="chevron-down" class="jp-lang-caret" aria-hidden="true"></ion-icon>
+      </button>
+      <ion-popover trigger="jplus-lang-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
+        <ng-template>
+          <ion-list class="lang-list">
+            <ion-item *ngFor="let lang of availableLanguages" button detail="false" lines="none"
+              [class.active]="lang.code === learningLanguage" (click)="selectLanguage(lang.code)">
+              <img class="flag" slot="start" [src]="lang.flagUrl" [alt]="lang.name" />
+              <ion-label>{{ lang.name }}</ion-label>
+              <ion-icon *ngIf="lang.code === learningLanguage" name="checkmark" slot="end" color="primary"></ion-icon>
+            </ion-item>
+          </ion-list>
+        </ng-template>
+      </ion-popover>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<!-- Not fullscreen: the content area ends above the HUD footer, so the HUD can
+     never cover a node (the page background still shows around the HUD). -->
+<ion-content class="jp-content" #content>
+  <div *ngIf="isLoading" class="jp-loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <p *ngIf="!isLoading && !chapter" class="jp-empty">{{ 'journeyPlus.empty' | translate }}</p>
+
+  <ng-container *ngIf="!isLoading && chapter">
+    <!-- Chapter switcher: browse chapters; a chip returns to the current one. -->
+    <nav class="jp-chapter-nav" [attr.aria-label]="'journey.chapter' | translate">
+      <button type="button" class="jp-icon-btn small" (click)="prevChapter()" [disabled]="!hasPrev"
+        [attr.aria-label]="'journeyPlus.prevChapter' | translate">
+        <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
+      </button>
+      <div class="jp-chapter-pill">
+        <span class="jp-chapter-label">{{ 'journeyPlus.chapterOf' | translate:{ n: chapter.number, total: chapters.length } }}</span>
+        <ion-icon *ngIf="!chapter.unlocked" name="lock-closed" class="jp-chapter-state" aria-hidden="true"></ion-icon>
+        <ion-icon *ngIf="chapter.complete" name="checkmark-circle" class="jp-chapter-state done" aria-hidden="true"></ion-icon>
+      </div>
+      <button type="button" class="jp-icon-btn small" (click)="nextChapter()" [disabled]="!hasNext"
+        [attr.aria-label]="'journeyPlus.nextChapterAria' | translate">
+        <ion-icon name="chevron-forward" aria-hidden="true"></ion-icon>
+      </button>
+    </nav>
+    <div class="jp-current-chip-row" *ngIf="!viewingCurrent">
+      <button type="button" class="jp-current-chip" (click)="goToCurrent()">
+        <ion-icon name="locate-outline" aria-hidden="true"></ion-icon>
+        {{ 'journeyPlus.goToCurrent' | translate }}
+      </button>
+    </div>
+
+    <!-- The map: one coordinate system shared by the SVG route and the stops.
+         Stop centres = X% of the map width, Y px from the top. -->
+    <div class="jp-map" #map [style.height.px]="mapHeight" [class.locked-chapter]="!chapter.unlocked">
+      <svg class="jp-route" [attr.viewBox]="'0 0 ' + mapWidth + ' ' + mapHeight"
+        [attr.width]="mapWidth" [attr.height]="mapHeight" aria-hidden="true">
+        <defs>
+          <linearGradient id="jpRouteGrad" x1="0" y1="0" x2="0" [attr.y2]="mapHeight" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#34f5a1" />
+            <stop offset="1" stop-color="#22d3ee" />
+          </linearGradient>
+        </defs>
+        <!-- Route ahead: muted lavender dots. -->
+        <path *ngIf="pathAhead" class="route-ahead" [attr.d]="pathAhead" />
+        <!-- Travelled route: a soft wide glow under bright flowing dots. -->
+        <path *ngIf="pathDone" class="route-glow" [attr.d]="pathDone" />
+        <path *ngIf="pathDone" class="route-done" [attr.d]="pathDone" stroke="url(#jpRouteGrad)" />
+      </svg>
+
+      <div class="jp-stop" *ngFor="let stop of stops; trackBy: trackStop"
+        [ngClass]="['state-' + stop.state, 'side-' + stop.side]"
+        [style.top.px]="stop.y" [style.--x]="stop.xPct + '%'"
+        [style.--i]="stop.index">
+        <button type="button" class="jp-node" [disabled]="stop.state === 'locked'"
+          [attr.aria-label]="stop.aria" (click)="openStop(stop)">
+          <ion-icon [name]="stop.node.icon" class="jp-node-icon" aria-hidden="true"></ion-icon>
+          <span *ngIf="stop.state === 'done'" class="jp-badge done" aria-hidden="true">
+            <ion-icon name="checkmark"></ion-icon>
+          </span>
+          <span *ngIf="stop.state === 'locked'" class="jp-badge lock" aria-hidden="true">
+            <ion-icon name="lock-closed"></ion-icon>
+          </span>
+        </button>
+
+        <!-- Info panel. Mirrors the node's tap (mouse convenience); hidden from
+             assistive tech since the node button already carries the label. -->
+        <div class="jp-panel" aria-hidden="true" (click)="openStop(stop)">
+          <div class="jp-panel-text">
+            <span class="jp-panel-title">
+              <ion-icon *ngIf="stop.state === 'done'" name="checkmark-circle" class="ic-done"></ion-icon>
+              {{ stop.label }}
+            </span>
+            <span class="jp-panel-detail">
+              <ion-icon *ngIf="stop.state === 'active'" name="time-outline"></ion-icon>
+              <ion-icon *ngIf="stop.state === 'locked'" name="lock-closed-outline"></ion-icon>
+              {{ stop.detail }}
+            </span>
+          </div>
+          <span *ngIf="stop.state === 'active'" class="jp-panel-go">
+            <ion-icon name="arrow-forward"></ion-icon>
+          </span>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</ion-content>
+
+<!-- Floating progress HUD. In an ion-footer so the content area always ends
+     above it: it can never cover a node (the map simply scrolls). -->
+<ion-footer class="jp-footer ion-no-border" *ngIf="!isLoading && chapter">
+  <div class="jp-hud">
+    <div class="jp-hud-row">
+      <div class="jp-ring" role="img"
+        [attr.aria-label]="chapter.done + ' / ' + chapter.nodes.length">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <circle class="ring-track" cx="32" cy="32" r="26" />
+          <circle class="ring-fill" cx="32" cy="32" r="26"
+            [attr.stroke-dasharray]="ringCircumference" [style.stroke-dashoffset]="ringOffset" />
+        </svg>
+        <span class="jp-ring-text">{{ chapter.done }}<small>/{{ chapter.nodes.length }}</small></span>
+      </div>
+
+      <div class="jp-hud-info">
+        <span class="jp-hud-title">{{ 'journeyPlus.yourProgress' | translate }}</span>
+        <div class="jp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progressPct">
+          <span class="jp-bar-fill" [style.width.%]="progressPct"></span>
+        </div>
+        <span class="jp-hud-pct">{{ 'journeyPlus.percentDone' | translate:{ p: progressPct } }}</span>
+      </div>
+
+      <div class="jp-reward">
+        <ion-icon name="trophy" aria-hidden="true"></ion-icon>
+        <span>{{ 'journeyPlus.xp' | translate:{ n: xpReward } }}</span>
+      </div>
+    </div>
+
+    <button type="button" class="jp-cta" [disabled]="ctaDisabled" (click)="onCta()">
+      <span>{{ ctaLabel }}</span>
+      <ion-icon *ngIf="!ctaDisabled" name="arrow-forward" aria-hidden="true"></ion-icon>
+    </button>
+  </div>
+</ion-footer>

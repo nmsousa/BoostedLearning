@@ -97,6 +97,14 @@
           <span class="mode-desc">{{ 'home.mode.journey.desc' | translate }}</span>
         </button>
 
+        <!-- Journey+: redesigned map, alongside the classic one for comparison. -->
+        <button type="button" class="mode-card journey-plus" (click)="startJourneyPlus()">
+          <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>
+          <ion-icon name="compass-outline"></ion-icon>
+          <span class="mode-name">{{ 'home.mode.journeyPlus' | translate }}</span>
+          <span class="mode-desc">{{ 'home.mode.journeyPlus.desc' | translate }}</span>
+        </button>
+
         <button type="button" class="mode-card builder" (click)="startBuilder()">
           <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>
           <ion-icon name="construct-outline"></ion-icon>

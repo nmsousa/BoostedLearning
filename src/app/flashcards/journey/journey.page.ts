@@ -15,44 +15,16 @@
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { ActionSheetController } from '@ionic/angular';
-import { FlashcardService, FlashcardDeck, DeckLevel, PracticeMode } from '../../services/flashcard.service';
+import { FlashcardService, FlashcardDeck, DeckLevel } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
-
-/** The node types of a chapter, in play order:
- *  Flashcards -> Quiz -> Write -> Match -> Builder (-> Blanks, French only). */
-type NodeType = 'flip' | 'quiz' | 'write' | 'match' | 'builder' | 'blanks';
-
-/** One node (activity) within a chapter. */
-interface JourneyNode {
-  type: NodeType;
-  /** The per-node progress mode ('journey-flip', …). */
-  mode: PracticeMode;
-  /** The exercise route to navigate to. */
-  route: string;
-  icon: string;
-  color: string;
-  passed: boolean;
-  unlocked: boolean;
-}
-
-/** A chapter = ONE skill, played as five fixed single-pass nodes. */
-interface Chapter {
-  /** Chapter number (1-based), shown as a small badge. */
-  number: number;
-  /** Skill name (shown as the chapter title). */
-  name: string;
-  /** The skill's level number (the shared level index used by every node mode). */
-  levelNumber: number;
-  nodes: JourneyNode[];
-  /** How many of the 5 nodes are passed. */
-  done: number;
-  /** True when the chapter is reachable (chapter 1, or prev chapter complete). */
-  unlocked: boolean;
-  /** True when all 5 nodes are passed. */
-  complete: boolean;
-}
+import {
+  buildJourneyChapters,
+  type JourneyChapter as Chapter,
+  type JourneyNode,
+  type JourneyNodeType as NodeType,
+} from './journey-model';
 
 @Component({
   selector: 'app-journey',
@@ -225,81 +197,15 @@ export class JourneyPage implements OnInit {
     target.complete?.();
   }
 
-  /** Node definitions in play order (type → mode / route / icon / colour):
-   *  Flashcards → Quiz → Write → Match → Builder → Blanks. The Blanks node is
-   *  French-only and is appended per-chapter in buildChapters(). */
-  private static readonly NODE_DEFS: { type: NodeType; mode: PracticeMode; route: string; icon: string; color: string }[] = [
-    { type: 'flip',    mode: 'journey-flip',    route: '/practice/flip',            icon: 'albums-outline',      color: 'primary' },
-    { type: 'quiz',    mode: 'journey-quiz',    route: '/practice/quiz',            icon: 'help-circle-outline', color: 'success' },
-    { type: 'write',   mode: 'journey-write',   route: '/practice/journey-play',    icon: 'create-outline',      color: 'secondary' },
-    { type: 'match',   mode: 'journey-match',   route: '/practice/match',           icon: 'git-compare-outline', color: 'tertiary' },
-    { type: 'builder', mode: 'journey-builder', route: '/practice/journey-builder', icon: 'construct-outline',   color: 'warning' },
-  ];
-
-  /** The French-only Blanks node, appended to each chapter when the deck is FR. */
-  private static readonly BLANKS_NODE_DEF = {
-    type: 'blanks' as NodeType, mode: 'journey-blanks' as PracticeMode,
-    route: '/practice/blanks', icon: 'reorder-four-outline', color: 'danger',
-  };
-
   /**
-   * Build one chapter per skill. Each chapter has the fixed nodes (5, +Blanks
-   * on French decks); a node is `passed` when its LevelProgress bestScore ≥ 70.
-   * Nodes unlock left→right (node 1, else previous node passed). A chapter
-   * unlocks when the previous chapter's nodes are all passed (chapter 1 always).
+   * Build one chapter per skill via the shared Journey model (also used by
+   * Journey+), from ONE bulk read of the deck's level progress.
    */
   private async buildChapters(deckId: string, levels: DeckLevel[]): Promise<Chapter[]> {
     // French decks get the extra Blanks node (the phrase generator is French).
     const isFrench = (this.deck?.languageCode ?? this.settings.learningLanguage()) === 'fr';
-    const nodeDefs = isFrench
-      ? [...JourneyPage.NODE_DEFS, JourneyPage.BLANKS_NODE_DEF]
-      : JourneyPage.NODE_DEFS;
-
-    // ONE bulk read of all level progress for the deck, then Map lookups — was
-    // ~1 DB read per node (hundreds of chapters × 6 nodes), which was slow.
     const progress = await this.flashcards.getDeckLevelProgressMap(deckId);
-    const PASS = 70;
-
-    const chapters: Chapter[] = [];
-    let prevComplete = true; // chapter 1 is always reachable
-    for (let i = 0; i < levels.length; i++) {
-      const level = levels[i];
-      const chapterUnlocked = prevComplete;
-
-      // Determine each node's passed state from the bulk progress map.
-      const passed: boolean[] = nodeDefs.map(def => {
-        const p = progress.get(`${def.mode}-${level.levelNumber}`);
-        return (p?.bestScore ?? 0) >= PASS;
-      });
-
-      const nodes: JourneyNode[] = nodeDefs.map((def, n) => ({
-        type: def.type,
-        mode: def.mode,
-        route: def.route,
-        icon: def.icon,
-        color: def.color,
-        passed: passed[n],
-        // Unlocked if the chapter is reachable AND (first node or previous passed).
-        unlocked: chapterUnlocked && (n === 0 || passed[n - 1]),
-      }));
-
-      const doneCount = passed.filter(Boolean).length;
-      const complete = doneCount === nodeDefs.length;
-      chapters.push({
-        number: i + 1,
-        // Skill name only. Decks without named skills (e.g. Dutch) show nothing
-        // here — the purple chapter number already identifies the chapter, so
-        // the "Level N" fallback is redundant and was dropped.
-        name: level.skill ?? '',
-        levelNumber: level.levelNumber,
-        nodes,
-        done: doneCount,
-        unlocked: chapterUnlocked,
-        complete,
-      });
-      prevComplete = complete;
-    }
-    return chapters;
+    return buildJourneyChapters(levels, progress, isFrench);
   }
 
   /** Scroll the content so the chapter being played is in view on entry, with

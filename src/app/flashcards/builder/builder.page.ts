@@ -24,6 +24,7 @@ import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
 import { AddWordService } from '../../services/add-word.service';
 import { FlashcardService } from '../../services/flashcard.service';
+import { journeyBackUrl } from '../journey/journey-back';
 import { buildTokens, generatePhrases, type GeneratedPhrase } from '../../../core/phrase-builder/phrase-builder';
 
 interface BuilderWord { text: string; translations: string[]; article?: string; lemma?: string; }
@@ -61,6 +62,8 @@ export class BuilderPage implements OnInit {
   // ── Journey Builder node: generated phrases from a skill's words ───────────
   /** True when opened as a Journey node (?mode=journey-builder&level=N). */
   journeyMode = false;
+  /** Map to return to (classic Journey or Journey+, via ?from=). */
+  private get journeyBack(): string { return journeyBackUrl(this.route.snapshot.queryParamMap); }
   private journeyDeckId = '';
   private journeyLevel = 0;
   /** The generated phrases to play through, and our position in them. */
@@ -213,7 +216,7 @@ export class BuilderPage implements OnInit {
     if (this.journeyPhrases.length === 0) {
       // Nothing to build — auto-pass so the chapter can continue.
       await this.flashcards.saveRoundProgress(deckId, 'journey-builder', level, 100);
-      this.router.navigate(['/practice/journey'], { replaceUrl: true });
+      this.router.navigate([this.journeyBack], { replaceUrl: true });
       return;
     }
 
@@ -264,7 +267,7 @@ export class BuilderPage implements OnInit {
     }
     // All phrases done → pass the node and return to the map.
     await this.flashcards.saveRoundProgress(this.journeyDeckId, 'journey-builder', this.journeyLevel, 100);
-    this.router.navigate(['/practice/journey'], { replaceUrl: true });
+    this.router.navigate([this.journeyBack], { replaceUrl: true });
   }
 
   /** (Re)load the Builder dataset + progress for the current `langCode`. */
@@ -518,7 +521,7 @@ export class BuilderPage implements OnInit {
 
   close(): void {
     // As a Journey node, the X returns to the map; standalone goes home.
-    this.router.navigate([this.journeyMode ? '/practice/journey' : '/home']);
+    this.router.navigate([this.journeyMode ? this.journeyBack : '/home']);
   }
 
   /** "n / total" progress label for the Journey Builder node. */

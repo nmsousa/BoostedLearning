@@ -18,6 +18,7 @@ import { I18nAngularService } from '../../services/i18n.service';
 import { SettingsService } from '../../services/settings.service';
 import { AudioService } from '../../services/audio.service';
 import { AddWordService } from '../../services/add-word.service';
+import { journeyBackUrl } from '../journey/journey-back';
 
 type StudyPhase = 'question' | 'feedback' | 'complete';
 type FeedbackResult = 'correct' | 'almost' | 'incorrect';
@@ -163,11 +164,11 @@ export class StudyPage implements OnInit, OnDestroy {
     const modeParam = this.route.snapshot.queryParamMap.get('mode');
     if (modeParam === 'journey') {
       this.mode = 'journey';
-      this.backUrl = '/practice/journey';
+      this.backUrl = journeyBackUrl(this.route.snapshot.queryParamMap);
     } else if (modeParam === 'journey-write') {
       // Journey WRITE node: a single pass (no 5-round loop), back to the map.
       this.mode = 'journey-write';
-      this.backUrl = '/practice/journey';
+      this.backUrl = journeyBackUrl(this.route.snapshot.queryParamMap);
       this.singlePass = true;
     }
     

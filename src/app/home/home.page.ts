@@ -323,6 +323,10 @@ export class HomePage implements OnInit {
   }
 
   /** EXPERIMENTAL modes have their own dedicated pages. */
+  startJourneyPlus(): void {
+    this.router.navigate(['/practice/journey-plus']);
+  }
+
   startJourney(): void {
     this.router.navigate(['/practice/journey']);
   }

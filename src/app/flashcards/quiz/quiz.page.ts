@@ -17,6 +17,7 @@ import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
+import { journeyBackUrl } from '../journey/journey-back';
 
 type QuizPhase = 'play' | 'complete';
 
@@ -133,7 +134,7 @@ export class QuizPage implements OnInit {
     // Journey Quiz node: score under 'journey-quiz', single pass, back to map.
     if (this.route.snapshot.queryParamMap.get('mode') === 'journey-quiz') {
       this.mode = 'journey-quiz';
-      this.backUrl = '/practice/journey';
+      this.backUrl = journeyBackUrl(this.route.snapshot.queryParamMap);
       this.singlePass = true;
     }
 
