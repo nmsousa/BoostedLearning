@@ -310,6 +310,45 @@ export class StudyPage implements OnInit, OnDestroy {
     } catch { /* fall back to the ngModel value */ }
   }
 
+  /**
+   * Keep the soft keyboard open when the user taps elsewhere on the screen
+   * (e.g. the audio button) while answering. The keyboard closes when the
+   * focused input loses focus, which a tap on any other control triggers.
+   * By preventing the pointerdown's default on taps OUTSIDE the header and the
+   * input itself, the input never blurs — so the keyboard stays up — while the
+   * subsequent `click` still fires (preventing mousedown/pointerdown does not
+   * cancel the click). The ONE exception is the app header: tapping it blurs
+   * the input and lets the keyboard close (the intended escape).
+   *
+   * Captured on the document in the capture phase so it runs before the target
+   * receives focus. Only active while the keyboard is meant to be up.
+   */
+  @HostListener('document:pointerdown', ['$event'])
+  keepKeyboardOnOutsideTap(event: PointerEvent): void {
+    // Only guard the phases where the input is focused / the keyboard is up.
+    const keyboardUp =
+      this.phase === 'question' ||
+      (this.phase === 'feedback' && this.feedbackResult !== 'almost');
+    if (!keyboardUp) return;
+
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    // Tapping the header is the escape hatch: let the input blur so the
+    // keyboard closes (e.g. to reach the close/menu buttons comfortably).
+    if (target.closest('ion-header')) {
+      void this.answerInput?.getInputElement().then(el => el?.blur()).catch(() => { /* ignore */ });
+      return;
+    }
+
+    // Let taps on the input itself through so the user can place the caret.
+    if (target.closest('ion-input, input, textarea')) return;
+
+    // Anywhere else (audio button, Check, hint, empty space): keep the input
+    // focused so the keyboard doesn't close. The click still fires.
+    event.preventDefault();
+  }
+
   @HostListener('document:keydown', ['$event'])
   handleKeydown(event: KeyboardEvent) {
     if (event.key !== 'Enter') return;
