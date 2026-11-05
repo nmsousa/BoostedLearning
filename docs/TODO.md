@@ -4,6 +4,29 @@ Tracked tasks that are deferred or in progress.
 
 ## Deferred (on standby)
 
+### Duolingo-style "no-fail" practice (reveal translation, keep going)
+Status: **not implemented** — planned.
+
+Rework Practice to feel like Duolingo: the user plays the existing modes
+(Flip / Write / Match / Quiz / Blanks) using the words they got wrong, but
+there is **no "fail" state**. Instead of being marked wrong and blocked, if the
+user doesn't know an answer they can tap a **"show translation / reveal"**
+option to see the answer, and then simply **continue** to the next item. The
+session always flows forward — practice is about exposure and recall, not
+punishment.
+
+Notes / open questions for when this is picked up:
+- Source the items from the user's weak words (highest miss rate / "don't
+  know" ratings) — reuse `getStudiedWords` miss-rate ordering and the
+  flip/level knowledge buckets.
+- "Reveal" should not count as a correct answer, but should NOT lock the input
+  or flash red / block the tap either — just show the answer and offer "next".
+- Decide how (or whether) a revealed item feeds back into the word's
+  knowledge/SRS state (e.g. treat as a soft "still learning" without a harsh
+  penalty) so weak words resurface without tanking stats.
+- Applies across all existing modes; may need a shared "practice session" flow
+  rather than per-mode level logic.
+
 ### Learn mode for beginners (teach before testing)
 Status: **not implemented** — planned.
 
