@@ -167,19 +167,15 @@ export class JourneyPage implements OnInit {
     );
     this.isLoading = false;
     this.cdr.detectChanges();
-    // Measure the trail width (for scale-correct dashed-path offsets) and jump
-    // (smoothly) to the chapter being played once the view has painted.
+    // Jump (smoothly) to the chapter being played once the view has painted.
     setTimeout(() => {
-      this.measureTrail();
-      this.cdr.detectChanges();
       this.scrollToCurrentChapter();
     }, 150);
   }
 
-  /** Re-measure trail width + redraw the dashed path when the window resizes. */
+  /** Redraw on resize (the path is percent/px based, so nothing to re-measure). */
   @HostListener('window:resize')
   onResize(): void {
-    this.measureTrail();
     this.cdr.detectChanges();
   }
 
@@ -300,34 +296,22 @@ export class JourneyPage implements OnInit {
     return `0 0 100 ${this.trailHeight(nodes)}`;
   }
 
-  /** Measured px width of a trail column (all equal); keeps the radius offset
-   *  scale-correct at any screen width. */
-  private trailWidthPx = 320;
-  private measureTrail(): void {
-    const el = document.querySelector('.journey .trail') as HTMLElement | null;
-    if (el && el.clientWidth > 0) this.trailWidthPx = el.clientWidth;
-  }
-
   /**
-   * Dashed tilde path: the line LEAVES a node from the side facing the next
-   * node and ARRIVES at the next node's TOP, with a gentle curve. The viewBox
-   * X is 0..100 (percent) and Y is px (preserveAspectRatio="none"), so to
-   * offset by the node radius we convert X% = NODE/2 / trailWidthPx * 100 and
-   * keep Y in px. This makes it scale-stable at any width.
+   * Dashed path between two nodes. Like Journey+, it runs CENTRE → CENTRE with
+   * a smooth cubic Bézier that has vertical tangents at each node, so the line
+   * meets each node squarely at its middle (not off at the edge/top). The node
+   * circles sit ABOVE the path (z-index), so the ends tuck neatly under them.
+   * The viewBox X is 0..100 (percent) and Y is px (preserveAspectRatio="none"),
+   * so the control-point pull (TENSION) is expressed in px and X stays on each
+   * node's own column — keeping it scale-stable at any width.
    */
-  /** SVG `d` for the single segment node(i-1) → node(i). */
+  private static readonly TENSION = 0.5;
+  /** SVG `d` for the single segment node(i-1) → node(i), centre to centre. */
   private segmentPath(i: number): string {
-    const RY = JourneyPage.NODE / 2;
-    const RX = (RY / Math.max(1, this.trailWidthPx)) * 100;
     const ax = this.nodeX(i - 1), ay = this.nodeY(i - 1);
     const bx = this.nodeX(i), by = this.nodeY(i);
-    const dir = bx > ax ? 1 : (bx < ax ? -1 : 0);
-    const sx = ax + dir * RX;
-    const sy = ay + RY * 0.45;
-    const ex = bx;
-    const ey = by - RY;
-    const midY = (sy + ey) / 2;
-    return `M ${sx} ${sy} C ${sx} ${midY}, ${ex} ${midY}, ${ex} ${ey}`;
+    const k = (JourneyPage.NODE + JourneyPage.GAP) * JourneyPage.TENSION;
+    return `M ${ax} ${ay} C ${ax} ${ay + k}, ${bx} ${by - k}, ${bx} ${by}`;
   }
 
   /**

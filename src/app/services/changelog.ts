@@ -21,6 +21,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.6',
+    notes: [
+      'Write mode: swipe/glide typing and the keyboard\'s suggestion dictionary now work again.',
+      'Journey++: all chapters now flow in one continuous scroll — just keep scrolling, no more chapter arrows. The language picker shows just the flag.',
+      'Journey+ and Journey++: the map now auto-scrolls to the next step when you finish one.',
+      'Journey: the trail now connects through the centre of each stop for a cleaner path.',
+      'Builder: dragging a word to a later position now works, and fixed a bug where it could open to a blank screen.',
+    ],
+  },
+  {
     version: '1.3.5',
     notes: [
       'New "Journey++" map: a polished, high-fidelity version of the journey with a night-sky scene, glowing stops and a redesigned progress bar.',
