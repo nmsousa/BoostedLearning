@@ -395,12 +395,15 @@ export class FlashcardsPage implements OnInit {
    * Pie-ring arcs for a Flashcards level: one coloured segment per non-empty
    * bucket, laid end-to-end around the ring (r=17). Each arc carries the
    * `dasharray` (arc length + gap) and `dashoffset` to position it. Proportions
-   * are over the PRACTISED words only (untouched words don't colour the ring).
+   * are over ALL words in the level, so unstudied words leave a grey remainder
+   * (the `.ring-track` circle shows through) instead of letting a single
+   * studied word fill the whole ring.
    */
   levelPieSegments(deckId: string, level: DeckLevel): { cls: string; dash: string; offset: number }[] {
     const k = this.levelKnowledge(deckId, level);
     const practised = k.learning + k.familiar + k.known;
-    if (practised === 0) return [];
+    // Nothing studied → no colour (fully grey). Total 0 guards divide-by-zero.
+    if (practised === 0 || k.total === 0) return [];
     const C = 2 * Math.PI * 17; // circumference ≈ 106.8
     const buckets: { cls: string; n: number }[] = [
       { cls: 'seg-known', n: k.known },
@@ -411,7 +414,9 @@ export class FlashcardsPage implements OnInit {
     let used = 0;
     for (const b of buckets) {
       if (b.n <= 0) continue;
-      const len = (b.n / practised) * C;
+      // Fraction of the WHOLE level, not just the practised words — so the
+      // coloured arcs stop short and leave grey for the unstudied remainder.
+      const len = (b.n / k.total) * C;
       segs.push({ cls: b.cls, dash: `${len} ${C - len}`, offset: -used });
       used += len;
     }
