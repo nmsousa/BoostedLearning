@@ -9,7 +9,7 @@
  * @module app/settings
  */
 
-import { Component, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, Injector, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, ToastController, ModalController } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
@@ -30,7 +30,9 @@ import { BUILD_INFO } from '../../build-info';
 export class SettingsPage {
   private router = inject(Router);
   private alertController = inject(AlertController);
-  private modalController = inject(ModalController);
+  // ModalController resolved lazily (injecting it as a field throws NG0201 at
+  // bootstrap under the lazy IonicModule setup — see HomePage for details).
+  private injector = inject(Injector);
   private toast = inject(ToastController);
   private settingsService = inject(SettingsService);
   private i18n = inject(I18nAngularService);
@@ -263,7 +265,8 @@ export class SettingsPage {
 
   /** Open the full "What's new" history (all versions, newest first). */
   async showWhatsNew(): Promise<void> {
-    const modal = await this.modalController.create({
+    const modalController = this.injector.get(ModalController);
+    const modal = await modalController.create({
       component: ChangelogModalComponent,
       componentProps: { currentVersion: this.appVersion },
     });

@@ -6,7 +6,7 @@
  * @module app/home
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, effect } from '@angular/core';
+import { Component, OnInit, inject, Injector, ChangeDetectorRef, ChangeDetectionStrategy, effect } from '@angular/core';
 import { Router } from '@angular/router';
 import { ModalController } from '@ionic/angular';
 import { ContentService } from '../services/content.service';
@@ -43,7 +43,12 @@ export class HomePage implements OnInit {
   private flashcards = inject(FlashcardService);
   private addWordService = inject(AddWordService);
   private appUpdate = inject(AppUpdateService);
-  private modalCtrl = inject(ModalController);
+  // NOTE: We do NOT inject ModalController as a constructor field. Under this
+  // app's lazy IonicModule setup, injecting an Ionic overlay controller into a
+  // lazy-loaded PAGE throws NG0201 at bootstrap and blanks the whole app (the
+  // same fragility noted in app.component.ts). We resolve it lazily at call
+  // time from the Injector instead, which is safe.
+  private injector = inject(Injector);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
@@ -172,7 +177,9 @@ export class HomePage implements OnInit {
    * confirm the update just applied. Reused by Settings → What's new.
    */
   async showWhatsNew(version: string, afterUpdate = false): Promise<void> {
-    const modal = await this.modalCtrl.create({
+    // Resolve ModalController lazily (see the injector note above).
+    const modalCtrl = this.injector.get(ModalController);
+    const modal = await modalCtrl.create({
       component: ChangelogModalComponent,
       componentProps: { currentVersion: version, afterUpdate },
     });
