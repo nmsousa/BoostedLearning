@@ -1,0 +1,63 @@
+.changelog-content {
+  --background: var(--ion-background-color);
+}
+
+.changelog-list {
+  padding: 8px 16px 28px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.changelog-entry {
+  padding: 14px 0 2px;
+  border-top: 1px solid var(--ion-color-step-150, rgba(128, 128, 128, 0.18));
+
+  &:first-child { border-top: 0; }
+
+  // The running version stands out.
+  &.is-current .changelog-version { color: var(--ion-color-primary); }
+}
+
+.changelog-entry-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.changelog-version {
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.changelog-current-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--ion-color-primary);
+}
+
+.changelog-notes {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  li {
+    font-size: 0.92rem;
+    line-height: 1.4;
+    color: var(--ion-text-color);
+  }
+}
+
+.changelog-empty {
+  text-align: center;
+  color: var(--ion-color-medium);
+  padding: 32px 16px;
+}

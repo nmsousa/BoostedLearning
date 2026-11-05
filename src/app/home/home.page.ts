@@ -8,7 +8,7 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, effect } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController, ToastController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
 import { ContentService } from '../services/content.service';
 import { SessionService } from '../services/session.service';
 import { SettingsService } from '../services/settings.service';
@@ -16,7 +16,7 @@ import { I18nAngularService } from '../services/i18n.service';
 import { FlashcardService } from '../services/flashcard.service';
 import { AddWordService } from '../services/add-word.service';
 import { AppUpdateService } from '../services/app-update.service';
-import { changelogFor } from '../services/changelog';
+import { ChangelogModalComponent } from '../shared/changelog-modal.component';
 import { KnowledgeBreakdown } from '../../core/knowledge-level';
 
 interface QuickAction {
@@ -43,8 +43,7 @@ export class HomePage implements OnInit {
   private flashcards = inject(FlashcardService);
   private addWordService = inject(AddWordService);
   private appUpdate = inject(AppUpdateService);
-  private toast = inject(ToastController);
-  private alertCtrl = inject(AlertController);
+  private modalCtrl = inject(ModalController);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
@@ -168,39 +167,16 @@ export class HomePage implements OnInit {
   }
 
   /**
-   * Show the "What's new" dialog for a version. `afterUpdate` tweaks the header
-   * to confirm the update just applied. Reused by Settings → What's new.
+   * Open the "What's new" history modal (the full version history, newest
+   * first, with this version highlighted). `afterUpdate` tweaks the header to
+   * confirm the update just applied. Reused by Settings → What's new.
    */
   async showWhatsNew(version: string, afterUpdate = false): Promise<void> {
-    const entry = changelogFor(version);
-    const header = afterUpdate
-      ? this.i18n.t('settings.updatedTo', { v: version })
-      : this.i18n.t('settings.whatsNewTitle', { v: version });
-
-    // No recorded notes → a lightweight toast (only meaningful right after an
-    // update; for the Settings tap we still open a minimal dialog).
-    if (!entry || entry.notes.length === 0) {
-      if (afterUpdate) {
-        const t = await this.toast.create({
-          message: this.i18n.t('settings.updatedTo', { v: version }),
-          duration: 3000, position: 'bottom', color: 'success',
-        });
-        await t.present();
-        return;
-      }
-    }
-
-    // Join with real newlines; the `.whats-new-alert` class renders them via
-    // `white-space: pre-line` (Ionic escapes the message, so inline HTML like
-    // <br> would show up literally).
-    const bullets = (entry?.notes ?? []).map(n => `• ${n}`).join('\n\n');
-    const alert = await this.alertCtrl.create({
-      cssClass: 'whats-new-alert',
-      header,
-      message: bullets || this.i18n.t('settings.whatsNewNone'),
-      buttons: [{ text: this.i18n.t('common.close') }],
+    const modal = await this.modalCtrl.create({
+      component: ChangelogModalComponent,
+      componentProps: { currentVersion: version, afterUpdate },
     });
-    await alert.present();
+    await modal.present();
   }
 
   /** Recompute when returning to the home tab (e.g. after play or an import). */

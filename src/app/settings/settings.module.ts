@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular/lazy';
 import { SettingsPageRoutingModule } from './settings-routing.module';
 import { SettingsPage } from './settings.page';
+import { ChangelogModalModule } from '../shared/changelog-modal.module';
 
 @NgModule({
   imports: [
@@ -12,7 +13,8 @@ import { SettingsPage } from './settings.page';
     FormsModule,
     IonicModule,
     SettingsPageRoutingModule,
-    SharedModule
+    SharedModule,
+    ChangelogModalModule
   ],
   declarations: [SettingsPage]
 })

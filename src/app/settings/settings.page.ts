@@ -11,14 +11,14 @@
 
 import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController, ToastController } from '@ionic/angular';
+import { AlertController, ToastController, ModalController } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
 import { SettingsService, Theme, ColorTheme, AppLanguage, TextSize, AudioSpeed, AppSettings, FlashcardDirection } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { FlashcardService, DuolingoResponse, DuolingoLexeme } from '../services/flashcard.service';
 import { AppUpdateService } from '../services/app-update.service';
 import { DUOME_COURSES } from '../services/duome-courses';
-import { changelogFor } from '../services/changelog';
+import { ChangelogModalComponent } from '../shared/changelog-modal.component';
 import { BUILD_INFO } from '../../build-info';
 
 @Component({
@@ -30,6 +30,7 @@ import { BUILD_INFO } from '../../build-info';
 export class SettingsPage {
   private router = inject(Router);
   private alertController = inject(AlertController);
+  private modalController = inject(ModalController);
   private toast = inject(ToastController);
   private settingsService = inject(SettingsService);
   private i18n = inject(I18nAngularService);
@@ -260,21 +261,13 @@ export class SettingsPage {
     this.settingsService.updateSetting('testerName', value);
   }
 
-  /** Show the patch notes for the currently-running version. */
+  /** Open the full "What's new" history (all versions, newest first). */
   async showWhatsNew(): Promise<void> {
-    const v = this.appVersion;
-    const entry = changelogFor(v);
-    // Join with real newlines; the `.whats-new-alert` class renders them via
-    // `white-space: pre-line` (Ionic escapes the message, so inline HTML like
-    // <br> would show up literally).
-    const bullets = (entry?.notes ?? []).map(n => `• ${n}`).join('\n\n');
-    const alert = await this.alertController.create({
-      cssClass: 'whats-new-alert',
-      header: this.i18n.t('settings.whatsNewTitle', { v }),
-      message: bullets || this.i18n.t('settings.whatsNewNone'),
-      buttons: [{ text: this.i18n.t('common.close') }],
+    const modal = await this.modalController.create({
+      component: ChangelogModalComponent,
+      componentProps: { currentVersion: this.appVersion },
     });
-    await alert.present();
+    await modal.present();
   }
 
   /** Open the in-app Admin / debug info page. */

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterModule } from '@angular/router';
+import { ModalController } from '@ionic/angular';
 
 import { SettingsPageModule } from './settings.module';
 import { SettingsPage } from './settings.page';
@@ -14,7 +15,8 @@ describe('SettingsPage', () => {
       imports: [
         SettingsPageModule,
         RouterModule.forRoot([{ path: 'home', children: [] }])
-      ]
+      ],
+      providers: [{ provide: ModalController, useValue: { create: () => Promise.resolve({ present: () => Promise.resolve() }) } }]
     }).compileComponents();
 
     fixture = TestBed.createComponent(SettingsPage);

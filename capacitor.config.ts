@@ -42,7 +42,14 @@ const config: CapacitorConfig = {
   android: {
     backgroundColor: '#ffffff',
     allowMixedContent: false,
-    captureInput: true,
+    // captureInput is OFF. When ON, the native WebView intercepts key input,
+    // which disables Gboard's glide/swipe typing AND its suggestion dictionary
+    // (both need the IME to drive the field directly). It was originally a
+    // workaround (Capacitor #1753) so typed/accented text reached the web input
+    // before the keyboard closed — but the Write screen now reads the LIVE DOM
+    // value at submit (syncNativeValue) and uses composition handlers, so that
+    // reason no longer applies and we can leave input to the keyboard.
+    captureInput: false,
     webContentsDebuggingEnabled: false,
   },
 };

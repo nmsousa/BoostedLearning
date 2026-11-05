@@ -1,0 +1,26 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>{{ headerTitle }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="close()" [attr.aria-label]="t('common.close')">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="changelog-content">
+  <div class="changelog-list">
+    <section class="changelog-entry" *ngFor="let entry of entries" [class.is-current]="isCurrent(entry)">
+      <header class="changelog-entry-head">
+        <span class="changelog-version">{{ t('settings.versionLabel', { v: entry.version }) }}</span>
+        <span class="changelog-current-tag" *ngIf="isCurrent(entry)">{{ t('settings.currentVersionTag') }}</span>
+      </header>
+      <ul class="changelog-notes">
+        <li *ngFor="let note of entry.notes">{{ note }}</li>
+      </ul>
+    </section>
+
+    <p class="changelog-empty" *ngIf="!entries.length">{{ t('settings.whatsNewNone') }}</p>
+  </div>
+</ion-content>
