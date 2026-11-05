@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.13',
+    notes: [
+      'Admin → How it works now explains when a typed answer is accepted as a typo or accent slip, and corrects the star rules.',
+    ],
+  },
+  {
     version: '1.3.12',
     notes: [
       'Write mode: small typos (one letter off) and missing accents are now accepted, with a note — like Duolingo — so a slip no longer blocks you.',
