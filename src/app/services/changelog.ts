@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.8',
+    notes: [
+      'Fixed a black screen that could appear after installing a new app build — the app now always falls back to its built-in version instead of getting stuck on an old downloaded update.',
+    ],
+  },
+  {
     version: '1.3.7',
     notes: [
       'Write mode: the answer box is now focused the moment the screen opens, so you can start typing right away (no more tapping the field first).',
