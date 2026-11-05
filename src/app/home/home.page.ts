@@ -327,6 +327,10 @@ export class HomePage implements OnInit {
     this.router.navigate(['/practice/journey-plus']);
   }
 
+  startJourneyPlusPlus(): void {
+    this.router.navigate(['/practice/journey-plus-plus']);
+  }
+
   startJourney(): void {
     this.router.navigate(['/practice/journey']);
   }

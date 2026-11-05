@@ -1,0 +1,145 @@
+<!-- Painted scene behind everything: starry night sky + the illustration as a
+     skyline band toward the bottom. Purely decorative. -->
+<div class="pp-scene" aria-hidden="true">
+  <div class="pp-skyline"></div>
+</div>
+
+<ion-header class="pp-header ion-no-border">
+  <ion-toolbar>
+    <div class="pp-head">
+      <button type="button" class="pp-back" (click)="close()" [attr.aria-label]="'journeyPlus.back' | translate">
+        <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
+      </button>
+
+      <span class="pp-emoji" aria-hidden="true">{{ emoji }}</span>
+
+      <div class="pp-title-block">
+        <h1 class="pp-title">{{ title }}</h1>
+        <div class="pp-sub" *ngIf="chapter">
+          <button type="button" class="pp-step" (click)="prevChapter()" [disabled]="!hasPrev"
+            [attr.aria-label]="'journeyPlus.prevChapter' | translate">
+            <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
+          </button>
+          <span class="pp-sub-text">{{ subtitle }}</span>
+          <button type="button" class="pp-step" (click)="nextChapter()" [disabled]="!hasNext"
+            [attr.aria-label]="'journeyPlus.nextChapterAria' | translate">
+            <ion-icon name="chevron-forward" aria-hidden="true"></ion-icon>
+          </button>
+          <button type="button" class="pp-step locate" *ngIf="!viewingCurrent" (click)="goToCurrent()"
+            [attr.aria-label]="'journeyPlus.goToCurrent' | translate">
+            <ion-icon name="locate" aria-hidden="true"></ion-icon>
+          </button>
+        </div>
+      </div>
+
+      <button type="button" class="pp-lang" id="jpp-lang-trigger"
+        [attr.aria-label]="'journeyPlus.changeLanguage' | translate">
+        <span class="pp-flag"><img [src]="currentLanguage.flagUrl" alt="" /></span>
+        <span class="pp-lang-name">{{ currentLanguage.name }}</span>
+        <ion-icon name="chevron-down" class="pp-lang-caret" aria-hidden="true"></ion-icon>
+      </button>
+      <ion-popover trigger="jpp-lang-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
+        <ng-template>
+          <ion-list class="lang-list">
+            <ion-item *ngFor="let lang of availableLanguages" button detail="false" lines="none"
+              [class.active]="lang.code === learningLanguage" (click)="selectLanguage(lang.code)">
+              <img class="flag" slot="start" [src]="lang.flagUrl" [alt]="lang.name" />
+              <ion-label>{{ lang.name }}</ion-label>
+              <ion-icon *ngIf="lang.code === learningLanguage" name="checkmark" slot="end" color="primary"></ion-icon>
+            </ion-item>
+          </ion-list>
+        </ng-template>
+      </ion-popover>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<!-- Not fullscreen: content ends above the HUD, so it never covers a node. -->
+<ion-content class="pp-content" #content>
+  <div *ngIf="isLoading" class="pp-loading"><ion-spinner name="crescent"></ion-spinner></div>
+  <p *ngIf="!isLoading && !chapter" class="pp-empty">{{ 'journeyPlus.empty' | translate }}</p>
+
+  <div *ngIf="!isLoading && chapter" class="pp-map" #map [style.height.px]="mapHeight">
+    <svg class="pp-route" [attr.viewBox]="'0 0 ' + mapWidth + ' ' + mapHeight"
+      [attr.width]="mapWidth" [attr.height]="mapHeight" aria-hidden="true">
+      <defs>
+        <linearGradient id="ppDone" x1="0" y1="0" x2="0" [attr.y2]="mapHeight" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#5dfaa6" />
+          <stop offset="1" stop-color="#3fd8ff" />
+        </linearGradient>
+      </defs>
+      <path *ngIf="pathAhead" class="ahead-glow" [attr.d]="pathAhead" />
+      <path *ngIf="pathAhead" class="ahead" [attr.d]="pathAhead" />
+      <path *ngIf="pathDone" class="done-glow" [attr.d]="pathDone" />
+      <path *ngIf="pathDone" class="done" [attr.d]="pathDone" stroke="url(#ppDone)" />
+    </svg>
+
+    <div class="pp-stop" *ngFor="let stop of stops; trackBy: trackStop"
+      [ngClass]="'state-' + stop.state"
+      [style.top.px]="stop.y" [style.--x]="stop.xPct + '%'" [style.--i]="stop.index">
+
+      <!-- Pill panel anchored at the node centre, extending right; the node
+           sits on top of its leading end. Mirrors the node's tap. -->
+      <div class="pp-panel" aria-hidden="true" (click)="openStop(stop)">
+        <div class="pp-panel-text">
+          <span class="pp-panel-title">
+            <span *ngIf="stop.state === 'done'" class="pp-tick"><ion-icon name="checkmark"></ion-icon></span>
+            {{ stop.label }}
+          </span>
+          <span class="pp-panel-detail">
+            <ion-icon *ngIf="stop.state === 'active'" name="time-outline"></ion-icon>
+            {{ stop.detail }}
+          </span>
+        </div>
+        <span *ngIf="stop.state === 'active'" class="pp-go"><ion-icon name="chevron-forward"></ion-icon></span>
+      </div>
+
+      <button type="button" class="pp-node" [disabled]="stop.state === 'locked'"
+        [attr.aria-label]="stop.aria" (click)="openStop(stop)">
+        <ion-icon *ngIf="stop.state !== 'locked'" [name]="stop.node.icon" class="pp-node-icon" aria-hidden="true"></ion-icon>
+        <ion-icon *ngIf="stop.state === 'locked'" name="lock-closed" class="pp-node-icon lock" aria-hidden="true"></ion-icon>
+      </button>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer class="pp-footer ion-no-border" *ngIf="!isLoading && chapter">
+  <div class="pp-hud">
+    <div class="pp-ring" role="img" [attr.aria-label]="chapter.done + ' / ' + chapter.nodes.length">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="ppRing" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5dfaa6" />
+            <stop offset="1" stop-color="#3fd8ff" />
+          </linearGradient>
+        </defs>
+        <circle class="track" cx="32" cy="32" r="25" />
+        <circle class="fill" cx="32" cy="32" r="25" stroke="url(#ppRing)"
+          [attr.stroke-dasharray]="ringCircumference" [style.stroke-dashoffset]="ringOffset" />
+      </svg>
+      <span class="pp-ring-text">{{ chapter.done }} / {{ chapter.nodes.length }}</span>
+    </div>
+
+    <span class="pp-divider" aria-hidden="true"></span>
+
+    <div class="pp-progress">
+      <span class="pp-progress-title">{{ 'journeyPlus.yourProgress' | translate }}</span>
+      <div class="pp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progressPct">
+        <span class="pp-bar-fill" [style.width.%]="progressPct"></span>
+      </div>
+      <span class="pp-progress-pct">{{ 'journeyPlus.percentDone' | translate:{ p: progressPct } }}</span>
+    </div>
+
+    <span class="pp-divider" aria-hidden="true"></span>
+
+    <div class="pp-xp">
+      <ion-icon name="trophy" aria-hidden="true"></ion-icon>
+      <span>{{ 'journeyPlus.xp' | translate:{ n: xpReward } }}</span>
+    </div>
+
+    <button type="button" class="pp-cta" [disabled]="ctaDisabled" (click)="onCta()">
+      <span>{{ ctaLabel }}</span>
+      <ion-icon *ngIf="!ctaDisabled" name="chevron-forward" aria-hidden="true"></ion-icon>
+    </button>
+  </div>
+</ion-footer>

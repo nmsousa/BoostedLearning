@@ -105,6 +105,14 @@
           <span class="mode-desc">{{ 'home.mode.journeyPlus.desc' | translate }}</span>
         </button>
 
+        <!-- Journey++: high-fidelity pass of Journey+ (matches the mockup). -->
+        <button type="button" class="mode-card journey-plus-plus" (click)="startJourneyPlusPlus()">
+          <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>
+          <ion-icon name="sparkles-outline"></ion-icon>
+          <span class="mode-name">{{ 'home.mode.journeyPP' | translate }}</span>
+          <span class="mode-desc">{{ 'home.mode.journeyPP.desc' | translate }}</span>
+        </button>
+
         <button type="button" class="mode-card builder" (click)="startBuilder()">
           <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>
           <ion-icon name="construct-outline"></ion-icon>

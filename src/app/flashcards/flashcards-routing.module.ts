@@ -51,6 +51,11 @@ const routes: Routes = [
     loadChildren: () => import('./journey-plus/journey-plus.module').then(m => m.JourneyPlusPageModule)
   },
   {
+    // EXPERIMENTAL: Journey++ — high-fidelity pass of Journey+ (mockup match).
+    path: 'journey-plus-plus',
+    loadChildren: () => import('./journey-plus-plus/journey-plus-plus.module').then(m => m.JourneyPlusPlusPageModule)
+  },
+  {
     // EXPERIMENTAL: a Journey level reuses the Write exercise, scored under
     // the 'journey' mode (via ?mode=journey).
     path: 'journey-play/:id',
