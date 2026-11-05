@@ -16,14 +16,18 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
     CapacitorUpdater: {
-      // OTA auto-update is DISABLED. Background download + apply of a web bundle
-      // was leaving the app on a blank screen after a relaunch on-device (the
-      // served bundle is identical to the builtin, yet applying it via the
-      // updater blanked the app). Until that's root-caused on a device, the app
-      // only ever runs the bundle baked into the APK; updates ship as new APKs.
-      // (AppUpdateService also resets any active OTA bundle back to builtin on
-      // launch, so a previously-downloaded bundle can't keep the app blank.)
-      autoUpdate: false,
+      // OTA auto-update. Background download; applied on the NEXT cold start.
+      autoUpdate: true,
+      // `resetWhenUpdate` (the default) makes the plugin DISCARD any stored OTA
+      // bundle and fall back to the APK's builtin bundle whenever the native
+      // app version CHANGES. The plugin's "builtin version" defaults to the
+      // Android versionName, which is now auto-synced to package.json on every
+      // build (scripts/gen-build-info.mjs). Previously versionName was stuck at
+      // "1.0.3" across every build, so the plugin never saw a native change,
+      // never reset, and kept serving an OLD downloaded bundle (e.g. 1.3.5)
+      // even after a clean reinstall — which showed the wrong version and
+      // caused the blank screens.
+      resetWhenUpdate: true,
       // The Capgo plugin POSTs to this URL on launch and expects the SERVER to
       // compare versions and return the bundle to download. A static file (e.g.
       // the GitHub release updates.json) can't do that — GitHub even rejects the

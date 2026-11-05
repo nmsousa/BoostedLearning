@@ -23,7 +23,8 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.9',
     notes: [
-      'Fixed the blank screen on relaunch: the app now always runs the version built into the installed app and no longer auto-downloads web updates in the background.',
+      'Fixed the blank screen on relaunch and the app being stuck on an old version: updates now correctly replace the previous one instead of a stale copy lingering after reinstall.',
+      'Catching up: Write mode focuses the answer box on open; swipe typing and keyboard suggestions work; Journey+ and Journey++ scroll through all chapters continuously; the full "What\'s new" history page.',
     ],
   },
   {
