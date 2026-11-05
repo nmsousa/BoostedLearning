@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.7',
+    notes: [
+      'Write mode: the answer box is now focused the moment the screen opens, so you can start typing right away (no more tapping the field first).',
+      '"What\'s new" is now a full page showing every version\'s changes, so you never miss updates that landed between app opens.',
+    ],
+  },
+  {
     version: '1.3.6',
     notes: [
       'Write mode: swipe/glide typing and the keyboard\'s suggestion dictionary now work again.',

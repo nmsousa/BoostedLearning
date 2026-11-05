@@ -10,7 +10,7 @@
 
 import { Component, OnInit, OnDestroy, inject, ViewChild, HostListener, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AlertController, IonInput, ToastController } from '@ionic/angular';
+import { AlertController, IonInput, ToastController, ViewDidEnter } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
 import { Keyboard } from '@capacitor/keyboard';
 import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
@@ -43,7 +43,7 @@ interface StudyCard {
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StudyPage implements OnInit, OnDestroy {
+export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
   @ViewChild('answerInput') answerInput!: IonInput;
 
   private route = inject(ActivatedRoute);
@@ -218,6 +218,11 @@ export class StudyPage implements OnInit, OnDestroy {
 
     this.isLoading = false;
     this.cdr.detectChanges();
+    // Now that the first card is rendered (phase === 'question'), grab focus.
+    // ngAfterViewInit fired too early — before this async load set the phase —
+    // so the <ion-input> (behind *ngIf) didn't exist yet and focus silently
+    // failed, leaving the keyboard open but unfocused.
+    this.focusInput();
   }
 
   /**
@@ -241,45 +246,60 @@ export class StudyPage implements OnInit, OnDestroy {
     if (this.autoAdvanceTimer) clearTimeout(this.autoAdvanceTimer);
   }
 
-  ngAfterViewInit() {
+  /**
+   * Ionic fires this once the page's ENTER transition has finished — the most
+   * reliable moment to focus the input and pop the keyboard (focusing mid-
+   * transition on Android often pops the keyboard without the field actually
+   * taking focus, so typing went nowhere until you tapped the field). We also
+   * focus at the end of ngOnInit (above) so a cached/instant re-entry is covered.
+   */
+  ionViewDidEnter(): void {
     this.focusInput();
   }
 
   /**
-   * Keep the keyboard up by holding focus on the input. We focus during the
+   * Hold focus on the input so the keyboard stays up. We focus during the
    * question AND during correct/incorrect feedback (the input stays mounted,
-   * read-only), so the keyboard doesn't close + reopen between cards. We do NOT
-   * force focus for the "almost" retry card (it has its own flow).
+   * editable), so the keyboard doesn't close + reopen between cards. The "almost"
+   * retry card is excluded (its own flow).
+   *
+   * Robustness: the <ion-input> lives behind *ngIf, so right after an async
+   * load it may not exist yet. We retry a few times and — crucially — only pop
+   * the soft keyboard AFTER setFocus() resolves on a real element, so we never
+   * show the keyboard while the field is unfocused (the reported bug: keyboard
+   * open, typing ignored, fixed only by a manual tap).
    */
-  private focusInput(): void {
-    // Keep the keyboard up while typing (question) and through correct/incorrect
-    // feedback — the input is now editable in both, so holding focus keeps the
-    // keyboard open into the next card. Only the "almost" retry flow is excluded
-    // (it has its own handling).
+  private focusInput(attempt = 0): void {
     const keepUp = () =>
       this.phase === 'question' ||
       (this.phase === 'feedback' && this.feedbackResult !== 'almost');
-    if (this.answerInput && keepUp()) {
-      this.answerInput.setFocus();
-      this.forceKeyboard();
+    if (!keepUp()) return;
+
+    const input = this.answerInput;
+    if (!input) {
+      // The input isn't rendered yet (phase/ngIf not settled). Retry briefly.
+      if (attempt < 10) setTimeout(() => this.focusInput(attempt + 1), 50);
+      return;
     }
-    setTimeout(() => {
-      if (this.answerInput && keepUp()) {
-        this.answerInput.setFocus();
-        this.forceKeyboard();
-      }
-    }, 60);
+
+    void input.setFocus()
+      .then(() => {
+        // Focus actually landed → now it's safe to ensure the keyboard is up.
+        if (keepUp()) this.forceKeyboard();
+      })
+      .catch(() => {
+        if (attempt < 10) setTimeout(() => this.focusInput(attempt + 1), 50);
+      });
   }
 
   /**
    * On native Android, focusing an input programmatically (not from a user tap)
-   * often does NOT pop the soft keyboard. Explicitly ask the Keyboard plugin to
-   * show it. No-op on web / where the plugin isn't available.
+   * sometimes doesn't pop the soft keyboard. Explicitly ask the Keyboard plugin
+   * to show it. No-op on web / where the plugin isn't available.
    */
   private forceKeyboard(): void {
     if (!Capacitor.isNativePlatform()) return;
-    // Let the focus settle first, then show.
-    setTimeout(() => { void Keyboard.show().catch(() => { /* ignore */ }); }, 0);
+    void Keyboard.show().catch(() => { /* ignore */ });
   }
 
   /** True while the IME is composing a character (accents / dead keys). */
