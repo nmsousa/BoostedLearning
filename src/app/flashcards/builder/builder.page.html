@@ -1,10 +1,16 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button *ngIf="stage.kind === 'map'" (click)="close()" aria-label="Close">
+      <!-- As a Journey node the Builder is a single-screen exercise (no group/
+           phrase map), so it shows a CLOSE (X) that returns to the Journey map,
+           consistent with the other journey nodes (Match, Quiz, …). Standalone,
+           it keeps the two-level flow: X on the map, ← inside a group/phrase. -->
+      <ion-button *ngIf="journeyMode || stage.kind === 'map'" (click)="close()"
+        [attr.aria-label]="'mode.close' | translate">
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
-      <ion-button *ngIf="stage.kind !== 'map'" (click)="backToMap()" aria-label="Back">
+      <ion-button *ngIf="!journeyMode && stage.kind !== 'map'" (click)="backToMap()"
+        [attr.aria-label]="'common.back' | translate">
         <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
