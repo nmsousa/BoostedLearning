@@ -405,9 +405,10 @@ export class FlashcardsPage implements OnInit {
     // Nothing studied → no colour (fully grey). Total 0 guards divide-by-zero.
     if (practised === 0 || k.total === 0) return [];
     const C = 2 * Math.PI * 17; // circumference ≈ 106.8
+    // Two-way rating: only know-it (green) and don't-know (red). The old
+    // "so-so"/familiar (yellow) segment was removed.
     const buckets: { cls: string; n: number }[] = [
       { cls: 'seg-known', n: k.known },
-      { cls: 'seg-familiar', n: k.familiar },
       { cls: 'seg-learning', n: k.learning },
     ];
     const segs: { cls: string; dash: string; offset: number }[] = [];

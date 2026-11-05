@@ -152,10 +152,7 @@
                 <span class="know-legend" *ngIf="isFlipMode && hasKnowledge(deck.id, level)">
                   <span class="kn" *ngIf="levelKnowledge(deck.id, level).learning">
                     <i class="dot learning"></i>{{ 'practice.know.learning' | translate:{ n: levelKnowledge(deck.id, level).learning } }}</span><span
-                    class="sep" *ngIf="levelKnowledge(deck.id, level).learning && (levelKnowledge(deck.id, level).familiar || levelKnowledge(deck.id, level).known)"> · </span><span
-                    class="kn" *ngIf="levelKnowledge(deck.id, level).familiar">
-                    <i class="dot familiar"></i>{{ 'practice.know.familiar' | translate:{ n: levelKnowledge(deck.id, level).familiar } }}</span><span
-                    class="sep" *ngIf="levelKnowledge(deck.id, level).familiar && levelKnowledge(deck.id, level).known"> · </span><span
+                    class="sep" *ngIf="levelKnowledge(deck.id, level).learning && levelKnowledge(deck.id, level).known"> · </span><span
                     class="kn" *ngIf="levelKnowledge(deck.id, level).known">
                     <i class="dot known"></i>{{ 'practice.know.known' | translate:{ n: levelKnowledge(deck.id, level).known } }}</span>
                 </span>

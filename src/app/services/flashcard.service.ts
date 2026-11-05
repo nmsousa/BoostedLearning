@@ -1433,20 +1433,21 @@ export class FlashcardService {
    * view but wrong here — a single flip pass can never build a streak, so a
    * level you mostly *knew* would show all-red. Flashcards flip has its own
    * direct self-rating ("don't know" / "so-so" / "know"), so we classify from
-   * those counts instead, reflecting what the user actually said:
-   *   - known:    said "know" at least once, never "don't know", and "know" ≥ "so-so".
-   *   - learning: never said "know", OR "don't know" outweighs "know"+"so-so".
-   *   - familiar: anything else that's been studied (mixed / mostly so-so).
+   * those counts instead, reflecting what the user actually said. The rating is
+   * now two-way (don't-know / know-it), so there are only two studied buckets:
+   *   - known:    said "know" at least once and never "don't know".
+   *   - learning: anything else that's been studied (said "don't know" at least
+   *               once, or only legacy "so-so" ratings).
+   * The old middle "familiar" / so-so bucket was removed. Legacy cards with a
+   * mediumCount fall into "learning" unless they also have a clean "know".
    * See docs/LEVEL-ALGORITHM.md §6b.
    */
   private flipKnowledgeBucket(card: Flashcard): KnowledgeLevel {
     const know = card.correctCount ?? 0;
-    const soso = card.mediumCount ?? 0;
     const dont = card.incorrectCount ?? 0;
 
-    if (know > 0 && dont === 0 && know >= soso) return 'known';
-    if (know === 0 || dont > know + soso) return 'learning';
-    return 'familiar';
+    if (know > 0 && dont === 0) return 'known';
+    return 'learning';
   }
 
   /**
@@ -1730,25 +1731,38 @@ export class FlashcardService {
     // "ton"), marking a valid answer wrong.
     const formsByPrompt = this.buildFormsByPrompt(deck.cards);
 
-    // Group by skill, preserving skillOrder; within a skill, de-duplicate by
-    // prompt key so ta/ton (both "your") collapse into ONE card that accepts
-    // both forms — mirroring how chunked decks are deduped.
-    const groups = new Map<string, { order: number; cards: Flashcard[]; seen: Set<string> }>();
+    // Bucket the raw cards by skill first (keeping document order within each
+    // skill), so we can then walk the skills in skillOrder and de-duplicate.
+    const raw = new Map<string, { order: number; cards: Flashcard[] }>();
     for (const card of deck.cards) {
       const skill = card.skill ?? 'Uncategorized';
       const order = card.skillOrder ?? 9999;
-      const g = groups.get(skill) ?? { order, cards: [], seen: new Set<string>() };
-      const key = this.promptKeyOf(card);
-      if (!g.seen.has(key)) {
-        g.seen.add(key);
-        g.cards.push({ ...card, acceptedForms: formsByPrompt.get(key) ?? [card.text] });
-      }
-      groups.set(skill, g);
+      const g = raw.get(skill) ?? { order, cards: [] };
+      g.cards.push(card);
+      raw.set(skill, g);
     }
 
-    const result = [...groups.values()]
+    // Walk skills in skillOrder and de-duplicate prompts GLOBALLY: a prompt key
+    // lands only in the FIRST (earliest-order) skill that teaches it, and never
+    // repeats in later levels. (Previously the `seen` set was per-skill, so a
+    // word taught early reappeared in later skills.) Shared forms like ta/ton
+    // (both "your") still collapse into one card that accepts every form.
+    const seen = new Set<string>();
+    const result = [...raw.values()]
       .sort((a, b) => a.order - b.order)
-      .map(g => g.cards);
+      .map(g => {
+        const cards: Flashcard[] = [];
+        for (const card of g.cards) {
+          const key = this.promptKeyOf(card);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          cards.push({ ...card, acceptedForms: formsByPrompt.get(key) ?? [card.text] });
+        }
+        return cards;
+      })
+      // A skill whose every prompt was already taught earlier collapses to
+      // nothing — drop it so levels stay contiguous (no empty levels).
+      .filter(cards => cards.length > 0);
     this.skillLevelsCache.set(deckId, { cards: deck.cards, result });
     return result;
   }

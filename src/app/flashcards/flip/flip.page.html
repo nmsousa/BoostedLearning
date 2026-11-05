@@ -77,17 +77,15 @@
         {{ isFlipped ? ('mode.howWellKnew' | translate) : ('mode.howWellKnow' | translate) }}
       </p>
 
+      <!-- Two-way self rating: thumbs-down (don't know) / thumbs-up (know it).
+           The old "so-so" middle option was removed. -->
       <div class="rating-buttons">
         <button type="button" class="rate-btn hard" [class.pending]="pendingRating === 'hard'" (click)="rate('hard')" [attr.aria-label]="'mode.dontKnow' | translate">
-          <span class="emoji">😢</span>
+          <ion-icon name="thumbs-down" aria-hidden="true"></ion-icon>
           <span class="rate-label">{{ 'mode.dontKnow' | translate }}</span>
         </button>
-        <button type="button" class="rate-btn medium" [class.pending]="pendingRating === 'medium'" (click)="rate('medium')" [attr.aria-label]="'mode.soso' | translate">
-          <span class="emoji">😐</span>
-          <span class="rate-label">{{ 'mode.soso' | translate }}</span>
-        </button>
         <button type="button" class="rate-btn easy" [class.pending]="pendingRating === 'easy'" (click)="rate('easy')" [attr.aria-label]="'mode.knowIt' | translate">
-          <span class="emoji">😎</span>
+          <ion-icon name="thumbs-up" aria-hidden="true"></ion-icon>
           <span class="rate-label">{{ 'mode.knowIt' | translate }}</span>
         </button>
       </div>
@@ -114,17 +112,12 @@
 
     <div class="summary-card">
       <div class="summary-stat">
-        <span class="emoji">😢</span>
+        <ion-icon class="summary-icon hard" name="thumbs-down" aria-hidden="true"></ion-icon>
         <span class="stat-value hard">{{ ratedHard }}</span>
         <span class="stat-label">{{ 'mode.dontKnow' | translate }}</span>
       </div>
       <div class="summary-stat">
-        <span class="emoji">😐</span>
-        <span class="stat-value medium">{{ ratedMedium }}</span>
-        <span class="stat-label">{{ 'mode.soso' | translate }}</span>
-      </div>
-      <div class="summary-stat">
-        <span class="emoji">😎</span>
+        <ion-icon class="summary-icon easy" name="thumbs-up" aria-hidden="true"></ion-icon>
         <span class="stat-value easy">{{ ratedEasy }}</span>
         <span class="stat-label">{{ 'mode.knowIt' | translate }}</span>
       </div>

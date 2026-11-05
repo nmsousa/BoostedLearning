@@ -196,6 +196,14 @@
     line-height: 1;
   }
 
+  // Thumbs icons replace the old emojis: red thumbs-down, green thumbs-up.
+  ion-icon {
+    font-size: 2rem;
+    line-height: 1;
+  }
+  &.hard ion-icon { color: var(--ion-color-danger); }
+  &.easy ion-icon { color: var(--ion-color-success); }
+
   .rate-label {
     font-size: 0.8rem;
     font-weight: 600;
@@ -317,6 +325,12 @@
 
   .emoji {
     font-size: 1.75rem;
+  }
+
+  .summary-icon {
+    font-size: 1.75rem;
+    &.hard { color: var(--ion-color-danger); }
+    &.easy { color: var(--ion-color-success); }
   }
 
   .stat-value {
