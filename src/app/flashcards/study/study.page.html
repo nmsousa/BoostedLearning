@@ -172,23 +172,23 @@
          for the "almost" retry flow (reuses it via tryAgain). -->
     <ion-item class="answer-input" lines="none"
       *ngIf="phase === 'question' || (phase === 'feedback' && feedbackResult !== 'almost')">
-      <!-- Autocorrect/autocapitalize/spell-check OFF so the keyboard doesn't
-           "fix" foreign words (e.g. "café" -> "caf"). inputmode="text" tells
-           Gboard this is plain prose so it hides the number row (same as
-           Duolingo — side-by-side on the same phone, Duolingo had no number
-           row and we did). The earlier "café -> caf" bug is handled by the
-           composition handlers + reading the live DOM value on submit, NOT by
-           omitting inputmode, so setting it here is safe. -->
+      <!-- Plain prose text field, like Duolingo: autocorrect, suggestions and
+           spell-check are LEFT ON so the on-screen keyboard offers glide/swipe
+           typing and its correction dictionary (both are disabled by Gboard
+           when a field opts out of prediction via autocorrect/autocomplete=off
+           or spellcheck=false — which is what previously killed them here).
+           We don't set inputmode: the number row is a Gboard user preference,
+           not something a web field can force off, and restricting inputmode
+           only removes keyboard features. A correction that rewrites a word is
+           harmless because submitAnswer() reads the LIVE DOM value (via
+           syncNativeValue) and compares accent-insensitively, so the old
+           "café -> caf" mismatch can't resurface. -->
       <ion-input
         #answerInput
         [(ngModel)]="userAnswer"
         type="text"
-        inputmode="text"
         enterkeyhint="done"
         autocapitalize="off"
-        autocorrect="off"
-        spellcheck="false"
-        autocomplete="off"
         [placeholder]="'mode.typeYourAnswer' | translate"
         (keyup.enter)="onEnter()"
         (compositionstart)="onCompositionStart()"
