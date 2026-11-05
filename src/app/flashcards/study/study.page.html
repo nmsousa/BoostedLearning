@@ -175,14 +175,17 @@
     <ion-item class="answer-input" lines="none"
       *ngIf="phase === 'question' || (phase === 'feedback' && feedbackResult !== 'almost')">
       <!-- Autocorrect/autocapitalize/spell-check OFF so the keyboard doesn't
-           "fix" foreign words (e.g. "café" -> "caf"). No `inputmode` (requesting
-           one can make some keyboards show a number row; we never type digits).
-           The composition handlers let an accented char finish before Enter
-           submits, and submit reads the live DOM value. -->
+           "fix" foreign words (e.g. "café" -> "caf"). inputmode="text" tells
+           Gboard this is plain prose so it hides the number row (same as
+           Duolingo — side-by-side on the same phone, Duolingo had no number
+           row and we did). The earlier "café -> caf" bug is handled by the
+           composition handlers + reading the live DOM value on submit, NOT by
+           omitting inputmode, so setting it here is safe. -->
       <ion-input
         #answerInput
         [(ngModel)]="userAnswer"
         type="text"
+        inputmode="text"
         enterkeyhint="done"
         autocapitalize="off"
         autocorrect="off"
