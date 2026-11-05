@@ -21,6 +21,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.3',
+    notes: [
+      'Flashcards: simpler rating — tap 👎 (don\'t know) or 👍 (know it). The "so-so" option was removed.',
+      'Flashcards: the level list no longer shows the "so-so" state.',
+      'Flashcards: each level now has only that skill\'s words — no more repeated words across levels.',
+    ],
+  },
+  {
     version: '1.3.2',
     notes: [
       'Flashcards: the level ring now shows your progress over the whole level — unstudied words stay grey instead of one word filling the whole circle.',
