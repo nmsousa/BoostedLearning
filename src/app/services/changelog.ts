@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.14',
+    notes: [
+      'Write mode: after you answer, the input locks (you can no longer edit a judged answer) and you tap Continue to move on.',
+      'Write mode: a correct answer now waits for you to tap Continue instead of jumping to the next card on its own.',
+    ],
+  },
+  {
     version: '1.3.13',
     notes: [
       'Admin → How it works now explains when a typed answer is accepted as a typo or accent slip, and corrects the star rules.',

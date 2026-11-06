@@ -120,6 +120,13 @@
     --padding-bottom: 14px;
     font-size: 1.125rem;
   }
+
+  // Readonly during feedback: dim slightly so it reads as "locked / already
+  // judged" (the user reads the result and taps Continue).
+  &.locked {
+    opacity: 0.7;
+    ion-input { --color: var(--ion-color-medium); }
+  }
 }
 
 .submit-button {

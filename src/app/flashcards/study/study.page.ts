@@ -354,11 +354,10 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
    */
   @HostListener('document:pointerdown', ['$event'])
   keepKeyboardOnOutsideTap(event: PointerEvent): void {
-    // Only guard the phases where the input is focused / the keyboard is up.
-    const keyboardUp =
-      this.phase === 'question' ||
-      (this.phase === 'feedback' && this.feedbackResult !== 'almost');
-    if (!keyboardUp) return;
+    // Only guard while the learner is TYPING (question phase). During feedback
+    // the input is readonly and the keyboard is down, and we must let the
+    // Continue tap through normally.
+    if (this.phase !== 'question') return;
 
     const target = event.target as HTMLElement | null;
     if (!target) return;
@@ -647,20 +646,10 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
       }
       this.markCompleted();
       this.phase = 'feedback';
-      this.focusInput();
       if (this.settings.autoPlayAudio()) this.playWord();
-      // A clean answer auto-advances after a brief green flash. When accepted
-      // with a note, DON'T auto-advance — let the user read it and tap Continue.
-      if (this.nearMiss === 'none') {
-        if (this.autoAdvanceTimer) clearTimeout(this.autoAdvanceTimer);
-        this.autoAdvanceTimer = setTimeout(() => {
-          this.autoAdvanceTimer = null;
-          if (this.phase === 'feedback' && this.feedbackResult === 'correct') {
-            this.nextCard();
-            this.cdr.detectChanges();
-          }
-        }, 900);
-      }
+      // No auto-advance: the user taps the green Continue to move on, at their
+      // own pace — the same interaction as a miss/typo. The input is readonly
+      // during feedback; the keyboard is reopened when the next card loads.
       this.cdr.detectChanges();
       return;
     }
@@ -671,7 +660,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
     this.recordAttempt(false);
     this.correctAnswer = validAnswers[0];
     this.phase = 'feedback';
-    this.focusInput(); // keep the keyboard up for the next card
+    // Input is readonly during feedback; the keyboard reopens on the next card.
     this.markFailedAndRequeue();
   }
 

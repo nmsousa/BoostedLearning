@@ -179,12 +179,12 @@
      (mobile). Holds the input + buttons for the question/feedback phases. -->
 <ion-footer *ngIf="!isLoading && phase !== 'complete' && currentCard" class="study-footer">
   <div class="footer-inner">
-    <!-- The input stays MOUNTED and EDITABLE across question + correct/incorrect
-         feedback so the keyboard never closes (a readonly field closes the
-         Android keyboard, and re-focusing after can't reopen it). Hidden only
-         for the "almost" retry flow (reuses it via tryAgain). -->
-    <ion-item class="answer-input" lines="none"
-      *ngIf="phase === 'question' || (phase === 'feedback' && feedbackResult !== 'almost')">
+    <!-- The input stays MOUNTED across question + feedback so the keyboard
+         doesn't flicker; it becomes READONLY once an answer is judged (the
+         answer is final — you read the result and tap Continue). The keyboard
+         is explicitly reopened on the next card via focusInput(), so a readonly
+         feedback field no longer strands it closed. -->
+    <ion-item class="answer-input" lines="none" [class.locked]="phase === 'feedback'">
       <!-- Plain prose text field, like Duolingo: autocorrect, suggestions and
            spell-check are LEFT ON so the on-screen keyboard offers glide/swipe
            typing and its correction dictionary (both are disabled by Gboard
@@ -202,6 +202,7 @@
         type="text"
         enterkeyhint="done"
         autocapitalize="off"
+        [readonly]="phase === 'feedback'"
         [placeholder]="'mode.typeYourAnswer' | translate"
         (keyup.enter)="onEnter()"
         (compositionstart)="onCompositionStart()"
@@ -221,9 +222,9 @@
       </ion-button>
     </div>
 
-    <!-- Correct: a PERFECT answer auto-advances (no button). When accepted with
-         a note (accent/typo), show Continue so the user can read it first. -->
-    <ion-button *ngIf="phase === 'feedback' && feedbackResult === 'correct' && nearMiss !== 'none'"
+    <!-- Correct: a persistent green Continue (no auto-advance), so the user
+         moves on at their own pace — same interaction as a miss/typo. -->
+    <ion-button *ngIf="phase === 'feedback' && feedbackResult === 'correct'"
       expand="block" color="success" (click)="nextCard()" class="submit-button">
       {{ 'mode.continue' | translate }}
     </ion-button>
