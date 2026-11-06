@@ -86,7 +86,10 @@ export class SettingsPage {
   async ionViewWillEnter(): Promise<void> {
     try {
       const s = await this.appUpdate.getUpdateStatus();
-      if (s.available && s.url && s.version) {
+      // Only light the badge on a SUCCESSFUL check that found a newer bundle.
+      // A failed check (s.ok === false) leaves the badge off silently here —
+      // the error is surfaced when the user taps "Check for updates".
+      if (s.ok && s.available && s.url && s.version) {
         this.pendingUpdate = { version: s.version, url: s.url, checksum: s.checksum };
         this.updateAvailable = true;
       } else {

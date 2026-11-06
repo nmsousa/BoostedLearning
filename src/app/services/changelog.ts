@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.25',
+    notes: [
+      'Write mode: fixed the swipe-back still flickering the "lose progress?" prompt — a back swipe now shows it once and a second back closes it cleanly.',
+      '"Check for updates" now reports the real result: if the check itself fails it says so (and falls back to a direct check) instead of wrongly claiming you\'re on the latest version.',
+    ],
+  },
+  {
     version: '1.3.24',
     notes: [
       'Fixed the back gesture / hardware back across the exercises: in Write it now shows the "lose progress?" prompt once (no more flicker loop), and from Flashcards, Quiz, Match and Blanks — whether started from the level list or a Journey map — back now returns to where you came from instead of jumping to the home screen.',

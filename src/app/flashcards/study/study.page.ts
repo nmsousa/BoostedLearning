@@ -282,10 +282,12 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
 
   /** Claim the hardware/gesture back press while this exercise is on screen. */
   ionViewWillEnter(): void {
+    this.leaving = false;
     this.backInterceptor.register(this.onHardwareBack);
   }
 
   ionViewWillLeave(): void {
+    this.leaving = true;
     this.backInterceptor.clear(this.onHardwareBack);
   }
 
@@ -298,9 +300,13 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
    * also let the app pop.
    */
   private async handleBack(): Promise<boolean> {
-    // The confirm is already up → claim the press (the overlay dismiss handled
-    // by app.component ran first anyway); don't present a second one.
+    // A single Android predictive-back SWIPE emits several backButton ticks.
+    // Claim (consume) all of them while the confirm is open AND for a short
+    // cooldown after it closes, so trailing ticks of the same gesture can't
+    // dismiss-then-re-present the alert in a loop. The hardware button is one
+    // discrete event, so this is invisible there.
     if (this.endStudyAlertOpen) return true;
+    if (Date.now() < this.backSuppressedUntil) return true;
     if (this.phase === 'complete' || this.hasNothingToLose) return false;
     await this.endStudy();   // presents the confirm (its handler navigates back)
     return true;
@@ -310,6 +316,10 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
    *  suspend the keyboard-hold + focus logic so they don't fight the alert
    *  (that interaction caused the confirm to flicker/auto-dismiss in a loop). */
   private endStudyAlertOpen = false;
+
+  /** Epoch ms until which back presses are swallowed (set when the confirm
+   *  closes), to absorb the trailing ticks of a predictive-back swipe. */
+  private backSuppressedUntil = 0;
 
   /**
    * Hold focus on the input so the keyboard stays up. We focus during the
@@ -324,9 +334,10 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
    * open, typing ignored, fixed only by a manual tap).
    */
   private focusInput(attempt = 0): void {
-    // Never grab focus / pop the keyboard while the exit confirm is open — that
-    // fought the alert and re-opened the keyboard under it in a loop.
-    if (this.endStudyAlertOpen) return;
+    // Never grab focus / pop the keyboard while the exit confirm is open or the
+    // page is leaving — that fought the alert and re-opened the keyboard under
+    // it in a loop.
+    if (this.endStudyAlertOpen || this.leaving) return;
     const keepUp = () =>
       this.phase === 'question' ||
       (this.phase === 'feedback' && this.feedbackResult !== 'almost');
@@ -906,8 +917,10 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
     const alert = await this.alertController.create({
       header: this.t('mode.endStudyHeader'),
       message: this.t('mode.endStudyMessage'),
-      // Dismiss on backdrop/hardware-back so a back press on the OPEN alert
-      // closes just the alert (handled by app.component.dismissTopOverlay).
+      // We OWN dismissal (Cancel / End only). Disabling backdrop + its own back
+      // handler stops a stray back tick from the same swipe gesture flicking
+      // the alert closed, which was half of the dismiss→re-present loop.
+      backdropDismiss: false,
       buttons: [
         {
           text: this.t('common.cancel'),
@@ -917,20 +930,31 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
           text: this.t('mode.end'),
           role: 'confirm',
           handler: () => {
+            // Mark leaving so onDidDismiss doesn't re-focus the (gone) input.
+            this.leaving = true;
             this.navCtrl.navigateBack(this.backUrl);
           },
         },
       ],
     });
-    // Clear the flag whenever the alert goes away (cancel, confirm, or a back
-    // press dismissing it) so the keyboard/focus logic resumes for the page.
+    // When the alert closes (Cancel or End): start a short cooldown so the
+    // trailing ticks of a predictive-back swipe can't immediately re-present
+    // it, THEN clear the open flag. Only restore focus if we're STAYING on the
+    // page (Cancel) — never when End/back is navigating away.
     void alert.onDidDismiss().then(() => {
+      this.backSuppressedUntil = Date.now() + 700;
       this.endStudyAlertOpen = false;
-      // If we're staying (cancel/backdrop), restore focus + keyboard.
-      this.focusInput();
+      if (!this.leaving) {
+        // Defer past the cooldown so we don't re-pop the keyboard mid-gesture.
+        setTimeout(() => { if (!this.leaving) this.focusInput(); }, 750);
+      }
     });
     await alert.present();
   }
+
+  /** Set once we've committed to leaving the page (End / navigating back), so
+   *  the alert's onDidDismiss doesn't try to re-focus a tearing-down input. */
+  private leaving = false;
 
   /** True if any Ionic overlay is currently open (modal/alert/sheet/etc.). */
   private anyOverlayOpen(): boolean {
