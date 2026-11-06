@@ -17,7 +17,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ActionSheetController } from '@ionic/angular';
+import { ActionSheetController, NavController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AudioService } from '../../services/audio.service';
@@ -50,6 +50,7 @@ export class BuilderPage implements OnInit {
 
   private http = inject(HttpClient);
   private router = inject(Router);
+  private navCtrl = inject(NavController);
   private route = inject(ActivatedRoute);
   private i18n = inject(I18nAngularService);
   private audio = inject(AudioService);
@@ -245,7 +246,7 @@ export class BuilderPage implements OnInit {
       this.isLoading = true;
       this.cdr.detectChanges();
       await this.flashcards.saveRoundProgress(deckId, 'journey-builder', level, 100);
-      await this.router.navigate([this.journeyBack], { replaceUrl: true });
+      this.navCtrl.navigateBack(this.journeyBack);
       return;
     }
 
@@ -296,7 +297,7 @@ export class BuilderPage implements OnInit {
     }
     // All phrases done → pass the node and return to the map.
     await this.flashcards.saveRoundProgress(this.journeyDeckId, 'journey-builder', this.journeyLevel, 100);
-    this.router.navigate([this.journeyBack], { replaceUrl: true });
+    this.navCtrl.navigateBack(this.journeyBack);
   }
 
   /** (Re)load the Builder dataset + progress for the current `langCode`. */
@@ -562,8 +563,10 @@ export class BuilderPage implements OnInit {
   }
 
   close(): void {
-    // As a Journey node, the X returns to the map; standalone goes home.
-    this.router.navigate([this.journeyMode ? this.journeyBack : '/home']);
+    // As a Journey node, the X goes BACK to the map (pops the stack, no
+    // duplicate map page); standalone goes home.
+    if (this.journeyMode) { this.navCtrl.navigateBack(this.journeyBack); return; }
+    this.router.navigate(['/home']);
   }
 
   /** "n / total" progress label for the Journey Builder node. */

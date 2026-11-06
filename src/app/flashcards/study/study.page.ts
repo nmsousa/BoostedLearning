@@ -10,7 +10,7 @@
 
 import { Component, OnInit, OnDestroy, inject, ViewChild, HostListener, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AlertController, IonInput, ToastController, ViewDidEnter } from '@ionic/angular';
+import { AlertController, IonInput, ToastController, ViewDidEnter, NavController } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
 import { Keyboard } from '@capacitor/keyboard';
 import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
@@ -49,6 +49,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private navCtrl = inject(NavController);
   private alertController = inject(AlertController);
   private flashcardService = inject(FlashcardService);
   private i18n = inject(I18nAngularService);
@@ -86,7 +87,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
         await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
       }
     }
-    this.router.navigate([this.backUrl], { replaceUrl: true });
+    this.navCtrl.navigateBack(this.backUrl);
   }
 
   deck: FlashcardDeck | null = null;
@@ -795,7 +796,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
     // If nothing was answered this round, there's nothing to lose — just exit
     // without the confirmation prompt.
     if (this.hasNothingToLose) {
-      this.router.navigate([this.backUrl], { replaceUrl: true });
+      this.navCtrl.navigateBack(this.backUrl);
       return;
     }
     const alert = await this.alertController.create({
@@ -810,7 +811,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
           text: this.t('mode.end'),
           role: 'confirm',
           handler: () => {
-            this.router.navigate([this.backUrl], { replaceUrl: true });
+            this.navCtrl.navigateBack(this.backUrl);
           },
         },
       ],
@@ -819,7 +820,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
   }
 
   finishStudy(): void {
-    this.router.navigate([this.backUrl], { replaceUrl: true });
+    this.navCtrl.navigateBack(this.backUrl);
   }
 
   get accuracy(): number {

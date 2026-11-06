@@ -11,6 +11,7 @@
 
 import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { NavController } from '@ionic/angular';
 import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
@@ -37,6 +38,7 @@ interface MatchItem {
 export class MatchPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private navCtrl = inject(NavController);
   private flashcardService = inject(FlashcardService);
   private cdr = inject(ChangeDetectorRef);
   private i18n = inject(I18nAngularService);
@@ -68,7 +70,7 @@ export class MatchPage implements OnInit, OnDestroy {
         await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
       }
     }
-    this.router.navigate([this.backUrl], { replaceUrl: true });
+    this.navCtrl.navigateBack(this.backUrl);
   }
 
   deck: FlashcardDeck | null = null;
@@ -515,10 +517,10 @@ export class MatchPage implements OnInit, OnDestroy {
   }
 
   finish() {
-    this.router.navigate([this.backUrl], { replaceUrl: true });
+    this.navCtrl.navigateBack(this.backUrl);
   }
 
   close() {
-    this.router.navigate([this.backUrl], { replaceUrl: true });
+    this.navCtrl.navigateBack(this.backUrl);
   }
 }

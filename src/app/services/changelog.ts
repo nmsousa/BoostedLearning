@@ -21,6 +21,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.16',
+    notes: [
+      'Journey/Journey+/Journey++: fixed the back gesture — leaving a map after playing a few nodes no longer walks back through old exercises; one back press leaves the map.',
+    ],
+  },
+  {
+    version: '1.3.15',
+    notes: [
+      'Flashcards: re-studying a word now updates its colour — mark a red word "know it" and it turns green (the latest rating wins).',
+      'Flashcards: new "Practice what I don\'t know" button drills up to 20 of your red words; marking one "know it" turns it green in its level.',
+      'Fixed the progress bar at the top of an exercise sometimes not showing until you switched theme.',
+    ],
+  },
+  {
     version: '1.3.14',
     notes: [
       'Write mode: after you answer, the input locks (you can no longer edit a judged answer) and you tap Continue to move on.',

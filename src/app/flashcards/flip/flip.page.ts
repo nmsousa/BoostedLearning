@@ -12,7 +12,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck, FlashcardRating, PracticeMode } from '../../services/flashcard.service';
-import { ToastController } from '@ionic/angular';
+import { ToastController, NavController } from '@ionic/angular';
 import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
@@ -31,6 +31,7 @@ type FlipPhase = 'card' | 'complete';
 export class FlipPage implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private navCtrl = inject(NavController);
   private flashcardService = inject(FlashcardService);
   private audio = inject(AudioService);
   private settings = inject(SettingsService);
@@ -83,7 +84,7 @@ export class FlipPage implements OnInit {
       await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
     }
 
-    this.router.navigate([this.backUrl], { replaceUrl: true });
+    this.navCtrl.navigateBack(this.backUrl);
   }
 
   /** After hiding the current word, advance to the next card. */
@@ -328,10 +329,10 @@ export class FlipPage implements OnInit {
   }
 
   finish() {
-    this.router.navigate([this.backUrl], { replaceUrl: true });
+    this.navCtrl.navigateBack(this.backUrl);
   }
 
   close() {
-    this.router.navigate([this.backUrl], { replaceUrl: true });
+    this.navCtrl.navigateBack(this.backUrl);
   }
 }

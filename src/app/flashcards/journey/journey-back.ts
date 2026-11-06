@@ -23,3 +23,11 @@ export function journeyBackUrl(query: ParamMap): string {
     default: return '/practice/journey';
   }
 }
+
+// NOTE: exercises RETURN to the map with NavController.navigateBack(backUrl)
+// rather than router.navigate(backUrl, { replaceUrl: true }). The map pushes
+// the exercise onto the ion-router-outlet stack; a forward navigate back to the
+// map URL (even with replaceUrl) left a DUPLICATE map page each time, so after
+// playing several nodes the back gesture walked through stacked map/exercise
+// pages (and could surface a previously-open node) instead of leaving. A back
+// navigation pops to the existing map page with no duplication.

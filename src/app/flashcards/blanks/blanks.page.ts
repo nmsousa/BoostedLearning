@@ -16,6 +16,7 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { NavController } from '@ionic/angular';
 import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
 import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
@@ -60,6 +61,7 @@ interface BlankQuestion {
 export class BlanksPage implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private navCtrl = inject(NavController);
   private flashcardService = inject(FlashcardService);
   private audio = inject(AudioService);
   private settings = inject(SettingsService);
@@ -109,7 +111,7 @@ export class BlanksPage implements OnInit {
     if (this.levelNumber > 0 && this.deck) {
       await this.flashcardService.adminForceComplete(this.deck.id, this.mode, this.levelNumber, stars);
     }
-    this.router.navigate([this.backUrl], { replaceUrl: true });
+    this.navCtrl.navigateBack(this.backUrl);
   }
 
   async ngOnInit(): Promise<void> {
@@ -142,7 +144,7 @@ export class BlanksPage implements OnInit {
     if (this.questions.length === 0) {
       if (this.mode === 'journey-blanks' && this.levelNumber > 0) {
         await this.flashcardService.saveRoundProgress(deckId, this.mode, this.levelNumber, 100);
-        this.router.navigate([this.backUrl], { replaceUrl: true });
+        this.navCtrl.navigateBack(this.backUrl);
         return;
       }
       this.phase = 'complete';
@@ -313,6 +315,6 @@ export class BlanksPage implements OnInit {
     return a;
   }
 
-  finish(): void { this.router.navigate([this.backUrl], { replaceUrl: true }); }
-  close(): void { this.router.navigate([this.backUrl], { replaceUrl: true }); }
+  finish(): void { this.navCtrl.navigateBack(this.backUrl); }
+  close(): void { this.navCtrl.navigateBack(this.backUrl); }
 }
