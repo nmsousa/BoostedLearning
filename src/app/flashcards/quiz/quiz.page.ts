@@ -353,6 +353,16 @@ export class QuizPage implements OnInit {
     this.cdr.detectChanges();
   }
 
+  /**
+   * True only when the NEXT round actually biases toward words missed in this
+   * level (final round, with recorded misses). Rounds 2–4 mix new words with
+   * earlier-level review, so they get a neutral message instead.
+   */
+  get nextRoundFocusesOnMissed(): boolean {
+    const nextRound = this.roundsCompleted + 1;
+    return nextRound >= this.totalRounds && this.missedThisLevel.size > 0;
+  }
+
   /** Continue to the next round. */
   nextRound(): void {
     if (!this.deck) return;

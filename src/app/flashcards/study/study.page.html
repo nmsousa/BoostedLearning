@@ -108,7 +108,7 @@
             <ion-icon name="volume-high-outline"></ion-icon>
           </button>
           <button type="button" class="pair-audio slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="'mode.playSlower' | translate">
-            <ion-icon name="volume-low-outline"></ion-icon>
+            <ion-icon name="hourglass-outline"></ion-icon>
           </button>
         </span>
       </div>
@@ -123,7 +123,7 @@
   <div *ngIf="!isLoading && phase === 'complete' && roundInterstitial" class="complete-container">
     <div class="round-badge"><ion-icon name="checkmark"></ion-icon></div>
     <h1>{{ 'mode.roundComplete' | translate:{ n: roundsCompleted, total: totalRounds } }}</h1>
-    <p class="complete-sub">{{ 'mode.roundNext' | translate }}</p>
+    <p class="complete-sub">{{ (nextRoundFocusesOnMissed ? 'mode.roundNext' : 'mode.roundNextReview') | translate }}</p>
     <ion-button expand="block" (click)="nextRound()" class="finish-button">
       {{ 'mode.continue' | translate }}
     </ion-button>

@@ -125,6 +125,11 @@
         [attr.aria-label]="'mode.playPronunciation' | translate">
         <ion-icon name="volume-high-outline"></ion-icon>
       </button>
+      <!-- Slower replay appears once the word has been played twice. -->
+      <button type="button" class="word-audio slow" *ngIf="showSlow(w)" (click)="playWord(w, $event, true)"
+        [attr.aria-label]="'mode.playSlower' | translate">
+        <ion-icon name="hourglass-outline"></ion-icon>
+      </button>
     </div>
   </div>
 </ion-content>

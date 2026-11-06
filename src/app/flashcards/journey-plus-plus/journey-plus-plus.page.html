@@ -51,7 +51,6 @@
         <span class="pp-chapter-badge">{{ block.chapter.number }}</span>
         <span class="pp-chapter-emoji" aria-hidden="true">{{ block.emoji }}</span>
         <span class="pp-chapter-name">{{ block.title }}</span>
-        <ion-icon *ngIf="!block.chapter.unlocked" name="lock-closed" class="pp-chapter-lock" aria-hidden="true"></ion-icon>
       </header>
 
       <div class="pp-map" [style.height.px]="block.mapHeight">

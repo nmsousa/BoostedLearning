@@ -197,7 +197,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.pp-chapter-lock { flex: 0 0 auto; font-size: 15px; color: var(--pp-muted); }
 // Locked chapters read dimmer until reached.
 .pp-chapter.is-locked { opacity: 0.9; }
 

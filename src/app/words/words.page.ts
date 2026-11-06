@@ -206,11 +206,28 @@ export class WordsPage implements OnInit, ViewWillEnter {
     return Math.round(w.accuracy * 100);
   }
 
+  /** Per-word count of normal-speed plays, so a "slower" button appears once a
+   *  word has been played twice (same rule as the Flashcard modes). Keyed by
+   *  word text. */
+  private playCounts = new Map<string, number>();
+
+  /** True once this word has been played at normal speed twice — reveals the
+   *  slow-replay button for that row. */
+  showSlow(w: StudiedWord): boolean {
+    return (this.playCounts.get(w.text) ?? 0) >= 2;
+  }
+
   /** Play a word's pronunciation (recorded audio if available, else TTS).
-   *  Stops the tap from also opening the priority sheet. */
-  playWord(w: StudiedWord, event: Event): void {
+   *  `slow` plays the "turtle" slow replay. Stops the tap from also opening the
+   *  priority sheet. */
+  playWord(w: StudiedWord, event: Event, slow = false): void {
     event.stopPropagation();
-    void this.audio.playWord(w.text, undefined, this.settings.learningLanguage());
+    if (!slow) {
+      this.playCounts.set(w.text, (this.playCounts.get(w.text) ?? 0) + 1);
+      this.cdr.detectChanges();
+    }
+    // Prefer the recorded clip (same as the Flashcard modes); fall back to TTS.
+    void this.audio.playWord(w.text, w.audioUrl, this.settings.learningLanguage(), slow);
   }
 
   /** Open the priority action sheet for a word (boost / normal / hide). */

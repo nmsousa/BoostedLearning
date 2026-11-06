@@ -845,6 +845,18 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
     setTimeout(() => this.focusInput(), 0);
   }
 
+  /**
+   * True only when the NEXT round actually biases toward words missed in this
+   * level. Per getRoundCards (docs/LEVEL-ALGORITHM.md), that bias applies on
+   * the final round (round 5) and only when there are recorded misses. Rounds
+   * 2–4 mix new words with earlier-level review, so claiming they "focus on
+   * the words you missed" would be inaccurate — show a neutral message there.
+   */
+  get nextRoundFocusesOnMissed(): boolean {
+    const nextRound = this.roundsCompleted + 1;
+    return nextRound >= this.totalRounds && this.missedThisLevel.size > 0;
+  }
+
   /** True when the current round has no answered/typed progress to lose. */
   private get hasNothingToLose(): boolean {
     return this.completedIds.size === 0

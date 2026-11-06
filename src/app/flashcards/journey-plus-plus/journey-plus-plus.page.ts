@@ -30,6 +30,7 @@ import {
   ViewChild, ElementRef, AfterViewInit, HostListener,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { ToastController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
@@ -84,6 +85,10 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
   private cdr = inject(ChangeDetectorRef);
+  private toast = inject(ToastController);
+
+  /** The currently-shown "locked" toast, so taps don't stack several up. */
+  private lockedToast: HTMLIonToastElement | null = null;
 
   @ViewChild('content', { read: ElementRef }) private contentEl?: ElementRef<HTMLIonContentElement>;
   @ViewChild('scene') private sceneEl?: ElementRef<HTMLElement>;
@@ -355,10 +360,26 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Actions ─────────────────────────────────────────────────────────────────
   openStop(block: MapChapter, stop: MapStop): void {
-    if (!this.deck || stop.state === 'locked') return;
+    if (!this.deck) return;
+    // Tapping a locked node explains WHY it's locked instead of doing nothing.
+    if (stop.state === 'locked') { void this.showLockedHint(); return; }
     this.router.navigate([stop.node.route, this.deck.id], {
       queryParams: { level: block.chapter.levelNumber, mode: stop.node.mode, from: JOURNEY_PLUS_PLUS_FROM },
     });
+  }
+
+  /** Brief toast shown when a locked node is tapped (kept short). */
+  private async showLockedHint(): Promise<void> {
+    // Replace any existing one so rapid taps don't stack toasts.
+    if (this.lockedToast) { await this.lockedToast.dismiss().catch(() => { /* ignore */ }); }
+    this.lockedToast = await this.toast.create({
+      message: this.t('journeyPP.lockedHint'),
+      duration: 2200,
+      position: 'bottom',
+      icon: 'lock-closed',
+      cssClass: 'pp-locked-toast',
+    });
+    void this.lockedToast.present();
   }
 
   /** Primary HUD action: play the current chapter's active node. */
@@ -382,6 +403,14 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
       this.cdr.detectChanges();
     }
     const scrollEl = await content.getScrollElement();
+
+    // A touch-flick leaves the scroll container still decelerating (momentum).
+    // On Android a programmatic scrollToPoint issued during that momentum is
+    // swallowed — the first tap only halts the fling, so you had to tap twice.
+    // Writing scrollTop to its own current value cancels the native momentum
+    // synchronously; the animated scroll below then lands on the first tap.
+    scrollEl.scrollTop = scrollEl.scrollTop; // eslint-disable-line no-self-assign
+
     const active = document.querySelector(
       `#jpp-chapter-${this.currentIndex} .state-active`,
     ) as HTMLElement | null;
@@ -390,7 +419,9 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
     if (!el) { void content.scrollToTop(400); return; }
     const top = el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop;
     const target = active ? top - scrollEl.clientHeight * 0.4 : top - 70;
-    void content.scrollToPoint(0, Math.max(0, target), 500);
+    // Defer one frame so the momentum-cancel above is committed before we
+    // start the animated scroll (otherwise the cancel can clobber it).
+    requestAnimationFrame(() => void content.scrollToPoint(0, Math.max(0, target), 500));
   }
 
   jumpToCurrent(): void { void this.scrollToCurrent(); }

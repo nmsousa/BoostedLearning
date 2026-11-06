@@ -114,6 +114,9 @@ export interface StudiedWord {
   missRate: number;
   level: KnowledgeLevel;
   priority: WordPriority;
+  /** Recorded pronunciation clip, when the source card has one. The Words page
+   *  prefers this over TTS so playback matches the Flashcard modes. */
+  audioUrl?: string;
 }
 
 /**
@@ -886,7 +889,14 @@ export class FlashcardService {
     
     // Save to IndexedDB
     await this.saveCardProgress(card);
-    
+
+    // The deduped list holds COPIES of the cards, so mutating the originals
+    // above doesn't change what getStudiedWords/getDedupedCards return until the
+    // cache is rebuilt. Without this, "Your words" kept showing pre-lesson
+    // counts until the app was reopened. Drop this deck's memo so the next read
+    // rebuilds from the live card.
+    this.invalidateDedupe(deckId);
+
     // Trigger signal update
     this.decksSignal.update(decks => [...decks]);
   }
@@ -1582,6 +1592,7 @@ export class FlashcardService {
           missRate,
           level,
           priority: card.priority ?? 'normal',
+          audioUrl: card.audioUrl,
         });
       }
     }

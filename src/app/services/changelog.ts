@@ -21,6 +21,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.20',
+    notes: [
+      'Your words: the list now refreshes right after a lesson (no need to reopen the app), and the speaker actually plays the word.',
+      'Your words: a slower-replay button appears after you play a word twice.',
+      'Journey++: tapping a locked node now tells you why it\'s locked.',
+      'Journey++: removed the small lock icon after a chapter title, and the "jump to current" button now works on the first tap even while the page is still scrolling.',
+      'Clearer "play slower" icon across the exercises.',
+      'Between-round message is now accurate — it only says a round focuses on your missed words when it actually does.',
+    ],
+  },
+  {
     version: '1.3.19',
     notes: [
       'Fixed the phone back gesture re-opening an exercise after you finished it — back now returns to the previous screen properly.',
