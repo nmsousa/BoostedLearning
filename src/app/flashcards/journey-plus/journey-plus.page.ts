@@ -23,6 +23,7 @@ import {
   ViewChild, ElementRef, AfterViewInit,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { NavController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
@@ -64,6 +65,7 @@ interface LanguageOption { code: string; name: string; flagUrl: string }
 })
 export class JourneyPlusPage implements OnInit, AfterViewInit, OnDestroy {
   private router = inject(Router);
+  private navCtrl = inject(NavController);
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
@@ -352,7 +354,9 @@ export class JourneyPlusPage implements OnInit, AfterViewInit, OnDestroy {
   openStop(stop: MapStop): void {
     const ch = this.chapter;
     if (!ch || !this.deck || stop.state === 'locked') return;
-    this.router.navigate([stop.node.route, this.deck.id], {
+    // Ionic FORWARD navigation so this map stays a poppable stack entry
+    // (hardware/gesture back returns here, not the /home fallback).
+    void this.navCtrl.navigateForward([stop.node.route, this.deck.id], {
       queryParams: { level: ch.levelNumber, mode: stop.node.mode, from: JOURNEY_PLUS_FROM },
     });
   }

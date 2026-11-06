@@ -14,7 +14,7 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
-import { ActionSheetController } from '@ionic/angular';
+import { ActionSheetController, NavController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck, DeckLevel } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
@@ -35,6 +35,7 @@ import {
 })
 export class JourneyPage implements OnInit {
   private router = inject(Router);
+  private navCtrl = inject(NavController);
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
@@ -361,10 +362,12 @@ export class JourneyPage implements OnInit {
     return this.t(`journey.node.${type}`);
   }
 
-  /** Start a node: navigate to its exercise with the per-node mode + level. */
+  /** Start a node: navigate to its exercise with the per-node mode + level.
+   *  Uses Ionic FORWARD navigation so this map stays a poppable stack entry
+   *  (hardware/gesture back returns here instead of the /home fallback). */
   startNode(chapter: Chapter, node: JourneyNode): void {
     if (!node.unlocked || !this.deck) return;
-    this.router.navigate([node.route, this.deck.id], {
+    void this.navCtrl.navigateForward([node.route, this.deck.id], {
       queryParams: { level: chapter.levelNumber, mode: node.mode },
     });
   }

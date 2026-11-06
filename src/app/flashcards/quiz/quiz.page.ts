@@ -9,14 +9,15 @@
  * @module app/flashcards/quiz
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
-import { ToastController, NavController } from '@ionic/angular';
+import { ToastController, NavController, ViewWillEnter, ViewWillLeave } from '@ionic/angular';
 import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
+import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { journeyBackUrl } from '../journey/journey-back';
 
 type QuizPhase = 'play' | 'complete';
@@ -36,7 +37,7 @@ interface QuizOption {
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class QuizPage implements OnInit {
+export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private navCtrl = inject(NavController);
@@ -47,6 +48,15 @@ export class QuizPage implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private i18n = inject(I18nAngularService);
   private addWordService = inject(AddWordService);
+  private backInterceptor = inject(BackInterceptorService);
+
+  /** Hardware/gesture back → same as the header X: return to the level list /
+   *  Journey map. Registered on enter, cleared on leave. Stable ref. */
+  private readonly onHardwareBack: () => boolean = () => { this.close(); return true; };
+
+  ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); }
+  ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
+  ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); }
 
   t(key: string, params?: Record<string, string | number>): string {
     return this.i18n.t(key, params);

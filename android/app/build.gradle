@@ -7,8 +7,8 @@ android {
         applicationId "com.boostedlearning.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 10323
-        versionName "1.3.23"
+        versionCode 10324
+        versionName "1.3.24"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

@@ -298,10 +298,18 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
    * also let the app pop.
    */
   private async handleBack(): Promise<boolean> {
+    // The confirm is already up → claim the press (the overlay dismiss handled
+    // by app.component ran first anyway); don't present a second one.
+    if (this.endStudyAlertOpen) return true;
     if (this.phase === 'complete' || this.hasNothingToLose) return false;
     await this.endStudy();   // presents the confirm (its handler navigates back)
     return true;
   }
+
+  /** True while the "lose progress?" confirm is on screen. While it's open we
+   *  suspend the keyboard-hold + focus logic so they don't fight the alert
+   *  (that interaction caused the confirm to flicker/auto-dismiss in a loop). */
+  private endStudyAlertOpen = false;
 
   /**
    * Hold focus on the input so the keyboard stays up. We focus during the
@@ -316,6 +324,9 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
    * open, typing ignored, fixed only by a manual tap).
    */
   private focusInput(attempt = 0): void {
+    // Never grab focus / pop the keyboard while the exit confirm is open — that
+    // fought the alert and re-opened the keyboard under it in a loop.
+    if (this.endStudyAlertOpen) return;
     const keepUp = () =>
       this.phase === 'question' ||
       (this.phase === 'feedback' && this.feedbackResult !== 'almost');
@@ -412,6 +423,11 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
    */
   @HostListener('document:pointerdown', ['$event'])
   keepKeyboardOnOutsideTap(event: PointerEvent): void {
+    // Suspend entirely while the exit confirm (or any Ionic overlay) is open,
+    // so taps/gestures on the alert aren't preventDefault()'d — that was
+    // interfering with the confirm and keeping the keyboard glued open.
+    if (this.endStudyAlertOpen || this.anyOverlayOpen()) return;
+
     // The keyboard stays up during question AND feedback (the field keeps
     // focus; typing is blocked during feedback). Keep it open on taps elsewhere
     // so it doesn't flicker between a card and its result. The Continue button
@@ -879,9 +895,19 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
       this.navCtrl.navigateBack(this.backUrl);
       return;
     }
+    // Guard against a second confirm while one is up (rapid double back).
+    if (this.endStudyAlertOpen) return;
+    this.endStudyAlertOpen = true;
+
+    // Drop focus so the soft keyboard closes BEFORE the alert shows — otherwise
+    // the keyboard-hold logic kept re-opening it under the alert.
+    try { (await this.answerInput?.getInputElement())?.blur(); } catch { /* ignore */ }
+
     const alert = await this.alertController.create({
       header: this.t('mode.endStudyHeader'),
       message: this.t('mode.endStudyMessage'),
+      // Dismiss on backdrop/hardware-back so a back press on the OPEN alert
+      // closes just the alert (handled by app.component.dismissTopOverlay).
       buttons: [
         {
           text: this.t('common.cancel'),
@@ -896,7 +922,23 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
         },
       ],
     });
+    // Clear the flag whenever the alert goes away (cancel, confirm, or a back
+    // press dismissing it) so the keyboard/focus logic resumes for the page.
+    void alert.onDidDismiss().then(() => {
+      this.endStudyAlertOpen = false;
+      // If we're staying (cancel/backdrop), restore focus + keyboard.
+      this.focusInput();
+    });
     await alert.present();
+  }
+
+  /** True if any Ionic overlay is currently open (modal/alert/sheet/etc.). */
+  private anyOverlayOpen(): boolean {
+    return document.querySelector(
+      'ion-alert:not(.overlay-hidden), ion-modal:not(.overlay-hidden), ' +
+      'ion-action-sheet:not(.overlay-hidden), ion-popover:not(.overlay-hidden), ' +
+      'ion-picker:not(.overlay-hidden)'
+    ) !== null;
   }
 
   finishStudy(): void {

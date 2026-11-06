@@ -11,10 +11,11 @@
 
 import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NavController } from '@ionic/angular';
+import { NavController, ViewWillEnter, ViewWillLeave } from '@ionic/angular';
 import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
+import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { journeyBackUrl } from '../journey/journey-back';
 
 type Side = 'left' | 'right';
@@ -35,7 +36,7 @@ interface MatchItem {
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MatchPage implements OnInit, OnDestroy {
+export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private navCtrl = inject(NavController);
@@ -43,6 +44,14 @@ export class MatchPage implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private i18n = inject(I18nAngularService);
   private addWordService = inject(AddWordService);
+  private backInterceptor = inject(BackInterceptorService);
+
+  /** Hardware/gesture back → same as the header X: return to the level list /
+   *  Journey map. Registered on enter, cleared on leave. Stable ref. */
+  private readonly onHardwareBack: () => boolean = () => { this.close(); return true; };
+
+  ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
+  ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); }
 
   t(key: string, params?: Record<string, string | number>): string {
     return this.i18n.t(key, params);
@@ -193,6 +202,7 @@ export class MatchPage implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.stopTimer();
+    this.backInterceptor.clear(this.onHardwareBack);
   }
 
   /** Start the count-up timer, ticking once a second. */

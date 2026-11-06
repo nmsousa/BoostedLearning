@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.24',
+    notes: [
+      'Fixed the back gesture / hardware back across the exercises: in Write it now shows the "lose progress?" prompt once (no more flicker loop), and from Flashcards, Quiz, Match and Blanks — whether started from the level list or a Journey map — back now returns to where you came from instead of jumping to the home screen.',
+    ],
+  },
+  {
     version: '1.3.23',
     notes: [
       'Admin/testing: a temporary "Level 0" (2 quick words) now appears at the top of every mode\'s level list when dev tools are on, for fast testing. It saves no progress and is invisible to normal users.',

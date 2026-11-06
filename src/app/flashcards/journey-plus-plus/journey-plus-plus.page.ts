@@ -30,7 +30,7 @@ import {
   ViewChild, ElementRef, AfterViewInit, HostListener,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { ToastController } from '@ionic/angular';
+import { NavController, ToastController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
@@ -86,6 +86,7 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   private i18n = inject(I18nAngularService);
   private cdr = inject(ChangeDetectorRef);
   private toast = inject(ToastController);
+  private navCtrl = inject(NavController);
 
   /** The currently-shown "locked" toast, so taps don't stack several up. */
   private lockedToast: HTMLIonToastElement | null = null;
@@ -366,7 +367,11 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
     if (!this.deck) return;
     // Tapping a locked node explains WHY it's locked instead of doing nothing.
     if (stop.state === 'locked') { void this.showLockedHint(); return; }
-    this.router.navigate([stop.node.route, this.deck.id], {
+    // Use Ionic's FORWARD navigation (not plain router.navigate) so the map is
+    // pushed onto the ion-router-outlet stack and stays a poppable entry. With
+    // a plain navigate, hardware/gesture back found nothing to pop and fell
+    // through to the /home fallback instead of returning to this map.
+    void this.navCtrl.navigateForward([stop.node.route, this.deck.id], {
       queryParams: { level: block.chapter.levelNumber, mode: stop.node.mode, from: JOURNEY_PLUS_PLUS_FROM },
     });
   }
