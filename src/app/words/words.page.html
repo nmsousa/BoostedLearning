@@ -44,7 +44,7 @@
           [attr.aria-label]="'words.filterLevels' | translate"
           (ionChange)="onLevelsChange($event)">
           <ion-select-option *ngFor="let lvl of levelOptions" [value]="lvl">
-            {{ ('home.level.' + lvl) | translate }} ({{ count(lvl) }})
+            {{ ('home.level.' + lvl) | translate }}
           </ion-select-option>
         </ion-select>
       </div>
@@ -113,15 +113,8 @@
         </span>
         <span class="word-translation">{{ w.translation }}</span>
       </div>
-      <span class="word-stats">
-        <span class="stat correct" title="Correct">✓ {{ w.correct }}</span>
-        <!-- The "so-so" column is always rendered (even when 0) so the ✓ / ~ /
-             ✗ / % columns stay vertically aligned across rows. It's just made
-             invisible when there's nothing to show. -->
-        <span class="stat medium" [class.empty]="w.medium <= 0" title="So-so">~ {{ w.medium }}</span>
-        <span class="stat wrong" title="Incorrect">✗ {{ w.incorrect }}</span>
-        <span class="stat acc">{{ accuracyPct(w) }}%</span>
-      </span>
+      <!-- Per-word counts and accuracy % are intentionally hidden: the coloured
+           dot on the left already conveys how well the word is known. -->
     </button>
   </div>
 </ion-content>

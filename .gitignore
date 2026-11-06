@@ -1,4 +1,4 @@
-# Specifies intentionally untracked files to ignore when using Git
+﻿# Specifies intentionally untracked files to ignore when using Git
 # http://git-scm.com/docs/gitignore
 
 *~
@@ -77,3 +77,5 @@ scripts/ota-out/
 
 # Generated at build time (version + build date)
 src/build-info.ts
+# Local preview tooling + headless-browser profiles (never committed)
+.tmp-preview/

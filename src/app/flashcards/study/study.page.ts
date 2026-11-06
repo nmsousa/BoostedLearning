@@ -329,6 +329,26 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
   }
 
   /**
+   * While an answer is being SHOWN (feedback phase) the field stays focused so
+   * the keyboard doesn't close, but the answer is final — block any further
+   * typing so the graded text can't be edited. Enter still advances (handled by
+   * keyup.enter → onEnter). We let navigation/modifier keys through so the
+   * field doesn't feel frozen.
+   */
+  onKeydownWhileLocked(event: KeyboardEvent): void {
+    if (this.phase !== 'feedback') return;
+    const allowed = ['Enter', 'Tab', 'Escape', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+    if (allowed.includes(event.key)) return;
+    event.preventDefault();
+  }
+
+  /** Swallow IME / autocorrect / paste insertions during feedback (keydown
+   *  alone doesn't cover soft-keyboard composition). */
+  onBeforeInputWhileLocked(event: Event): void {
+    if (this.phase === 'feedback') event.preventDefault();
+  }
+
+  /**
    * Read the input's LIVE native value into `userAnswer`. ngModel can lag the
    * IME on composed characters, so before checking we pull the real DOM value
    * so "café" isn't read as "caf".
@@ -355,10 +375,14 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
    */
   @HostListener('document:pointerdown', ['$event'])
   keepKeyboardOnOutsideTap(event: PointerEvent): void {
-    // Only guard while the learner is TYPING (question phase). During feedback
-    // the input is readonly and the keyboard is down, and we must let the
-    // Continue tap through normally.
-    if (this.phase !== 'question') return;
+    // The keyboard stays up during question AND feedback (the field keeps
+    // focus; typing is blocked during feedback). Keep it open on taps elsewhere
+    // so it doesn't flicker between a card and its result. The Continue button
+    // tap still works — preventing pointerdown's default doesn't cancel click.
+    const keyboardUp =
+      this.phase === 'question' ||
+      (this.phase === 'feedback' && this.feedbackResult !== 'almost');
+    if (!keyboardUp) return;
 
     const target = event.target as HTMLElement | null;
     if (!target) return;
@@ -647,10 +671,10 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
       }
       this.markCompleted();
       this.phase = 'feedback';
+      // Keep focus so the keyboard stays open (typing is blocked by the
+      // feedback guards). No auto-advance: tap the green Continue to move on.
+      this.focusInput();
       if (this.settings.autoPlayAudio()) this.playWord();
-      // No auto-advance: the user taps the green Continue to move on, at their
-      // own pace — the same interaction as a miss/typo. The input is readonly
-      // during feedback; the keyboard is reopened when the next card loads.
       this.cdr.detectChanges();
       return;
     }
@@ -661,7 +685,8 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
     this.recordAttempt(false);
     this.correctAnswer = validAnswers[0];
     this.phase = 'feedback';
-    // Input is readonly during feedback; the keyboard reopens on the next card.
+    // Keep focus (keyboard stays up; typing blocked) until the user continues.
+    this.focusInput();
     this.markFailedAndRequeue();
   }
 

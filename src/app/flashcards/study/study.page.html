@@ -179,11 +179,12 @@
      (mobile). Holds the input + buttons for the question/feedback phases. -->
 <ion-footer *ngIf="!isLoading && phase !== 'complete' && currentCard" class="study-footer">
   <div class="footer-inner">
-    <!-- The input stays MOUNTED across question + feedback so the keyboard
-         doesn't flicker; it becomes READONLY once an answer is judged (the
-         answer is final — you read the result and tap Continue). The keyboard
-         is explicitly reopened on the next card via focusInput(), so a readonly
-         feedback field no longer strands it closed. -->
+    <!-- The input stays MOUNTED and FOCUSED across question + feedback so the
+         soft keyboard never closes (making it readonly closes the Android
+         keyboard, and re-opening it reliably afterwards isn't possible). Once
+         an answer is judged we LOCK it instead: a (beforeinput)/(keydown) guard
+         swallows further typing so the already-graded answer can't be edited,
+         while focus (and thus the keyboard) stays until you tap Continue. -->
     <ion-item class="answer-input" lines="none" [class.locked]="phase === 'feedback'">
       <!-- Plain prose text field, like Duolingo: autocorrect, suggestions and
            spell-check are LEFT ON so the on-screen keyboard offers glide/swipe
@@ -202,9 +203,10 @@
         type="text"
         enterkeyhint="done"
         autocapitalize="off"
-        [readonly]="phase === 'feedback'"
         [placeholder]="'mode.typeYourAnswer' | translate"
         (keyup.enter)="onEnter()"
+        (keydown)="onKeydownWhileLocked($event)"
+        (beforeinput)="onBeforeInputWhileLocked($event)"
         (compositionstart)="onCompositionStart()"
         (compositionend)="onCompositionEnd()"
         [attr.aria-label]="'mode.typeYourAnswer' | translate">

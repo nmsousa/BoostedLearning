@@ -1203,6 +1203,12 @@ export class FlashcardService {
       next.due instanceof Date ? next.due.toISOString() : new Date(next.due).toISOString();
 
     await this.saveCardProgress(card);
+    // The deduped-cards cache holds SNAPSHOT copies (built with {...card}); it's
+    // keyed by the deck.cards array reference, which rating mutates in place
+    // (same reference) — so without invalidating it, "Your words" / breakdowns
+    // kept showing pre-rating counts until the app was reopened. Drop it so the
+    // next read rebuilds from the live cards.
+    this.invalidateDedupe(deck.id);
     this.decksSignal.update(decks => [...decks]);
   }
 
@@ -1405,32 +1411,31 @@ export class FlashcardService {
   // Knowledge breakdown (home "Your words")
   // ============================================
 
-  /** Consecutive-correct streak needed to count a word as "familiar". */
-  private readonly FAMILIAR_STREAK = 2;
-  /** Consecutive-correct streak needed to count a word as "known". */
-  private readonly KNOWN_STREAK = 3;
-  /** Lifetime accuracy required for "known" (so a lucky recent streak over a
-   *  poor overall record doesn't mark a word as mastered). */
+  /** Lifetime accuracy (correct / seen) at/above which a word is "known". */
   private readonly KNOWN_MIN_ACCURACY = 0.7;
-  /** Lifetime accuracy required for "familiar". */
+  /** Lifetime accuracy at/above which a word is "familiar". */
   private readonly FAMILIAR_MIN_ACCURACY = 0.5;
 
   /**
-   * Map a card to its knowledge bucket from BOTH the current streak and the
-   * lifetime accuracy. Requiring accuracy prevents the confusing case where a
-   * word with a bad record (e.g. 3 right / 4 wrong = 43%) shows as "known"
-   * just because the last few answers were correct. Single source of truth
-   * shared by the home breakdown and the Your Words list.
+   * Map a card to its knowledge bucket purely from its lifetime ACCURACY
+   * (correct / times seen) — see docs/LEVEL-ALGORITHM.md §10. Simple and
+   * language-agnostic:
+   *   - accuracy  > 70%            → known    (green)
+   *   - 50% ≤ accuracy ≤ 70%       → familiar (yellow)
+   *   - accuracy  < 50%            → learning (red)   (missed more than half)
+   * A never-answered word (no correct/incorrect yet) is "learning" — it still
+   * needs practice. Single source of truth shared by the home breakdown and the
+   * Your Words list. (Replaced an earlier streak-based rule that could call a
+   * word with a poor overall record "known" after a few lucky answers.)
    */
   private levelForCard(card: Flashcard): KnowledgeLevel {
     const correct = card.correctCount ?? 0;
     const incorrect = card.incorrectCount ?? 0;
     const seen = correct + incorrect;
-    const accuracy = seen > 0 ? correct / seen : 1; // unseen-by-stats: don't penalize
-    const streak = card.streak ?? 0;
-
-    if (streak >= this.KNOWN_STREAK && accuracy >= this.KNOWN_MIN_ACCURACY) return 'known';
-    if (streak >= this.FAMILIAR_STREAK && accuracy >= this.FAMILIAR_MIN_ACCURACY) return 'familiar';
+    if (seen === 0) return 'learning';
+    const accuracy = correct / seen;
+    if (accuracy > this.KNOWN_MIN_ACCURACY) return 'known';
+    if (accuracy >= this.FAMILIAR_MIN_ACCURACY) return 'familiar';
     return 'learning';
   }
 

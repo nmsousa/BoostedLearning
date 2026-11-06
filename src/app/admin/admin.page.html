@@ -49,4 +49,12 @@
   </ul>
   <p class="admin-note">{{ typoAmber }}</p>
   <p class="admin-note">{{ previousMistakeNote }}</p>
+
+  <h2>Word knowledge colour (Your words)</h2>
+  <p>{{ colourIntro }}</p>
+  <table class="admin-table">
+    <tbody>
+      <tr *ngFor="let c of colourRows"><td class="stars-cell">{{ c.dot }}</td><td>{{ c.rule }}</td></tr>
+    </tbody>
+  </table>
 </ion-content>

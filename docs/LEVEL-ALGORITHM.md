@@ -351,6 +351,30 @@ and comes around again, the Write screen shows a small amber **"Previous
 mistake"** badge above the prompt (Duolingo-style), so they know this one bit
 them before.
 
+## 10. Word knowledge colour (Your words / home breakdown)
+
+Each studied word shows a coloured dot — red / yellow / green — for how well
+the learner knows it. It is computed purely from the word's **lifetime
+accuracy** (`correct / timesSeen`) by `levelForCard`:
+
+| Colour | Bucket | Rule |
+|--------|--------|------|
+| 🟢 green  | known    | accuracy **> 70%** |
+| 🟡 yellow | familiar | **50% ≤ accuracy ≤ 70%** |
+| 🔴 red    | learning | accuracy **< 50%** (missed more than half), or never answered |
+
+Notes:
+- This is accuracy-only and language-agnostic (no streak requirement). It
+  replaced an earlier streak-based rule that could mark a word "known" after a
+  few lucky answers despite a poor overall record.
+- The **Your words** list shows only the dot — the per-word correct/incorrect/
+  so-so counts and the accuracy % are hidden to keep the list clean.
+- The list refreshes every time the page is shown, so a word's colour updates
+  right after a session (no app restart needed).
+- Flashcards' per-level pie ring uses a SEPARATE two-way rule
+  (`flipKnowledgeBucket`, §6b) based on the latest flip self-rating, not this
+  accuracy rule.
+
 ---
 
 ## Legacy fallback (pre-rounds records)

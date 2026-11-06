@@ -78,6 +78,15 @@ export class AdminPage {
   readonly previousMistakeNote =
     '"Previous mistake" badge: shown on Write when a word you got wrong earlier in the session comes back around.';
 
+  // ── Word knowledge colour (Your words / home breakdown) ───────────────────
+  readonly colourIntro =
+    'Each studied word shows a red / yellow / green dot for how well you know it, from its lifetime accuracy (correct ÷ times seen). Your words shows only the dot — counts and % are hidden — and refreshes after each session.';
+  readonly colourRows: { dot: string; rule: string }[] = [
+    { dot: '🟢 green', rule: 'accuracy > 70% (known)' },
+    { dot: '🟡 yellow', rule: '50%–70% accuracy (familiar)' },
+    { dot: '🔴 red', rule: 'accuracy < 50% — missed more than half — or never answered (learning)' },
+  ];
+
   close(): void {
     this.router.navigate(['/settings']);
   }
