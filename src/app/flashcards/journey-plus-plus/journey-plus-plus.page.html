@@ -108,8 +108,9 @@
   <!-- Jump back to the chapter in progress when it's scrolled out of view.
        slot="fixed" pins it to the content viewport so it does NOT scroll. -->
   <button type="button" slot="fixed" class="pp-jump" *ngIf="!isLoading && showJumpFab"
-    (click)="jumpToCurrent()" [attr.aria-label]="'journeyPlus.goToCurrent' | translate">
-    <ion-icon name="locate" aria-hidden="true"></ion-icon>
+    (pointerdown)="onJumpPointerDown($event)" (pointerup)="onJumpPointerUp($event)" (click)="onJumpClick()"
+    [attr.aria-label]="'journeyPlus.goToCurrent' | translate">
+    <ion-icon [name]="jumpDirection === 'up' ? 'chevron-up' : 'chevron-down'" aria-hidden="true"></ion-icon>
   </button>
 </ion-content>
 

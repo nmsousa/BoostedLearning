@@ -133,6 +133,9 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   ctaDisabled = false;
   /** True when the current chapter is scrolled well out of view. */
   showJumpFab = false;
+  /** Whether the current node sits ABOVE ('up') or BELOW ('down') the current
+   *  viewport — drives the FAB's arrow direction. */
+  jumpDirection: 'up' | 'down' = 'down';
 
   availableLanguages: LanguageOption[] = [];
 
@@ -392,7 +395,25 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ── Scrolling ─────────────────────────────────────────────────────────────
-  /** Bring the active node of the current chapter to ~40% of the viewport. */
+  /** Compute the target scrollTop that brings the current node to ~40% of the
+   *  viewport (or the chapter top near the top of the viewport). Returns null
+   *  if nothing to scroll to. */
+  private currentScrollTarget(scrollEl: HTMLElement): number | null {
+    const active = document.querySelector(
+      `#jpp-chapter-${this.currentIndex} .state-active`,
+    ) as HTMLElement | null;
+    const chapterEl = document.getElementById(`jpp-chapter-${this.currentIndex}`);
+    const el = active ?? chapterEl;
+    if (!el) return null;
+    const top = el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop;
+    return Math.max(0, active ? top - scrollEl.clientHeight * 0.4 : top - 70);
+  }
+
+  /** Bring the active node of the current chapter to ~40% of the viewport.
+   *  Works on the FIRST tap even mid-fling: we hard-stop any momentum scroll by
+   *  writing scrollTop (with smooth behaviour temporarily disabled), then run
+   *  our own animation and re-assert the target once more in case the fling
+   *  fought the first attempt. */
   async scrollToCurrent(): Promise<void> {
     const content = this.contentEl?.nativeElement;
     if (!content) return;
@@ -404,41 +425,101 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
     }
     const scrollEl = await content.getScrollElement();
 
-    // A touch-flick leaves the scroll container still decelerating (momentum).
-    // On Android a programmatic scrollToPoint issued during that momentum is
-    // swallowed — the first tap only halts the fling, so you had to tap twice.
-    // Writing scrollTop to its own current value cancels the native momentum
-    // synchronously; the animated scroll below then lands on the first tap.
-    scrollEl.scrollTop = scrollEl.scrollTop; // eslint-disable-line no-self-assign
+    // Hard-stop any in-flight momentum: temporarily force instant scrolling and
+    // pin scrollTop to its current value. On Android WebView a running fling
+    // otherwise swallows the first programmatic scroll (the reported "first tap
+    // only stops the scroll" bug).
+    const prevBehavior = scrollEl.style.scrollBehavior;
+    scrollEl.style.scrollBehavior = 'auto';
+    scrollEl.scrollTop = scrollEl.scrollTop + 0; // commit a write to kill momentum
 
-    const active = document.querySelector(
-      `#jpp-chapter-${this.currentIndex} .state-active`,
-    ) as HTMLElement | null;
-    const chapterEl = document.getElementById(`jpp-chapter-${this.currentIndex}`);
-    const el = active ?? chapterEl;
-    if (!el) { void content.scrollToTop(400); return; }
-    const top = el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop;
-    const target = active ? top - scrollEl.clientHeight * 0.4 : top - 70;
-    // Defer one frame so the momentum-cancel above is committed before we
-    // start the animated scroll (otherwise the cancel can clobber it).
-    requestAnimationFrame(() => void content.scrollToPoint(0, Math.max(0, target), 500));
+    const target = this.currentScrollTarget(scrollEl);
+    if (target === null) { scrollEl.style.scrollBehavior = prevBehavior; void content.scrollToTop(400); return; }
+
+    // Animate to the target. Recompute on the next frame (layout is now stable
+    // after the momentum stop) and issue the real animated scroll. Then, once
+    // the animation window elapses, snap-correct if a late fling left us short.
+    requestAnimationFrame(() => {
+      const t2 = this.currentScrollTarget(scrollEl) ?? target;
+      void content.scrollToPoint(0, t2, 450);
+      setTimeout(() => {
+        scrollEl.style.scrollBehavior = prevBehavior;
+        const t3 = this.currentScrollTarget(scrollEl);
+        if (t3 !== null && Math.abs(scrollEl.scrollTop - t3) > 24) {
+          scrollEl.scrollTop = t3; // instant correction if the animation fell short
+        }
+      }, 520);
+    });
   }
 
-  jumpToCurrent(): void { void this.scrollToCurrent(); }
+  // The FAB can be tapped while a momentum fling is still running. On Android
+  // WebView the first touch that lands on the button is consumed to stop the
+  // fling, and the synthesized `click` is often suppressed — which is why a
+  // single tap "only stopped the scrolling" and you had to tap again. We drive
+  // the jump from pointer events instead: pointerdown kills the momentum
+  // immediately; pointerup performs the jump (it fires even when click is
+  // swallowed). `click` is a fallback for non-pointer (keyboard/a11y) activation
+  // and is de-duplicated against a just-handled pointerup.
+  private jumpHandledAt = 0;
 
-  /** Show the jump FAB when the current chapter is off-screen. */
+  onJumpPointerDown(ev: Event): void {
+    ev.preventDefault(); // don't let the press start a drag/scroll gesture
+    void this.stopMomentum();
+  }
+
+  onJumpPointerUp(ev: Event): void {
+    ev.preventDefault();
+    this.jumpHandledAt = Date.now();
+    void this.scrollToCurrent();
+  }
+
+  onJumpClick(): void {
+    // Ignore the click that follows a pointerup we already handled.
+    if (Date.now() - this.jumpHandledAt < 700) return;
+    void this.scrollToCurrent();
+  }
+
+  /** Halt any in-flight momentum scroll immediately (instant scroll write). */
+  async stopMomentum(): Promise<void> {
+    const content = this.contentEl?.nativeElement;
+    if (!content) return;
+    const scrollEl = await content.getScrollElement();
+    const prev = scrollEl.style.scrollBehavior;
+    scrollEl.style.scrollBehavior = 'auto';
+    scrollEl.scrollTop = scrollEl.scrollTop + 0;
+    scrollEl.style.scrollBehavior = prev;
+  }
+
+  /** Show the jump FAB when the current chapter is off-screen, and point its
+   *  arrow toward the current node (up if it's above us, down if below). */
   onContentScroll(): void {
     if (this.isLoading || this.currentIndex < 0) return;
     const el = document.getElementById(`jpp-chapter-${this.currentIndex}`);
-    if (!el) {
-      if (!this.showJumpFab) { this.showJumpFab = true; this.cdr.detectChanges(); }
+    const vh = window.innerHeight;
+
+    // Prefer the active node's position; fall back to the chapter block.
+    const active = document.querySelector(
+      `#jpp-chapter-${this.currentIndex} .state-active`,
+    ) as HTMLElement | null;
+    const ref = active ?? el;
+
+    if (!ref) {
+      // Chapter not rendered yet → it's further down the list.
+      if (!this.showJumpFab || this.jumpDirection !== 'down') {
+        this.showJumpFab = true; this.jumpDirection = 'down'; this.cdr.detectChanges();
+      }
       return;
     }
-    const box = el.getBoundingClientRect();
-    const vh = window.innerHeight;
-    const offscreen = box.bottom < 90 || box.top > vh - 90;
-    if (offscreen !== this.showJumpFab) {
+
+    const box = ref.getBoundingClientRect();
+    const above = box.bottom < 90;          // current node is above the viewport
+    const below = box.top > vh - 90;        // current node is below the viewport
+    const offscreen = above || below;
+    const dir: 'up' | 'down' = above ? 'up' : 'down';
+
+    if (offscreen !== this.showJumpFab || (offscreen && dir !== this.jumpDirection)) {
       this.showJumpFab = offscreen;
+      this.jumpDirection = dir;
       this.cdr.detectChanges();
     }
   }

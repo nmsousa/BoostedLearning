@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.22',
+    notes: [
+      'Journey++: the "go to current" button now jumps on the first tap even while the page is still scrolling, and its arrow points up or down depending on where the current node is.',
+    ],
+  },
+  {
     version: '1.3.21',
     notes: [
       'Blanks (fill-in-the-blank) now works for Dutch too — short sentences are built from your Dutch words, so you can test the mode. It\'s on the Home screen when Dutch is your learning language.',
