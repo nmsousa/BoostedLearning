@@ -803,10 +803,16 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
     this.completedIds.clear();
     this.userAnswer = '';
     this.submittedAnswer = '';
+    this.nearMiss = 'none';
     this.roundInterstitial = false;
     this.phase = 'question';
     this.cdr.detectChanges();
-    this.focusInput();
+    // The input only exists once phase==='question' re-adds the footer, and the
+    // @ViewChild reference updates AFTER this change-detection pass (not
+    // synchronously). Focusing immediately grabbed a stale/undefined input, so
+    // the keyboard never opened on the next round. Defer to the next tick so
+    // the freshly-rendered input is queried, then focus + show the keyboard.
+    setTimeout(() => this.focusInput(), 0);
   }
 
   /** True when the current round has no answered/typed progress to lose. */
