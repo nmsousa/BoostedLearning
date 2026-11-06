@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.19',
+    notes: [
+      'Fixed the phone back gesture re-opening an exercise after you finished it — back now returns to the previous screen properly.',
+    ],
+  },
+  {
     version: '1.3.18',
     notes: [
       'Your words: tap the speaker on a row to hear the word (tap elsewhere still opens its options).',
