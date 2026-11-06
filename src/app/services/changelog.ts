@@ -21,6 +21,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.17',
+    notes: [
+      'Write mode: the keyboard now stays open after you answer (you just can\'t edit a graded answer until you continue).',
+      'Your words: the list refreshes right after a session, shows only the colour dot (counts and % hidden), and the colour now reflects accuracy — green above 70%, yellow 50–70%, red below 50%.',
+      'Removed the round counter (1/5…) from exercise headers — the level ring already shows round progress.',
+      'Fixed the swipe-back gesture re-opening an exercise after you finished it.',
+    ],
+  },
+  {
     version: '1.3.16',
     notes: [
       'Journey/Journey+/Journey++: fixed the back gesture — leaving a map after playing a few nodes no longer walks back through old exercises; one back press leaves the map.',
