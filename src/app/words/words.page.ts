@@ -19,6 +19,7 @@ import { FlashcardService, StudiedWord, WordPriority } from '../services/flashca
 import { SettingsService } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { AddWordService } from '../services/add-word.service';
+import { AudioService } from '../services/audio.service';
 import { KnowledgeLevel } from '../../core/knowledge-level';
 
 type Filter = 'all' | KnowledgeLevel;
@@ -39,6 +40,7 @@ export class WordsPage implements OnInit, ViewWillEnter {
   private cdr = inject(ChangeDetectorRef);
   private actionSheet = inject(ActionSheetController);
   private addWordService = inject(AddWordService);
+  private audio = inject(AudioService);
 
   allWords: StudiedWord[] = [];
   /** True until the first load finishes, so we show a skeleton (not the empty
@@ -202,6 +204,13 @@ export class WordsPage implements OnInit, ViewWillEnter {
   /** Accuracy % for display (0 when never seen correctly/incorrectly). */
   accuracyPct(w: StudiedWord): number {
     return Math.round(w.accuracy * 100);
+  }
+
+  /** Play a word's pronunciation (recorded audio if available, else TTS).
+   *  Stops the tap from also opening the priority sheet. */
+  playWord(w: StudiedWord, event: Event): void {
+    event.stopPropagation();
+    void this.audio.playWord(w.text, undefined, this.settings.learningLanguage());
   }
 
   /** Open the priority action sheet for a word (boost / normal / hide). */

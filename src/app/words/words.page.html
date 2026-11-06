@@ -101,8 +101,13 @@
        inflating every row to ~144px no matter the custom-property overrides.
        A div row with an explicit height is fully under our control. -->
   <div class="word-list" *ngIf="!isLoading && words.length > 0">
-    <button type="button" class="word-row" *ngFor="let w of words; trackBy: trackByWord"
-      [class.hidden-word]="w.priority === 'hide'" (click)="openPriority(w)">
+    <!-- A DIV row (not a <button>) so the per-row speaker can be a real nested
+         button. The row itself is clickable (opens the priority sheet) with
+         keyboard support for a11y. -->
+    <div class="word-row" *ngFor="let w of words; trackBy: trackByWord"
+      role="button" tabindex="0"
+      [class.hidden-word]="w.priority === 'hide'"
+      (click)="openPriority(w)" (keydown.enter)="openPriority(w)" (keydown.space)="openPriority(w)">
       <span class="word-dot" [class.learning]="w.level === 'learning'"
         [class.familiar]="w.level === 'familiar'" [class.known]="w.level === 'known'"></span>
       <div class="word-text">
@@ -113,8 +118,13 @@
         </span>
         <span class="word-translation">{{ w.translation }}</span>
       </div>
-      <!-- Per-word counts and accuracy % are intentionally hidden: the coloured
-           dot on the left already conveys how well the word is known. -->
-    </button>
+      <!-- Per-word counts and accuracy % are hidden (the dot conveys how well
+           the word is known). A tap on the speaker plays the word; a tap
+           anywhere else on the row opens the priority sheet. -->
+      <button type="button" class="word-audio" (click)="playWord(w, $event)"
+        [attr.aria-label]="'mode.playPronunciation' | translate">
+        <ion-icon name="volume-high-outline"></ion-icon>
+      </button>
+    </div>
   </div>
 </ion-content>
