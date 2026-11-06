@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.27',
+    notes: [
+      'The "lose progress?" prompt on back now also appears in Quiz, Match and Builder (not just Write), when you\'re mid-exercise: back shows it, back again closes it and leaves.',
+    ],
+  },
+  {
     version: '1.3.26',
     notes: [
       'Write mode back flow fixed properly: mid-exercise, back shows the "lose progress?" prompt on the exercise (no longer jumping to the list first). Back again closes it and returns to the list; back again goes Home.',

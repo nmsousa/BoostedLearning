@@ -14,16 +14,18 @@
  * @module app/flashcards/builder
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ActionSheetController, NavController } from '@ionic/angular';
+import { ActionSheetController, NavController, ViewWillEnter, ViewWillLeave } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AudioService } from '../../services/audio.service';
 import { SettingsService } from '../../services/settings.service';
 import { AddWordService } from '../../services/add-word.service';
 import { FlashcardService } from '../../services/flashcard.service';
+import { BackInterceptorService } from '../../services/back-interceptor.service';
+import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../journey/journey-back';
 import { buildTokens, generatePhrases, type GeneratedPhrase } from '../../../core/phrase-builder/phrase-builder';
 
@@ -44,7 +46,7 @@ type Stage =
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BuilderPage implements OnInit {
+export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave {
   /** The chosen-chips row, used to hit-test the pointer against chips on drag. */
   @ViewChild('slotsRow') private slotsRow?: ElementRef<HTMLElement>;
 
@@ -59,6 +61,28 @@ export class BuilderPage implements OnInit {
   private flashcards = inject(FlashcardService);
   private actionSheet = inject(ActionSheetController);
   private cdr = inject(ChangeDetectorRef);
+  private backInterceptor = inject(BackInterceptorService);
+  private exitConfirm = inject(ExitConfirmService);
+
+  /** Hardware/gesture back: if the user is inside a group/phrase stage (not on
+   *  the map), confirm before leaving; otherwise leave straight away. */
+  private readonly onHardwareBack: () => Promise<boolean> =
+    () => this.exitConfirm.request(this.hasProgress, () => this.leave());
+
+  ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
+  ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
+
+  /** True when the user is mid-activity (a group or phrase stage is open). On
+   *  the map there's nothing to lose. */
+  private get hasProgress(): boolean {
+    return this.stage.kind !== 'map';
+  }
+
+  /** Leave the Builder (shared by the X and the confirm's End). */
+  private leave(): void {
+    if (this.journeyMode) { this.navCtrl.navigateBack(this.journeyBack); return; }
+    this.router.navigate(['/home']);
+  }
 
   // ── Journey Builder node: generated phrases from a skill's words ───────────
   /** True when opened as a Journey node (?mode=journey-builder&level=N). */
@@ -184,6 +208,8 @@ export class BuilderPage implements OnInit {
    * stuck on whatever stale/blank state it was left in.
    */
   async ionViewWillEnter(): Promise<void> {
+    // Claim hardware/gesture back while the Builder is on screen.
+    this.backInterceptor.register(this.onHardwareBack);
     // ngOnInit already ran setup for a fresh instance; only re-run on reuse.
     if (this.didSetup) await this.setup();
   }
@@ -562,11 +588,10 @@ export class BuilderPage implements OnInit {
     this.cdr.detectChanges();
   }
 
+  /** Header X: confirm if mid-activity, else leave. `leave()` handles the
+   *  journey-vs-standalone destination. */
   close(): void {
-    // As a Journey node, the X goes BACK to the map (pops the stack, no
-    // duplicate map page); standalone goes home.
-    if (this.journeyMode) { this.navCtrl.navigateBack(this.journeyBack); return; }
-    this.router.navigate(['/home']);
+    void this.exitConfirm.request(this.hasProgress, () => this.leave());
   }
 
   /** "n / total" progress label for the Journey Builder node. */

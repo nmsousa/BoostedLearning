@@ -16,6 +16,7 @@ import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
+import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../journey/journey-back';
 
 type Side = 'left' | 'right';
@@ -45,13 +46,22 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   private i18n = inject(I18nAngularService);
   private addWordService = inject(AddWordService);
   private backInterceptor = inject(BackInterceptorService);
+  private exitConfirm = inject(ExitConfirmService);
 
-  /** Hardware/gesture back → same as the header X: return to the level list /
-   *  Journey map. Registered on enter, cleared on leave. Stable ref. */
-  private readonly onHardwareBack: () => boolean = () => { this.close(); return true; };
+  /** Hardware/gesture back: confirm if there's progress to lose, else leave. */
+  private readonly onHardwareBack: () => Promise<boolean> =
+    () => this.exitConfirm.request(this.hasProgress, () => this.leave());
 
   ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
-  ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); }
+  ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
+
+  /** True when there are matched pairs or mistakes worth confirming. */
+  private get hasProgress(): boolean {
+    return this.phase !== 'complete' && (this.solvedPairs > 0 || this.mistakes > 0);
+  }
+
+  /** Navigate away (shared by the X button and the confirm's End). */
+  private leave(): void { this.navCtrl.navigateBack(this.backUrl); }
 
   t(key: string, params?: Record<string, string | number>): string {
     return this.i18n.t(key, params);
@@ -203,6 +213,7 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   ngOnDestroy() {
     this.stopTimer();
     this.backInterceptor.clear(this.onHardwareBack);
+    this.exitConfirm.reset();
   }
 
   /** Start the count-up timer, ticking once a second. */
@@ -537,7 +548,8 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     this.navCtrl.navigateBack(this.backUrl);
   }
 
+  /** Header X: confirm if there's progress, else leave. */
   close() {
-    this.navCtrl.navigateBack(this.backUrl);
+    void this.exitConfirm.request(this.hasProgress, () => this.leave());
   }
 }

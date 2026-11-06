@@ -18,6 +18,7 @@ import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
+import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../journey/journey-back';
 
 type QuizPhase = 'play' | 'complete';
@@ -49,14 +50,25 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
   private i18n = inject(I18nAngularService);
   private addWordService = inject(AddWordService);
   private backInterceptor = inject(BackInterceptorService);
+  private exitConfirm = inject(ExitConfirmService);
 
-  /** Hardware/gesture back → same as the header X: return to the level list /
-   *  Journey map. Registered on enter, cleared on leave. Stable ref. */
-  private readonly onHardwareBack: () => boolean = () => { this.close(); return true; };
+  /** Hardware/gesture back: if there's progress to lose, show the confirm (and
+   *  claim the press so the page isn't popped behind it); otherwise leave. */
+  private readonly onHardwareBack: () => Promise<boolean> =
+    () => this.exitConfirm.request(this.hasProgress, () => this.leave());
 
-  ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); }
+  ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
   ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
-  ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); }
+  ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
+
+  /** True when there is quiz progress worth confirming before leaving. */
+  private get hasProgress(): boolean {
+    return this.phase !== 'complete'
+      && (this.currentIndex > 0 || this.correctCount > 0 || this.mistakes > 0);
+  }
+
+  /** Navigate away (shared by the X button and the confirm's End). */
+  private leave(): void { this.navCtrl.navigateBack(this.backUrl); }
 
   t(key: string, params?: Record<string, string | number>): string {
     return this.i18n.t(key, params);
@@ -411,7 +423,8 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
     this.navCtrl.navigateBack(this.backUrl);
   }
 
+  /** Header X: same confirm-if-progress behaviour as hardware/gesture back. */
   close() {
-    this.navCtrl.navigateBack(this.backUrl);
+    void this.exitConfirm.request(this.hasProgress, () => this.leave());
   }
 }

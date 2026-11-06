@@ -167,10 +167,12 @@ export class AppComponent {
       'ion-modal, ion-popover, ion-action-sheet, ion-alert, ion-select-popover, ion-picker, ion-toast';
     const open = Array.from(document.querySelectorAll<HTMLElement>(selector))
       .filter(el => !el.classList.contains('overlay-hidden'))
-      // The Write "lose progress?" confirm (study-end-confirm) is owned by the
-      // page's back handler: back on it should close AND leave to the list, not
-      // just close here. Skip it so the press flows to backInterceptor.
-      .filter(el => !el.classList.contains('study-end-confirm'));
+      // The "lose progress?" exit confirm is owned by the active page's back
+      // handler: back on it should close AND leave, not just close here. Skip
+      // it so the press flows to backInterceptor.runActive(). Write uses its
+      // own marker (study-end-confirm); Quiz/Match/Builder use the shared
+      // ExitConfirmService marker (exit-confirm).
+      .filter(el => !el.classList.contains('exit-confirm') && !el.classList.contains('study-end-confirm'));
     if (open.length === 0) return false;
 
     let top = open[0];
