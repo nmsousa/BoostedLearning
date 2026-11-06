@@ -133,25 +133,39 @@ Flashcards list: a single flip pass can never build a streak, so a level the
 user had just aced (mostly "I know") showed up **all red** ("24 a aprender").
 That looked broken.
 
-Flashcards flip has its own direct per-card self-rating — **don't know /
-so-so / know** — stored as `incorrectCount` / `mediumCount` / `correctCount`.
-The breakdown classifies from those counts (`flipKnowledgeBucket`), reflecting
-what the user actually said:
+Flashcards flip has its own direct per-card self-rating — **don't know / know
+it** (a legacy "so-so" is still tolerated but no longer offered). The breakdown
+classifies from the per-card counters (`flipKnowledgeBucket`), and the **latest
+rating decides the bucket** — `rateFlashcard` clears the opposite counter so a
+word you re-rate flips colour:
 
 | Bucket | Colour | Rule |
 |--------|--------|------|
-| **known**    | green  | said "know" ≥ 1, never "don't know", and `know ≥ so-so`. |
-| **learning** | red    | never said "know", **or** "don't know" outweighs `know + so-so`. |
-| **familiar** | yellow | anything else studied (mixed / mostly "so-so"). |
+| **known**    | green | `correctCount > 0` and `incorrectCount === 0` (latest rating was "know it"). |
+| **learning** | red   | otherwise (studied, but the latest rating was "don't know"). |
 
-So a pass of 9 "know" / 7 "so-so" / 8 "don't know" reads ≈ 9 green · 7 yellow ·
-8 red — matching the session. The pie ring's proportions are over the
-**practised** words only (untouched words don't colour the ring).
+Because a "know it" rating resets `incorrectCount` to 0 (and a "don't know"
+resets `correctCount`), re-studying all of a level's red words as "know it"
+turns the whole level green — the counters are a snapshot of CURRENT knowledge,
+not a cumulative history. (FSRS keeps its own full scheduling history
+separately; this only drives the red/green display.) `familiar`/yellow is no
+longer produced. The pie ring's proportions are over the **practised** words
+only (untouched words don't colour the ring).
 
-> History: an even earlier version coloured the whole level *border* green/
-> yellow/red from the mastery buckets. It was removed because one pass left
-> everything "learning". The current pie+legend uses the flip-rating rule above
-> instead, which does not have that problem.
+> History: an even earlier version coloured the whole level *border* from the
+> long-term mastery buckets; one pass left everything "learning", so it was
+> replaced by the flip-rating pie+legend. A later version also accumulated the
+> counters (never resetting), which meant a word marked "don't know" once could
+> never turn green — fixed by the latest-rating-wins reset above.
+
+### Practice the words I don't know
+
+The Flashcards list shows a prominent **"Practice what I don't know"** button
+(flip mode only) whenever the deck has at least one red/`learning` word. It
+launches a flip session (`/practice/flip/:id?mode=unknowns`) seeded with up to
+**20** of the deck's red words (weakest first, hidden words excluded, de-duped
+by prompt). It's scored under the normal `flip` namespace — no separate
+progress — so rating a word "know it" there turns it green in its own level.
 
 Other modes (Write / Quiz / Match) keep the round ring + stars and the
 "current level" highlight; those already convey performance.

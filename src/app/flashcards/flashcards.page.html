@@ -97,6 +97,16 @@
 
         <!-- Levels list (expandable). Quick study moved to the "⋮" menu. -->
         <ion-card-content *ngIf="isDeckExpanded(deck.id)" class="levels-content">
+          <!-- Flashcards only: a prominent shortcut to drill just the words the
+               learner currently doesn't know (red). Shown only when there is at
+               least one such word. Rating one "know it" there turns it green. -->
+          <button type="button" class="practice-unknowns" *ngIf="isFlipMode && unknownCount(deck.id) > 0"
+            (click)="startUnknowns(deck); $event.stopPropagation()">
+            <ion-icon name="flash" aria-hidden="true"></ion-icon>
+            <span class="pu-label">{{ 'mode.practiceUnknowns' | translate }}</span>
+            <span class="pu-count">{{ unknownCount(deck.id) }}</span>
+          </button>
+
           <h4 class="levels-title">{{ 'practice.levelsTitle' | translate }}</h4>
 
           <div class="levels-list">

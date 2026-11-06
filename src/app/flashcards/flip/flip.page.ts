@@ -106,7 +106,12 @@ export class FlipPage implements OnInit {
 
   cards: Flashcard[] = [];
   /** Skill/title of the current level (for the header), if any. */
-  get levelTitle(): string { return this.cards[0]?.skill ?? ''; }
+  /** True for the "practice the words I don't know" session (?mode=unknowns). */
+  unknownsMode = false;
+  get levelTitle(): string {
+    if (this.unknownsMode) return this.i18n.t('mode.practiceUnknownsTitle');
+    return this.cards[0]?.skill ?? '';
+  }
   currentIndex = 0;
   isFlipped = false;
   phase: FlipPhase = 'card';
@@ -136,10 +141,16 @@ export class FlipPage implements OnInit {
     const deckId = this.route.snapshot.paramMap.get('id');
     const levelParam = this.route.snapshot.queryParamMap.get('level');
     this.levelNumber = levelParam ? parseInt(levelParam, 10) : 0;
+    const modeParam = this.route.snapshot.queryParamMap.get('mode');
     // Journey Flashcards node: score under 'journey-flip', return to the map.
-    if (this.route.snapshot.queryParamMap.get('mode') === 'journey-flip') {
+    if (modeParam === 'journey-flip') {
       this.mode = 'journey-flip';
       this.backUrl = journeyBackUrl(this.route.snapshot.queryParamMap);
+    } else if (modeParam === 'unknowns') {
+      // "Practice the words I don't know": a free session over the deck's red
+      // cards. Scored under the normal 'flip' namespace so a "know it" here
+      // flips the word green in its level (no separate progress).
+      this.unknownsMode = true;
     }
 
     if (!deckId) {
@@ -153,8 +164,10 @@ export class FlipPage implements OnInit {
       return;
     }
 
-    // Pull cards for this level if given, else an urgency-ordered queue.
-    if (this.levelNumber > 0) {
+    // Pull cards: unknowns session, a specific level, or an urgency queue.
+    if (this.unknownsMode) {
+      this.cards = this.flashcardService.getUnknownCards(deckId, 20);
+    } else if (this.levelNumber > 0) {
       const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
       if (!isUnlocked) {
         this.router.navigate([this.backUrl]);

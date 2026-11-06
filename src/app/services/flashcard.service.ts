@@ -1178,12 +1178,21 @@ export class FlashcardService {
 
     card.fsrs = JSON.stringify(next);
 
-    // Keep the lightweight stats roughly in sync for display elsewhere.
+    // Keep the lightweight display stats in sync. The Flashcards breakdown is a
+    // snapshot of the learner's CURRENT knowledge, so the LATEST rating decides
+    // the bucket: rating a card "know it" clears its earlier "don't know" (and
+    // vice-versa). Without this reset the counters only ever accumulated, so a
+    // card marked "don't know" once could never turn green no matter how many
+    // times it was later known. (FSRS scheduling keeps its own full history via
+    // the engine above — this only affects the red/green display buckets.)
     if (rating === 'easy') {
       card.correctCount += 1;
+      card.incorrectCount = 0;   // latest rating is "know it" → clear red
+      card.mediumCount = 0;
       card.streak += 1;
     } else if (rating === 'hard') {
       card.incorrectCount += 1;
+      card.correctCount = 0;     // latest rating is "don't know" → clear green
       card.streak = 0;
     } else {
       // 'medium' = so-so: track separately; doesn't extend or reset the streak.
@@ -1481,6 +1490,44 @@ export class FlashcardService {
   /** Whether a card has been practiced at least once (any mode). */
   private hasBeenStudied(card: Flashcard): boolean {
     return card.lastSeen !== null || card.correctCount > 0 || card.incorrectCount > 0;
+  }
+
+  /**
+   * How many of the deck's words the learner currently does NOT know (red /
+   * 'learning' in the Flashcards breakdown). Drives the "practice unknowns"
+   * button's visibility. Counts live cards, skips hidden ones, and de-dupes by
+   * prompt so a word with several forms counts once.
+   */
+  countUnknownCards(deckId: string): number {
+    return this.getUnknownCards(deckId, Number.MAX_SAFE_INTEGER).length;
+  }
+
+  /**
+   * Up to `max` words the learner marked "don't know" (red / 'learning'),
+   * for the "practice the words I don't know" Flashcards session. Rating one
+   * "know it" there flips it green in its level (rateFlashcard clears the red).
+   * Hidden words are excluded; de-duped by prompt; weakest-first ordering.
+   */
+  getUnknownCards(deckId: string, max = 20): Flashcard[] {
+    const deck = this.getDeck(deckId);
+    if (!deck) return [];
+    const seen = new Set<string>();
+    const unknown: Flashcard[] = [];
+    for (const card of this.excludeHiddenCards(deck.cards)) {
+      if (!this.hasBeenStudied(card)) continue;
+      if (this.flipKnowledgeBucket(card) !== 'learning') continue;
+      const key = this.normalizeKey(card.text);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unknown.push(card);
+    }
+    // Weakest first: most "don't know"s, then most recently seen.
+    unknown.sort((a, b) => {
+      const d = (b.incorrectCount ?? 0) - (a.incorrectCount ?? 0);
+      if (d !== 0) return d;
+      return (b.lastSeen ?? '').localeCompare(a.lastSeen ?? '');
+    });
+    return unknown.slice(0, Math.max(0, max));
   }
 
   /**

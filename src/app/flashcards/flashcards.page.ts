@@ -284,6 +284,7 @@ export class FlashcardsPage implements OnInit {
     // Recompute which level is "current" / its knowledge breakdown on every load.
     this.currentLevelCache.clear();
     this.knowledgeCache.clear();
+    this.unknownCountCache.clear();
     // Keep the header flag picker's options in sync with available decks.
     this.refreshLanguages();
 
@@ -383,6 +384,21 @@ export class FlashcardsPage implements OnInit {
       this.knowledgeCache.set(key, this.flashcardService.getLevelKnowledge(deckId, level.levelNumber));
     }
     return this.knowledgeCache.get(key)!;
+  }
+
+  // Memoised count of the deck's "don't know" words, for the practice-unknowns
+  // button (OnPush template calls it freely). Cleared on every reload.
+  private unknownCountCache = new Map<string, number>();
+  unknownCount(deckId: string): number {
+    if (!this.unknownCountCache.has(deckId)) {
+      this.unknownCountCache.set(deckId, this.flashcardService.countUnknownCards(deckId));
+    }
+    return this.unknownCountCache.get(deckId)!;
+  }
+
+  /** Launch the "practice the words I don't know" session (flip over red cards). */
+  startUnknowns(deck: FlashcardDeck): void {
+    this.router.navigate(['/practice/flip', deck.id], { queryParams: { mode: 'unknowns' } });
   }
 
   /** True once at least one of the level's words has been practised. */

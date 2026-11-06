@@ -304,3 +304,19 @@ ion-popover .lang-list {
     text-align: left;
   }
 }
+
+/**
+ * Exercise progress bar (flip / quiz / match / write / blanks headers).
+ * The lazy <ion-progress-bar> web component sometimes doesn't lay itself out on
+ * first paint inside the toolbar/header, so the bar was invisible until an
+ * unrelated reflow (e.g. a theme toggle) forced one. Pinning an explicit box +
+ * a visible track means the host always occupies space and shows immediately,
+ * regardless of when the component hydrates.
+ */
+ion-header ion-progress-bar {
+  display: block;
+  min-height: 4px;
+  contain: none;
+  // A faint track so the empty bar is visible even at value 0.
+  --background: rgba(var(--ion-color-primary-rgb, 0, 180, 219), 0.22);
+}
