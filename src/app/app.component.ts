@@ -1,5 +1,4 @@
 import { Component, inject, effect } from '@angular/core';
-import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -20,7 +19,6 @@ export class AppComponent {
   private settings = inject(SettingsService);
   private appUpdate = inject(AppUpdateService);
   private flashcards = inject(FlashcardService);
-  private location = inject(Location);
   private router = inject(Router);
 
   constructor() {
@@ -91,28 +89,49 @@ export class AppComponent {
   private registerHardwareBackButton(): void {
     if (!Capacitor.isNativePlatform()) return;
 
-    App.addListener('backButton', async ({ canGoBack }) => {
+    App.addListener('backButton', async () => {
       // FIRST: if any overlay (modal / popover / action sheet / alert) is open,
       // close just that and stop — a back press/swipe should dismiss the popup
       // before it ever navigates to the previous page. Only the NEXT back goes
       // back a page. (We dismiss the top-most overlay across all controllers.)
       if (await this.dismissTopOverlay()) return;
 
+      // Then step back along IONIC's router-outlet stack, NOT browser history.
+      // Using location.back()/history replayed the browser history, which still
+      // held the just-finished exercise URL — so a back gesture on the list
+      // RE-OPENED the exercise. ion-router-outlet.pop() pops the real page stack
+      // the outlet maintains, matching what ion-back-button does.
+      if (await this.popRouterOutlet()) return;
+
       const onHome = this.router.url === '/' || this.router.url.startsWith('/home');
-
       if (onHome) {
-        // Already home: let the user leave the app.
-        void App.exitApp();
-        return;
-      }
-
-      if (canGoBack || window.history.length > 1) {
-        this.location.back();
+        void App.exitApp();      // already home: leave the app
       } else {
-        // No history but not on home: go to home rather than exit.
-        void this.router.navigate(['/home']);
+        void this.router.navigate(['/home']);  // no stack to pop: go home
       }
     });
+  }
+
+  /**
+   * Pop the Ionic router-outlet stack if it has somewhere to go back to.
+   * Queries the DOM for the <ion-router-outlet> element (its custom-element API
+   * exposes canGoBack()/pop()) rather than injecting IonRouterOutlet, which
+   * isn't reliably injectable into the root component under @ionic/angular/lazy
+   * (same reason dismissTopOverlay queries the DOM). Returns true when it popped.
+   */
+  private async popRouterOutlet(): Promise<boolean> {
+    const outlet = document.querySelector('ion-router-outlet') as
+      (HTMLElement & { canGoBack?: () => Promise<boolean> | boolean; pop?: () => Promise<void> }) | null;
+    if (!outlet || typeof outlet.canGoBack !== 'function' || typeof outlet.pop !== 'function') {
+      return false;
+    }
+    try {
+      if (await outlet.canGoBack()) {
+        await outlet.pop();
+        return true;
+      }
+    } catch { /* fall through to the home/exit fallback */ }
+    return false;
   }
 
   /**
