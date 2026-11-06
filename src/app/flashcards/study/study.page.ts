@@ -300,22 +300,39 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
    * also let the app pop.
    */
   private async handleBack(): Promise<boolean> {
-    // A single Android predictive-back SWIPE emits several backButton ticks.
-    // Claim (consume) all of them while the confirm is open AND for a short
-    // cooldown after it closes, so trailing ticks of the same gesture can't
-    // dismiss-then-re-present the alert in a loop. The hardware button is one
-    // discrete event, so this is invisible there.
-    if (this.endStudyAlertOpen) return true;
+    // Back while the confirm is OPEN = "yes, leave": close it and go back to
+    // the list. But IGNORE back for a moment right after it opened, so the
+    // trailing ticks of the SAME predictive-back swipe that opened it don't
+    // instantly close+leave (which looked like the modal flashing). A separate,
+    // deliberate second back press lands after this window.
+    if (this.endStudyAlertOpen) {
+      if (Date.now() < this.confirmInteractableAt) return true; // same gesture
+      this.leaving = true;
+      this.backSuppressedUntil = Date.now() + 700;
+      try { await this.endStudyAlert?.dismiss(); } catch { /* ignore */ }
+      this.endStudyAlert = null;
+      this.endStudyAlertOpen = false;
+      this.navCtrl.navigateBack(this.backUrl);
+      return true;
+    }
+    // Swallow the trailing ticks of a swipe that just dismissed the confirm so
+    // they don't immediately re-open it.
     if (Date.now() < this.backSuppressedUntil) return true;
+    // Mid-session with progress → show the confirm (claim the press so the
+    // page is NOT popped behind it). Nothing to lose / complete → let back pop.
     if (this.phase === 'complete' || this.hasNothingToLose) return false;
-    await this.endStudy();   // presents the confirm (its handler navigates back)
+    await this.endStudy();
     return true;
   }
 
   /** True while the "lose progress?" confirm is on screen. While it's open we
-   *  suspend the keyboard-hold + focus logic so they don't fight the alert
-   *  (that interaction caused the confirm to flicker/auto-dismiss in a loop). */
+   *  suspend the keyboard-hold + focus logic so they don't fight the alert. */
   private endStudyAlertOpen = false;
+  /** The live confirm overlay, so back can dismiss it explicitly. */
+  private endStudyAlert: HTMLIonAlertElement | null = null;
+  /** Epoch ms before which a back press won't act on the open confirm — guards
+   *  against the opening swipe's trailing ticks closing it in the same gesture. */
+  private confirmInteractableAt = 0;
 
   /** Epoch ms until which back presses are swallowed (set when the confirm
    *  closes), to absorb the trailing ticks of a predictive-back swipe. */
@@ -909,6 +926,9 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
     // Guard against a second confirm while one is up (rapid double back).
     if (this.endStudyAlertOpen) return;
     this.endStudyAlertOpen = true;
+    // Ignore back on the confirm for a beat so the opening swipe's trailing
+    // ticks don't instantly close+leave it (needs a deliberate second press).
+    this.confirmInteractableAt = Date.now() + 500;
 
     // Drop focus so the soft keyboard closes BEFORE the alert shows — otherwise
     // the keyboard-hold logic kept re-opening it under the alert.
@@ -917,10 +937,12 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
     const alert = await this.alertController.create({
       header: this.t('mode.endStudyHeader'),
       message: this.t('mode.endStudyMessage'),
-      // We OWN dismissal (Cancel / End only). Disabling backdrop + its own back
-      // handler stops a stray back tick from the same swipe gesture flicking
-      // the alert closed, which was half of the dismiss→re-present loop.
+      // We OWN dismissal (Cancel / End / back). backdropDismiss off + a marker
+      // class that the global back handler skips, so a back press on the OPEN
+      // confirm flows to our handleBack() (which closes it AND leaves), instead
+      // of the global dismissTopOverlay just closing it and staying.
       backdropDismiss: false,
+      cssClass: 'study-end-confirm',
       buttons: [
         {
           text: this.t('common.cancel'),
@@ -937,13 +959,15 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
         },
       ],
     });
-    // When the alert closes (Cancel or End): start a short cooldown so the
+    this.endStudyAlert = alert;
+    // When the alert closes (Cancel / End / back): start a short cooldown so the
     // trailing ticks of a predictive-back swipe can't immediately re-present
     // it, THEN clear the open flag. Only restore focus if we're STAYING on the
     // page (Cancel) — never when End/back is navigating away.
     void alert.onDidDismiss().then(() => {
       this.backSuppressedUntil = Date.now() + 700;
       this.endStudyAlertOpen = false;
+      this.endStudyAlert = null;
       if (!this.leaving) {
         // Defer past the cooldown so we don't re-pop the keyboard mid-gesture.
         setTimeout(() => { if (!this.leaving) this.focusInput(); }, 750);

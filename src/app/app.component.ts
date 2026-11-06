@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { Platform } from '@ionic/angular';
 import { SettingsService } from './services/settings.service';
 import { AppUpdateService } from './services/app-update.service';
 import { FlashcardService } from './services/flashcard.service';
@@ -22,6 +23,7 @@ export class AppComponent {
   private flashcards = inject(FlashcardService);
   private backInterceptor = inject(BackInterceptorService);
   private router = inject(Router);
+  private platform = inject(Platform);
 
   constructor() {
     // Mark the current OTA bundle as healthy and enable live updates.
@@ -91,30 +93,37 @@ export class AppComponent {
   private registerHardwareBackButton(): void {
     if (!Capacitor.isNativePlatform()) return;
 
-    App.addListener('backButton', async () => {
-      // FIRST: if any overlay (modal / popover / action sheet / alert) is open,
-      // close just that and stop — a back press/swipe should dismiss the popup
-      // before it ever navigates to the previous page. Only the NEXT back goes
-      // back a page. (We dismiss the top-most overlay across all controllers.)
+    // Use IONIC's priority back-button system, NOT a raw @capacitor/app
+    // listener. Ionic's ion-router-outlet subscribes at priority 0 to pop the
+    // page on every back/gesture; a raw @capacitor/app listener runs ALONGSIDE
+    // it, so the page was being popped to the list at the same moment our
+    // handler tried to show the Write confirm — the confirm then appeared on
+    // the ALREADY-popped list page (the reported bug). By subscribing at a
+    // HIGHER priority (100) and NEVER calling the provided `_next` processor,
+    // OUR handler runs first and fully owns the decision: Ionic's outlet pop
+    // only happens because WE call popRouterOutlet() in step 3. When the active
+    // page claims the press (step 2), nothing pops behind the confirm.
+    this.platform.backButton.subscribeWithPriority(100, async (_next) => {
+      // 1) An open overlay (modal/popover/action-sheet/alert) closes first.
       if (await this.dismissTopOverlay()) return;
 
-      // SECOND: let the active page intercept back and do what its own X does
-      // (e.g. the Write exercise's "lose progress?" confirm). If it handled the
-      // press, stop — don't also navigate.
+      // 2) The active page intercepts back to do what its own X does (e.g. the
+      //    Write exercise's "lose progress?" confirm). If it claimed the press,
+      //    STOP — don't let Ionic pop the page behind the confirm.
       if (await this.backInterceptor.runActive()) return;
 
-      // Then step back along IONIC's router-outlet stack, NOT browser history.
-      // Using location.back()/history replayed the browser history, which still
-      // held the just-finished exercise URL — so a back gesture on the list
-      // RE-OPENED the exercise. ion-router-outlet.pop() pops the real page stack
-      // the outlet maintains, matching what ion-back-button does.
+      // 3) Nobody claimed it → try to pop the ion-router-outlet stack ourselves
+      //    (DOM API, since the outlet isn't reliably injectable here under
+      //    @ionic/angular/lazy). If we popped, we're done and must NOT also run
+      //    Ionic's default handler (that would double-pop).
       if (await this.popRouterOutlet()) return;
 
+      // 4) Nothing to pop. On home → exit; otherwise go home.
       const onHome = this.router.url === '/' || this.router.url.startsWith('/home');
       if (onHome) {
-        void App.exitApp();      // already home: leave the app
+        void App.exitApp();
       } else {
-        void this.router.navigate(['/home']);  // no stack to pop: go home
+        void this.router.navigate(['/home']);
       }
     });
   }
@@ -157,7 +166,11 @@ export class AppComponent {
     const selector =
       'ion-modal, ion-popover, ion-action-sheet, ion-alert, ion-select-popover, ion-picker, ion-toast';
     const open = Array.from(document.querySelectorAll<HTMLElement>(selector))
-      .filter(el => !el.classList.contains('overlay-hidden'));
+      .filter(el => !el.classList.contains('overlay-hidden'))
+      // The Write "lose progress?" confirm (study-end-confirm) is owned by the
+      // page's back handler: back on it should close AND leave to the list, not
+      // just close here. Skip it so the press flows to backInterceptor.
+      .filter(el => !el.classList.contains('study-end-confirm'));
     if (open.length === 0) return false;
 
     let top = open[0];

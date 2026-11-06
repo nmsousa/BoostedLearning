@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.26',
+    notes: [
+      'Write mode back flow fixed properly: mid-exercise, back shows the "lose progress?" prompt on the exercise (no longer jumping to the list first). Back again closes it and returns to the list; back again goes Home.',
+    ],
+  },
+  {
     version: '1.3.25',
     notes: [
       'Write mode: fixed the swipe-back still flickering the "lose progress?" prompt — a back swipe now shows it once and a second back closes it cleanly.',
