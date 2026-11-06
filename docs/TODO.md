@@ -4,6 +4,45 @@ Tracked tasks that are deferred or in progress.
 
 ## Deferred (on standby)
 
+### End-to-end (e2e) tests — options to evaluate
+Status: **not implemented** — for later evaluation.
+
+We have unit tests (Vitest, ~420) but nothing exercises the real installed app.
+Several bugs this project hit were NATIVE-only (soft-keyboard focus, Android
+hardware/gesture back, OTA apply) and slipped past unit tests and the headless
+desktop-Chromium screenshot checks (which are desktop web, not the Android
+WebView + Capacitor layer). Options, most-faithful first:
+
+1. **Appium + Android emulator (or a real device)** — drives the installed APK
+   through the real Android WebView + Capacitor. The ONLY option that catches
+   the native bugs we keep hitting (keyboard opening on Write entry, swipe/
+   hardware back leaving a screen, OTA applying). Cost: heavy setup (emulator or
+   device + Appium server), slower, flakier in CI. Best used as a SMALL manual/
+   occasional smoke suite for native-only flows, not every CI run.
+2. **Playwright (or Cypress) against the web build** — fast, stable, easy in CI;
+   great for logic/flow/layout regressions (e.g. "typo accepted", "practice
+   unknowns launches", "What's new opens", "Your words colours"). Runs in desktop
+   Chromium, so it does NOT catch native keyboard/back/OTA issues (same class as
+   the current screenshot checks).
+3. **Capacitor + WebdriverIO** — like Appium, drives the native app; comparable
+   setup cost.
+
+Recommendation when picked up: Playwright web-e2e for the bulk of flows (cheap,
+CI-friendly) PLUS a tiny Appium native smoke suite for the handful of
+native-only things (keyboard, back gesture, OTA) run manually/occasionally.
+Decide CI vs local-only for the Appium part given emulator cost/flakiness.
+
+### Consistent "lose progress?" confirm on back for all exercises
+Status: **partially implemented.**
+
+Hardware/gesture back now runs through a `BackInterceptorService`: the active
+page can claim the back press and do what its on-screen X does. The **Write**
+exercise uses it to show the existing "you'll lose progress" confirm (and to
+just close when nothing was started). The other exercises (Quiz, Match, Flip,
+Blanks, Builder) don't track multi-step in-session progress the same way, so
+their X / back just closes. If we later want a progress-loss confirm on those
+too, register a similar handler per page — the service is already in place.
+
 ### Rename the app identity to "Boostionary" everywhere
 Status: **not implemented** — planned.
 

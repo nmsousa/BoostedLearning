@@ -10,7 +10,7 @@
 
 import { Component, OnInit, OnDestroy, inject, ViewChild, HostListener, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AlertController, IonInput, ToastController, ViewDidEnter, NavController } from '@ionic/angular';
+import { AlertController, IonInput, ToastController, ViewDidEnter, ViewWillEnter, ViewWillLeave, NavController } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
 import { Keyboard } from '@capacitor/keyboard';
 import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
@@ -18,6 +18,7 @@ import { I18nAngularService } from '../../services/i18n.service';
 import { SettingsService } from '../../services/settings.service';
 import { AudioService } from '../../services/audio.service';
 import { AddWordService } from '../../services/add-word.service';
+import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { journeyBackUrl } from '../journey/journey-back';
 import { gradeAnswer } from '../../../core/answer-validator/typo-grader';
 
@@ -44,7 +45,7 @@ interface StudyCard {
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
+export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter, ViewWillLeave {
   @ViewChild('answerInput') answerInput!: IonInput;
 
   private route = inject(ActivatedRoute);
@@ -58,6 +59,11 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
   private toast = inject(ToastController);
   private cdr = inject(ChangeDetectorRef);
   private addWordService = inject(AddWordService);
+  private backInterceptor = inject(BackInterceptorService);
+
+  /** Registered with the back interceptor so hardware/gesture back runs the
+   *  same confirm-and-exit path as the header X. Stable ref for register/clear. */
+  private readonly onHardwareBack: () => Promise<boolean> = () => this.handleBack();
 
   /** Open the header menu: add a word, or hide the current word. */
   async openMenu(): Promise<void> {
@@ -253,6 +259,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
 
   ngOnDestroy() {
     if (this.autoAdvanceTimer) clearTimeout(this.autoAdvanceTimer);
+    this.backInterceptor.clear(this.onHardwareBack);
   }
 
   /**
@@ -264,6 +271,29 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter {
    */
   ionViewDidEnter(): void {
     this.focusInput();
+  }
+
+  /** Claim the hardware/gesture back press while this exercise is on screen. */
+  ionViewWillEnter(): void {
+    this.backInterceptor.register(this.onHardwareBack);
+  }
+
+  ionViewWillLeave(): void {
+    this.backInterceptor.clear(this.onHardwareBack);
+  }
+
+  /**
+   * Hardware/gesture back for the Write exercise: behave exactly like the X —
+   * if there's unsaved progress, show the "lose progress?" confirm and report
+   * HANDLED (true) so the app doesn't also pop the page; the confirm's "End"
+   * navigates. If there's nothing to lose, report NOT handled (false) so the
+   * app pops normally. On the complete screen there's no input to protect, so
+   * also let the app pop.
+   */
+  private async handleBack(): Promise<boolean> {
+    if (this.phase === 'complete' || this.hasNothingToLose) return false;
+    await this.endStudy();   // presents the confirm (its handler navigates back)
+    return true;
   }
 
   /**

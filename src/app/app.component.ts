@@ -6,6 +6,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { SettingsService } from './services/settings.service';
 import { AppUpdateService } from './services/app-update.service';
 import { FlashcardService } from './services/flashcard.service';
+import { BackInterceptorService } from './services/back-interceptor.service';
 
 @Component({
   selector: 'app-root',
@@ -19,6 +20,7 @@ export class AppComponent {
   private settings = inject(SettingsService);
   private appUpdate = inject(AppUpdateService);
   private flashcards = inject(FlashcardService);
+  private backInterceptor = inject(BackInterceptorService);
   private router = inject(Router);
 
   constructor() {
@@ -95,6 +97,11 @@ export class AppComponent {
       // before it ever navigates to the previous page. Only the NEXT back goes
       // back a page. (We dismiss the top-most overlay across all controllers.)
       if (await this.dismissTopOverlay()) return;
+
+      // SECOND: let the active page intercept back and do what its own X does
+      // (e.g. the Write exercise's "lose progress?" confirm). If it handled the
+      // press, stop — don't also navigate.
+      if (await this.backInterceptor.runActive()) return;
 
       // Then step back along IONIC's router-outlet stack, NOT browser history.
       // Using location.back()/history replayed the browser history, which still
