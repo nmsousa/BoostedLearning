@@ -5,13 +5,11 @@
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <!-- Skill name only (the redundant "Level N ·" prefix is dropped). The
-         round counter stays — useful progress while playing. -->
+    <!-- Skill name only. The round counter (1/5…) is NOT shown: the level
+         list's ring already conveys round progress (how green/full it is). -->
     <ion-title>
       <ng-container *ngIf="levelTitle">{{ levelTitle }}</ng-container>
       <ng-container *ngIf="!levelTitle">{{ 'mode.titleQuiz' | translate }}</ng-container>
-      <!-- Hide the round counter for Journey nodes (single pass, no rounds). -->
-      <span *ngIf="round > 0 && !singlePass" class="round-pill">{{ round }}/{{ totalRounds }}</span>
     </ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="openMenu()" [attr.aria-label]="'mode.addWord' | translate">

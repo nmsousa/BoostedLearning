@@ -8,7 +8,7 @@
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { ActionSheetController, AlertController } from '@ionic/angular';
+import { ActionSheetController, AlertController, NavController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck, DeckLevel, PracticeMode } from '../services/flashcard.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { SettingsService } from '../services/settings.service';
@@ -30,6 +30,7 @@ interface LangOption { code: string; name: string; flagUrl: string; }
 export class FlashcardsPage implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private navCtrl = inject(NavController);
   private alertController = inject(AlertController);
   private actionSheet = inject(ActionSheetController);
   private flashcardService = inject(FlashcardService);
@@ -398,7 +399,7 @@ export class FlashcardsPage implements OnInit {
 
   /** Launch the "practice the words I don't know" session (flip over red cards). */
   startUnknowns(deck: FlashcardDeck): void {
-    this.router.navigate(['/practice/flip', deck.id], { queryParams: { mode: 'unknowns' } });
+    this.navCtrl.navigateForward(['/practice/flip', deck.id], { queryParams: { mode: 'unknowns' } });
   }
 
   /** True once at least one of the level's words has been practised. */
@@ -558,24 +559,22 @@ export class FlashcardsPage implements OnInit {
    */
   private async launchMode(deck: FlashcardDeck, level: number) {
     const queryParams = level > 0 ? { level } : undefined;
-
-    switch (this.mode) {
-      case 'flip':
-        this.router.navigate(['/practice/flip', deck.id], { queryParams });
-        break;
-      case 'write':
-        this.router.navigate(['/practice/write', deck.id], { queryParams });
-        break;
-      case 'match':
-        this.router.navigate(['/practice/match', deck.id], { queryParams });
-        break;
-      case 'quiz':
-        this.router.navigate(['/practice/quiz', deck.id], { queryParams });
-        break;
-      case 'blanks':
-        this.router.navigate(['/practice/blanks', deck.id], { queryParams });
-        break;
-    }
+    // Use Ionic's FORWARD navigation so the exercise is pushed onto the stack
+    // with this list recorded behind it. The exercises return with
+    // navCtrl.navigateBack(), which then pops cleanly back to this list — and
+    // a swipe-back from the list goes to Home, instead of the exercise being
+    // re-opened (which happened when entry was a plain router.navigate and the
+    // outlet lost track of the stack direction).
+    const routes: Partial<Record<PracticeMode, string>> = {
+      flip: '/practice/flip',
+      write: '/practice/write',
+      match: '/practice/match',
+      quiz: '/practice/quiz',
+      blanks: '/practice/blanks',
+    };
+    const base = routes[this.mode];
+    if (!base) return;
+    this.navCtrl.navigateForward([base, deck.id], { queryParams });
   }
 
   async confirmDeleteDeck(deck: FlashcardDeck) {
