@@ -1407,6 +1407,51 @@ export class FlashcardService {
     return word.length > 0 && word === translation;
   }
 
+  // ============================================
+  // TEMPORARY: admin-only "Level 0" test cards
+  // ============================================
+  //
+  // A throwaway test level available only when adminMode is on. It holds 2
+  // fixed words that are identical in the base and target languages, so any
+  // mode can be reached and finished in seconds for testing. Internally the
+  // level is numbered -1 (a sentinel) because level 0 already means "quick
+  // study / no level filter" everywhere; the UI shows it as "Level 0".
+  //
+  // This block is intentionally self-contained so it can be deleted in one go
+  // when the test level is no longer needed. Progress is NEVER persisted for
+  // it (the mode pages skip saveRoundProgress/recordAttempt for this level).
+
+  /** Sentinel level number for the admin-only test level (shown as "Level 0"). */
+  static readonly TEST_LEVEL = -1;
+  /** The fixed test words (same in base + target language). */
+  private static readonly TEST_WORDS = ['wifi', 'internet'];
+
+  /** True for the admin-only test level. */
+  isTestLevel(levelNumber: number): boolean {
+    return levelNumber === FlashcardService.TEST_LEVEL;
+  }
+
+  /**
+   * Build the 2 in-memory test cards for a deck. These are NOT part of the
+   * deck's `cards` array and are never saved, so recordAttempt (which looks a
+   * card up by id in the deck) naturally no-ops on them.
+   */
+  getTestLevelCards(deckId: string): Flashcard[] {
+    return FlashcardService.TEST_WORDS.map(w => ({
+      id: `test-${w}`,
+      deckId,
+      text: w,
+      translations: [w],
+      correctCount: 0,
+      incorrectCount: 0,
+      lastSeen: null,
+      nextReview: null,
+      streak: 0,
+      acceptedForms: [w],
+      skill: 'Level 0 (test)',
+    }));
+  }
+
   /**
    * Filter a card list down to those suitable for the matching/quiz modes:
    * excludes cards identical in both languages, and words the user has chosen

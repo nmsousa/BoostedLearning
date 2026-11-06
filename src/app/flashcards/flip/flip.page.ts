@@ -166,7 +166,10 @@ export class FlipPage implements OnInit {
     }
 
     // Pull cards: unknowns session, a specific level, or an urgency queue.
-    if (this.unknownsMode) {
+    if (this.flashcardService.isTestLevel(this.levelNumber)) {
+      // TEMPORARY: admin test level — 2 fixed words, no persistence.
+      this.cards = this.flashcardService.getTestLevelCards(deckId);
+    } else if (this.unknownsMode) {
       this.cards = this.flashcardService.getUnknownCards(deckId, 20);
     } else if (this.levelNumber > 0) {
       const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);

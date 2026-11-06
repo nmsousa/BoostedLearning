@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.23',
+    notes: [
+      'Admin/testing: a temporary "Level 0" (2 quick words) now appears at the top of every mode\'s level list when dev tools are on, for fast testing. It saves no progress and is invisible to normal users.',
+    ],
+  },
+  {
     version: '1.3.22',
     notes: [
       'Journey++: the "go to current" button now jumps on the first tap even while the page is still scrolling, and its arrow points up or down depending on where the current node is.',

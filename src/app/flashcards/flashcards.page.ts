@@ -308,8 +308,8 @@ export class FlashcardsPage implements OnInit {
     this.deckStats.clear();
     for (const deck of this.decks) {
       const levels = await this.flashcardService.getDeckLevels(deck.id, this.mode);
-      this.deckLevels.set(deck.id, levels);
 
+      // Header stats reflect the REAL levels only (exclude the test row below).
       const totalStars = levels.reduce((sum, l) => sum + l.bestStars, 0);
       this.deckStats.set(deck.id, {
         uniqueCount: this.flashcardService.getDedupedCards(deck.id).length,
@@ -318,6 +318,14 @@ export class FlashcardsPage implements OnInit {
         totalStars,
         maxStars: levels.length * 3,
       });
+
+      // TEMPORARY: admin-only "Level 0" test level at the top of the list. It's
+      // a synthetic, always-unlocked row (2 fixed words) for quick testing; see
+      // FlashcardService test-level block. Numbered -1 internally, shown as 0.
+      if (this.isAdmin) {
+        levels.unshift(this.testLevelRow());
+      }
+      this.deckLevels.set(deck.id, levels);
     }
   }
 
@@ -441,6 +449,29 @@ export class FlashcardsPage implements OnInit {
     return segs;
   }
 
+  /** TEMPORARY: admin-only test level is shown when dev tools are enabled. */
+  get isAdmin(): boolean {
+    return this.settings.adminMode();
+  }
+
+  /** TEMPORARY: a synthetic "Level 0" row for the admin test level. Always
+   *  unlocked, no stars/rounds; the modes recognise its sentinel level number
+   *  (FlashcardService.TEST_LEVEL) and load 2 fixed words. */
+  private testLevelRow(): DeckLevel {
+    return {
+      levelNumber: FlashcardService.TEST_LEVEL,
+      startIndex: 0,
+      endIndex: 0,
+      cardCount: 2,
+      bestStars: 0,
+      bestScore: 0,
+      roundsCompleted: 0,
+      attempts: 0,
+      isUnlocked: true,
+      skill: 'Level 0 (test)',
+    };
+  }
+
   getLevels(deckId: string): DeckLevel[] {
     return this.deckLevels.get(deckId) ?? [];
   }
@@ -498,8 +529,11 @@ export class FlashcardsPage implements OnInit {
    */
   private currentLevelCache = new Map<string, number>();
   isCurrentLevel(deckId: string, level: DeckLevel): boolean {
+    // The admin test level (-1) is never the highlighted "current" level.
+    if (level.levelNumber < 0) return false;
     if (!this.currentLevelCache.has(deckId)) {
-      const levels = this.getLevels(deckId);
+      // Exclude the synthetic test level from the "current" search.
+      const levels = this.getLevels(deckId).filter(l => l.levelNumber > 0);
       // A level counts as "complete" when all rounds are done, OR (legacy
       // records written before rounds existed) it already has stars.
       const isComplete = (l: DeckLevel) =>
@@ -555,10 +589,12 @@ export class FlashcardsPage implements OnInit {
 
   /**
    * Launch the currently-selected practice mode for a deck/level.
-   * level 0 = no level filter (quick study).
+   * level 0 = no level filter (quick study); level -1 = admin test level.
    */
   private async launchMode(deck: FlashcardDeck, level: number) {
-    const queryParams = level > 0 ? { level } : undefined;
+    // Pass the level param for real levels AND the admin test level (-1);
+    // only quick study (0) omits it so the mode falls back to its queue.
+    const queryParams = level !== 0 ? { level } : undefined;
     // Use Ionic's FORWARD navigation so the exercise is pushed onto the stack
     // with this list recorded behind it. The exercises return with
     // navCtrl.navigateBack(), which then pops cleanly back to this list — and

@@ -131,6 +131,18 @@ export class BlanksPage implements OnInit {
     this.deck = this.flashcardService.getDeck(deckId);
     if (!this.deck) { this.router.navigate([this.backUrl]); return; }
 
+    // TEMPORARY: admin test level — the phrase-builder can't make sentences
+    // from "wifi"/"internet", so build 2 trivial one-word questions directly.
+    // No persistence (completeSession is guarded by levelNumber > 0).
+    if (this.flashcardService.isTestLevel(this.levelNumber)) {
+      this.levelTitle = 'Level 0 (test)';
+      this.questions = this.buildTestQuestions(deckId);
+      this.phase = this.questions.length === 0 ? 'complete' : 'play';
+      this.isLoading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
     if (this.levelNumber > 0) {
       const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
       if (!isUnlocked) { this.router.navigate([this.backUrl]); return; }
@@ -172,6 +184,41 @@ export class BlanksPage implements OnInit {
    */
   private builderLang(): BuilderLang {
     return this.deck?.languageCode === 'nl' ? 'nl' : 'fr';
+  }
+
+  /**
+   * TEMPORARY: build the admin test-level questions. The phrase-builder can't
+   * form sentences from arbitrary words, so each test word becomes a trivial
+   * "pick the word" question (blank-only sentence) with 3 distractors drawn
+   * from the deck's other translations.
+   */
+  private buildTestQuestions(deckId: string): BlankQuestion[] {
+    const testCards = this.flashcardService.getTestLevelCards(deckId);
+    // Distractor pool: other words from the deck (clean, de-duplicated).
+    const pool = Array.from(new Set(
+      (this.deck?.cards ?? [])
+        .map(c => c.text.trim())
+        .filter(t => t && !testCards.some(tc => tc.text.toLowerCase() === t.toLowerCase()))
+    ));
+
+    return testCards.map(card => {
+      const answer = card.text;
+      const distractors = this.shuffle(pool).slice(0, this.OPTION_COUNT - 1);
+      const labels = this.shuffle([answer, ...distractors]);
+      return {
+        before: '',
+        after: '',
+        full: answer,
+        gloss: card.translations[0] ?? answer,
+        answer,
+        options: labels.map(label => ({
+          label,
+          correct: label === answer,
+          revealed: false,
+          chosen: false,
+        })),
+      };
+    });
   }
 
   private buildQuestions(deckId: string, level: number): BlankQuestion[] {

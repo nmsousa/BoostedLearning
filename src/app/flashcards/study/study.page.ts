@@ -200,7 +200,14 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
 
     // Get cards for this level (or all cards if no level specified)
     let cards: Flashcard[];
-    if (this.levelNumber > 0) {
+    if (this.flashcardService.isTestLevel(this.levelNumber)) {
+      // TEMPORARY: admin test level — 2 fixed words, one pass, no persistence.
+      this.singlePass = true;
+      this.totalRounds = 1;
+      this.round = 1;
+      this.roundsCompleted = 0;
+      cards = this.flashcardService.getTestLevelCards(deckId);
+    } else if (this.levelNumber > 0) {
       // Check if level is unlocked
       const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
       if (!isUnlocked) {

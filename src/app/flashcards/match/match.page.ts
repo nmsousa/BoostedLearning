@@ -151,24 +151,31 @@ export class MatchPage implements OnInit, OnDestroy {
     }
 
     let cards: Flashcard[];
-    if (this.levelNumber > 0) {
-      const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
-      if (!isUnlocked) {
-        this.router.navigate([this.backUrl]);
-        return;
-      }
-      // Match uses a longer session: the level's words + weak words from
-      // earlier levels (for bigger combos and review).
-      cards = this.flashcardService.getMatchSessionCards(deckId, this.levelNumber);
-      // Title from the level's OWN cards (the session mixes in review words).
-      this.levelTitle = this.flashcardService.getLevelCards(deckId, this.levelNumber)[0]?.skill ?? '';
+    // TEMPORARY: admin test level — 2 fixed words, no persistence. Skip
+    // playableCards (it strips identical-in-both-languages words).
+    if (this.flashcardService.isTestLevel(this.levelNumber)) {
+      this.levelTitle = 'Level 0 (test)';
+      cards = this.flashcardService.getTestLevelCards(deckId);
     } else {
-      cards = this.flashcardService.getFlashcardQueue(deckId, 20);
-    }
+      if (this.levelNumber > 0) {
+        const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
+        if (!isUnlocked) {
+          this.router.navigate([this.backUrl]);
+          return;
+        }
+        // Match uses a longer session: the level's words + weak words from
+        // earlier levels (for bigger combos and review).
+        cards = this.flashcardService.getMatchSessionCards(deckId, this.levelNumber);
+        // Title from the level's OWN cards (the session mixes in review words).
+        this.levelTitle = this.flashcardService.getLevelCards(deckId, this.levelNumber)[0]?.skill ?? '';
+      } else {
+        cards = this.flashcardService.getFlashcardQueue(deckId, 20);
+      }
 
-    // Exclude cards identical in both languages (e.g. "water" = "water"):
-    // they make a trivial/ambiguous match and look like duplicate tiles.
-    cards = this.flashcardService.playableCards(cards);
+      // Exclude cards identical in both languages (e.g. "water" = "water"):
+      // they make a trivial/ambiguous match and look like duplicate tiles.
+      cards = this.flashcardService.playableCards(cards);
+    }
 
     this.queue = this.shuffle(cards);
     this.totalPairs = this.queue.length;

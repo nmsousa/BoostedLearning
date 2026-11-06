@@ -151,6 +151,21 @@ export class QuizPage implements OnInit {
     }
 
     let cards: Flashcard[];
+    // TEMPORARY: admin test level — 2 fixed words, one pass, no persistence.
+    // Skip playableCards (it strips identical-in-both-languages words, which
+    // these test words are) so the 2 cards actually reach the board.
+    if (this.flashcardService.isTestLevel(this.levelNumber)) {
+      this.singlePass = true;
+      this.totalRounds = 1;
+      this.round = 1;
+      this.roundsCompleted = 0;
+      this.cards = this.flashcardService.getTestLevelCards(deckId);
+      if (this.cards.length === 0) { this.phase = 'complete'; }
+      else { this.loadQuestion(); }
+      this.isLoading = false;
+      this.cdr.detectChanges();
+      return;
+    }
     if (this.levelNumber > 0) {
       const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
       if (!isUnlocked) {
