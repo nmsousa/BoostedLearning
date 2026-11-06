@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.21',
+    notes: [
+      'Blanks (fill-in-the-blank) now works for Dutch too — short sentences are built from your Dutch words, so you can test the mode. It\'s on the Home screen when Dutch is your learning language.',
+    ],
+  },
+  {
     version: '1.3.20',
     notes: [
       'Your words: the list now refreshes right after a lesson (no need to reopen the app), and the speaker actually plays the word.',

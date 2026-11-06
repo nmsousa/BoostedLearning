@@ -98,6 +98,14 @@ export class HomePage implements OnInit {
     return this.settings.learningLanguage();
   }
 
+  /** Languages the Blanks sentence generator has vocabulary for. */
+  private static readonly BLANKS_LANGS = new Set(['fr', 'nl']);
+
+  /** Whether the Blanks mode card should show for the current language. */
+  get blanksAvailable(): boolean {
+    return HomePage.BLANKS_LANGS.has(this.learningLanguage);
+  }
+
   get currentLanguage(): { code: string; name: string; flagUrl: string } {
     return (
       this.availableLanguages.find(l => l.code === this.learningLanguage) ??

@@ -3,6 +3,7 @@ import {
   classifyCard,
   buildTokens,
   generatePhrases,
+  inflectAdjNl,
   type SourceCard,
 } from './phrase-builder';
 
@@ -96,5 +97,71 @@ describe('phrase-builder generator', () => {
       expect(p.blankIndex!).toBeLessThan(p.tokens.length);
       expect(p.blankCategory).toBeDefined();
     }
+  });
+});
+
+describe('phrase-builder Dutch', () => {
+  const current: SourceCard[] = [
+    { text: 'hond', translations: ['dog'] },   // de-noun
+    { text: 'huis', translations: ['house'] }, // het-noun
+    { text: 'boek', translations: ['book'] },  // het-noun
+  ];
+  const earlier: SourceCard[] = [
+    { text: 'de', translations: ['the'] },
+    { text: 'het', translations: ['the'] },
+    { text: 'een', translations: ['a'] },
+    { text: 'ik', translations: ['I'] },
+    { text: 'mijn', translations: ['my'] },
+    { text: 'groot', translations: ['big'] },
+  ];
+
+  it('classifies Dutch closed-class words', () => {
+    expect(classifyCard({ text: 'de', translations: ['the'] }, 'nl').category).toBe('article');
+    expect(classifyCard({ text: 'het', translations: ['the'] }, 'nl').category).toBe('article');
+    expect(classifyCard({ text: 'ik', translations: ['I'] }, 'nl').category).toBe('pronoun');
+    expect(classifyCard({ text: 'mijn', translations: ['my'] }, 'nl').category).toBe('possessive');
+    expect(classifyCard({ text: 'en', translations: ['and'] }, 'nl').category).toBe('connector');
+    expect(classifyCard({ text: 'hallo', translations: ['hello'] }, 'nl').category).toBe('expression');
+    expect(classifyCard({ text: 'hond', translations: ['dog'] }, 'nl').category).toBe('noun');
+  });
+
+  it('builds grammatical Dutch noun phrases with the right article', () => {
+    const tokens = buildTokens(current, earlier, 'nl');
+    const targets = generatePhrases(tokens, 12, 'nl').map(p => p.target);
+    expect(targets).toContain('de hond');   // de-noun
+    expect(targets).toContain('het huis');  // het-noun
+    expect(targets).toContain('het boek');  // het-noun
+    expect(targets).toContain('mijn hond'); // possessive
+    // Adjective inflects before the noun.
+    expect(targets).toContain('de grote hond');
+    expect(targets).toContain('het grote huis');
+    // Never emits the wrong article for a het-noun.
+    expect(targets).not.toContain('de huis');
+    expect(targets).not.toContain('de boek');
+  });
+
+  it('every Dutch phrase uses a current-chapter word and marks a blank', () => {
+    const tokens = buildTokens(current, earlier, 'nl');
+    const phrases = generatePhrases(tokens, 12, 'nl');
+    expect(phrases.length).toBeGreaterThan(0);
+    const currentWords = new Set(current.map(c => c.text));
+    for (const p of phrases) {
+      expect(p.tokens.some(t => currentWords.has(t))).toBe(true);
+      expect(p.blankIndex).toBeGreaterThanOrEqual(0);
+      expect(p.blankIndex!).toBeLessThan(p.tokens.length);
+    }
+  });
+
+  it('inflects attributive adjectives per Dutch spelling rules', () => {
+    expect(inflectAdjNl('groot', true)).toBe('grote');  // oo → o
+    expect(inflectAdjNl('klein', true)).toBe('kleine');
+    expect(inflectAdjNl('goed', true)).toBe('goede');   // oe digraph kept
+    expect(inflectAdjNl('lief', true)).toBe('lieve');   // f → v
+    expect(inflectAdjNl('vies', true)).toBe('vieze');   // s → z
+    expect(inflectAdjNl('dun', true)).toBe('dunne');    // double consonant
+    expect(inflectAdjNl('oud', true)).toBe('oude');
+    expect(inflectAdjNl('mooi', true)).toBe('mooie');
+    expect(inflectAdjNl('oude', true)).toBe('oude');    // already -e
+    expect(inflectAdjNl('groot', false)).toBe('groot'); // bare form
   });
 });

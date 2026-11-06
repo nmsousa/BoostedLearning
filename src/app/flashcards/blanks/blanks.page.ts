@@ -1,15 +1,15 @@
 /**
- * Blanks Page - fill-in-the-blank multiple choice (French only).
+ * Blanks Page - fill-in-the-blank multiple choice (French + Dutch).
  *
- * Shows a generated French sentence with ONE word replaced by a blank, and four
+ * Shows a generated sentence with ONE word replaced by a blank, and four
  * options; the user taps the word that fits. Sentences come from the
  * phrase-builder core (the same generator the Builder uses), so no hand-authored
  * sentence list is needed. Scored like Quiz: first-try accuracy into stars under
  * the 'blanks' mode (or 'journey-blanks' as a Journey node).
  *
- * French-only: the phrase-builder's word lists are French; for other languages
- * it yields no phrases, so the mode is hidden on Home and the Journey node
- * auto-passes.
+ * Supported languages: the phrase-builder has closed-class vocabulary for
+ * French and Dutch. For any other language it yields no phrases, so the mode is
+ * hidden on Home and the Journey node auto-passes.
  *
  * @module app/flashcards/blanks
  */
@@ -24,7 +24,8 @@ import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
 import { journeyBackUrl } from '../journey/journey-back';
 import {
-  buildTokens, generatePhrases, type BuilderToken, type GeneratedPhrase, type WordCategory,
+  buildTokens, generatePhrases, type BuilderToken, type BuilderLang,
+  type GeneratedPhrase, type WordCategory,
 } from '../../../core/phrase-builder/phrase-builder';
 
 type BlanksPhase = 'play' | 'complete';
@@ -163,6 +164,16 @@ export class BlanksPage implements OnInit {
    * blankIndex are usable; options are the correct word + distractors of the
    * SAME grammatical category drawn from the token pool.
    */
+  /**
+   * Which closed-class vocabulary the phrase-builder should use, from the
+   * deck's language. Only 'fr' and 'nl' are supported; any other language
+   * falls back to 'fr', whose word lists won't match, so no phrases are
+   * generated (the mode stays hidden / the Journey node auto-passes).
+   */
+  private builderLang(): BuilderLang {
+    return this.deck?.languageCode === 'nl' ? 'nl' : 'fr';
+  }
+
   private buildQuestions(deckId: string, level: number): BlankQuestion[] {
     const toSrc = (c: { text: string; translations: string[] }) => ({ text: c.text, translations: c.translations });
     const current = (level > 0 ? this.flashcardService.getLevelCards(deckId, level) : this.flashcardService.getFlashcardQueue(deckId, 20)).map(toSrc);
@@ -171,8 +182,9 @@ export class BlanksPage implements OnInit {
       for (const c of this.flashcardService.getLevelCards(deckId, n)) earlier.push(toSrc(c));
     }
 
-    const tokens = buildTokens(current, earlier);
-    const phrases = generatePhrases(tokens, this.MAX_QUESTIONS * 2)
+    const lang = this.builderLang();
+    const tokens = buildTokens(current, earlier, lang);
+    const phrases = generatePhrases(tokens, this.MAX_QUESTIONS * 2, lang)
       .filter(p => p.blankIndex !== undefined);
 
     const questions: BlankQuestion[] = [];
