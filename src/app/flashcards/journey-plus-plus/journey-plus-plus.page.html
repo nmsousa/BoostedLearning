@@ -52,7 +52,6 @@
         <span class="pp-chapter-emoji" aria-hidden="true">{{ block.emoji }}</span>
         <span class="pp-chapter-name">{{ block.title }}</span>
         <ion-icon *ngIf="!block.chapter.unlocked" name="lock-closed" class="pp-chapter-lock" aria-hidden="true"></ion-icon>
-        <span class="pp-chapter-sub">{{ block.subtitle }}</span>
       </header>
 
       <div class="pp-map" [style.height.px]="block.mapHeight">
@@ -107,9 +106,10 @@
     </ion-infinite-scroll>
   </div>
 
-  <!-- Jump back to the chapter in progress when it's scrolled out of view. -->
-  <button type="button" class="pp-jump" *ngIf="!isLoading && showJumpFab" (click)="jumpToCurrent()"
-    [attr.aria-label]="'journeyPlus.goToCurrent' | translate">
+  <!-- Jump back to the chapter in progress when it's scrolled out of view.
+       slot="fixed" pins it to the content viewport so it does NOT scroll. -->
+  <button type="button" slot="fixed" class="pp-jump" *ngIf="!isLoading && showJumpFab"
+    (click)="jumpToCurrent()" [attr.aria-label]="'journeyPlus.goToCurrent' | translate">
     <ion-icon name="locate" aria-hidden="true"></ion-icon>
   </button>
 </ion-content>

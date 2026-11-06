@@ -187,7 +187,8 @@
 }
 .pp-chapter-emoji { flex: 0 0 auto; font-size: 1.25rem; line-height: 1; }
 .pp-chapter-name {
-  flex: 0 1 auto;
+  // Now that the "N words" subtitle is gone, the name takes the full width.
+  flex: 1 1 auto;
   min-width: 0;
   font-size: 1.02rem;
   font-weight: 700;
@@ -197,14 +198,6 @@
   text-overflow: ellipsis;
 }
 .pp-chapter-lock { flex: 0 0 auto; font-size: 15px; color: var(--pp-muted); }
-.pp-chapter-sub {
-  flex: 0 0 auto;
-  margin-left: auto;
-  font-size: 0.76rem;
-  font-weight: 500;
-  color: var(--pp-muted);
-  white-space: nowrap;
-}
 // Locked chapters read dimmer until reached.
 .pp-chapter.is-locked { opacity: 0.9; }
 

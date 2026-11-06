@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.18',
+    notes: [
+      'Your words: tap the speaker on a row to hear the word (tap elsewhere still opens its options).',
+      'Journey++: chapter titles have more room (removed the word count), and the "jump to current" button now stays put above the bar instead of scrolling.',
+    ],
+  },
+  {
     version: '1.3.17',
     notes: [
       'Write mode: the keyboard now stays open after you answer (you just can\'t edit a graded answer until you continue).',
