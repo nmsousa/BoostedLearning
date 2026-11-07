@@ -156,6 +156,26 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   get currentChapter(): JourneyChapter | null { return this.chapters[this.currentIndex] ?? null; }
   get hasMoreChapters(): boolean { return this.renderCount < this.chapters.length; }
 
+  /** Index of the chapter currently filling the viewport — drives the HEADER
+   *  (its name + progress). Tracked on scroll so the header always names the
+   *  section you're looking at, not just the in-progress one. Defaults to the
+   *  in-progress chapter on load. */
+  headerChapterIndex = 0;
+
+  /** The chapter shown in the header (the one on screen). */
+  get headerChapter(): JourneyChapter | null {
+    return this.chapters[this.headerChapterIndex] ?? this.currentChapter;
+  }
+  /** Header title = the on-screen chapter's name. */
+  get headerTitle(): string {
+    const ch = this.headerChapter;
+    if (!ch) return this.t('journeyPP.title');
+    return ch.name || this.t('journeyPlus.chapterFallback', { n: ch.number });
+  }
+  get headerDone(): number { return this.headerChapter?.done ?? 0; }
+  get headerTotal(): number { return Math.max(1, this.headerChapter?.nodes.length ?? 1); }
+  get headerPct(): number { return Math.round((this.headerDone / this.headerTotal) * 100); }
+
   t(key: string, params?: Record<string, string | number>): string {
     return this.i18n.t(key, params);
   }
@@ -228,6 +248,8 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
 
     const found = this.chapters.findIndex(c => c.unlocked && !c.complete);
     this.currentIndex = found >= 0 ? found : Math.max(0, this.chapters.length - 1);
+    // Header starts on the in-progress chapter; scroll updates it thereafter.
+    this.headerChapterIndex = this.currentIndex;
     // Render at least up to the current chapter (+ a batch), like the classic
     // Journey, so the auto-scroll target exists without building all chapters.
     this.renderCount = Math.min(
@@ -310,9 +332,9 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
     const ch = this.currentChapter;
     if (!ch) { this.ctaLabel = ''; this.ctaDisabled = true; return; }
     const total = Math.max(1, ch.nodes.length);
+    // progressPct kept for the in-progress chapter; the HEADER shows per-chapter
+    // progress via headerPct. The ring + XP were removed from the HUD.
     this.progressPct = Math.round((ch.done / total) * 100);
-    this.ringOffset = this.ringCircumference * (1 - ch.done / total);
-    this.xpReward = ch.nodes.length * JourneyPlusPlusPage.XP_PER_NODE;
     this.ctaDisabled = false;
     const activeIdx = ch.unlocked ? ch.nodes.findIndex(n => n.unlocked && !n.passed) : -1;
     if (activeIdx >= 0) {
@@ -324,13 +346,12 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private stopDetail(ch: JourneyChapter, i: number, state: StopState): string {
-    if (state === 'done') return this.t('journeyPP.greatJob');
+    // Done nodes show no "Great job!" caption (removed); locked nodes show no
+    // caption either — tapping a locked node surfaces the reason as a toast
+    // (showLockedHint) instead of an always-visible line.
+    if (state === 'done') return '';
     if (state === 'active') return this.t('journeyPP.minutes', { n: this.minutesFor(ch, ch.nodes[i].type) });
-    if (!ch.unlocked && i === 0) return this.t('journeyPlus.unlocksChapter', { n: ch.number - 1 });
-    const prev = ch.nodes[i - 1];
-    return prev
-      ? this.t('journeyPP.unlocksAfter', { name: this.t(`journey.node.${prev.type}`) })
-      : this.t('journeyPlus.locked');
+    return '';
   }
 
   private minutesFor(ch: JourneyChapter, type: JourneyNodeType): number {
@@ -499,6 +520,7 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
    *  arrow toward the current node (up if it's above us, down if below). */
   onContentScroll(): void {
     if (this.isLoading || this.currentIndex < 0) return;
+    this.updateHeaderChapter();
     const el = document.getElementById(`jpp-chapter-${this.currentIndex}`);
     const vh = window.innerHeight;
 
@@ -525,6 +547,24 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
     if (offscreen !== this.showJumpFab || (offscreen && dir !== this.jumpDirection)) {
       this.showJumpFab = offscreen;
       this.jumpDirection = dir;
+      this.cdr.detectChanges();
+    }
+  }
+
+  /** Pick the chapter whose section currently sits under the header, so the
+   *  header names the section you're looking at. We take the LAST rendered
+   *  chapter whose top has scrolled above a line just under the header. */
+  private updateHeaderChapter(): void {
+    const line = 110; // px from the top of the viewport (just below the header)
+    let idx = 0;
+    for (let i = 0; i < this.mapChapters.length; i++) {
+      const el = document.getElementById(`jpp-chapter-${i}`);
+      if (!el) continue;
+      if (el.getBoundingClientRect().top <= line) idx = i;
+      else break;
+    }
+    if (idx !== this.headerChapterIndex) {
+      this.headerChapterIndex = idx;
       this.cdr.detectChanges();
     }
   }

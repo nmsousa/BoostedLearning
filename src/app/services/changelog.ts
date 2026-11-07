@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.28',
+    notes: [
+      'Journey++ tidied up: chapter titles are centred (no number/emoji), the header now shows the section you\'re on plus its progress bar, "N/total" and % completed. Removed the "Great job!" caption and the XP trophy; a locked node now explains itself only when you tap it.',
+    ],
+  },
+  {
     version: '1.3.27',
     notes: [
       'The "lose progress?" prompt on back now also appears in Quiz, Match and Builder (not just Write), when you\'re mid-exercise: back shows it, back again closes it and leaves.',
