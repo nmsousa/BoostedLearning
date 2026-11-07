@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.29',
+    notes: [
+      'Fixed icons sometimes failing to load (a blank square instead of the icon).',
+      'Journey++: the background illustration now fills the screen properly instead of showing only a strip at the bottom with blue above.',
+    ],
+  },
+  {
     version: '1.3.28',
     notes: [
       'Journey++ tidied up: chapter titles are centred (no number/emoji), the header now shows the section you\'re on plus its progress bar, "N/total" and % completed. Removed the "Great job!" caption and the XP trophy; a locked node now explains itself only when you tap it.',

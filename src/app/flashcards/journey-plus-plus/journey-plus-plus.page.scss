@@ -26,23 +26,26 @@
   background: var(--pp-navy);
 }
 
-// ── Scene: night sky + skyline band (fixed, decorative, behind everything) ──
+// ── Scene: night sky + skyline (fixed, decorative, behind everything) ───────
+// The illustration now fills the lower ~70% of the screen and fades gently into
+// the night sky at the top — mirroring Journey+ (where the image covers the
+// view) instead of sitting as a short masked band at the very bottom.
 .pp-scene {
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  // A thinner sky gradient at the very top; the skyline image carries the rest.
   background:
-    radial-gradient(120% 40% at 50% 0%, rgba(58, 80, 210, 0.55) 0%, transparent 70%),
-    radial-gradient(80% 30% at 85% 30%, rgba(120, 80, 200, 0.28) 0%, transparent 70%),
-    linear-gradient(180deg, #0b1342 0%, #16288a 48%, #1a2a7c 66%, #0b1236 100%);
+    radial-gradient(120% 32% at 50% 0%, rgba(58, 80, 210, 0.5) 0%, transparent 70%),
+    linear-gradient(180deg, #0b1342 0%, #16247e 30%, #16246f 55%, #0b1236 100%);
 
   // Stars across the upper region.
   &::before {
     content: '';
     position: absolute;
-    inset: 0 0 45% 0;
+    inset: 0 0 55% 0;
     opacity: 0.85;
     background:
       radial-gradient(1.6px 1.6px at 8% 22%, #fff 50%, transparent 51%),
@@ -53,16 +56,14 @@
       radial-gradient(1.2px 1.2px at 74% 8%, #fff 50%, transparent 51%),
       radial-gradient(1.4px 1.4px at 88% 19%, #fff 50%, transparent 51%),
       radial-gradient(1px 1px at 94% 38%, #fff 50%, transparent 51%),
-      radial-gradient(1px 1px at 12% 46%, #fff 50%, transparent 51%),
-      radial-gradient(1.2px 1.2px at 56% 52%, #fff 50%, transparent 51%),
-      radial-gradient(1px 1px at 80% 60%, #fff 50%, transparent 51%);
+      radial-gradient(1px 1px at 12% 46%, #fff 50%, transparent 51%);
   }
   // Darken toward the bottom so the HUD reads as a floating panel.
   &::after {
     content: '';
     position: absolute;
     inset: auto 0 0 0;
-    height: 26%;
+    height: 22%;
     background: linear-gradient(180deg, transparent, rgba(8, 12, 40, 0.92));
   }
 }
@@ -71,15 +72,21 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 48%;
+  // Fill most of the view (was 48%) so the illustration reads across the
+  // screen like Journey+, not just a strip at the bottom.
+  height: 72%;
   background: url('/assets/images/international-background.jpg') 26% 100% / cover no-repeat;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 42%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 42%);
+  // Fade the TOP of the image gently into the sky (image fully visible from
+  // ~55% down). A softer, higher fade than before (was transparent→#000 by 42%)
+  // so more of the skyline shows.
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 55%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 55%);
   &::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(36, 52, 170, 0.62) 0%, rgba(40, 50, 150, 0.4) 45%, rgba(14, 20, 70, 0.35) 100%);
+    // Lighter navy wash so the illustration isn't drowned in blue.
+    background: linear-gradient(180deg, rgba(30, 44, 150, 0.4) 0%, rgba(34, 44, 130, 0.22) 45%, rgba(14, 20, 70, 0.3) 100%);
     mix-blend-mode: multiply;
   }
 }
