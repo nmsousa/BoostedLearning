@@ -14,12 +14,15 @@ import type { ParamMap } from '@angular/router';
 export const JOURNEY_PLUS_FROM = 'journey-plus';
 /** `from` value passed by Journey++. */
 export const JOURNEY_PLUS_PLUS_FROM = 'journey-plus-plus';
+/** `from` value passed by the Tree map. */
+export const JOURNEY_TREE_FROM = 'tree';
 
 /** Return route for a Journey node exercise. */
 export function journeyBackUrl(query: ParamMap): string {
   switch (query.get('from')) {
     case JOURNEY_PLUS_FROM: return '/practice/journey-plus';
     case JOURNEY_PLUS_PLUS_FROM: return '/practice/journey-plus-plus';
+    case JOURNEY_TREE_FROM: return '/practice/tree';
     default: return '/practice/journey';
   }
 }

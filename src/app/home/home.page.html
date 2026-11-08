@@ -113,6 +113,14 @@
           <span class="mode-desc">{{ 'home.mode.journeyPP.desc' | translate }}</span>
         </button>
 
+        <!-- Tree: radial "learning network" map (Core Vocabulary hub + units). -->
+        <button type="button" class="mode-card tree" (click)="startTree()">
+          <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>
+          <ion-icon name="git-network-outline"></ion-icon>
+          <span class="mode-name">{{ 'home.mode.tree' | translate }}</span>
+          <span class="mode-desc">{{ 'home.mode.tree.desc' | translate }}</span>
+        </button>
+
         <button type="button" class="mode-card builder" (click)="startBuilder()">
           <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>
           <ion-icon name="construct-outline"></ion-icon>

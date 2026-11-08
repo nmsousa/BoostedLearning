@@ -1,0 +1,87 @@
+<ion-header class="tree-header ion-no-border">
+  <ion-toolbar>
+    <div class="tree-head-wrap">
+      <div class="tree-head">
+        <button type="button" class="tree-back" (click)="close()" [attr.aria-label]="'journeyPlus.back' | translate">
+          <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
+        </button>
+
+        <h1 class="tree-title">{{ switchingLanguage ? '' : ('tree.title' | translate) }}</h1>
+
+        <button type="button" class="tree-lang" id="tree-lang-trigger"
+          [attr.aria-label]="'journeyPlus.changeLanguage' | translate">
+          <span class="tree-flag"><img [src]="currentLanguage.flagUrl" alt="" /></span>
+          <ion-icon name="chevron-down" class="tree-lang-caret" aria-hidden="true"></ion-icon>
+        </button>
+        <ion-popover trigger="tree-lang-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
+          <ng-template>
+            <ion-list class="lang-list">
+              <ion-item *ngFor="let lang of availableLanguages" button detail="false" lines="none"
+                [class.active]="lang.code === learningLanguage" (click)="selectLanguage(lang.code)">
+                <img class="flag" slot="start" [src]="lang.flagUrl" [alt]="lang.name" />
+                <ion-label>{{ lang.name }}</ion-label>
+                <ion-icon *ngIf="lang.code === learningLanguage" name="checkmark" slot="end" color="primary"></ion-icon>
+              </ion-item>
+            </ion-list>
+          </ng-template>
+        </ion-popover>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tree-content" [scrollY]="true">
+  <!-- Overlay spinner on first load AND during a language switch. -->
+  <div *ngIf="isLoading || switchingLanguage" class="tree-loading"><ion-spinner name="crescent"></ion-spinner></div>
+  <p *ngIf="!isLoading && !deck" class="tree-empty">{{ 'journeyPlus.empty' | translate }}</p>
+
+  <div *ngIf="!isLoading && deck" class="tree-scene" #scene>
+    <!-- Square radial stage; nodes placed on a circle inside it. -->
+    <div class="tree-stage">
+      <!-- Connector layer: hub → each unit. Behind nodes; no pointer events. -->
+      <svg class="tree-links" [attr.viewBox]="'0 0 ' + view + ' ' + view" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+        <line *ngFor="let u of units; trackBy: trackUnit"
+          [attr.x1]="view / 2" [attr.y1]="view / 2" [attr.x2]="u.x" [attr.y2]="u.y"
+          class="tree-link" [class.is-done]="u.state === 'done'" [class.is-active]="u.state === 'active'" />
+      </svg>
+
+      <!-- Central hub: Core Vocabulary (aggregate foundation). -->
+      <button type="button" class="tree-hub" [class.started]="hubStarted" (click)="openHub()"
+        [attr.aria-label]="('tree.hubTitle' | translate) + ', ' + ('journeyPlus.percentDone' | translate:{ p: hubPct })">
+        <ion-icon name="book" class="tree-hub-icon" aria-hidden="true"></ion-icon>
+        <span class="tree-hub-title">{{ 'tree.hubTitle' | translate }}</span>
+        <span class="tree-hub-sub">{{ 'tree.hubSub' | translate }}</span>
+        <span class="tree-hub-pct">{{ 'journeyPlus.percentDone' | translate:{ p: hubPct } }}</span>
+      </button>
+
+      <!-- Unit nodes arranged around the hub. -->
+      <div *ngFor="let u of units; trackBy: trackUnit"
+        class="tree-unit-wrap" [ngClass]="'state-' + u.state" [class.hint-open]="isHintVisible(u)"
+        [style.--ux]="u.x" [style.--uy]="u.y" [style.--view]="view" [style.--hue]="u.hue">
+
+        <button type="button" class="tree-unit" (click)="onUnitTap(u)" [attr.aria-label]="u.aria">
+          <span class="tree-unit-emoji" aria-hidden="true">{{ u.emoji }}</span>
+          <span *ngIf="u.state === 'locked'" class="tree-unit-lock" aria-hidden="true">
+            <ion-icon name="lock-closed"></ion-icon>
+          </span>
+          <span *ngIf="u.state === 'done'" class="tree-unit-tick" aria-hidden="true">
+            <ion-icon name="checkmark"></ion-icon>
+          </span>
+        </button>
+
+        <!-- Lesson dots branching off the unit. -->
+        <div class="tree-lessons" aria-hidden="true">
+          <span *ngFor="let l of u.lessons; trackBy: trackLesson"
+            class="tree-dot" [ngClass]="'dot-' + l.state"></span>
+        </div>
+
+        <!-- Label + progress; locked units reveal an "unlocks after…" hint. -->
+        <div class="tree-unit-label">
+          <span class="tree-unit-name">{{ u.title }}</span>
+          <span class="tree-unit-meta" *ngIf="u.state !== 'locked'">{{ u.done }}/{{ u.total }} · {{ 'journeyPlus.percentDone' | translate:{ p: u.pct } }}</span>
+          <span class="tree-unit-meta hint" *ngIf="isHintVisible(u)">{{ unitHint(u) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

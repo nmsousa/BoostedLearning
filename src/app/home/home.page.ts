@@ -326,6 +326,10 @@ export class HomePage implements OnInit {
     this.router.navigate(['/practice/journey']);
   }
 
+  startTree(): void {
+    this.router.navigate(['/practice/tree']);
+  }
+
   startBuilder(): void {
     this.router.navigate(['/practice/builder']);
   }

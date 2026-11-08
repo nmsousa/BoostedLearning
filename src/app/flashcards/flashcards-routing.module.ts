@@ -56,6 +56,12 @@ const routes: Routes = [
     loadChildren: () => import('./journey-plus-plus/journey-plus-plus.module').then(m => m.JourneyPlusPlusPageModule)
   },
   {
+    // EXPERIMENTAL: Tree — a radial "learning network" map. Central Core
+    // Vocabulary hub with thematic unit branches. Shares journey-* progress.
+    path: 'tree',
+    loadChildren: () => import('./tree/tree.module').then(m => m.TreePageModule)
+  },
+  {
     // EXPERIMENTAL: a Journey level reuses the Write exercise, scored under
     // the 'journey' mode (via ?mode=journey).
     path: 'journey-play/:id',

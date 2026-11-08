@@ -1,0 +1,275 @@
+// Tree — radial "learning network" map. Central Core Vocabulary hub with the
+// deck's skill chapters arranged as unit nodes around it. Own night palette,
+// echoing Journey++ so the two feel like one family.
+
+:host {
+  --tree-ink: #ffffff;
+  --tree-muted: rgba(208, 214, 255, 0.72);
+  --tree-navy: #0a1036;
+  --tree-glass: rgba(16, 20, 58, 0.82);
+  --tree-glass-line: rgba(160, 170, 255, 0.2);
+  --tree-green: #4cf59a;
+  --tree-cyan: #3fd8ff;
+  --tree-blue: #1f6bff;
+  --tree-lavender: #8c9bff;
+  --tree-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --tree-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  --tree-ring-color: rgba(124, 132, 232, 0.9);
+  --tree-ring-fill: rgba(28, 32, 74, 0.55);
+  --tree-ring-glow:
+    inset 0 0 0 2px var(--tree-ring-color),
+    0 0 0 1px rgba(124, 132, 232, 0.2),
+    0 0 16px rgba(110, 120, 240, 0.32);
+
+  --hub: clamp(96px, 30vw, 136px);
+  --unit: clamp(58px, 16vw, 78px);
+
+  color: var(--tree-ink);
+  background: var(--tree-navy);
+}
+
+// ── Header (mirrors Journey++) ───────────────────────────────────────────────
+.tree-header ion-toolbar {
+  --background: transparent;
+  --border-width: 0;
+  --min-height: 60px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+.tree-head-wrap { display: flex; flex-direction: column; justify-content: center; width: 100%; }
+.tree-head { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.tree-back {
+  flex: 0 0 auto; width: 44px; height: 44px; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; font-size: 23px; color: #eceeff;
+  background: var(--tree-ring-fill); border: 0; box-shadow: var(--tree-ring-glow);
+  cursor: pointer; transition: transform 0.15s var(--tree-ease);
+  &:active { transform: scale(0.92); }
+}
+.tree-title {
+  flex: 1 1 auto; min-width: 0; margin: 0;
+  font-size: clamp(1.05rem, 4.6vw, 1.3rem); font-weight: 800; letter-spacing: 0.01em;
+  line-height: 1.12;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  overflow: hidden; overflow-wrap: anywhere;
+}
+.tree-lang {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px;
+  height: 44px; padding: 0 8px; border-radius: 999px; color: var(--tree-ink);
+  font: inherit; background: var(--tree-ring-fill); border: 0; box-shadow: var(--tree-ring-glow);
+  cursor: pointer;
+}
+.tree-flag {
+  width: 28px; height: 28px; border-radius: 50%; overflow: hidden;
+  box-shadow: 0 0 0 1.5px rgba(160, 170, 255, 0.55);
+  img { width: 100%; height: 100%; object-fit: cover; display: block; }
+}
+.tree-lang-caret { font-size: 14px; opacity: 0.85; }
+
+// ── Scene background ─────────────────────────────────────────────────────────
+.tree-content {
+  --background: transparent;
+  &::part(background) {
+    background:
+      radial-gradient(120% 50% at 50% 0%, rgba(58, 80, 210, 0.45) 0%, transparent 65%),
+      linear-gradient(180deg, #0b1342 0%, #16247e 45%, #0b1236 100%);
+  }
+}
+.tree-loading {
+  position: fixed; inset: 0; z-index: 5; display: grid; place-items: center;
+  background: var(--tree-navy);
+}
+.tree-empty { text-align: center; color: var(--tree-muted); padding: 40px 24px; }
+
+// ── Radial stage ─────────────────────────────────────────────────────────────
+.tree-scene {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+}
+// Square stage: side = the smaller of width / a capped height, so the full
+// circle (hub + units + labels) always fits without clipping.
+.tree-stage {
+  position: relative;
+  width: min(100%, 78vh);
+  aspect-ratio: 1 / 1;
+  --view: 1000; // overwritten per-node via inline style, but a sane default
+}
+
+// Connector lines (SVG scaled to the stage).
+.tree-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.tree-link {
+  stroke: rgba(150, 160, 255, 0.28);
+  stroke-width: 3;
+  &.is-active { stroke: rgba(120, 200, 255, 0.55); stroke-width: 4; }
+  &.is-done { stroke: rgba(76, 245, 154, 0.5); stroke-width: 4; }
+}
+
+// ── Central hub ──────────────────────────────────────────────────────────────
+.tree-hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--hub);
+  height: var(--hub);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  place-items: center;
+  gap: 1px;
+  padding: 6px;
+  text-align: center;
+  color: #0b1240;
+  background: radial-gradient(circle at 38% 30%, #ffffff 0%, #eaf2ff 70%, #d7e6ff 100%);
+  border: 0;
+  box-shadow:
+    0 0 0 4px rgba(63, 150, 255, 0.5),
+    0 0 26px rgba(63, 160, 255, 0.6),
+    var(--tree-shadow);
+  cursor: pointer;
+  z-index: 3;
+  transition: transform 0.18s var(--tree-ease);
+  &:active { transform: translate(-50%, -50%) scale(0.95); }
+  &.started { box-shadow: 0 0 0 4px rgba(76, 245, 154, 0.55), 0 0 26px rgba(76, 245, 154, 0.5), var(--tree-shadow); }
+}
+.tree-hub-icon { font-size: calc(var(--hub) * 0.26); color: #1f6bff; }
+.tree-hub-title { font-size: calc(var(--hub) * 0.125); font-weight: 800; line-height: 1.05; }
+.tree-hub-sub { display: none; }
+.tree-hub-pct { font-size: calc(var(--hub) * 0.12); font-weight: 800; color: #1f9d57; }
+
+@media (min-width: 420px) {
+  .tree-hub-sub {
+    display: block;
+    font-size: calc(var(--hub) * 0.085);
+    font-weight: 600;
+    color: #3b4775;
+    line-height: 1.1;
+    max-width: 86%;
+  }
+}
+
+// ── Unit nodes ───────────────────────────────────────────────────────────────
+// Positioned by converting the SVG-space centre (--ux,--uy in 0..--view units)
+// to a percentage of the square stage.
+.tree-unit-wrap {
+  position: absolute;
+  left: calc(var(--ux) / var(--view) * 100%);
+  top: calc(var(--uy) / var(--view) * 100%);
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: max-content;
+  max-width: 40%;
+  z-index: 2;
+}
+.tree-unit {
+  position: relative;
+  width: var(--unit);
+  height: var(--unit);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 0;
+  cursor: pointer;
+  font-size: calc(var(--unit) * 0.46);
+  // Theme tint derived from the node's hue, kept soft and harmonious.
+  background: radial-gradient(circle at 36% 30%,
+    hsl(var(--hue), 90%, 72%) 0%,
+    hsl(var(--hue), 72%, 54%) 55%,
+    hsl(var(--hue), 68%, 40%) 100%);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 -5px 10px rgba(0, 0, 0, 0.22);
+  transition: transform 0.18s var(--tree-ease);
+  &:active { transform: scale(0.92); }
+  .tree-unit-emoji { line-height: 1; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3)); }
+}
+
+// Active unit: white rim + glow (the current one).
+.state-active .tree-unit {
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 22px rgba(120, 200, 255, 0.7), 0 6px 16px rgba(0, 0, 0, 0.4);
+  animation: tree-breathe 2.8s ease-in-out 0.4s infinite;
+}
+// Done unit: green rim.
+.state-done .tree-unit {
+  border: 3px solid #c3ffdd;
+  box-shadow: 0 0 20px rgba(76, 245, 154, 0.6), 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+// Locked unit: desaturated + periwinkle ring.
+.state-locked .tree-unit {
+  filter: grayscale(0.55) brightness(0.72);
+  box-shadow: var(--tree-ring-glow), inset 0 -5px 10px rgba(0, 0, 0, 0.3);
+}
+
+.tree-unit-lock,
+.tree-unit-tick {
+  position: absolute;
+  right: calc(var(--unit) * -0.06);
+  bottom: calc(var(--unit) * -0.06);
+  width: calc(var(--unit) * 0.42);
+  height: calc(var(--unit) * 0.42);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  ion-icon { font-size: calc(var(--unit) * 0.24); }
+}
+.tree-unit-lock {
+  background: radial-gradient(circle at 35% 30%, #5a5f8e 0%, #2b2f4e 70%, #171a30 100%);
+  box-shadow: inset 0 0 0 2px var(--tree-ring-color), 0 2px 6px rgba(0, 0, 0, 0.5);
+  color: #eceeff;
+}
+.tree-unit-tick {
+  background: #22d36e;
+  box-shadow: 0 0 10px rgba(76, 245, 154, 0.6);
+}
+
+// Lesson dots under the node.
+.tree-lessons { display: flex; gap: 3px; justify-content: center; }
+.tree-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(200, 206, 240, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+.dot-done { background: var(--tree-green); box-shadow: 0 0 6px rgba(76, 245, 154, 0.7); }
+.dot-active { background: var(--tree-cyan); box-shadow: 0 0 6px rgba(63, 216, 255, 0.8); }
+
+// Label + progress.
+.tree-unit-label { text-align: center; max-width: 118px; }
+.tree-unit-name {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  overflow: hidden; overflow-wrap: anywhere;
+}
+.tree-unit-meta {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--tree-muted);
+  font-variant-numeric: tabular-nums;
+  &.hint { color: #ffd27a; margin-top: 1px; }
+}
+.state-locked .tree-unit-name { color: rgba(236, 238, 255, 0.82); }
+
+@keyframes tree-breathe { 50% { transform: scale(1.05); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .state-active .tree-unit { animation: none !important; }
+}
+:host-context(.reduced-motion) {
+  .state-active .tree-unit { animation: none !important; }
+}
