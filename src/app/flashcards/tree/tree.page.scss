@@ -1,16 +1,16 @@
 // Tree — radial "learning network" map. Central Core Vocabulary hub with the
-// deck's skill chapters arranged as unit nodes around it. Own night palette,
-// echoing Journey++ so the two feel like one family.
+// deck's skills GROUPED INTO ~11 themes around it (see tree-themes.ts), so the
+// ring stays readable no matter how many skills the deck has. Tapping a theme
+// opens a slide-up sheet listing that theme's chapters as lessons.
 
 :host {
   --tree-ink: #ffffff;
   --tree-muted: rgba(208, 214, 255, 0.72);
   --tree-navy: #0a1036;
-  --tree-glass: rgba(16, 20, 58, 0.82);
+  --tree-glass: rgba(16, 20, 58, 0.92);
   --tree-glass-line: rgba(160, 170, 255, 0.2);
   --tree-green: #4cf59a;
   --tree-cyan: #3fd8ff;
-  --tree-blue: #1f6bff;
   --tree-lavender: #8c9bff;
   --tree-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --tree-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
@@ -21,14 +21,14 @@
     0 0 0 1px rgba(124, 132, 232, 0.2),
     0 0 16px rgba(110, 120, 240, 0.32);
 
-  --hub: clamp(96px, 30vw, 136px);
-  --unit: clamp(58px, 16vw, 78px);
+  --hub: clamp(100px, 30vw, 140px);
+  --unit: clamp(54px, 15vw, 72px);
 
   color: var(--tree-ink);
   background: var(--tree-navy);
 }
 
-// ── Header (mirrors Journey++) ───────────────────────────────────────────────
+// ── Header ───────────────────────────────────────────────────────────────────
 .tree-header ion-toolbar {
   --background: transparent;
   --border-width: 0;
@@ -81,195 +81,163 @@
 .tree-empty { text-align: center; color: var(--tree-muted); padding: 40px 24px; }
 
 // ── Radial stage ─────────────────────────────────────────────────────────────
-.tree-scene {
-  display: grid;
-  place-items: center;
-  min-height: 100%;
-  padding: 12px;
-  box-sizing: border-box;
-}
-// Square stage: side = the smaller of width / a capped height, so the full
-// circle (hub + units + labels) always fits without clipping.
+.tree-scene { display: grid; place-items: center; min-height: 100%; padding: 14px; box-sizing: border-box; }
 .tree-stage {
   position: relative;
-  width: min(100%, 78vh);
+  width: min(100%, 74vh);
   aspect-ratio: 1 / 1;
-  --view: 1000; // overwritten per-node via inline style, but a sane default
+  --view: 1000;
 }
-
-// Connector lines (SVG scaled to the stage).
 .tree-links {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
+  position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible;
 }
 .tree-link {
-  stroke: rgba(150, 160, 255, 0.28);
-  stroke-width: 3;
+  stroke: rgba(150, 160, 255, 0.28); stroke-width: 3;
   &.is-active { stroke: rgba(120, 200, 255, 0.55); stroke-width: 4; }
   &.is-done { stroke: rgba(76, 245, 154, 0.5); stroke-width: 4; }
 }
 
 // ── Central hub ──────────────────────────────────────────────────────────────
 .tree-hub {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: var(--hub);
-  height: var(--hub);
+  position: absolute; left: 50%; top: 50%;
+  width: var(--hub); height: var(--hub);
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  display: grid;
-  grid-template-rows: auto auto auto auto;
-  place-items: center;
-  gap: 1px;
-  padding: 6px;
-  text-align: center;
-  color: #0b1240;
+  display: grid; place-items: center; gap: 2px; padding: 6px; text-align: center;
+  color: #0b1240; border: 0;
   background: radial-gradient(circle at 38% 30%, #ffffff 0%, #eaf2ff 70%, #d7e6ff 100%);
-  border: 0;
-  box-shadow:
-    0 0 0 4px rgba(63, 150, 255, 0.5),
-    0 0 26px rgba(63, 160, 255, 0.6),
-    var(--tree-shadow);
-  cursor: pointer;
-  z-index: 3;
+  box-shadow: 0 0 0 4px rgba(63, 150, 255, 0.5), 0 0 26px rgba(63, 160, 255, 0.6), var(--tree-shadow);
+  cursor: pointer; z-index: 3;
   transition: transform 0.18s var(--tree-ease);
   &:active { transform: translate(-50%, -50%) scale(0.95); }
   &.started { box-shadow: 0 0 0 4px rgba(76, 245, 154, 0.55), 0 0 26px rgba(76, 245, 154, 0.5), var(--tree-shadow); }
 }
-.tree-hub-icon { font-size: calc(var(--hub) * 0.26); color: #1f6bff; }
-.tree-hub-title { font-size: calc(var(--hub) * 0.125); font-weight: 800; line-height: 1.05; }
-.tree-hub-sub { display: none; }
+.tree-hub-icon { font-size: calc(var(--hub) * 0.24); color: #1f6bff; }
+.tree-hub-title { font-size: calc(var(--hub) * 0.13); font-weight: 800; line-height: 1.05; max-width: 90%; }
 .tree-hub-pct { font-size: calc(var(--hub) * 0.12); font-weight: 800; color: #1f9d57; }
 
-@media (min-width: 420px) {
-  .tree-hub-sub {
-    display: block;
-    font-size: calc(var(--hub) * 0.085);
-    font-weight: 600;
-    color: #3b4775;
-    line-height: 1.1;
-    max-width: 86%;
-  }
-}
-
-// ── Unit nodes ───────────────────────────────────────────────────────────────
-// Positioned by converting the SVG-space centre (--ux,--uy in 0..--view units)
-// to a percentage of the square stage.
+// ── Theme nodes ──────────────────────────────────────────────────────────────
 .tree-unit-wrap {
   position: absolute;
   left: calc(var(--ux) / var(--view) * 100%);
   top: calc(var(--uy) / var(--view) * 100%);
   transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: max-content;
-  max-width: 40%;
-  z-index: 2;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: max-content; max-width: 34%; z-index: 2;
 }
 .tree-unit {
-  position: relative;
-  width: var(--unit);
-  height: var(--unit);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  border: 0;
-  cursor: pointer;
+  position: relative; width: var(--unit); height: var(--unit); border-radius: 50%;
+  display: grid; place-items: center; border: 0; cursor: pointer;
   font-size: calc(var(--unit) * 0.46);
-  // Theme tint derived from the node's hue, kept soft and harmonious.
   background: radial-gradient(circle at 36% 30%,
-    hsl(var(--hue), 90%, 72%) 0%,
-    hsl(var(--hue), 72%, 54%) 55%,
-    hsl(var(--hue), 68%, 40%) 100%);
+    hsl(var(--hue), 90%, 72%) 0%, hsl(var(--hue), 72%, 54%) 55%, hsl(var(--hue), 68%, 40%) 100%);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 -5px 10px rgba(0, 0, 0, 0.22);
   transition: transform 0.18s var(--tree-ease);
   &:active { transform: scale(0.92); }
   .tree-unit-emoji { line-height: 1; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3)); }
 }
-
-// Active unit: white rim + glow (the current one).
 .state-active .tree-unit {
   border: 3px solid #ffffff;
   box-shadow: 0 0 22px rgba(120, 200, 255, 0.7), 0 6px 16px rgba(0, 0, 0, 0.4);
   animation: tree-breathe 2.8s ease-in-out 0.4s infinite;
 }
-// Done unit: green rim.
 .state-done .tree-unit {
   border: 3px solid #c3ffdd;
   box-shadow: 0 0 20px rgba(76, 245, 154, 0.6), 0 6px 16px rgba(0, 0, 0, 0.4);
 }
-// Locked unit: desaturated + periwinkle ring.
 .state-locked .tree-unit {
   filter: grayscale(0.55) brightness(0.72);
   box-shadow: var(--tree-ring-glow), inset 0 -5px 10px rgba(0, 0, 0, 0.3);
 }
-
-.tree-unit-lock,
-.tree-unit-tick {
-  position: absolute;
-  right: calc(var(--unit) * -0.06);
-  bottom: calc(var(--unit) * -0.06);
-  width: calc(var(--unit) * 0.42);
-  height: calc(var(--unit) * 0.42);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: #fff;
+.tree-unit-lock, .tree-unit-tick {
+  position: absolute; right: calc(var(--unit) * -0.06); bottom: calc(var(--unit) * -0.06);
+  width: calc(var(--unit) * 0.42); height: calc(var(--unit) * 0.42); border-radius: 50%;
+  display: grid; place-items: center; color: #fff;
   ion-icon { font-size: calc(var(--unit) * 0.24); }
 }
 .tree-unit-lock {
   background: radial-gradient(circle at 35% 30%, #5a5f8e 0%, #2b2f4e 70%, #171a30 100%);
-  box-shadow: inset 0 0 0 2px var(--tree-ring-color), 0 2px 6px rgba(0, 0, 0, 0.5);
-  color: #eceeff;
+  box-shadow: inset 0 0 0 2px var(--tree-ring-color), 0 2px 6px rgba(0, 0, 0, 0.5); color: #eceeff;
 }
-.tree-unit-tick {
-  background: #22d36e;
-  box-shadow: 0 0 10px rgba(76, 245, 154, 0.6);
-}
+.tree-unit-tick { background: #22d36e; box-shadow: 0 0 10px rgba(76, 245, 154, 0.6); }
 
-// Lesson dots under the node.
-.tree-lessons { display: flex; gap: 3px; justify-content: center; }
-.tree-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: rgba(200, 206, 240, 0.35);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
-}
-.dot-done { background: var(--tree-green); box-shadow: 0 0 6px rgba(76, 245, 154, 0.7); }
-.dot-active { background: var(--tree-cyan); box-shadow: 0 0 6px rgba(63, 216, 255, 0.8); }
-
-// Label + progress.
-.tree-unit-label { text-align: center; max-width: 118px; }
+.tree-unit-label { text-align: center; max-width: 112px; }
 .tree-unit-name {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 800;
-  line-height: 1.1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
   overflow: hidden; overflow-wrap: anywhere;
+  font-size: 0.76rem; font-weight: 800; line-height: 1.1; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 .tree-unit-meta {
-  display: block;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--tree-muted);
+  display: block; font-size: 0.66rem; font-weight: 600; color: var(--tree-muted);
   font-variant-numeric: tabular-nums;
-  &.hint { color: #ffd27a; margin-top: 1px; }
 }
 .state-locked .tree-unit-name { color: rgba(236, 238, 255, 0.82); }
 
 @keyframes tree-breathe { 50% { transform: scale(1.05); } }
 
+// ── Theme detail sheet ───────────────────────────────────────────────────────
+.tree-sheet-backdrop {
+  position: fixed; inset: 0; z-index: 8; background: rgba(4, 6, 24, 0.55);
+  animation: tree-fade 0.2s ease;
+}
+.tree-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 9;
+  max-height: 78vh; display: flex; flex-direction: column;
+  border-radius: 22px 22px 0 0;
+  background: linear-gradient(180deg, rgba(24, 30, 84, 0.98), rgba(12, 16, 50, 0.99));
+  border-top: 1px solid var(--tree-glass-line);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.55);
+  padding: 8px 12px calc(12px + var(--ion-safe-area-bottom, 0px));
+  animation: tree-rise 0.28s var(--tree-ease);
+}
+.tree-sheet-grip {
+  width: 44px; height: 4px; border-radius: 999px; background: rgba(180, 190, 255, 0.4);
+  margin: 2px auto 8px;
+}
+.tree-sheet-head { display: flex; align-items: center; gap: 12px; padding: 0 4px 10px; }
+.tree-sheet-emoji { font-size: 1.9rem; line-height: 1; }
+.tree-sheet-headtext { flex: 1 1 auto; min-width: 0; }
+.tree-sheet-title { margin: 0; font-size: 1.15rem; font-weight: 800; line-height: 1.15; }
+.tree-sheet-sub { font-size: 0.78rem; color: var(--tree-muted); font-variant-numeric: tabular-nums; }
+.tree-sheet-close {
+  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--tree-ring-fill); border: 0; color: #eceeff; font-size: 20px; cursor: pointer;
+  box-shadow: var(--tree-ring-glow);
+}
+.tree-sheet-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 2px 2px 4px; }
+
+.tree-lesson {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 12px 14px; border-radius: 14px; cursor: pointer;
+  background: var(--tree-glass); border: 1px solid var(--tree-glass-line); color: var(--tree-ink);
+  transition: transform 0.12s var(--tree-ease), background 0.12s;
+  &:active:not(:disabled) { transform: scale(0.985); }
+  &:disabled { opacity: 0.55; cursor: default; }
+}
+.tree-lesson-icon {
+  flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; font-size: 24px;
+}
+.lesson-done .tree-lesson-icon { color: var(--tree-green); }
+.lesson-active .tree-lesson-icon { color: var(--tree-cyan); }
+.lesson-locked .tree-lesson-icon { color: rgba(180, 186, 230, 0.6); }
+.tree-lesson-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tree-lesson-name {
+  font-size: 0.95rem; font-weight: 700; line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tree-lesson-meta { font-size: 0.72rem; color: var(--tree-muted); font-variant-numeric: tabular-nums; }
+.tree-lesson-chev { flex: 0 0 auto; font-size: 18px; color: var(--tree-lavender); }
+.lesson-active { border-color: rgba(120, 200, 255, 0.5); box-shadow: 0 0 14px rgba(63, 216, 255, 0.18); }
+.lesson-active .tree-lesson-name { color: #eaf4ff; }
+
+@keyframes tree-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tree-rise { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
 @media (prefers-reduced-motion: reduce) {
   .state-active .tree-unit { animation: none !important; }
+  .tree-sheet, .tree-sheet-backdrop { animation: none !important; }
 }
 :host-context(.reduced-motion) {
   .state-active .tree-unit { animation: none !important; }
+  .tree-sheet, .tree-sheet-backdrop { animation: none !important; }
 }

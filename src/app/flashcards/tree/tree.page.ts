@@ -1,32 +1,24 @@
 /**
  * Tree Page (EXPERIMENTAL — radial "learning network" map)
  *
- * An alternative to the linear Journey maps: a central "Core Vocabulary" hub
- * with the deck's skill chapters arranged as thematic UNIT nodes in a circle
- * around it, each connected to the hub by a thin line. Small lesson dots branch
- * off every unit (one per activity node) showing done / active / locked state.
+ * A themed alternative to the linear Journey maps. The deck's MANY skill
+ * chapters (the French deck has ~295) are grouped into a SMALL set of thematic
+ * units (see tree-themes.ts) arranged radially around a central "Core
+ * Vocabulary" hub. Tapping a theme opens a detail panel listing that theme's
+ * chapters as lessons; each lesson launches the same exercises as Journey and
+ * writes the shared `journey-*` progress.
  *
- * It reuses the EXACT same data and progress as Journey/Journey+/Journey++:
- *  - `buildJourneyChapters` turns the deck's skill levels into chapters;
- *  - each chapter is a unit, its nodes are the lessons;
- *  - tapping a unit opens that unit's active node exercise with the same
- *    `navigateForward([route, deckId], { level, mode, from: tree })` wiring, so
- *    scores land in the shared `journey-*` namespaces and the exercise returns
- *    here (via journeyBackUrl → /practice/tree).
- *
- * The hub is an aggregate/foundation node: it shows overall progress and, when
- * tapped, jumps into the current in-progress unit's active lesson.
- *
- * Layout: nodes are positioned with CSS custom properties (angle + radius) so
- * the radial arrangement scales with the measured viewport; an SVG layer draws
- * the hub→unit connectors behind the nodes (pointer-events: none).
+ * Layout: theme nodes are placed on a circle via unitless CSS custom properties
+ * (converted to % of the square stage); an SVG layer draws hub→theme connectors
+ * behind the nodes. Because the theme COUNT is small and fixed-ish (~11), the
+ * radial map stays readable regardless of how many skills the deck has.
  *
  * @module app/flashcards/tree
  */
 
 import {
   Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy,
-  ViewChild, ElementRef, AfterViewInit, HostListener,
+  HostListener,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { NavController } from '@ionic/angular';
@@ -36,38 +28,35 @@ import { I18nAngularService } from '../../services/i18n.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { buildJourneyChapters, type JourneyChapter } from '../journey/journey-model';
 import { JOURNEY_TREE_FROM } from '../journey/journey-back';
+import { groupChaptersIntoThemes, type TreeTheme } from './tree-themes';
 
-type UnitState = 'done' | 'active' | 'locked';
-type LessonState = 'done' | 'active' | 'locked';
+type NodeState = 'done' | 'active' | 'locked';
 
-/** A lesson dot branching off a unit (mirrors a chapter node). */
-interface Lesson {
-  index: number;
-  state: LessonState;
-  label: string;
-  aria: string;
-}
-
-/** A thematic unit node in the radial ring (= one JourneyChapter). */
-interface Unit {
-  chapter: JourneyChapter;
+/** A theme node positioned in the radial ring. */
+interface ThemeNode {
+  theme: TreeTheme;
   index: number;
   title: string;
   emoji: string;
-  state: UnitState;
-  /** 0-based position in the ring. */
-  ring: number;
-  /** Angle (deg) and radius (% of the map radius) for CSS positioning. */
-  angle: number;
+  state: NodeState;
+  pct: number;
+  done: number;
+  total: number;
+  hue: number;
+  /** Connector endpoint (theme centre) in SVG viewBox units. */
+  x: number;
+  y: number;
+  aria: string;
+}
+
+/** A lesson row inside the opened theme's detail panel (= one chapter). */
+interface LessonRow {
+  chapter: JourneyChapter;
+  title: string;
+  state: NodeState;
   done: number;
   total: number;
   pct: number;
-  /** Theme hue (deg) derived from the ring position for a harmonious palette. */
-  hue: number;
-  /** Connector line endpoint (unit centre) in SVG viewBox units. */
-  x: number;
-  y: number;
-  lessons: Lesson[];
   aria: string;
 }
 
@@ -80,7 +69,7 @@ interface LanguageOption { code: string; name: string; flagUrl: string }
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TreePage implements OnInit, AfterViewInit, OnDestroy {
+export class TreePage implements OnInit, OnDestroy {
   private router = inject(Router);
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
@@ -89,34 +78,33 @@ export class TreePage implements OnInit, AfterViewInit, OnDestroy {
   private navCtrl = inject(NavController);
   private backInterceptor = inject(BackInterceptorService);
 
-  /** Hardware/gesture back → same as the header X (go Home). Claimed here so a
-   *  single press doesn't fall through to the global handler and pop twice. */
-  private readonly onHardwareBack: () => boolean = () => { this.close(); return true; };
-
-  @ViewChild('scene') private sceneEl?: ElementRef<HTMLElement>;
+  /** Hardware/gesture back: if a theme panel is open, close it; otherwise go
+   *  Home (same as the header X). Claimed so one press doesn't double-pop. */
+  private readonly onHardwareBack: () => boolean = () => {
+    if (this.openTheme) { this.closeTheme(); return true; }
+    this.close();
+    return true;
+  };
 
   /** SVG viewBox is a square; nodes are placed on a circle inside it. */
   static readonly VIEW = 1000;
-  /** Ring radius as a fraction of half the viewBox (leaves room for labels). */
-  private static readonly RING_RADIUS = 0.72;
+  private static readonly RING_RADIUS = 0.74;
 
   isLoading = true;
   switchingLanguage = false;
   deck: FlashcardDeck | null = null;
   chapters: JourneyChapter[] = [];
-  /** Index of the chapter in progress (first unlocked, not complete). */
-  currentIndex = 0;
-  units: Unit[] = [];
+  themes: TreeTheme[] = [];
+  nodes: ThemeNode[] = [];
 
-  /** Overall foundation (hub) progress across all units. */
   hubPct = 0;
   hubStarted = false;
 
-  /** Key of the locked unit whose "unlocks after…" hint is shown (tapped). */
-  revealedUnitIndex: number | null = null;
+  /** The currently opened theme's detail panel (null = radial map shown). */
+  openTheme: ThemeNode | null = null;
+  openLessons: LessonRow[] = [];
 
   availableLanguages: LanguageOption[] = [];
-  private resizeObserver?: ResizeObserver;
 
   readonly view = TreePage.VIEW;
 
@@ -142,17 +130,8 @@ export class TreePage implements OnInit, AfterViewInit, OnDestroy {
     await this.load();
   }
 
-  ngAfterViewInit(): void {
-    if (typeof ResizeObserver === 'undefined') return;
-    this.resizeObserver = new ResizeObserver(() => this.cdr.detectChanges());
-    const el = this.sceneEl?.nativeElement;
-    if (el) this.resizeObserver.observe(el);
-  }
-
   ngOnDestroy(): void {
-    this.resizeObserver?.disconnect();
     this.backInterceptor.clear(this.onHardwareBack);
-    if (this.tapTimer) { clearTimeout(this.tapTimer); this.tapTimer = null; }
   }
 
   async ionViewWillEnter(): Promise<void> {
@@ -178,7 +157,8 @@ export class TreePage implements OnInit, AfterViewInit, OnDestroy {
     this.deck = decks[0] ?? this.flashcards.getAllDecks()[0] ?? null;
     if (!this.deck) {
       this.chapters = [];
-      this.units = [];
+      this.themes = [];
+      this.nodes = [];
       this.isLoading = false;
       this.switchingLanguage = false;
       this.cdr.detectChanges();
@@ -188,11 +168,18 @@ export class TreePage implements OnInit, AfterViewInit, OnDestroy {
     const levels = await this.flashcards.getDeckLevels(this.deck.id, 'journey-flip');
     const progress = await this.flashcards.getDeckLevelProgressMap(this.deck.id);
     this.chapters = buildJourneyChapters(levels, progress, this.deck.languageCode === 'fr');
-
-    const found = this.chapters.findIndex(c => c.unlocked && !c.complete);
-    this.currentIndex = found >= 0 ? found : Math.max(0, this.chapters.length - 1);
+    this.themes = groupChaptersIntoThemes(this.chapters);
 
     this.rebuild();
+
+    // If a theme panel was open, refresh its lesson list in place (e.g. after
+    // returning from an exercise) so progress updates without closing it.
+    if (this.openTheme) {
+      const refreshed = this.nodes.find(nd => nd.theme.def.id === this.openTheme!.theme.def.id);
+      if (refreshed) { this.openTheme = refreshed; this.buildLessons(refreshed); }
+      else { this.openTheme = null; this.openLessons = []; }
+    }
+
     this.isLoading = false;
     this.switchingLanguage = false;
     this.cdr.detectChanges();
@@ -202,7 +189,8 @@ export class TreePage implements OnInit, AfterViewInit, OnDestroy {
     if (code === this.learningLanguage) return;
     this.settings.updateSetting('learningLanguage', code);
     this.switchingLanguage = true;
-    this.revealedUnitIndex = null;
+    this.openTheme = null;
+    this.openLessons = [];
     this.cdr.detectChanges();
     await this.flashcards.initialize();
     await this.load(true);
@@ -210,102 +198,82 @@ export class TreePage implements OnInit, AfterViewInit, OnDestroy {
 
   // ── View model ──────────────────────────────────────────────────────────────
   private rebuild(): void {
-    const n = this.chapters.length;
+    const n = this.themes.length;
     const cx = TreePage.VIEW / 2;
     const cy = TreePage.VIEW / 2;
     const r = (TreePage.VIEW / 2) * TreePage.RING_RADIUS;
 
-    this.units = this.chapters.map((ch, i) => {
-      const state: UnitState = ch.complete ? 'done' : ch.unlocked ? 'active' : 'locked';
-      const total = Math.max(1, ch.nodes.length);
-      const pct = Math.round((ch.done / total) * 100);
-      // Even spread around the circle, starting at the top (-90deg).
+    this.nodes = this.themes.map((theme, i) => {
       const angle = (360 / Math.max(1, n)) * i - 90;
       const rad = (angle * Math.PI) / 180;
       const x = cx + r * Math.cos(rad);
       const y = cy + r * Math.sin(rad);
-      const hue = Math.round((360 / Math.max(1, n)) * i);
-
-      const activeLessonIdx = ch.unlocked ? ch.nodes.findIndex(nd => nd.unlocked && !nd.passed) : -1;
-      const lessons: Lesson[] = ch.nodes.map((nd, li) => {
-        const ls: LessonState = nd.unlocked && nd.passed ? 'done' : li === activeLessonIdx ? 'active' : 'locked';
-        const label = this.t(`journey.node.${nd.type}`);
-        return {
-          index: li,
-          state: ls,
-          label,
-          aria: `${label}, ${this.t(`tree.lesson.${ls}`)}`,
-        };
-      });
-
-      const title = ch.name || this.t('journeyPlus.chapterFallback', { n: ch.number });
+      const title = this.t(theme.def.nameKey);
       return {
-        chapter: ch,
+        theme,
         index: i,
         title,
-        emoji: TreePage.emojiFor(ch.name),
-        state,
-        ring: i,
-        angle,
-        done: ch.done,
-        total,
-        pct,
-        hue,
+        emoji: theme.def.emoji,
+        state: theme.state,
+        pct: theme.pct,
+        done: theme.doneChapters,
+        total: theme.totalChapters,
+        hue: theme.def.hue,
         x,
         y,
-        lessons,
-        aria: `${title}, ${this.t(`tree.unit.${state}`)}, ${this.t('journeyPlus.percentDone', { p: pct })}`,
+        aria: `${title}, ${this.t(`tree.unit.${theme.state}`)}, ${this.t('journeyPlus.percentDone', { p: theme.pct })}`,
       };
     });
 
-    // Hub = aggregate of all units' lessons.
     const totalNodes = this.chapters.reduce((s, c) => s + c.nodes.length, 0);
     const doneNodes = this.chapters.reduce((s, c) => s + c.done, 0);
     this.hubPct = totalNodes === 0 ? 0 : Math.round((doneNodes / totalNodes) * 100);
     this.hubStarted = doneNodes > 0;
   }
 
-  // ── Actions ─────────────────────────────────────────────────────────────────
-  private static readonly DOUBLE_TAP_MS = 320;
-  private tapTimer: ReturnType<typeof setTimeout> | null = null;
-  private pendingTapIndex: number | null = null;
-
-  /** Tap a unit. Admin double-tap on the ACTIVE unit force-completes its active
-   *  lesson (same shortcut as Journey++); otherwise open the unit. */
-  onUnitTap(unit: Unit): void {
-    if (!this.settings.adminMode() || unit.state !== 'active') {
-      this.openUnit(unit);
-      return;
-    }
-    if (this.tapTimer && this.pendingTapIndex === unit.index) {
-      clearTimeout(this.tapTimer);
-      this.tapTimer = null;
-      this.pendingTapIndex = null;
-      void this.adminCompleteUnit(unit);
-      return;
-    }
-    if (this.tapTimer) clearTimeout(this.tapTimer);
-    this.pendingTapIndex = unit.index;
-    this.tapTimer = setTimeout(() => {
-      this.tapTimer = null;
-      this.pendingTapIndex = null;
-      this.openUnit(unit);
-    }, TreePage.DOUBLE_TAP_MS);
+  private buildLessons(node: ThemeNode): void {
+    this.openLessons = node.theme.chapters.map(ch => {
+      const total = Math.max(1, ch.nodes.length);
+      const state: NodeState = ch.complete ? 'done' : ch.unlocked ? 'active' : 'locked';
+      const title = ch.name || this.t('journeyPlus.chapterFallback', { n: ch.number });
+      return {
+        chapter: ch,
+        title,
+        state,
+        done: ch.done,
+        total,
+        pct: Math.round((ch.done / total) * 100),
+        aria: `${title}, ${this.t(`tree.unit.${state}`)}, ${this.t('journeyPlus.percentDone', { p: Math.round((ch.done / total) * 100) })}`,
+      };
+    });
   }
 
-  /** Open a unit: launch its active lesson, or reveal the "unlocks after…"
-   *  hint for a locked unit. Done units re-open their first lesson for replay. */
-  openUnit(unit: Unit): void {
-    if (!this.deck) return;
-    if (unit.state === 'locked') {
-      this.revealedUnitIndex = this.revealedUnitIndex === unit.index ? null : unit.index;
-      this.cdr.detectChanges();
-      return;
-    }
-    this.revealedUnitIndex = null;
-    const ch = unit.chapter;
-    // The lesson to play: the active (unlocked, not-passed) node, else the first
-    // node (replay for a completed unit).
+  // ── Actions ─────────────────────────────────────────────────────────────────
+  /** Tap a theme node: open its lesson panel. Locked themes open too (so the
+   *  user can see what's inside), but their lessons are individually locked. */
+  openThemeNode(node: ThemeNode): void {
+    this.openTheme = node;
+    this.buildLessons(node);
+    this.cdr.detectChanges();
+  }
+
+  closeTheme(): void {
+    this.openTheme = null;
+    this.openLessons = [];
+    this.cdr.detectChanges();
+  }
+
+  /** Hub tap: open the theme that contains the current in-progress chapter. */
+  openHub(): void {
+    const active = this.nodes.find(nd => nd.state === 'active') ?? this.nodes[0];
+    if (active) this.openThemeNode(active);
+  }
+
+  /** Launch a lesson (chapter): open its active node, or the first node for a
+   *  completed chapter (replay). Locked chapters do nothing (visual only). */
+  openLesson(lesson: LessonRow): void {
+    if (!this.deck || lesson.state === 'locked') return;
+    const ch = lesson.chapter;
     const node = ch.nodes.find(nd => nd.unlocked && !nd.passed) ?? ch.nodes[0];
     if (!node) return;
     void this.navCtrl.navigateForward([node.route, this.deck.id], {
@@ -313,28 +281,37 @@ export class TreePage implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  /** Hub tap: jump into the current in-progress unit's active lesson. */
-  openHub(): void {
-    const unit = this.units[this.currentIndex] ?? this.units.find(u => u.state === 'active');
-    if (unit) this.openUnit(unit);
+  /** Admin double-tap on an ACTIVE lesson row force-completes it (3★). */
+  private static readonly DOUBLE_TAP_MS = 320;
+  private tapTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingTapLevel: number | null = null;
+
+  onLessonTap(lesson: LessonRow): void {
+    if (!this.settings.adminMode() || lesson.state !== 'active') {
+      this.openLesson(lesson);
+      return;
+    }
+    const key = lesson.chapter.levelNumber;
+    if (this.tapTimer && this.pendingTapLevel === key) {
+      clearTimeout(this.tapTimer);
+      this.tapTimer = null;
+      this.pendingTapLevel = null;
+      void this.adminCompleteLesson(lesson);
+      return;
+    }
+    if (this.tapTimer) clearTimeout(this.tapTimer);
+    this.pendingTapLevel = key;
+    this.tapTimer = setTimeout(() => {
+      this.tapTimer = null;
+      this.pendingTapLevel = null;
+      this.openLesson(lesson);
+    }, TreePage.DOUBLE_TAP_MS);
   }
 
-  /** True when a locked unit's "unlocks after…" hint should show. */
-  isHintVisible(unit: Unit): boolean {
-    return unit.state === 'locked' && this.revealedUnitIndex === unit.index;
-  }
-
-  unitHint(unit: Unit): string {
-    const ch = unit.chapter;
-    if (ch.number <= 1) return this.t('journeyPlus.locked');
-    return this.t('journeyPlus.unlocksChapter', { n: ch.number - 1 });
-  }
-
-  /** Admin-only: force-complete the unit's active lesson with 3★. */
-  private async adminCompleteUnit(unit: Unit): Promise<void> {
-    if (!this.deck || !this.settings.adminMode() || unit.state !== 'active') return;
+  private async adminCompleteLesson(lesson: LessonRow): Promise<void> {
+    if (!this.deck || !this.settings.adminMode() || lesson.state !== 'active') return;
     const deckId = this.deck.id;
-    const ch = unit.chapter;
+    const ch = lesson.chapter;
     const level = ch.levelNumber;
     const node = ch.nodes.find(nd => nd.unlocked && !nd.passed);
     if (!node) return;
@@ -360,8 +337,8 @@ export class TreePage implements OnInit, AfterViewInit, OnDestroy {
 
   close(): void { this.router.navigate(['/home']); }
 
-  trackUnit(_i: number, u: Unit): number { return u.chapter.number; }
-  trackLesson(_i: number, l: Lesson): number { return l.index; }
+  trackNode(_i: number, n: ThemeNode): string { return n.theme.def.id; }
+  trackLesson(_i: number, l: LessonRow): number { return l.chapter.levelNumber; }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
   private flagUrl(code: string): string {
@@ -372,33 +349,5 @@ export class TreePage implements OnInit, AfterViewInit, OnDestroy {
       gd: 'gb', cy: 'gb', hw: 'us', ht: 'ht', zu: 'za', sw: 'ke',
     };
     return `https://flagcdn.com/${toCountry[code] ?? code}.svg`;
-  }
-
-  private static emojiFor(skill: string): string {
-    const s = (skill || '').toLowerCase();
-    const rules: [RegExp, string][] = [
-      [/caf[eé]|coffee|drink/, '☕'],
-      [/food|eat|restaurant|meal|cook|fruit/, '🍽️'],
-      [/greet|hello|intro|meet|people/, '👋'],
-      [/family|parent|child|relation/, '❤️'],
-      [/travel|trip|airport|vacation|holiday|hotel/, '✈️'],
-      [/shop|buy|cloth|store|money|business|work|job|office/, '💼'],
-      [/home|house|room|furniture/, '🏠'],
-      [/school|study|class|learn|education/, '🎓'],
-      [/time|date|day|calendar|week|month/, '🕒'],
-      [/weather|season|nature/, '🌳'],
-      [/colou?r/, '🎨'],
-      [/number|count/, '🔢'],
-      [/animal|pet/, '🐾'],
-      [/sport|hobby|game|play/, '⚽'],
-      [/health|body|doctor|sick/, '🩺'],
-      [/city|place|direction|where|town|culture/, '🗺️'],
-      [/music|song/, '🎵'],
-      [/language|speak|daily|life/, '💬'],
-      [/feel|emotion|trait|describe/, '😊'],
-      [/science|tech/, '🔬'],
-    ];
-    for (const [re, emoji] of rules) if (re.test(s)) return emoji;
-    return '📘';
   }
 }

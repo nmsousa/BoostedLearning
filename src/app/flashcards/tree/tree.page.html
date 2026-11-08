@@ -2,11 +2,11 @@
   <ion-toolbar>
     <div class="tree-head-wrap">
       <div class="tree-head">
-        <button type="button" class="tree-back" (click)="close()" [attr.aria-label]="'journeyPlus.back' | translate">
+        <button type="button" class="tree-back" (click)="openTheme ? closeTheme() : close()" [attr.aria-label]="'journeyPlus.back' | translate">
           <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
         </button>
 
-        <h1 class="tree-title">{{ switchingLanguage ? '' : ('tree.title' | translate) }}</h1>
+        <h1 class="tree-title">{{ switchingLanguage ? '' : (openTheme ? openTheme.title : ('tree.title' | translate)) }}</h1>
 
         <button type="button" class="tree-lang" id="tree-lang-trigger"
           [attr.aria-label]="'journeyPlus.changeLanguage' | translate">
@@ -31,57 +31,73 @@
 </ion-header>
 
 <ion-content class="tree-content" [scrollY]="true">
-  <!-- Overlay spinner on first load AND during a language switch. -->
   <div *ngIf="isLoading || switchingLanguage" class="tree-loading"><ion-spinner name="crescent"></ion-spinner></div>
   <p *ngIf="!isLoading && !deck" class="tree-empty">{{ 'journeyPlus.empty' | translate }}</p>
 
+  <!-- Radial theme map -->
   <div *ngIf="!isLoading && deck" class="tree-scene" #scene>
-    <!-- Square radial stage; nodes placed on a circle inside it. -->
     <div class="tree-stage">
-      <!-- Connector layer: hub → each unit. Behind nodes; no pointer events. -->
       <svg class="tree-links" [attr.viewBox]="'0 0 ' + view + ' ' + view" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
-        <line *ngFor="let u of units; trackBy: trackUnit"
-          [attr.x1]="view / 2" [attr.y1]="view / 2" [attr.x2]="u.x" [attr.y2]="u.y"
-          class="tree-link" [class.is-done]="u.state === 'done'" [class.is-active]="u.state === 'active'" />
+        <line *ngFor="let n of nodes; trackBy: trackNode"
+          [attr.x1]="view / 2" [attr.y1]="view / 2" [attr.x2]="n.x" [attr.y2]="n.y"
+          class="tree-link" [class.is-done]="n.state === 'done'" [class.is-active]="n.state === 'active'" />
       </svg>
 
-      <!-- Central hub: Core Vocabulary (aggregate foundation). -->
+      <!-- Central hub -->
       <button type="button" class="tree-hub" [class.started]="hubStarted" (click)="openHub()"
         [attr.aria-label]="('tree.hubTitle' | translate) + ', ' + ('journeyPlus.percentDone' | translate:{ p: hubPct })">
         <ion-icon name="book" class="tree-hub-icon" aria-hidden="true"></ion-icon>
         <span class="tree-hub-title">{{ 'tree.hubTitle' | translate }}</span>
-        <span class="tree-hub-sub">{{ 'tree.hubSub' | translate }}</span>
         <span class="tree-hub-pct">{{ 'journeyPlus.percentDone' | translate:{ p: hubPct } }}</span>
       </button>
 
-      <!-- Unit nodes arranged around the hub. -->
-      <div *ngFor="let u of units; trackBy: trackUnit"
-        class="tree-unit-wrap" [ngClass]="'state-' + u.state" [class.hint-open]="isHintVisible(u)"
-        [style.--ux]="u.x" [style.--uy]="u.y" [style.--view]="view" [style.--hue]="u.hue">
-
-        <button type="button" class="tree-unit" (click)="onUnitTap(u)" [attr.aria-label]="u.aria">
-          <span class="tree-unit-emoji" aria-hidden="true">{{ u.emoji }}</span>
-          <span *ngIf="u.state === 'locked'" class="tree-unit-lock" aria-hidden="true">
-            <ion-icon name="lock-closed"></ion-icon>
-          </span>
-          <span *ngIf="u.state === 'done'" class="tree-unit-tick" aria-hidden="true">
-            <ion-icon name="checkmark"></ion-icon>
-          </span>
+      <!-- Theme nodes -->
+      <div *ngFor="let n of nodes; trackBy: trackNode"
+        class="tree-unit-wrap" [ngClass]="'state-' + n.state"
+        [style.--ux]="n.x" [style.--uy]="n.y" [style.--view]="view" [style.--hue]="n.hue">
+        <button type="button" class="tree-unit" (click)="openThemeNode(n)" [attr.aria-label]="n.aria">
+          <span class="tree-unit-emoji" aria-hidden="true">{{ n.emoji }}</span>
+          <span *ngIf="n.state === 'locked'" class="tree-unit-lock" aria-hidden="true"><ion-icon name="lock-closed"></ion-icon></span>
+          <span *ngIf="n.state === 'done'" class="tree-unit-tick" aria-hidden="true"><ion-icon name="checkmark"></ion-icon></span>
         </button>
-
-        <!-- Lesson dots branching off the unit. -->
-        <div class="tree-lessons" aria-hidden="true">
-          <span *ngFor="let l of u.lessons; trackBy: trackLesson"
-            class="tree-dot" [ngClass]="'dot-' + l.state"></span>
-        </div>
-
-        <!-- Label + progress; locked units reveal an "unlocks after…" hint. -->
         <div class="tree-unit-label">
-          <span class="tree-unit-name">{{ u.title }}</span>
-          <span class="tree-unit-meta" *ngIf="u.state !== 'locked'">{{ u.done }}/{{ u.total }} · {{ 'journeyPlus.percentDone' | translate:{ p: u.pct } }}</span>
-          <span class="tree-unit-meta hint" *ngIf="isHintVisible(u)">{{ unitHint(u) }}</span>
+          <span class="tree-unit-name">{{ n.title }}</span>
+          <span class="tree-unit-meta">{{ n.done }}/{{ n.total }} · {{ 'journeyPlus.percentDone' | translate:{ p: n.pct } }}</span>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Theme detail panel: the theme's chapters as a readable lesson list. -->
+  <div *ngIf="openTheme" class="tree-sheet-backdrop" (click)="closeTheme()"></div>
+  <div *ngIf="openTheme" class="tree-sheet" role="dialog" [attr.aria-label]="openTheme.title">
+    <div class="tree-sheet-grip" aria-hidden="true"></div>
+    <div class="tree-sheet-head">
+      <span class="tree-sheet-emoji" aria-hidden="true">{{ openTheme.emoji }}</span>
+      <div class="tree-sheet-headtext">
+        <h2 class="tree-sheet-title">{{ openTheme.title }}</h2>
+        <span class="tree-sheet-sub">{{ openTheme.done }}/{{ openTheme.total }} · {{ 'journeyPlus.percentDone' | translate:{ p: openTheme.pct } }}</span>
+      </div>
+      <button type="button" class="tree-sheet-close" (click)="closeTheme()" [attr.aria-label]="'mode.close' | translate">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <div class="tree-sheet-list">
+      <button type="button" class="tree-lesson" *ngFor="let l of openLessons; trackBy: trackLesson"
+        [ngClass]="'lesson-' + l.state" [disabled]="l.state === 'locked'"
+        (click)="onLessonTap(l)" [attr.aria-label]="l.aria">
+        <span class="tree-lesson-icon" aria-hidden="true">
+          <ion-icon *ngIf="l.state === 'done'" name="checkmark-circle"></ion-icon>
+          <ion-icon *ngIf="l.state === 'active'" name="play"></ion-icon>
+          <ion-icon *ngIf="l.state === 'locked'" name="lock-closed"></ion-icon>
+        </span>
+        <span class="tree-lesson-text">
+          <span class="tree-lesson-name">{{ l.title }}</span>
+          <span class="tree-lesson-meta">{{ l.done }}/{{ l.total }} · {{ 'journeyPlus.percentDone' | translate:{ p: l.pct } }}</span>
+        </span>
+        <ion-icon *ngIf="l.state !== 'locked'" name="chevron-forward" class="tree-lesson-chev" aria-hidden="true"></ion-icon>
+      </button>
     </div>
   </div>
 </ion-content>
