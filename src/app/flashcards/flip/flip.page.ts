@@ -43,8 +43,15 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
   private backInterceptor = inject(BackInterceptorService);
 
   /** Hardware/gesture back → same as the header X: return to the level list /
-   *  Journey map. Registered on enter, cleared on leave. Stable ref. */
-  private readonly onHardwareBack: () => boolean = () => { this.close(); return true; };
+   *  Journey map. Registered on enter, cleared on leave. Stable ref.
+   *  AWAITS the navigation so the interceptor only resolves once the pop has
+   *  committed — otherwise `runActive()` returns true while the back-nav is
+   *  still queued, and a residual back signal in that window could pop a second
+   *  time (flip → map → Home on a single press). */
+  private readonly onHardwareBack: () => Promise<boolean> = async () => {
+    await this.close();
+    return true;
+  };
 
   ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); }
   ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
@@ -342,10 +349,10 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
   }
 
   finish() {
-    this.navCtrl.navigateBack(this.backUrl);
+    return this.navCtrl.navigateBack(this.backUrl);
   }
 
   close() {
-    this.navCtrl.navigateBack(this.backUrl);
+    return this.navCtrl.navigateBack(this.backUrl);
   }
 }

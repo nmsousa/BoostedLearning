@@ -73,8 +73,14 @@ export class BlanksPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLea
   private backInterceptor = inject(BackInterceptorService);
 
   /** Hardware/gesture back → same as the header X: return to the level list /
-   *  Journey map. Registered on enter, cleared on leave. Stable ref. */
-  private readonly onHardwareBack: () => boolean = () => { this.close(); return true; };
+   *  Journey map. Registered on enter, cleared on leave. Stable ref.
+   *  AWAITS the navigation so the interceptor only resolves once the pop has
+   *  committed — otherwise a residual back signal in the window before the pop
+   *  could pop a second time (exercise → map → Home on a single press). */
+  private readonly onHardwareBack: () => Promise<boolean> = async () => {
+    await this.close();
+    return true;
+  };
 
   ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); }
   ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
@@ -384,6 +390,6 @@ export class BlanksPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLea
     return a;
   }
 
-  finish(): void { this.navCtrl.navigateBack(this.backUrl); }
-  close(): void { this.navCtrl.navigateBack(this.backUrl); }
+  finish(): Promise<boolean> { return this.navCtrl.navigateBack(this.backUrl); }
+  close(): Promise<boolean> { return this.navCtrl.navigateBack(this.backUrl); }
 }

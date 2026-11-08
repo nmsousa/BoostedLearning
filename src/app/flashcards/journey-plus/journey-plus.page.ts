@@ -27,6 +27,7 @@ import { NavController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
+import { BackInterceptorService } from '../../services/back-interceptor.service';
 import {
   buildJourneyChapters, type JourneyChapter, type JourneyNode, type JourneyNodeType,
 } from '../journey/journey-model';
@@ -70,6 +71,12 @@ export class JourneyPlusPage implements OnInit, AfterViewInit, OnDestroy {
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
   private cdr = inject(ChangeDetectorRef);
+  private backInterceptor = inject(BackInterceptorService);
+
+  /** Hardware/gesture back → same as the header X (go Home). Claiming the press
+   *  here stops a single back from falling through to the global handler and
+   *  popping a second time (e.g. after returning from a node exercise). */
+  private readonly onHardwareBack: () => boolean = () => { this.close(); return true; };
 
   /** The <ion-content> element itself (its web-component methods). A class
    *  query (`@ViewChild(IonContent)`) doesn't match under the lazy IonicModule. */
@@ -164,12 +171,20 @@ export class JourneyPlusPage implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.resizeObserver?.disconnect();
+    this.backInterceptor.clear(this.onHardwareBack);
+  }
+
+  ionViewWillLeave(): void {
+    this.backInterceptor.clear(this.onHardwareBack);
   }
 
   /** Returning from an exercise: refresh progress, stay on the same chapter
    *  unless the learner just finished it (then follow them forward), and always
    *  bring the new active node into view (it may have moved below the fold). */
   async ionViewWillEnter(): Promise<void> {
+    // Own hardware/gesture back while this page is foreground so one press is
+    // claimed here (→ Home), not re-processed by the global handler.
+    this.backInterceptor.register(this.onHardwareBack);
     if (this.deck) await this.load(false, true);
   }
 

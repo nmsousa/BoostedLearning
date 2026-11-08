@@ -12,13 +12,14 @@
  * @module app/flashcards/journey
  */
 
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { ActionSheetController, NavController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck, DeckLevel } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
+import { BackInterceptorService } from '../../services/back-interceptor.service';
 import {
   buildJourneyChapters,
   type JourneyChapter as Chapter,
@@ -33,7 +34,7 @@ import {
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class JourneyPage implements OnInit {
+export class JourneyPage implements OnInit, OnDestroy {
   private router = inject(Router);
   private navCtrl = inject(NavController);
   private flashcards = inject(FlashcardService);
@@ -42,6 +43,12 @@ export class JourneyPage implements OnInit {
   private addWordService = inject(AddWordService);
   private actionSheet = inject(ActionSheetController);
   private cdr = inject(ChangeDetectorRef);
+  private backInterceptor = inject(BackInterceptorService);
+
+  /** Hardware/gesture back → same as the header X (go Home). Claiming the press
+   *  here stops a single back from falling through to the global handler and
+   *  popping a second time (e.g. after returning from a node exercise). */
+  private readonly onHardwareBack: () => boolean = () => { this.close(); return true; };
 
   // ── Header language flag (mirrors the homepage / mode-list selector) ───────
   availableLanguages: { code: string; name: string; flagUrl: string }[] = [];
@@ -136,8 +143,19 @@ export class JourneyPage implements OnInit {
   }
 
   async ionViewWillEnter(): Promise<void> {
+    // Own hardware/gesture back while this page is foreground so one press is
+    // claimed here (→ Home), not re-processed by the global handler.
+    this.backInterceptor.register(this.onHardwareBack);
     // Recompute stars/unlock when returning from an exercise.
     if (!this.isLoading || this.deck) await this.load();
+  }
+
+  ionViewWillLeave(): void {
+    this.backInterceptor.clear(this.onHardwareBack);
+  }
+
+  ngOnDestroy(): void {
+    this.backInterceptor.clear(this.onHardwareBack);
   }
 
   private async load(): Promise<void> {

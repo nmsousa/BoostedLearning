@@ -34,6 +34,7 @@ import { NavController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
+import { BackInterceptorService } from '../../services/back-interceptor.service';
 import {
   buildJourneyChapters, type JourneyChapter, type JourneyNode, type JourneyNodeType,
 } from '../journey/journey-model';
@@ -86,6 +87,15 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   private i18n = inject(I18nAngularService);
   private cdr = inject(ChangeDetectorRef);
   private navCtrl = inject(NavController);
+  private backInterceptor = inject(BackInterceptorService);
+
+  /** Hardware/gesture back → same as the header X (go Home). Claiming the press
+   *  here is what stops a one-press back from falling through to the global
+   *  handler and then popping AGAIN. Registered while this page is foreground
+   *  (ionViewWillEnter) and cleared on leave/destroy with a stable ref. Without
+   *  this, returning from a node exercise could let the same back gesture drive
+   *  Journey++ straight to Home. */
+  private readonly onHardwareBack: () => boolean = () => { this.close(); return true; };
 
   @ViewChild('content', { read: ElementRef }) private contentEl?: ElementRef<HTMLIonContentElement>;
   @ViewChild('scene') private sceneEl?: ElementRef<HTMLElement>;
@@ -210,13 +220,23 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.resizeObserver?.disconnect();
+    this.backInterceptor.clear(this.onHardwareBack);
     if (this.tapTimer) { clearTimeout(this.tapTimer); this.tapTimer = null; }
   }
 
   async ionViewWillEnter(): Promise<void> {
+    // Own the hardware/gesture back while this page is foreground, so a single
+    // press is claimed here (→ Home) instead of falling through to the global
+    // handler. This also prevents the back that returned us from a node
+    // exercise from immediately popping us again.
+    this.backInterceptor.register(this.onHardwareBack);
     // Returning from a finished exercise: refresh progress and bring the new
     // active node into view (it may now sit below the fold).
     if (this.deck) await this.load(false, true);
+  }
+
+  ionViewWillLeave(): void {
+    this.backInterceptor.clear(this.onHardwareBack);
   }
 
   private observeScene(): void {
