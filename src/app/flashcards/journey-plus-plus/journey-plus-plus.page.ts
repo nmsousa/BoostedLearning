@@ -454,12 +454,17 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   private tapTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingTapKey: string | null = null;
 
-  /** Entry point for a node/panel tap. Outside admin mode it opens the node
-   *  immediately. In admin mode the single-tap is deferred briefly: a quick
-   *  second tap on the SAME node force-completes it (3★, plus a good time/combo
+  /** Entry point for a node/panel tap. The admin double-tap-to-complete only
+   *  applies to the ACTIVE (current, blue) node — not locked or done ones. For
+   *  every other case (non-admin, or a non-active node) the tap opens the node
+   *  immediately. On the active node in admin mode the single-tap is deferred
+   *  briefly: a quick second tap force-completes it (3★, plus a good time/combo
    *  where applicable); a lone tap falls through to the normal open. */
   onNodeTap(block: MapChapter, stop: MapStop): void {
-    if (!this.settings.adminMode()) { this.openStop(block, stop); return; }
+    if (!this.settings.adminMode() || stop.state !== 'active') {
+      this.openStop(block, stop);
+      return;
+    }
 
     const key = this.stopKey(block, stop);
     if (this.tapTimer && this.pendingTapKey === key) {
@@ -483,7 +488,7 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   /** Admin-only: force-complete a node with 3★ (and a good time/combo for
    *  modes that score on those), then refresh the map. */
   private async adminCompleteNode(block: MapChapter, stop: MapStop): Promise<void> {
-    if (!this.deck || !this.settings.adminMode()) return;
+    if (!this.deck || !this.settings.adminMode() || stop.state !== 'active') return;
     const deckId = this.deck.id;
     const level = block.chapter.levelNumber;
     const mode = stop.node.mode;
@@ -669,7 +674,11 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   /** Show the jump FAB when the current chapter is off-screen, and point its
    *  arrow toward the current node (up if it's above us, down if below). */
   onContentScroll(): void {
-    if (this.isLoading || this.currentIndex < 0) return;
+    // While a language switch is repositioning under the overlay, ignore scroll
+    // events entirely: the header is pinned to the target chapter and must not
+    // be recomputed from the transient scroll position (that caused the header
+    // to flash the old chapter number before settling).
+    if (this.isLoading || this.switchingLanguage || this.currentIndex < 0) return;
     this.updateHeaderChapter();
     const el = document.getElementById(`jpp-chapter-${this.currentIndex}`);
     const vh = window.innerHeight;

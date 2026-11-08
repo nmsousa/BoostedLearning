@@ -60,10 +60,11 @@ const DEFAULT_SETTINGS: AppSettings = {
   reducedDistraction: false,
   flashcardDirection: 'target-only',
   learningLanguage: 'nl',
-  // OFF by default. The Admin section is visible in all builds now (so it can
-  // be enabled for on-device testing), so the admin shortcuts must be opt-in —
-  // normal users never turn this on. Existing installs keep their saved value.
-  adminMode: false,
+  // ON by default during the testing phase so the admin shortcuts are always
+  // available on a fresh install without having to re-enable them. This is a
+  // TEMPORARY testing convenience — see docs/TODO.md ("remove Admin mode"):
+  // before a public release this must go back to false (or be removed).
+  adminMode: true,
   autoPlayAudio: true,
   testerName: '',
 };

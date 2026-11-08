@@ -4,6 +4,33 @@ Tracked tasks that are deferred or in progress.
 
 ## Deferred (on standby)
 
+### Remove Admin mode before public release
+Status: **temporary testing convenience — must be removed/disabled for release.**
+
+Admin mode is currently **ON by default** (`DEFAULT_SETTINGS.adminMode = true`
+in `settings.service.ts`) so testers always have the dev shortcuts available on
+a fresh install without re-enabling them. This is only acceptable during the
+testing phase.
+
+Before any public release, do ONE of:
+- flip the default back to `adminMode: false`, OR
+- remove the Admin mode feature entirely.
+
+If removing entirely, audit and strip:
+- the `adminMode` setting + default in `settings.service.ts` (and its
+  `adminMode` computed getter);
+- the Admin section/toggle in `settings.page.html` (+ handler in
+  `settings.page.ts`) and its i18n keys;
+- the admin shortcuts that gate on `settings.adminMode()` — e.g. the
+  "complete level / complete 5 rounds" actions wired via
+  `add-word.service.ts` (`onAdminComplete`/`onAdminCompleteAll`), the
+  Journey++ active-node double-tap-to-complete (`onNodeTap`/`adminCompleteNode`
+  in `journey-plus-plus.page.ts`), and the admin-only Level 0 test level in
+  `flashcard.service.ts`;
+- the `FlashcardService` admin helpers (`adminForceComplete`,
+  `adminForceCompleteAllRounds`, `adminSetFlipKnowledge`) if nothing else uses
+  them.
+
 ### End-to-end (e2e) tests — options to evaluate
 Status: **not implemented** — for later evaluation.
 
