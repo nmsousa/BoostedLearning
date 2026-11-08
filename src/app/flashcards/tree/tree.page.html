@@ -43,13 +43,16 @@
           class="tree-link" [class.is-done]="n.state === 'done'" [class.is-active]="n.state === 'active'" />
       </svg>
 
-      <!-- Central hub -->
-      <button type="button" class="tree-hub" [class.started]="hubStarted" (click)="openHub()"
+      <!-- Central hub: a NON-interactive foundation marker showing overall
+           progress. It is not a unit (the deck has no distinct "core" content),
+           so tapping it must not open a theme — you explore via the theme nodes
+           around it. -->
+      <div class="tree-hub" [class.started]="hubStarted"
         [attr.aria-label]="('tree.hubTitle' | translate) + ', ' + ('journeyPlus.percentDone' | translate:{ p: hubPct })">
         <ion-icon name="book" class="tree-hub-icon" aria-hidden="true"></ion-icon>
         <span class="tree-hub-title">{{ 'tree.hubTitle' | translate }}</span>
         <span class="tree-hub-pct">{{ 'journeyPlus.percentDone' | translate:{ p: hubPct } }}</span>
-      </button>
+      </div>
 
       <!-- Theme nodes -->
       <div *ngFor="let n of nodes; trackBy: trackNode"

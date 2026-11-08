@@ -263,12 +263,6 @@ export class TreePage implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  /** Hub tap: open the theme that contains the current in-progress chapter. */
-  openHub(): void {
-    const active = this.nodes.find(nd => nd.state === 'active') ?? this.nodes[0];
-    if (active) this.openThemeNode(active);
-  }
-
   /** Launch a lesson (chapter): open its active node, or the first node for a
    *  completed chapter (replay). Locked chapters do nothing (visual only). */
   openLesson(lesson: LessonRow): void {

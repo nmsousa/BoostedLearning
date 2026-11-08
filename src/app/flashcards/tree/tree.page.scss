@@ -107,9 +107,7 @@
   color: #0b1240; border: 0;
   background: radial-gradient(circle at 38% 30%, #ffffff 0%, #eaf2ff 70%, #d7e6ff 100%);
   box-shadow: 0 0 0 4px rgba(63, 150, 255, 0.5), 0 0 26px rgba(63, 160, 255, 0.6), var(--tree-shadow);
-  cursor: pointer; z-index: 3;
-  transition: transform 0.18s var(--tree-ease);
-  &:active { transform: translate(-50%, -50%) scale(0.95); }
+  z-index: 3;
   &.started { box-shadow: 0 0 0 4px rgba(76, 245, 154, 0.55), 0 0 26px rgba(76, 245, 154, 0.5), var(--tree-shadow); }
 }
 .tree-hub-icon { font-size: calc(var(--hub) * 0.24); color: #1f6bff; }
