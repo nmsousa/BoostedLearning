@@ -16,8 +16,10 @@
           <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
         </button>
 
-        <!-- The header names the section you're looking at (updates on scroll). -->
-        <h1 class="pp-title">{{ headerTitle }}</h1>
+        <!-- The header names the section you're looking at (updates on scroll).
+             During a language switch it's blanked (kept for layout) until the
+             new view has settled, so it never flashes the wrong chapter. -->
+        <h1 class="pp-title">{{ switchingLanguage ? '' : headerTitle }}</h1>
 
         <button type="button" class="pp-lang" id="jpp-lang-trigger"
           [attr.aria-label]="'journeyPlus.changeLanguage' | translate">
@@ -38,8 +40,10 @@
         </ion-popover>
       </div>
 
-      <!-- Progress for the section in the header: "N/total", a bar, and x%. -->
-      <div class="pp-head-progress" *ngIf="!isLoading && headerChapter">
+      <!-- Progress for the section in the header: "N/total", a bar, and x%.
+           Hidden during a language switch so it doesn't flash the target
+           chapter's fresh 0% before the header settles. -->
+      <div class="pp-head-progress" *ngIf="!isLoading && !switchingLanguage && headerChapter">
         <span class="pp-head-count">{{ headerDone }} / {{ headerTotal }}</span>
         <div class="pp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="headerPct">
           <span class="pp-bar-fill" [style.width.%]="headerPct"></span>
