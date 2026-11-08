@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.30',
+    notes: [
+      'Journey++ visual polish: cleaner purple rings on the back/flag buttons and locked nodes, decorative lines beside chapter titles, brighter completed nodes with a check + chevron badge, bigger and clearer Quiz and Write icons, larger nodes with the lock tucked into the corner, a more premium blue action button and a more 3D "Continue" button, plus a nicer top progress bar.',
+      'The Quiz and Write mode icons are refreshed everywhere they appear (Home, mode lists and the Journey maps).',
+    ],
+  },
+  {
     version: '1.3.29',
     notes: [
       'Fixed icons sometimes failing to load (a blank square instead of the icon).',

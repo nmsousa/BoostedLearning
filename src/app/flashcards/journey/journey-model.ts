@@ -57,7 +57,7 @@ interface NodeDef {
 /** Node definitions in play order. */
 export const JOURNEY_NODE_DEFS: readonly NodeDef[] = [
   { type: 'flip',    mode: 'journey-flip',    route: '/practice/flip',            icon: 'albums-outline',      color: 'primary' },
-  { type: 'quiz',    mode: 'journey-quiz',    route: '/practice/quiz',            icon: 'help-circle-outline', color: 'success' },
+  { type: 'quiz',    mode: 'journey-quiz',    route: '/practice/quiz',            icon: 'help', color: 'success' },
   { type: 'write',   mode: 'journey-write',   route: '/practice/journey-play',    icon: 'create-outline',      color: 'secondary' },
   { type: 'match',   mode: 'journey-match',   route: '/practice/match',           icon: 'git-compare-outline', color: 'tertiary' },
   { type: 'builder', mode: 'journey-builder', route: '/practice/journey-builder', icon: 'construct-outline',   color: 'warning' },

@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { Platform } from '@ionic/angular';
 import { SettingsService } from './services/settings.service';
 import { AppUpdateService } from './services/app-update.service';
 import { FlashcardService } from './services/flashcard.service';
@@ -23,7 +22,6 @@ export class AppComponent {
   private flashcards = inject(FlashcardService);
   private backInterceptor = inject(BackInterceptorService);
   private router = inject(Router);
-  private platform = inject(Platform);
 
   constructor() {
     // Mark the current OTA bundle as healthy and enable live updates.
@@ -35,8 +33,20 @@ export class AppComponent {
     // pages that also await it just join this same load.
     void this.flashcards.initialize();
 
+    this.registerIcons();
     this.registerHardwareBackButton();
     this.syncStatusBarWithTheme();
+  }
+
+  /**
+   * Register the app's Ionicons as inline DATA, AFTER Ionic has initialized
+   * (this constructor runs post-APP_INITIALIZER). Importing `ionicons` at the
+   * entry point (main.ts) instead pulled a second Stencil runtime under Vite
+   * and broke @ionic/core's component mode resolution — so we do it here, and
+   * lazily, to avoid touching the module graph before Ionic is set up.
+   */
+  private registerIcons(): void {
+    void import('./icons').then(m => m.registerAppIcons());
   }
 
   /**
@@ -93,29 +103,29 @@ export class AppComponent {
   private registerHardwareBackButton(): void {
     if (!Capacitor.isNativePlatform()) return;
 
-    // Use IONIC's priority back-button system, NOT a raw @capacitor/app
-    // listener. Ionic's ion-router-outlet subscribes at priority 0 to pop the
-    // page on every back/gesture; a raw @capacitor/app listener runs ALONGSIDE
-    // it, so the page was being popped to the list at the same moment our
-    // handler tried to show the Write confirm — the confirm then appeared on
-    // the ALREADY-popped list page (the reported bug). By subscribing at a
-    // HIGHER priority (100) and NEVER calling the provided `_next` processor,
-    // OUR handler runs first and fully owns the decision: Ionic's outlet pop
-    // only happens because WE call popRouterOutlet() in step 3. When the active
-    // page claims the press (step 2), nothing pops behind the confirm.
-    this.platform.backButton.subscribeWithPriority(100, async (_next) => {
+    // Use a raw @capacitor/app `backButton` listener — NOT Ionic's
+    // `Platform.backButton`. Injecting `Platform` from @ionic/angular into this
+    // ROOT component forced Ionic's Angular providers to initialize at root
+    // construction, before the lazy APP_INITIALIZER ran setupConfig — so under
+    // the Vite dev server the Ionic components upgraded with `mode=undefined`
+    // and the header collapsed to a blank bar. Keeping back handling on the
+    // Capacitor listener avoids pulling Platform into the root entirely.
+    //
+    // We own the whole decision here: close an overlay, let the active page
+    // claim the press (its X behaviour), else pop the outlet ourselves, else
+    // home/exit. We never defer to Ionic's own outlet handler, so there's no
+    // double-pop.
+    App.addListener('backButton', async () => {
       // 1) An open overlay (modal/popover/action-sheet/alert) closes first.
       if (await this.dismissTopOverlay()) return;
 
       // 2) The active page intercepts back to do what its own X does (e.g. the
       //    Write exercise's "lose progress?" confirm). If it claimed the press,
-      //    STOP — don't let Ionic pop the page behind the confirm.
+      //    STOP — don't also navigate.
       if (await this.backInterceptor.runActive()) return;
 
-      // 3) Nobody claimed it → try to pop the ion-router-outlet stack ourselves
-      //    (DOM API, since the outlet isn't reliably injectable here under
-      //    @ionic/angular/lazy). If we popped, we're done and must NOT also run
-      //    Ionic's default handler (that would double-pop).
+      // 3) Nobody claimed it → pop the ion-router-outlet stack ourselves (DOM
+      //    API; the outlet isn't reliably injectable here under lazy Ionic).
       if (await this.popRouterOutlet()) return;
 
       // 4) Nothing to pop. On home → exit; otherwise go home.

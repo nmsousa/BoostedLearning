@@ -7,40 +7,45 @@
 
 <ion-header class="pp-header ion-no-border">
   <ion-toolbar>
-    <div class="pp-head">
-      <button type="button" class="pp-back" (click)="close()" [attr.aria-label]="'journeyPlus.back' | translate">
-        <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
-      </button>
+    <!-- One column wrapper so the title row + progress row STACK inside the
+         toolbar. (Two bare divs in the toolbar's default slot laid out side by
+         side and got squashed, hiding the title/flag/progress.) -->
+    <div class="pp-head-wrap">
+      <div class="pp-head">
+        <button type="button" class="pp-back" (click)="close()" [attr.aria-label]="'journeyPlus.back' | translate">
+          <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
+        </button>
 
-      <!-- The header names the section you're looking at (updates on scroll). -->
-      <h1 class="pp-title">{{ headerTitle }}</h1>
+        <!-- The header names the section you're looking at (updates on scroll). -->
+        <h1 class="pp-title">{{ headerTitle }}</h1>
 
-      <button type="button" class="pp-lang" id="jpp-lang-trigger"
-        [attr.aria-label]="'journeyPlus.changeLanguage' | translate">
-        <span class="pp-flag"><img [src]="currentLanguage.flagUrl" alt="" /></span>
-        <ion-icon name="chevron-down" class="pp-lang-caret" aria-hidden="true"></ion-icon>
-      </button>
-      <ion-popover trigger="jpp-lang-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
-        <ng-template>
-          <ion-list class="lang-list">
-            <ion-item *ngFor="let lang of availableLanguages" button detail="false" lines="none"
-              [class.active]="lang.code === learningLanguage" (click)="selectLanguage(lang.code)">
-              <img class="flag" slot="start" [src]="lang.flagUrl" [alt]="lang.name" />
-              <ion-label>{{ lang.name }}</ion-label>
-              <ion-icon *ngIf="lang.code === learningLanguage" name="checkmark" slot="end" color="primary"></ion-icon>
-            </ion-item>
-          </ion-list>
-        </ng-template>
-      </ion-popover>
-    </div>
-
-    <!-- Progress for the section in the header: "N/total", a bar, and x%. -->
-    <div class="pp-head-progress" *ngIf="!isLoading && headerChapter">
-      <span class="pp-head-count">{{ headerDone }} / {{ headerTotal }}</span>
-      <div class="pp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="headerPct">
-        <span class="pp-bar-fill" [style.width.%]="headerPct"></span>
+        <button type="button" class="pp-lang" id="jpp-lang-trigger"
+          [attr.aria-label]="'journeyPlus.changeLanguage' | translate">
+          <span class="pp-flag"><img [src]="currentLanguage.flagUrl" alt="" /></span>
+          <ion-icon name="chevron-down" class="pp-lang-caret" aria-hidden="true"></ion-icon>
+        </button>
+        <ion-popover trigger="jpp-lang-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
+          <ng-template>
+            <ion-list class="lang-list">
+              <ion-item *ngFor="let lang of availableLanguages" button detail="false" lines="none"
+                [class.active]="lang.code === learningLanguage" (click)="selectLanguage(lang.code)">
+                <img class="flag" slot="start" [src]="lang.flagUrl" [alt]="lang.name" />
+                <ion-label>{{ lang.name }}</ion-label>
+                <ion-icon *ngIf="lang.code === learningLanguage" name="checkmark" slot="end" color="primary"></ion-icon>
+              </ion-item>
+            </ion-list>
+          </ng-template>
+        </ion-popover>
       </div>
-      <span class="pp-head-pct">{{ 'journeyPlus.percentDone' | translate:{ p: headerPct } }}</span>
+
+      <!-- Progress for the section in the header: "N/total", a bar, and x%. -->
+      <div class="pp-head-progress" *ngIf="!isLoading && headerChapter">
+        <span class="pp-head-count">{{ headerDone }} / {{ headerTotal }}</span>
+        <div class="pp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="headerPct">
+          <span class="pp-bar-fill" [style.width.%]="headerPct"></span>
+        </div>
+        <span class="pp-head-pct">{{ 'journeyPlus.percentDone' | translate:{ p: headerPct } }}</span>
+      </div>
     </div>
   </ion-toolbar>
 </ion-header>
@@ -79,7 +84,7 @@
         </svg>
 
         <div class="pp-stop" *ngFor="let stop of block.stops; trackBy: trackStop"
-          [ngClass]="'state-' + stop.state"
+          [ngClass]="'state-' + stop.state" [class.hint-open]="isHintVisible(block, stop)"
           [style.top.px]="stop.y" [style.--x]="stop.xPct + '%'" [style.--i]="stop.index">
 
           <!-- Pill panel anchored at the node centre, extending right; the node
@@ -90,20 +95,31 @@
                 <span *ngIf="stop.state === 'done'" class="pp-tick"><ion-icon name="checkmark"></ion-icon></span>
                 {{ stop.label }}
               </span>
-              <!-- Only shown when there's a caption (active nodes). Done/locked
-                   have none — a locked node explains itself via a toast on tap. -->
-              <span class="pp-panel-detail" *ngIf="stop.detail">
+              <!-- Active nodes always show the time estimate. A locked node's
+                   "unlocks after…" caption shows only when the node is tapped
+                   (isHintVisible), pinned inline to the right of the node. -->
+              <span class="pp-panel-detail"
+                *ngIf="stop.state === 'active' || isHintVisible(block, stop)">
                 <ion-icon *ngIf="stop.state === 'active'" name="time-outline"></ion-icon>
                 {{ stop.detail }}
               </span>
             </div>
             <span *ngIf="stop.state === 'active'" class="pp-go"><ion-icon name="chevron-forward"></ion-icon></span>
+            <!-- Completed: a small green chevron at the end of the pill, like
+                 the reference "Cards >". -->
+            <ion-icon *ngIf="stop.state === 'done'" name="chevron-forward" class="pp-done-chevron" aria-hidden="true"></ion-icon>
           </div>
 
-          <button type="button" class="pp-node" [disabled]="stop.state === 'locked'"
+          <!-- Locked nodes are NOT disabled (a disabled button swallows the tap
+               that reveals the "unlocks after…" caption). The mode icon stays
+               visible; a small padlock badge is integrated at the node's
+               bottom-right (not obscuring the icon). The pill carries NO lock. -->
+          <button type="button" class="pp-node"
             [attr.aria-label]="stop.aria" (click)="openStop(block, stop)">
-            <ion-icon *ngIf="stop.state !== 'locked'" [name]="stop.node.icon" class="pp-node-icon" aria-hidden="true"></ion-icon>
-            <ion-icon *ngIf="stop.state === 'locked'" name="lock-closed" class="pp-node-icon lock" aria-hidden="true"></ion-icon>
+            <ion-icon [name]="stop.node.icon" class="pp-node-icon" aria-hidden="true"></ion-icon>
+            <span *ngIf="stop.state === 'locked'" class="pp-node-lock" aria-hidden="true">
+              <ion-icon name="lock-closed"></ion-icon>
+            </span>
           </button>
         </div>
       </div>

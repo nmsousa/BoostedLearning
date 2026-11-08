@@ -175,7 +175,7 @@ export class FlashcardsPage implements OnInit {
   get modeIcon(): string {
     const icons: Partial<Record<PracticeMode, string>> = {
       flip: 'albums-outline', write: 'create-outline', match: 'git-compare-outline',
-      quiz: 'help-circle-outline', journey: 'map-outline', builder: 'construct-outline',
+      quiz: 'help', journey: 'map-outline', builder: 'construct-outline',
       blanks: 'reorder-four-outline',
     };
     return icons[this.mode] ?? 'albums-outline';

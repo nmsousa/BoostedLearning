@@ -30,7 +30,7 @@ import {
   ViewChild, ElementRef, AfterViewInit, HostListener,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { NavController, ToastController } from '@ionic/angular';
+import { NavController } from '@ionic/angular';
 import { FlashcardService, FlashcardDeck } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
@@ -85,11 +85,7 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
   private cdr = inject(ChangeDetectorRef);
-  private toast = inject(ToastController);
   private navCtrl = inject(NavController);
-
-  /** The currently-shown "locked" toast, so taps don't stack several up. */
-  private lockedToast: HTMLIonToastElement | null = null;
 
   @ViewChild('content', { read: ElementRef }) private contentEl?: ElementRef<HTMLIonContentElement>;
   @ViewChild('scene') private sceneEl?: ElementRef<HTMLElement>;
@@ -137,6 +133,19 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   /** Whether the current node sits ABOVE ('up') or BELOW ('down') the current
    *  viewport — drives the FAB's arrow direction. */
   jumpDirection: 'up' | 'down' = 'down';
+
+  /** Key ("chapterIndex:stopIndex") of the LOCKED node whose "unlocks after…"
+   *  caption is currently revealed (tapped). Only one shows at a time; tapping
+   *  another, or an unlocked node, replaces/clears it. */
+  revealedStopKey: string | null = null;
+
+  /** Stable key for a stop within the rendered map. */
+  stopKey(block: MapChapter, stop: MapStop): string { return `${block.index}:${stop.index}`; }
+
+  /** True when this locked node's caption should be visible (it was tapped). */
+  isHintVisible(block: MapChapter, stop: MapStop): boolean {
+    return stop.state === 'locked' && this.revealedStopKey === this.stopKey(block, stop);
+  }
 
   availableLanguages: LanguageOption[] = [];
 
@@ -338,7 +347,8 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
     this.ctaDisabled = false;
     const activeIdx = ch.unlocked ? ch.nodes.findIndex(n => n.unlocked && !n.passed) : -1;
     if (activeIdx >= 0) {
-      this.ctaLabel = this.t(ch.done === 0 ? 'journeyPlus.start' : 'journeyPlus.keepGoing');
+      // A single, calm "Continue" (instead of "Let's start!" / "Keep going!").
+      this.ctaLabel = this.t('journeyPlus.continue');
     } else {
       this.ctaLabel = this.t('journeyPlus.allDone');
       this.ctaDisabled = true;
@@ -346,12 +356,19 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private stopDetail(ch: JourneyChapter, i: number, state: StopState): string {
-    // Done nodes show no "Great job!" caption (removed); locked nodes show no
-    // caption either — tapping a locked node surfaces the reason as a toast
-    // (showLockedHint) instead of an always-visible line.
+    // Done nodes show no "Great job!" caption (removed). Active nodes show the
+    // time estimate. Locked nodes carry their "unlocks after…" reason, but the
+    // template only SHOWS it for the node the user tapped (revealedStopKey) —
+    // so it reads like an inline tooltip pinned to the node, not a toast.
     if (state === 'done') return '';
     if (state === 'active') return this.t('journeyPP.minutes', { n: this.minutesFor(ch, ch.nodes[i].type) });
-    return '';
+    // Locked: explain what unlocks it (first node of a locked chapter vs a node
+    // gated by the previous node in an unlocked chapter).
+    if (!ch.unlocked && i === 0) return this.t('journeyPlus.unlocksChapter', { n: ch.number - 1 });
+    const prev = ch.nodes[i - 1];
+    return prev
+      ? this.t('journeyPP.unlocksAfter', { name: this.t(`journey.node.${prev.type}`) })
+      : this.t('journeyPlus.locked');
   }
 
   private minutesFor(ch: JourneyChapter, type: JourneyNodeType): number {
@@ -386,8 +403,17 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   // ── Actions ─────────────────────────────────────────────────────────────────
   openStop(block: MapChapter, stop: MapStop): void {
     if (!this.deck) return;
-    // Tapping a locked node explains WHY it's locked instead of doing nothing.
-    if (stop.state === 'locked') { void this.showLockedHint(); return; }
+    // Tapping a LOCKED node reveals its inline "unlocks after…" caption (pinned
+    // to the right of the node), toggling off on a second tap. Tapping any
+    // other locked node moves the caption there.
+    if (stop.state === 'locked') {
+      const key = this.stopKey(block, stop);
+      this.revealedStopKey = this.revealedStopKey === key ? null : key;
+      this.cdr.detectChanges();
+      return;
+    }
+    // Tapping a playable node clears any revealed hint and opens the exercise.
+    this.revealedStopKey = null;
     // Use Ionic's FORWARD navigation (not plain router.navigate) so the map is
     // pushed onto the ion-router-outlet stack and stays a poppable entry. With
     // a plain navigate, hardware/gesture back found nothing to pop and fell
@@ -395,20 +421,6 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
     void this.navCtrl.navigateForward([stop.node.route, this.deck.id], {
       queryParams: { level: block.chapter.levelNumber, mode: stop.node.mode, from: JOURNEY_PLUS_PLUS_FROM },
     });
-  }
-
-  /** Brief toast shown when a locked node is tapped (kept short). */
-  private async showLockedHint(): Promise<void> {
-    // Replace any existing one so rapid taps don't stack toasts.
-    if (this.lockedToast) { await this.lockedToast.dismiss().catch(() => { /* ignore */ }); }
-    this.lockedToast = await this.toast.create({
-      message: this.t('journeyPP.lockedHint'),
-      duration: 2200,
-      position: 'bottom',
-      icon: 'lock-closed',
-      cssClass: 'pp-locked-toast',
-    });
-    void this.lockedToast.present();
   }
 
   /** Primary HUD action: play the current chapter's active node. */

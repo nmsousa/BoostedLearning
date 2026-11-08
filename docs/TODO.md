@@ -188,6 +188,37 @@ To do: go through the list, confirm/correct the suggestions using real French
 knowledge, then fold the agreed fixes into the language-scoped
 `CURATED_TRANSLATIONS.fr` map in `flashcard.service.ts`. Re-run `npm test` after.
 
+### IELTS vocabulary dictionary / deck
+Status: **not implemented** — idea to evaluate.
+
+Add an IELTS-focused English vocabulary dataset (a themed dictionary/deck the
+user can pick, like the existing Dutch/French decks). Source / inspiration:
+https://sprechify.com/blog/best-ielts-vocabulary-apps
+
+What "IELTS vocabulary" means (from the article) — worth structuring the deck
+around these three buckets rather than a flat word list:
+- **Topic vocabulary** — words tied to common IELTS topics (environment,
+  technology, education, health…), e.g. "biodiversity".
+- **Functional vocabulary** — expressing opinions, comparisons, cause/effect,
+  hypotheticals, e.g. "ostensibly".
+- **High-band vocabulary** — precise single-word alternatives, e.g. "ubiquitous"
+  for "very common".
+
+Fit with this app (we already have the pieces):
+- It's just another deck: author/import a JSON deck (`languageCode: 'en'`, with
+  `skill` groups = the three buckets or by topic) and it flows through the
+  existing level/round/Flashcards/Write/Quiz/Match system.
+- Each word benefits from an **example sentence** (the article stresses using a
+  word in context, not in isolation) — ties into the planned "Learn mode" and
+  grammar/phrases extension above.
+- Spaced repetition is already there (FSRS in Flip); the article's retention
+  formula (encounter → use in a sentence within 24h → SRS over 30 days → apply)
+  maps onto our modes.
+
+Open questions when picked up: where to source the word list + definitions +
+examples (e.g. a Magoosh-style ~600-word starter set, or Cambridge IELTS), and
+whether to ship it bundled or via the planned download-on-demand deck loading.
+
 ## In progress / recently decided
 
 ### App UI language (i18n) — #3

@@ -18,9 +18,26 @@
   --pp-gold: #ffcf3f;
   --pp-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --pp-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
-  --node: clamp(58px, 15.5vw, 72px);
-  --node-active: clamp(76px, 20.5vw, 94px);
-  --node-locked: clamp(54px, 14.5vw, 66px);
+
+  // ── Shared "periwinkle ring" treatment ───────────────────────────────────
+  // One consistent ring used by the back button, the language button and the
+  // locked nodes so they read as the same component family (matches the
+  // reference). The ring is drawn with box-shadow SPREAD rings rather than a
+  // CSS `border` — a hard border aliased/"pixelated" on scaled desktop
+  // displays, whereas layered inset/outset shadows render perfectly smooth.
+  --pp-ring-color: rgba(124, 132, 232, 0.9);
+  --pp-ring-fill: rgba(28, 32, 74, 0.55);
+  // Applied with `border: 0`:
+  //   - inset ring  = the crisp periwinkle line (2px, anti-aliased)
+  //   - outer spread + blur = the soft same-hue glow
+  --pp-ring-glow:
+    inset 0 0 0 2px var(--pp-ring-color),
+    0 0 0 1px rgba(124, 132, 232, 0.2),
+    0 0 16px rgba(110, 120, 240, 0.32);
+  // Nodes ~10% larger than before for a more substantial presence (reference).
+  --node: clamp(64px, 17vw, 80px);
+  --node-active: clamp(82px, 22vw, 102px);
+  --node-locked: clamp(60px, 16vw, 74px);
 
   color: var(--pp-ink);
   background: var(--pp-navy);
@@ -95,15 +112,26 @@
 .pp-header ion-toolbar {
   --background: transparent;
   --border-width: 0;
-  --min-height: 60px;
+  // Tall enough for BOTH rows (title + progress). The toolbar's content area is
+  // fixed to --min-height and hides overflow, so this must cover both rows or
+  // the progress row gets clipped (the bug that hid the title/flag/progress).
+  --min-height: 96px;
   --padding-start: 12px;
   --padding-end: 12px;
+}
+// Column wrapper filling the toolbar: title row on top, progress row below.
+.pp-head-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
 }
 .pp-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 0;
+  padding: 6px 0 0;
 }
 .pp-back {
   flex: 0 0 auto;
@@ -114,10 +142,12 @@
   display: grid;
   place-items: center;
   font-size: 23px;
-  color: var(--pp-ink);
-  background: rgba(24, 32, 92, 0.72);
-  border: 1px solid rgba(150, 160, 255, 0.28);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #eceeff;
+  // Shared periwinkle ring (same as the language button + locked nodes). The
+  // ring is drawn via box-shadow (not a border) so it stays crisp on desktop.
+  background: var(--pp-ring-fill);
+  border: 0;
+  box-shadow: var(--pp-ring-glow);
   cursor: pointer;
   transition: transform 0.15s var(--pp-ease);
   &:active { transform: scale(0.92); }
@@ -126,9 +156,9 @@
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
-  font-size: clamp(1.1rem, 5vw, 1.3rem);
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: clamp(1.15rem, 5vw, 1.35rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -144,9 +174,10 @@
   border-radius: 999px;
   color: var(--pp-ink);
   font: inherit;
-  background: rgba(24, 32, 92, 0.62);
-  border: 1px solid rgba(150, 160, 255, 0.28);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  // Shared periwinkle ring (identical to the back button + locked nodes).
+  background: var(--pp-ring-fill);
+  border: 0;
+  box-shadow: var(--pp-ring-glow);
   cursor: pointer;
 }
 .pp-flag {
@@ -154,7 +185,8 @@
   height: 28px;
   border-radius: 50%;
   overflow: hidden;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+  // Crisp lavender ring instead of a soft white halo.
+  box-shadow: 0 0 0 1.5px rgba(160, 170, 255, 0.55);
   img { width: 100%; height: 100%; object-fit: cover; display: block; }
 }
 .pp-lang-caret { font-size: 14px; opacity: 0.85; }
@@ -168,15 +200,16 @@
 }
 .pp-head-count {
   flex: 0 0 auto;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--pp-ink);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #eef1ff;
   font-variant-numeric: tabular-nums;
 }
 .pp-head-pct {
   flex: 0 0 auto;
-  font-size: 0.72rem;
-  color: var(--pp-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #dfe4ff;
   white-space: nowrap;
 }
 
@@ -193,20 +226,35 @@
   padding-bottom: 16px;
 }
 
-// ── Chapter header (centred title only — number badge + emoji removed) ───────
+// ── Chapter header (centred title + a short decorative line each side) ───────
 .pp-chapter-head {
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 14px;
   padding: 18px 16px 6px;
+  // Short, subtle lavender lines flanking the title. They flex to a capped
+  // width so they adapt to the viewport without crowding the text.
+  &::before,
+  &::after {
+    content: '';
+    flex: 0 1 56px;
+    height: 1.5px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(150, 160, 255, 0.5));
+  }
+  &::after { background: linear-gradient(90deg, rgba(150, 160, 255, 0.5), transparent); }
 }
 .pp-chapter-name {
-  // Centred, no badge/emoji. Takes the available width and ellipsises.
-  max-width: 100%;
+  // Centred, no badge/emoji. Shrinks before the flanking lines do. Heavier,
+  // tighter bold to echo the reference's chapter title (system font — no new
+  // web-font dependency).
+  flex: 0 1 auto;
+  min-width: 0;
   text-align: center;
-  font-size: 1.02rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 1.22rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -259,16 +307,17 @@
   cursor: pointer;
   transition: transform 0.18s var(--pp-ease);
   &:active:not(:disabled) { transform: scale(0.92); }
-  .pp-node-icon { font-size: calc(var(--size) * 0.44); }
+  // Icons fill a touch more of the node for a stronger presence (reference).
+  .pp-node-icon { font-size: calc(var(--size) * 0.48); }
 }
 
-// Done: neon green sphere with a bright rim and halo.
+// Done: vibrant green sphere with a luminous outer ring + halo (reference).
 .state-done .pp-node {
-  background: radial-gradient(circle at 35% 28%, #6dffb4 0%, #22d36e 45%, var(--pp-green-deep) 100%);
-  border: 4px solid #a8ffcf;
+  background: radial-gradient(circle at 35% 26%, #8dffc2 0%, #2ae37a 46%, var(--pp-green-deep) 100%);
+  border: 4px solid #c3ffdd;
   box-shadow:
-    0 0 0 4px rgba(76, 245, 154, 0.28),
-    0 0 26px rgba(76, 245, 154, 0.65),
+    0 0 0 5px rgba(76, 245, 154, 0.32),
+    0 0 30px rgba(76, 245, 154, 0.75),
     inset 0 -6px 12px rgba(0, 80, 40, 0.35),
     var(--pp-shadow);
 }
@@ -300,18 +349,35 @@
   }
 }
 
-// Locked: dark charcoal sphere, lavender rim, solid padlock.
+// Locked: dark purple sphere with the SAME periwinkle ring + glow as the back
+// and language buttons, so they all match. The mode icon stays prominent; a
+// small lock badge sits bottom-right.
 .state-locked .pp-node {
-  background: radial-gradient(circle at 35% 28%, #3a3f63 0%, #22253f 55%, #14162b 100%);
-  border: 3px solid rgba(130, 140, 255, 0.5);
-  box-shadow:
-    0 0 0 3px rgba(90, 100, 230, 0.16),
-    0 0 18px rgba(100, 110, 255, 0.25),
-    inset 0 -6px 12px rgba(0, 0, 0, 0.35),
-    var(--pp-shadow);
-  color: #c9cce4;
-  cursor: not-allowed;
-  .pp-node-icon.lock { font-size: calc(var(--size) * 0.4); }
+  position: absolute; // establish a containing block for the lock badge
+  background: radial-gradient(circle at 35% 28%, #3c4168 0%, #242843 55%, #15172e 100%);
+  border: 0;
+  box-shadow: var(--pp-ring-glow), inset 0 -6px 12px rgba(0, 0, 0, 0.3);
+  color: #dfe2ff;
+  cursor: pointer; // tappable to reveal the "unlocks after…" caption
+  .pp-node-icon { opacity: 0.92; }
+}
+
+// Small padlock badge integrated at a locked node's bottom-right. Sized to the
+// node so it scales with it; sits on the rim without covering the mode icon.
+.pp-node-lock {
+  position: absolute;
+  right: calc(var(--size) * -0.04);
+  bottom: calc(var(--size) * -0.04);
+  width: calc(var(--size) * 0.42);
+  height: calc(var(--size) * 0.42);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 35% 30%, #5a5f8e 0%, #2b2f4e 70%, #171a30 100%);
+  border: 0;
+  box-shadow: inset 0 0 0 2px var(--pp-ring-color), 0 2px 6px rgba(0, 0, 0, 0.5);
+  color: #eceeff;
+  ion-icon { font-size: calc(var(--size) * 0.22); }
 }
 
 // ── Pill panels (anchored at the node centre, extending right) ──────────────
@@ -368,8 +434,19 @@
 }
 
 .state-done .pp-panel {
+  // Subtle green-tinted border + faint inner glow so the completed badge reads
+  // as "done" and feels integrated with the green node (reference).
+  border-color: rgba(76, 245, 154, 0.45);
+  box-shadow: var(--pp-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 14px rgba(76, 245, 154, 0.18);
   .pp-panel-title { color: var(--pp-green); }
   .pp-panel-detail { color: rgba(255, 255, 255, 0.92); }
+}
+// Green chevron closing the completed pill.
+.pp-done-chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-size: 18px;
+  color: var(--pp-green);
 }
 
 .state-active .pp-panel {
@@ -385,23 +462,38 @@
 }
 .pp-go {
   flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   color: #fff;
-  font-size: 18px;
-  background: linear-gradient(145deg, #3b8bff, #1d4ed8);
-  box-shadow: 0 4px 10px rgba(29, 78, 216, 0.45);
+  font-size: 22px;
+  // Solid, vivid periwinkle-blue button (reference, left): a tight, saturated
+  // gradient — NOT a pale glassy one — with no bright rim and only a whisper of
+  // top highlight. Bigger so it nearly fills the pill height.
+  background: linear-gradient(180deg, #4f7bff 0%, #2f5df0 55%, #2546d8 100%);
+  border: 0;
+  box-shadow:
+    0 5px 12px rgba(26, 54, 170, 0.5),
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.28);
+  ion-icon { filter: drop-shadow(0 1px 1px rgba(0, 18, 80, 0.45)); }
 }
 
 .state-locked .pp-panel {
-  cursor: default;
+  cursor: pointer; // tappable to reveal the "unlocks after…" caption
   max-width: min(calc(var(--size) / 2 + 168px), calc(100% - var(--x) - 8px));
   background: rgba(16, 18, 50, 0.74);
   .pp-panel-title { color: rgba(236, 238, 255, 0.92); font-weight: 600; font-size: 0.94rem; }
   .pp-panel-detail { color: rgba(200, 204, 240, 0.7); font-size: 0.74rem; }
+}
+// Tapped locked node: lift the pill a touch so the revealed caption reads as
+// an opened tooltip pinned to the node. (hint-open + state-locked are on the
+// same .pp-stop element.)
+.pp-stop.state-locked.hint-open .pp-panel {
+  background: rgba(26, 30, 74, 0.92);
+  border-color: rgba(150, 160, 255, 0.4);
+  box-shadow: var(--pp-shadow), 0 0 0 1px rgba(150, 160, 255, 0.25);
 }
 
 // ── "Jump to current" FAB ────────────────────────────────────────────────────
@@ -440,36 +532,58 @@
   border: 1px solid rgba(150, 160, 255, 0.24);
   box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
-.pp-bar { height: 6px; border-radius: 999px; background: rgba(60, 72, 160, 0.6); overflow: hidden; flex: 1 1 auto; min-width: 0; }
+.pp-bar {
+  height: 9px;
+  border-radius: 999px;
+  // Softer, slightly translucent track with a subtle inner shade (reference).
+  background: rgba(46, 54, 120, 0.55);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .pp-bar-fill {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--pp-green), var(--pp-cyan));
+  // Cyan→green gradient with a luminous edge, like the reference fill.
+  background: linear-gradient(90deg, #3fd8ff 0%, #4cf59a 100%);
+  box-shadow: 0 0 10px rgba(76, 245, 154, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   transition: width 0.8s var(--pp-ease);
 }
 .pp-cta {
   flex: 1 1 auto;
   max-width: 420px;
-  height: 48px;
+  height: 50px;
   padding: 0 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
+  // No hard border — the HUD container behind it provides the dark frame. A
+  // soft luminous rim + drop shadow give depth (reference "Keep going!").
   border: 0;
   border-radius: 999px;
   color: #062033;
   font: inherit;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.98rem;
+  font-weight: 800;
   white-space: nowrap;
-  background: linear-gradient(90deg, #4af59a, #3fd8ff);
-  box-shadow: 0 0 22px rgba(74, 245, 154, 0.4), 0 6px 14px rgba(0, 0, 0, 0.35);
+  // Vibrant green→cyan gradient with a top inner highlight + bottom inner shade
+  // for depth, a luminous outer rim, and a soft drop shadow beneath.
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(95deg, #58ffa8 0%, #3fe6c0 50%, #3fd8ff 100%);
+  box-shadow:
+    0 0 0 1px rgba(150, 255, 210, 0.4),
+    0 0 26px rgba(74, 245, 154, 0.5),
+    0 8px 18px rgba(0, 0, 0, 0.45),
+    inset 0 2px 2px rgba(255, 255, 255, 0.55),
+    inset 0 -4px 8px rgba(0, 90, 90, 0.3);
   cursor: pointer;
   transition: transform 0.15s var(--pp-ease), opacity 0.2s;
   ion-icon { font-size: 20px; }
-  &:active:not(:disabled) { transform: scale(0.96); }
+  &:active:not(:disabled) { transform: scale(0.97); }
   &:disabled { opacity: 0.55; box-shadow: none; }
 }
 // Short phones: tighter HUD so more of the map stays visible.
