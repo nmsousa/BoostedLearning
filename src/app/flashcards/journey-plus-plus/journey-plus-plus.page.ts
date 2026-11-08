@@ -94,7 +94,10 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   /** Gentle S of node centres (X % of map width), as in the mockup. Kept left
    *  of centre so the right-hand panels always have room. */
   private static readonly X_PATTERN = [33, 43, 50, 40, 31, 42];
-  private static readonly PAD_TOP = 48;
+  // Top inset of the first node's CENTRE within a chapter's map. Must clear the
+  // largest node (the active one, ~102px → ~51px radius) so a chapter whose
+  // first stop is active doesn't crowd the chapter title above it.
+  private static readonly PAD_TOP = 68;
   private static readonly PAD_BOTTOM = 36;
   /** Row pitch = width × this, clamped. */
   private static readonly ROW_RATIO = 0.28;
@@ -112,6 +115,10 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   private static readonly RENDER_BATCH = 10;
 
   isLoading = true;
+  /** True while a language switch is rebuilding + snapping to the current
+   *  chapter. Keeps a spinner overlay over the (already rendered) content so
+   *  the reposition isn't visible. */
+  switchingLanguage = false;
   deck: FlashcardDeck | null = null;
   chapters: JourneyChapter[] = [];
   /** Index of the chapter in progress (first unlocked, not complete). */
@@ -201,7 +208,10 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
     this.observeScene();
   }
 
-  ngOnDestroy(): void { this.resizeObserver?.disconnect(); }
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+    if (this.tapTimer) { clearTimeout(this.tapTimer); this.tapTimer = null; }
+  }
 
   async ionViewWillEnter(): Promise<void> {
     // Returning from a finished exercise: refresh progress and bring the new
@@ -235,7 +245,7 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   onResize(): void { this.measure(); }
 
   // ── Data ────────────────────────────────────────────────────────────────────
-  private async load(initial: boolean, returning = false): Promise<void> {
+  private async load(initial: boolean, returning = false, languageSwitch = false): Promise<void> {
     this.availableLanguages = this.flashcards
       .getAvailableLanguages()
       .map(l => ({ ...l, flagUrl: this.flagUrl(l.code) }));
@@ -266,24 +276,60 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
       Math.max(JourneyPlusPlusPage.RENDER_BATCH, this.currentIndex + 1 + JourneyPlusPlusPage.RENDER_BATCH),
     );
 
+    // On a language switch, keep a loading overlay OVER the (already rendered)
+    // content through the rebuild + scroll so the user never sees the new
+    // chapter rendered at the OLD scroll position (the "flash then scroll to
+    // current" glitch). The content is snapped to the current chapter INSTANTLY
+    // (no animation) under the overlay, then the overlay is cleared.
     this.isLoading = false;
+    this.switchingLanguage = languageSwitch;
     this.rebuild();
     this.updateHud();
     this.cdr.detectChanges();
     setTimeout(() => {
       this.observeScene();
       this.measure();
-      if (initial || returning) void this.scrollToCurrent();
+      if (languageSwitch) {
+        // Content is rendered but hidden behind the overlay: jump to the
+        // current chapter with no animation, then reveal.
+        void this.jumpToCurrentInstant().then(() => {
+          this.switchingLanguage = false;
+          this.cdr.detectChanges();
+        });
+      } else if (initial || returning) {
+        void this.scrollToCurrent();
+      }
     }, 150);
+  }
+
+  /** Snap the current chapter into view with NO animation. Used on a language
+   *  switch so there's no visible scroll-from-top. Renders enough chapters for
+   *  the target to exist, measures, then writes scrollTop directly. */
+  private async jumpToCurrentInstant(): Promise<void> {
+    const content = this.contentEl?.nativeElement;
+    if (!content) return;
+    if (this.renderCount <= this.currentIndex) {
+      this.renderCount = Math.min(this.chapters.length, this.currentIndex + 1 + JourneyPlusPlusPage.RENDER_BATCH);
+      this.rebuild();
+      this.cdr.detectChanges();
+    }
+    const scrollEl = await content.getScrollElement();
+    const prev = scrollEl.style.scrollBehavior;
+    scrollEl.style.scrollBehavior = 'auto';
+    const target = this.currentScrollTarget(scrollEl);
+    scrollEl.scrollTop = target ?? 0;
+    scrollEl.style.scrollBehavior = prev;
   }
 
   async selectLanguage(code: string): Promise<void> {
     if (code === this.learningLanguage) return;
     this.settings.updateSetting('learningLanguage', code);
-    this.isLoading = true;
+    // Show the overlay immediately, then rebuild + snap under it (no visible
+    // "render at old position → scroll to current" flash).
+    this.switchingLanguage = true;
     this.cdr.detectChanges();
     await this.flashcards.initialize();
-    await this.load(true);
+    await this.load(true, false, true);
   }
 
   /** Render the next batch of chapters as the user nears the bottom. */
@@ -401,6 +447,74 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ── Actions ─────────────────────────────────────────────────────────────────
+  // ── Admin double-tap to complete a node ─────────────────────────────────────
+  private static readonly DOUBLE_TAP_MS = 320;
+  /** Pending single-tap timer (admin mode only, so a double-tap can pre-empt
+   *  the normal open). */
+  private tapTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingTapKey: string | null = null;
+
+  /** Entry point for a node/panel tap. Outside admin mode it opens the node
+   *  immediately. In admin mode the single-tap is deferred briefly: a quick
+   *  second tap on the SAME node force-completes it (3★, plus a good time/combo
+   *  where applicable); a lone tap falls through to the normal open. */
+  onNodeTap(block: MapChapter, stop: MapStop): void {
+    if (!this.settings.adminMode()) { this.openStop(block, stop); return; }
+
+    const key = this.stopKey(block, stop);
+    if (this.tapTimer && this.pendingTapKey === key) {
+      // Second tap on the same node within the window → force-complete.
+      clearTimeout(this.tapTimer);
+      this.tapTimer = null;
+      this.pendingTapKey = null;
+      void this.adminCompleteNode(block, stop);
+      return;
+    }
+    // First tap: wait briefly for a possible second tap before opening.
+    if (this.tapTimer) clearTimeout(this.tapTimer);
+    this.pendingTapKey = key;
+    this.tapTimer = setTimeout(() => {
+      this.tapTimer = null;
+      this.pendingTapKey = null;
+      this.openStop(block, stop);
+    }, JourneyPlusPlusPage.DOUBLE_TAP_MS);
+  }
+
+  /** Admin-only: force-complete a node with 3★ (and a good time/combo for
+   *  modes that score on those), then refresh the map. */
+  private async adminCompleteNode(block: MapChapter, stop: MapStop): Promise<void> {
+    if (!this.deck || !this.settings.adminMode()) return;
+    const deckId = this.deck.id;
+    const level = block.chapter.levelNumber;
+    const mode = stop.node.mode;
+    const cardCount = Math.max(1, block.chapter.cardCount || 1);
+
+    try {
+      if (stop.node.type === 'flip') {
+        // Flip scores on correct/total; 100% → 3★. Also set every level card to
+        // "known" so the underlying knowledge matches a real clear.
+        for (const card of this.flashcards.getLevelCards(deckId, level)) {
+          await this.flashcards.adminSetFlipKnowledge(deckId, card.id, 'known');
+        }
+        await this.flashcards.saveLevelProgress(deckId, mode, level, cardCount, cardCount);
+      } else if (stop.node.type === 'match') {
+        // Match scores on time + combo: fill all 5 rounds with 100%, a good
+        // (fast) time and a full combo.
+        const goodTime = Math.max(5, cardCount * 2);
+        for (let guard = 0; guard < 5; guard++) {
+          const res = await this.flashcards.saveRoundProgress(deckId, mode, level, 100, goodTime, cardCount);
+          if (res.levelComplete) break;
+        }
+      } else {
+        // quiz / write / builder / blanks: 3★ across all 5 rounds.
+        await this.flashcards.adminForceCompleteAllRounds(deckId, mode, level, 3);
+      }
+    } catch { /* best-effort admin shortcut */ }
+
+    // Reload to reflect the new progress (unlocks the next node/chapter).
+    await this.load(false, false);
+  }
+
   openStop(block: MapChapter, stop: MapStop): void {
     if (!this.deck) return;
     // Tapping a LOCKED node reveals its inline "unlocks after…" caption (pinned
@@ -429,7 +543,31 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
     const active = block?.stops.find(s => s.state === 'active');
     if (block && active) { this.openStop(block, active); return; }
     // Otherwise just bring the current chapter into view.
-    this.scrollToCurrent();
+    void this.scrollToCurrent();
+  }
+
+  // Like the jump FAB, the Continue button can be pressed while a momentum
+  // fling is still running. On Android WebView the first touch is consumed to
+  // stop the fling and the synthesized `click` is swallowed, so a single tap
+  // appeared to do nothing. Drive it from pointer events: pointerdown kills the
+  // momentum, pointerup performs the action. `click` is kept as a de-duplicated
+  // fallback for keyboard/a11y activation.
+  private ctaHandledAt = 0;
+
+  onCtaPointerDown(ev: Event): void {
+    ev.preventDefault();
+    void this.stopMomentum();
+  }
+
+  onCtaPointerUp(ev: Event): void {
+    ev.preventDefault();
+    this.ctaHandledAt = Date.now();
+    this.onCta();
+  }
+
+  onCtaClick(): void {
+    if (Date.now() - this.ctaHandledAt < 700) return;
+    this.onCta();
   }
 
   // ── Scrolling ─────────────────────────────────────────────────────────────

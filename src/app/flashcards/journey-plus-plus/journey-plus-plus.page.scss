@@ -215,7 +215,17 @@
 
 // ── Content / continuous chapter stream ──────────────────────────────────────
 .pp-content { --background: transparent; position: relative; z-index: 1; }
-.pp-loading { display: grid; place-items: center; height: 60%; }
+// Full-bleed overlay so it covers the content being repositioned during a
+// language switch (fixed to the viewport, above the stream). On first load the
+// stream isn't rendered yet, so it simply shows the centred spinner.
+.pp-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  background: var(--pp-navy);
+}
 .pp-empty { text-align: center; color: var(--pp-muted); padding: 40px 24px; }
 
 .pp-stream {
@@ -233,17 +243,18 @@
   align-items: center;
   gap: 14px;
   padding: 18px 16px 6px;
-  // Short, subtle lavender lines flanking the title. They flex to a capped
-  // width so they adapt to the viewport without crowding the text.
+  // Lavender lines flanking the title. A touch longer, thicker and brighter
+  // than before so they read clearly against the night scene (were 56px /
+  // 1.5px / 0.5 alpha, which looked too faint).
   &::before,
   &::after {
     content: '';
-    flex: 0 1 56px;
-    height: 1.5px;
+    flex: 0 1 72px;
+    height: 2px;
     border-radius: 999px;
-    background: linear-gradient(90deg, transparent, rgba(150, 160, 255, 0.5));
+    background: linear-gradient(90deg, transparent, rgba(176, 184, 255, 0.85));
   }
-  &::after { background: linear-gradient(90deg, rgba(150, 160, 255, 0.5), transparent); }
+  &::after { background: linear-gradient(90deg, rgba(176, 184, 255, 0.85), transparent); }
 }
 .pp-chapter-name {
   // Centred, no badge/emoji. Shrinks before the flanking lines do. Heavier,

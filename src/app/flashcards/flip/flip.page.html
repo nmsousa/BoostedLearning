@@ -94,13 +94,10 @@
 
   <!-- Complete phase -->
   <div *ngIf="!isLoading && phase === 'complete'" class="complete-container">
-    <!-- Stars (level sessions) -->
-    <div *ngIf="levelNumber > 0" class="stars-display gamification">
-      <ion-icon *ngFor="let s of [1,2,3]" [name]="s <= earnedStars ? 'star' : 'star-outline'"
-        class="star" [class.filled]="s <= earnedStars"></ion-icon>
-    </div>
-
-    <div *ngIf="levelNumber === 0" class="complete-emoji gamification">🎉</div>
+    <!-- No stars on the Flashcards complete screen: flip sessions are
+         self-rated recall, not a scored exercise, so stars would be
+         misleading. A celebratory emoji is shown for all completions. -->
+    <div class="complete-emoji gamification">🎉</div>
 
     <h1>
       <ng-container *ngIf="levelNumber > 0 && earnedStars >= 1">{{ 'mode.levelComplete' | translate }}</ng-container>

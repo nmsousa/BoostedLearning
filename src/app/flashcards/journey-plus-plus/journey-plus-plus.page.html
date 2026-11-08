@@ -52,7 +52,9 @@
 
 <!-- Not fullscreen: content ends above the HUD, so it never covers a node. -->
 <ion-content class="pp-content" #content [scrollEvents]="true" (ionScroll)="onContentScroll()">
-  <div *ngIf="isLoading" class="pp-loading"><ion-spinner name="crescent"></ion-spinner></div>
+  <!-- Overlay spinner: shown on first load AND during a language switch (while
+       the new content is repositioned under it, so the jump isn't visible). -->
+  <div *ngIf="isLoading || switchingLanguage" class="pp-loading"><ion-spinner name="crescent"></ion-spinner></div>
   <p *ngIf="!isLoading && !deck" class="pp-empty">{{ 'journeyPlus.empty' | translate }}</p>
 
   <!-- All chapters stacked in one continuous scroll: a light header per chapter
@@ -89,7 +91,7 @@
 
           <!-- Pill panel anchored at the node centre, extending right; the node
                sits on top of its leading end. Mirrors the node's tap. -->
-          <div class="pp-panel" aria-hidden="true" (click)="openStop(block, stop)">
+          <div class="pp-panel" aria-hidden="true" (click)="onNodeTap(block, stop)">
             <div class="pp-panel-text">
               <span class="pp-panel-title">
                 <span *ngIf="stop.state === 'done'" class="pp-tick"><ion-icon name="checkmark"></ion-icon></span>
@@ -115,7 +117,7 @@
                visible; a small padlock badge is integrated at the node's
                bottom-right (not obscuring the icon). The pill carries NO lock. -->
           <button type="button" class="pp-node"
-            [attr.aria-label]="stop.aria" (click)="openStop(block, stop)">
+            [attr.aria-label]="stop.aria" (click)="onNodeTap(block, stop)">
             <ion-icon [name]="stop.node.icon" class="pp-node-icon" aria-hidden="true"></ion-icon>
             <span *ngIf="stop.state === 'locked'" class="pp-node-lock" aria-hidden="true">
               <ion-icon name="lock-closed"></ion-icon>
@@ -145,7 +147,8 @@
      the primary action. -->
 <ion-footer class="pp-footer ion-no-border" *ngIf="!isLoading && currentChapter">
   <div class="pp-hud">
-    <button type="button" class="pp-cta" [disabled]="ctaDisabled" (click)="onCta()">
+    <button type="button" class="pp-cta" [disabled]="ctaDisabled"
+      (pointerdown)="onCtaPointerDown($event)" (pointerup)="onCtaPointerUp($event)" (click)="onCtaClick()">
       <span>{{ ctaLabel }}</span>
       <ion-icon *ngIf="!ctaDisabled" name="chevron-forward" aria-hidden="true"></ion-icon>
     </button>

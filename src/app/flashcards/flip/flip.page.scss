@@ -85,6 +85,16 @@
   transform: rotateY(180deg);
 }
 
+// While a card is swiping out (or the next card is entering), freeze the inner
+// flip transition. Otherwise resetting `isFlipped=false` for the next card
+// animates a visible back->front rotation, briefly showing the translation.
+.flip-card.exit-left .flip-card-inner,
+.flip-card.exit-right .flip-card-inner,
+.flip-card.exit-down .flip-card-inner,
+.flip-card.entering .flip-card-inner {
+  transition: none;
+}
+
 .flip-card-face {
   position: absolute;
   inset: 0;
@@ -107,12 +117,11 @@
   color: var(--ion-color-primary-contrast);
 }
 
-// Back = English, uses the secondary (coral) gradient, pre-rotated
+// Back = English. Uses a deeper blue than the teal front (it's the same word,
+// not a failed exercise, so it must not read as "wrong"/red).
 .flip-card-back {
-  background: linear-gradient(145deg,
-    var(--ion-color-secondary),
-    var(--ion-color-secondary-shade));
-  color: var(--ion-color-secondary-contrast);
+  background: linear-gradient(145deg, #1e3a8a, #152a63);
+  color: #ffffff;
   transform: rotateY(180deg);
 }
 
