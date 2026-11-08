@@ -291,10 +291,17 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
       this.measure();
       if (languageSwitch) {
         // Content is rendered but hidden behind the overlay: jump to the
-        // current chapter with no animation, then reveal.
+        // current chapter with no animation, settle the HEADER to whatever
+        // chapter actually sits under it at that scroll position, THEN reveal.
+        // (We must correct the header BEFORE clearing the overlay: otherwise it
+        // shows the raw current-chapter index first and visibly snaps to the
+        // on-screen chapter a frame later — e.g. "Chapter 6" → "Chapter 5".)
         void this.jumpToCurrentInstant().then(() => {
-          this.switchingLanguage = false;
-          this.cdr.detectChanges();
+          requestAnimationFrame(() => {
+            this.updateHeaderChapter();
+            this.switchingLanguage = false;
+            this.cdr.detectChanges();
+          });
         });
       } else if (initial || returning) {
         void this.scrollToCurrent();
