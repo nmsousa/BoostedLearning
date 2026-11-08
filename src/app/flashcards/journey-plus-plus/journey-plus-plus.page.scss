@@ -112,12 +112,19 @@
 .pp-header ion-toolbar {
   --background: transparent;
   --border-width: 0;
-  // Tall enough for BOTH rows (title + progress). The toolbar's content area is
-  // fixed to --min-height and hides overflow, so this must cover both rows or
-  // the progress row gets clipped (the bug that hid the title/flag/progress).
+  // Floor height for the two rows (title + progress). The title may wrap to a
+  // second line for long skill names, so the toolbar must be allowed to GROW
+  // past this minimum rather than clip — hence min-height (not a fixed height)
+  // and visible overflow on the inner content area below.
   --min-height: 96px;
   --padding-start: 12px;
   --padding-end: 12px;
+  // Let the toolbar expand to fit a two-line title instead of clipping it.
+  &::part(container) {
+    height: auto;
+    min-height: var(--min-height);
+    overflow: visible;
+  }
 }
 // Column wrapper filling the toolbar: title row on top, progress row below.
 .pp-head-wrap {
@@ -156,12 +163,20 @@
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
-  font-size: clamp(1.15rem, 5vw, 1.35rem);
+  // Slightly smaller base so longer titles fit, and allow up to TWO lines
+  // (clamped) instead of a single ellipsised line — long skill names like
+  // "Talk about your family" were being cut to "Talk about your f…".
+  font-size: clamp(1.02rem, 4.4vw, 1.3rem);
   font-weight: 800;
   letter-spacing: 0.01em;
-  white-space: nowrap;
+  line-height: 1.12;
+  // Wrap to a maximum of two lines, then ellipsise (rarely needed at 2 lines).
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 // Flag-only language button (like the classic Journey header).
 .pp-lang {
@@ -259,16 +274,21 @@
 .pp-chapter-name {
   // Centred, no badge/emoji. Shrinks before the flanking lines do. Heavier,
   // tighter bold to echo the reference's chapter title (system font — no new
-  // web-font dependency).
+  // web-font dependency). Long names wrap to at most TWO centred lines instead
+  // of being clipped to one with an ellipsis ("Talk about yo…").
   flex: 0 1 auto;
   min-width: 0;
   text-align: center;
-  font-size: 1.22rem;
+  font-size: 1.16rem;
   font-weight: 800;
   letter-spacing: 0.01em;
-  white-space: nowrap;
+  line-height: 1.15;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 // Locked chapters read dimmer until reached.
 .pp-chapter.is-locked { opacity: 0.9; }

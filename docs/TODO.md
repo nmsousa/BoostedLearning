@@ -4,6 +4,51 @@ Tracked tasks that are deferred or in progress.
 
 ## Deferred (on standby)
 
+### New map concept: a "learning network/tree" to replace the linear Journey
+Status: **idea / concept** — not implemented.
+
+Replace (or offer as an alternative to) the current linear Journey map with a
+NETWORK of learning paths that share a common vocabulary foundation. It is NOT
+just a circular menu — it's a web of branches growing from a central hub.
+
+Reference mockups (in `mockups/`, untracked — ChatGPT concept art):
+- `mockups/ChatGPT-Andre-NewStructure.png` — the radial hub: a central "Core
+  Vocabulary" node with thematic units (Travel, Daily Life, Food & Drink, Home,
+  Relationships, Health, Culture, Education, Nature, Science & Technology,
+  Business) radiating around it, each with CEFR levels (A1…B2) and small lesson
+  nodes branching off each unit.
+- `mockups/ChatGPT-Andre-NewStructure2.png` — the three levels of the tree.
+
+Core ideas / goals:
+- **Less restrictive progression** — learners choose what interests them rather
+  than following one fixed path.
+- **Better contextual learning** — common words are encountered/reinforced
+  across multiple situations (units), not just once.
+- **A visual sense of progression** — the map grows OUTWARD as the learner
+  advances (branches extend, new nodes appear).
+- **More replayability** — learners can revisit a specific branch directly
+  without walking back through a long linear path.
+- Key distinction: a NETWORK of paths sharing a common vocabulary foundation —
+  not a circular menu.
+
+Proposed structure (from the second mockup):
+- **Level 1 — Core Vocabulary** (the central node): the most common words plus
+  basic grammar — pronouns, verbs, connectors, everyday expressions.
+  Example: be, have, go, want, need, I, you, we, not, where, when.
+- **Level 2 — Thematic Units** (branches around the centre): each a
+  self-contained unit with its own vocabulary, grammar and practical
+  situations. Example: Travel, Food, Work, Family, Shopping, Health, etc.
+- **Level 3 — Unit Lessons** (each branch expands into smaller lessons): each
+  thematic branch has its own progression and mastery system.
+  Example: Travel → Transport → At the airport → Booking a hotel → Asking for
+  directions.
+
+Open questions when picked up: how this maps onto our existing deck/level/
+round model and `journey-*` progress namespaces; whether units reuse the same
+underlying cards tagged by theme vs. separate decks; how "core vocabulary"
+feeds/gates the thematic units; and whether this replaces Journey/Journey+/
+Journey++ or becomes a fourth map style.
+
 ### Remove Admin mode before public release
 Status: **temporary testing convenience — must be removed/disabled for release.**
 
