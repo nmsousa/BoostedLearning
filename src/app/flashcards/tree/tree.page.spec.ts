@@ -188,6 +188,19 @@ describe('TreePage (5 modes per level)', () => {
     expect(component.expandedId).toBeNull();
   });
 
+  it('recenters the map when the sub-star is collapsed', async () => {
+    doneLevels = [1];
+    await component.ngOnInit();
+    // Pan away first.
+    component.onPanPointerDown({ pointerId: 1, clientX: 0, clientY: 0 } as PointerEvent);
+    component.onPanPointerMove({ pointerId: 1, clientX: 120, clientY: 80 } as PointerEvent);
+    component.onPanPointerUp({ pointerId: 1 } as PointerEvent);
+    expect(component.viewportTransform).not.toBe('translate(0px, 0px) scale(1)');
+    // Collapsing recenters.
+    component.collapse();
+    expect(component.viewportTransform).toBe('translate(0px, 0px) scale(1)');
+  });
+
   it('does NOT close when the click lands on a mode node', async () => {
     doneLevels = [1];
     await component.ngOnInit();

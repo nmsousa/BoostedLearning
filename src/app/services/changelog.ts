@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.49',
+    notes: [
+      'Tree: closing a sub-star now smoothly recenters the main map.',
+      'Tree: connector lines no longer show through the dimmed nodes — they correctly pass under them, while staying faintly visible in the open spaces.',
+    ],
+  },
+  {
     version: '1.3.48',
     notes: [
       'Tree: tapping the empty space outside an open sub-star now closes it and returns to the main tree.',

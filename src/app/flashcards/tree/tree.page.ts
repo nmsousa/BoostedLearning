@@ -24,6 +24,7 @@
 
 import {
   Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy, HostListener,
+  ViewChild, ElementRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { NavController } from '@ionic/angular';
@@ -128,12 +129,17 @@ export class TreePage implements OnInit, OnDestroy {
 
   availableLanguages: { code: string; name: string; flagUrl: string }[] = [];
 
+  @ViewChild('viewport') private viewportEl?: ElementRef<HTMLElement>;
+  @ViewChild('stage') private stageEl?: ElementRef<HTMLElement>;
+
   // ── Pan / pinch-zoom state ──────────────────────────────────────────────────
   private panX = 0;
   private panY = 0;
   private zoom = 1;
   private static readonly ZOOM_MIN = 0.6;
   private static readonly ZOOM_MAX = 2.4;
+  /** True while an auto-pan animation is running (adds a CSS transition). */
+  panAnimating = false;
   /** CSS transform applied to the viewport. */
   get viewportTransform(): string {
     return `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
@@ -377,6 +383,7 @@ export class TreePage implements OnInit, OnDestroy {
     this.expandedWords = ct.authored ? ct.words : [];
     this.buildModeNodes(this.skillLevels.get(`Core ${tier}`)!, ct.authored);
     this.cdr.detectChanges();
+    this.autoPanToExpanded();
   }
 
   openTheme(node: ThemeNode): void {
@@ -392,6 +399,7 @@ export class TreePage implements OnInit, OnDestroy {
     this.expandedWords = this.wordsForSkill({ kind: 'theme', id: th.id, tier }, true);
     this.buildModeNodes(this.skillLevels.get(`${th.id}:${tier}`)!, true);
     this.cdr.detectChanges();
+    this.autoPanToExpanded();
   }
 
   /** Build the 5 mode nodes orbiting the expanded centre. Modes unlock in
@@ -414,10 +422,64 @@ export class TreePage implements OnInit, OnDestroy {
     });
   }
 
+  /** After expanding, if the sub-star doesn't fully fit in the viewport, pan
+   *  (with a smooth transition) so the expanded node + its mode ring are fully
+   *  visible. Measured in screen px from the current layout. */
+  private autoPanToExpanded(): void {
+    const vp = this.viewportEl?.nativeElement;
+    const stage = this.stageEl?.nativeElement;
+    if (!vp || !stage) return;
+    // Defer a frame so the sub-star nodes are laid out before we measure.
+    requestAnimationFrame(() => {
+      const vpRect = vp.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+      // VIEW→px scale of the stage (already includes the current zoom).
+      const pxPerView = stageRect.width / TreePage.VIEW;
+      // Sub-star centre in screen coords.
+      const cxScreen = stageRect.left + this.expandedCenterX * pxPerView;
+      const cyScreen = stageRect.top + this.expandedCenterY * pxPerView;
+      // Radius the sub-star occupies, in screen px (+ node radius + label).
+      const radiusPx = (TreePage.SUBSTAR_RADIUS * pxPerView) + 48 * this.zoom;
+
+      const margin = 12;
+      let dx = 0, dy = 0;
+      const leftOver = (cxScreen - radiusPx) - (vpRect.left + margin);
+      const rightOver = (cxScreen + radiusPx) - (vpRect.right - margin);
+      const topOver = (cyScreen - radiusPx) - (vpRect.top + margin);
+      const botOver = (cyScreen + radiusPx) - (vpRect.bottom - margin);
+      if (leftOver < 0) dx = -leftOver;          // push right
+      else if (rightOver > 0) dx = -rightOver;    // push left
+      if (topOver < 0) dy = -topOver;             // push down
+      else if (botOver > 0) dy = -botOver;        // push up
+
+      if (dx === 0 && dy === 0) return;
+      this.panAnimating = true;
+      this.panX += dx;
+      this.panY += dy;
+      // Keep the drag anchor consistent so a later drag starts from here.
+      this.panStart = { x: 0, y: 0, panX: this.panX, panY: this.panY };
+      this.cdr.detectChanges();
+      // Drop the transition after it finishes so manual panning stays instant.
+      setTimeout(() => { this.panAnimating = false; this.cdr.detectChanges(); }, 360);
+    });
+  }
+
   collapse(): void {
     this.expandedId = null;
     this.modeNodes = [];
+    // Smoothly recenter the main tree (undo any auto-pan / manual pan/zoom).
+    this.recenter();
     this.cdr.detectChanges();
+  }
+
+  /** Animate pan/zoom back to the centered, un-zoomed default. */
+  private recenter(): void {
+    if (this.panX === 0 && this.panY === 0 && this.zoom === 1) return;
+    this.panAnimating = true;
+    this.panX = 0; this.panY = 0; this.zoom = 1;
+    this.panStart = { x: 0, y: 0, panX: 0, panY: 0 };
+    this.cdr.detectChanges();
+    setTimeout(() => { this.panAnimating = false; this.cdr.detectChanges(); }, 360);
   }
 
   private refreshExpanded(): void {

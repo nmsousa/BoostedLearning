@@ -112,6 +112,12 @@
   display: grid;
   place-items: center;
   width: 100%;
+  // Smooth auto-pan when a sub-star is opened off-screen. Manual drag/zoom
+  // stays instant (no transition) — the class is only on during the auto-pan.
+  &.animating { transition: transform 0.34s var(--tree-ease); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tree-pan.animating { transition: none; }
 }
 .tree-stage {
   position: relative;
@@ -129,12 +135,13 @@
   &.is-active { stroke: rgba(120, 200, 255, 0.55); stroke-width: 4; }
   &.is-done { stroke: rgba(76, 245, 154, 0.5); stroke-width: 4; }
 }
-// When a sub-star is open, HIDE the main Core→theme links entirely. The theme
-// nodes are dimmed (opacity 0.25), so a faded line sitting BEHIND them still
-// shows THROUGH the near-transparent node and looks like it's crossing over.
-// Removing the main lines (only the sub-star's mode links remain) fixes that.
+// When a sub-star is open, keep the main Core→theme links visible but FAINT.
+// They sit behind the nodes (SVG z0 < nodes z2); the dimmed nodes are kept
+// opaque enough (see below) that a line doesn't visibly show through them, so
+// the lines read as "under" the nodes rather than crossing over.
 .tree-stage.has-expanded .tree-link:not(.mode-link) {
-  display: none;
+  stroke: rgba(150, 160, 255, 0.28) !important;
+  stroke-width: 2;
 }
 
 // ── Central hub ──────────────────────────────────────────────────────────────
@@ -225,9 +232,17 @@
 // An in-progress node (not fully done) shows its level badge in blue.
 .state-active .tree-unit-badge { background: #3fd8ff; color: #042033; box-shadow: 0 0 10px rgba(63, 216, 255, 0.6); }
 
-// Dim non-expanded nodes while one node is expanded.
+// Dim non-expanded nodes while one node is expanded. IMPORTANT: dim with
+// brightness/saturate, NOT opacity — a translucent node lets the connector
+// line behind it show through (looking like the line is ON TOP). Keeping the
+// node fully opaque (and just darker/desaturated) means lines truly pass UNDER.
+// The dimming is scoped to the BUTTON/label, leaving the wrapper opaque.
 .tree-stage.has-expanded .tree-unit-wrap.dimmed,
-.tree-stage.has-expanded .tree-hub.dimmed { opacity: 0.25; filter: saturate(0.6); pointer-events: none; }
+.tree-stage.has-expanded .tree-hub.dimmed { pointer-events: none; }
+.tree-stage.has-expanded .tree-unit-wrap.dimmed .tree-unit,
+.tree-stage.has-expanded .tree-unit-wrap.dimmed .tree-unit-label,
+.tree-stage.has-expanded .tree-unit-wrap.dimmed .tree-unit-badge,
+.tree-stage.has-expanded .tree-hub.dimmed { filter: brightness(0.5) saturate(0.6); }
 
 // ── Sub-star: mode nodes orbiting the expanded node ─────────────────────────
 .tree-link.mode-link { stroke: rgba(150, 160, 255, 0.4); stroke-width: 3; }

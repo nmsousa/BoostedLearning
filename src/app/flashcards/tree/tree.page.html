@@ -40,8 +40,8 @@
     (pointerup)="onPanPointerUp($event)" (pointercancel)="onPanPointerUp($event)"
     (wheel)="onWheelZoom($event)" (click)="onBackgroundClick($event)">
     <div class="tree-viewport" #viewport>
-    <div class="tree-pan" [style.transform]="viewportTransform">
-    <div class="tree-stage" [class.has-expanded]="expandedId">
+    <div class="tree-pan" [class.animating]="panAnimating" [style.transform]="viewportTransform">
+    <div class="tree-stage" #stage [class.has-expanded]="expandedId">
       <svg class="tree-links" [attr.viewBox]="'0 0 ' + view + ' ' + view" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
         <line *ngFor="let n of nodes; trackBy: trackNode"
           [attr.x1]="view / 2" [attr.y1]="view / 2" [attr.x2]="n.x" [attr.y2]="n.y"
