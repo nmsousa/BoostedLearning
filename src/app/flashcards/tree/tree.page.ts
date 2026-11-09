@@ -128,6 +128,24 @@ export class TreePage implements OnInit, OnDestroy {
 
   availableLanguages: { code: string; name: string; flagUrl: string }[] = [];
 
+  // ── Pan / pinch-zoom state ──────────────────────────────────────────────────
+  private panX = 0;
+  private panY = 0;
+  private zoom = 1;
+  private static readonly ZOOM_MIN = 0.6;
+  private static readonly ZOOM_MAX = 2.4;
+  /** CSS transform applied to the viewport. */
+  get viewportTransform(): string {
+    return `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+  }
+  // Active pointers for drag/pinch.
+  private pointers = new Map<number, { x: number; y: number }>();
+  private panStart = { x: 0, y: 0, panX: 0, panY: 0 };
+  private pinchStart = { dist: 0, zoom: 1 };
+  /** True once the pointer moved beyond a small threshold (so a drag doesn't
+   *  also fire a node tap). */
+  private panMoved = false;
+
   /** skill name → deck level. */
   private skillLevels = new Map<string, number>();
   /** Passed modes, keyed "<level>:<mode>". */
@@ -163,6 +181,61 @@ export class TreePage implements OnInit, OnDestroy {
 
   @HostListener('window:resize')
   onResize(): void { this.cdr.detectChanges(); }
+
+  // ── Pan / pinch-zoom ────────────────────────────────────────────────────────
+  onPanPointerDown(ev: PointerEvent): void {
+    this.pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (this.pointers.size === 1) {
+      this.panMoved = false;
+      this.panStart = { x: ev.clientX, y: ev.clientY, panX: this.panX, panY: this.panY };
+    } else if (this.pointers.size === 2) {
+      const [a, b] = [...this.pointers.values()];
+      this.pinchStart = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom: this.zoom };
+    }
+  }
+
+  onPanPointerMove(ev: PointerEvent): void {
+    if (!this.pointers.has(ev.pointerId)) return;
+    this.pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+
+    if (this.pointers.size >= 2) {
+      // Pinch: scale from the two-pointer distance.
+      const [a, b] = [...this.pointers.values()];
+      const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      const next = this.pinchStart.zoom * (dist / this.pinchStart.dist);
+      this.zoom = Math.min(TreePage.ZOOM_MAX, Math.max(TreePage.ZOOM_MIN, next));
+      this.panMoved = true;
+      this.cdr.detectChanges();
+      return;
+    }
+    // Single-pointer drag → pan.
+    const dx = ev.clientX - this.panStart.x;
+    const dy = ev.clientY - this.panStart.y;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) this.panMoved = true;
+    this.panX = this.panStart.panX + dx;
+    this.panY = this.panStart.panY + dy;
+    this.cdr.detectChanges();
+  }
+
+  onPanPointerUp(ev: PointerEvent): void {
+    this.pointers.delete(ev.pointerId);
+    if (this.pointers.size === 1) {
+      // Returning to single-pointer after a pinch: reset the drag anchor.
+      const [p] = [...this.pointers.values()];
+      this.panStart = { x: p.x, y: p.y, panX: this.panX, panY: this.panY };
+    }
+  }
+
+  onWheelZoom(ev: WheelEvent): void {
+    ev.preventDefault();
+    const next = this.zoom * (ev.deltaY < 0 ? 1.12 : 0.89);
+    this.zoom = Math.min(TreePage.ZOOM_MAX, Math.max(TreePage.ZOOM_MIN, next));
+    this.cdr.detectChanges();
+  }
+
+  /** True when the last pointer interaction was a drag/pinch (so node taps that
+   *  follow a pan are ignored). */
+  private get wasPanning(): boolean { return this.panMoved; }
 
   // ── Data ────────────────────────────────────────────────────────────────────
   private async load(): Promise<void> {
@@ -365,13 +438,38 @@ export class TreePage implements OnInit, OnDestroy {
   private pendingTapKey: string | null = null;
 
   onNodeTap(node: ThemeNode): void {
+    if (this.wasPanning) return; // this "click" ended a drag/pinch
     if (!this.adminMode) { this.openTheme(node); return; }
     this.handleAdminDoubleTap(`theme:${node.id}`, () => this.openTheme(node), () => this.adminCompleteTheme(node));
   }
 
   onCoreTap(): void {
+    if (this.wasPanning) return;
     if (!this.adminMode) { this.openCore(); return; }
     this.handleAdminDoubleTap('core', () => this.openCore(), () => this.adminCompleteCore());
+  }
+
+  /** Tap a mode node in the sub-star. Non-admin plays it; an admin double-tap
+   *  completes just that mode. */
+  onModeTap(m: ModeNode): void {
+    if (this.wasPanning) return;
+    if (m.state === 'locked') return;
+    if (!this.adminMode) { this.openMode(m); return; }
+    this.handleAdminDoubleTap(`mode:${m.id}`, () => this.openMode(m), () => this.adminCompleteMode(m));
+  }
+
+  /** Admin: mark just this one mode of the expanded tier passed, then reload. */
+  private async adminCompleteMode(m: ModeNode): Promise<void> {
+    if (!this.adminMode || !this.deckId) return;
+    const skill = this.expandedId === 'core' ? `Core ${this.expandedTier}` : `${this.expandedId}:${this.expandedTier}`;
+    const level = this.skillLevels.get(skill);
+    if (!level) return;
+    const def = TREE_MODES[m.modeIndex];
+    const cards = this.flashcards.getLevelCards(this.deckId, level);
+    const n = Math.max(1, cards.length);
+    try { await this.flashcards.saveLevelProgress(this.deckId, def.mode, level, n, n); }
+    catch { /* best-effort */ }
+    await this.load();
   }
 
   private handleAdminDoubleTap(key: string, single: () => void, double: () => void): void {

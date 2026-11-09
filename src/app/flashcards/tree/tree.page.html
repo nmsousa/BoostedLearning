@@ -35,7 +35,12 @@
     <span>{{ 'tree.adminTip' | translate }}</span>
   </div>
 
-  <div *ngIf="!isLoading" class="tree-scene" #scene>
+  <div *ngIf="!isLoading" class="tree-scene" #scene
+    (pointerdown)="onPanPointerDown($event)" (pointermove)="onPanPointerMove($event)"
+    (pointerup)="onPanPointerUp($event)" (pointercancel)="onPanPointerUp($event)"
+    (wheel)="onWheelZoom($event)">
+    <div class="tree-viewport" #viewport>
+    <div class="tree-pan" [style.transform]="viewportTransform">
     <div class="tree-stage" [class.has-expanded]="expandedId">
       <svg class="tree-links" [attr.viewBox]="'0 0 ' + view + ' ' + view" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
         <line *ngFor="let n of nodes; trackBy: trackNode"
@@ -76,7 +81,7 @@
         <div *ngFor="let m of modeNodes; trackBy: trackMode"
           class="tree-mode-wrap" [ngClass]="'state-' + m.state"
           [style.--ux]="m.x" [style.--uy]="m.y" [style.--view]="view">
-          <button type="button" class="tree-mode" (click)="openMode(m)" [attr.aria-label]="m.aria" [disabled]="m.state === 'locked'">
+          <button type="button" class="tree-mode" (click)="onModeTap(m)" [attr.aria-label]="m.aria" [disabled]="m.state === 'locked'">
             <ion-icon [name]="m.icon" aria-hidden="true"></ion-icon>
             <span *ngIf="m.state === 'done'" class="tree-mode-tick" aria-hidden="true"><ion-icon name="checkmark"></ion-icon></span>
             <span *ngIf="m.state === 'locked'" class="tree-mode-lock" aria-hidden="true"><ion-icon name="lock-closed"></ion-icon></span>
@@ -85,6 +90,8 @@
         </div>
       </ng-container>
     </div>
+    </div><!-- /.tree-pan -->
+    </div><!-- /.tree-viewport -->
 
     <!-- Info strip for the expanded node: which level + word preview + close. -->
     <div *ngIf="expandedId" class="tree-expanded-info">

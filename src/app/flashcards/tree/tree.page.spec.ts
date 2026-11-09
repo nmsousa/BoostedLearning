@@ -155,4 +155,24 @@ describe('TreePage (5 modes per level)', () => {
     expect(component.modeNodes.length).toBe(5);
     expect(component.expandedWords.length).toBeGreaterThan(0);
   });
+
+  it('starts centred and un-zoomed', async () => {
+    await component.ngOnInit();
+    expect(component.viewportTransform).toBe('translate(0px, 0px) scale(1)');
+  });
+
+  it('pans with a pointer drag', async () => {
+    await component.ngOnInit();
+    component.onPanPointerDown({ pointerId: 1, clientX: 100, clientY: 100 } as PointerEvent);
+    component.onPanPointerMove({ pointerId: 1, clientX: 160, clientY: 130 } as PointerEvent);
+    expect(component.viewportTransform).toBe('translate(60px, 30px) scale(1)');
+    component.onPanPointerUp({ pointerId: 1 } as PointerEvent);
+  });
+
+  it('zooms with the wheel (clamped)', async () => {
+    await component.ngOnInit();
+    for (let i = 0; i < 20; i++) component.onWheelZoom({ deltaY: -100, preventDefault() {} } as unknown as WheelEvent);
+    // Clamped to the max zoom.
+    expect(component.viewportTransform).toContain('scale(2.4)');
+  });
 });

@@ -21,6 +21,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.46',
+    notes: [
+      'Tree: you can now drag to pan around the map and pinch (or scroll) to zoom, so nodes that fall off-screen are reachable.',
+      'Tree: when a node is expanded, the lines to the other nodes fade back and no longer cross over them.',
+      'Tree admin (testing): double-tap now also works on an individual activity node inside an open sub-star to complete just that activity, as well as on the Core node.',
+    ],
+  },
+  {
     version: '1.3.45',
     notes: [
       'Tree: each Core and theme level is now a set of 5 activities (Cards → Quiz → Write → Match → Builder), done in order like Journey. A level is complete only when all 5 are done.',
