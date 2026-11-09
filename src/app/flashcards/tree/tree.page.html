@@ -2,10 +2,10 @@
   <ion-toolbar>
     <div class="tree-head-wrap">
       <div class="tree-head">
-        <button type="button" class="tree-back" (click)="panelOpen ? closePanel() : close()" [attr.aria-label]="'journeyPlus.back' | translate">
+        <button type="button" class="tree-back" (click)="expandedId ? collapse() : close()" [attr.aria-label]="'journeyPlus.back' | translate">
           <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
         </button>
-        <h1 class="tree-title">{{ switchingLanguage ? '' : (panelOpen ? panelTitle : ('tree.title' | translate)) }}</h1>
+        <h1 class="tree-title">{{ switchingLanguage ? '' : (expandedId ? expandedTitle : ('tree.title' | translate)) }}</h1>
         <button type="button" class="tree-lang" id="tree-lang-trigger" [attr.aria-label]="'journeyPlus.changeLanguage' | translate">
           <span class="tree-flag"><img [src]="currentLanguage.flagUrl" alt="" /></span>
           <ion-icon name="chevron-down" class="tree-lang-caret" aria-hidden="true"></ion-icon>
@@ -30,75 +30,78 @@
 <ion-content class="tree-content" [scrollY]="true">
   <div *ngIf="isLoading || switchingLanguage" class="tree-loading"><ion-spinner name="crescent"></ion-spinner></div>
 
-  <!-- Admin tip: double-tap a node to complete its next level. -->
   <div *ngIf="!isLoading && adminMode" class="tree-admin-tip">
     <ion-icon name="sparkles-outline" aria-hidden="true"></ion-icon>
     <span>{{ 'tree.adminTip' | translate }}</span>
   </div>
 
   <div *ngIf="!isLoading" class="tree-scene" #scene>
-    <div class="tree-stage">
+    <div class="tree-stage" [class.has-expanded]="expandedId">
       <svg class="tree-links" [attr.viewBox]="'0 0 ' + view + ' ' + view" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
         <line *ngFor="let n of nodes; trackBy: trackNode"
           [attr.x1]="view / 2" [attr.y1]="view / 2" [attr.x2]="n.x" [attr.y2]="n.y"
           class="tree-link" [class.is-done]="n.state === 'done'" [class.is-active]="n.state === 'active'" />
+        <!-- Sub-star connectors (expanded node → its mode nodes). -->
+        <line *ngFor="let m of modeNodes; trackBy: trackMode"
+          [attr.x1]="expandedCenterX" [attr.y1]="expandedCenterY" [attr.x2]="m.x" [attr.y2]="m.y"
+          class="tree-link mode-link" [class.is-done]="m.state === 'done'" [class.is-active]="m.state === 'active'" />
       </svg>
 
-      <!-- Central Core node (openable). -->
-      <button type="button" class="tree-hub" [class.started]="corePct > 0" (click)="onCoreTap()"
-        [attr.aria-label]="('tree.hubTitle' | translate) + ', ' + ('tree.levelShort' | translate:{ n: coreTier })">
+      <!-- Central Core node -->
+      <button type="button" class="tree-hub" [class.started]="coreDoneLevel > 0" [class.dimmed]="expandedId && expandedId !== 'core'"
+        (click)="onCoreTap()" [attr.aria-label]="('tree.hubTitle' | translate) + ', ' + ('tree.levelShort' | translate:{ n: coreDoneLevel })">
         <ion-icon name="book" class="tree-hub-icon" aria-hidden="true"></ion-icon>
         <span class="tree-hub-title">{{ 'tree.hubTitle' | translate }}</span>
-        <span class="tree-hub-pct">{{ 'tree.levelShort' | translate:{ n: coreTier } }}</span>
+        <span class="tree-hub-pct">{{ 'tree.levelShort' | translate:{ n: coreDoneLevel } }}</span>
       </button>
 
       <!-- Theme nodes -->
       <div *ngFor="let n of nodes; trackBy: trackNode"
-        class="tree-unit-wrap" [ngClass]="'state-' + n.state"
+        class="tree-unit-wrap" [ngClass]="'state-' + n.state" [class.dimmed]="expandedId && expandedId !== n.id"
         [style.--ux]="n.x" [style.--uy]="n.y" [style.--view]="view" [style.--hue]="n.hue">
         <button type="button" class="tree-unit" (click)="onNodeTap(n)" [attr.aria-label]="n.aria">
           <span class="tree-unit-emoji" aria-hidden="true">{{ n.emoji }}</span>
           <span *ngIf="n.state === 'locked'" class="tree-unit-lock" aria-hidden="true"><ion-icon name="lock-closed"></ion-icon></span>
-          <span *ngIf="n.state === 'done'" class="tree-unit-tick" aria-hidden="true"><ion-icon name="checkmark"></ion-icon></span>
+          <!-- Level badge: last completed level (or a check when all done). -->
+          <span *ngIf="n.state !== 'locked'" class="tree-unit-badge" aria-hidden="true">
+            <ng-container *ngIf="n.state === 'done'"><ion-icon name="checkmark"></ion-icon></ng-container>
+            <ng-container *ngIf="n.state !== 'done'">L{{ n.doneLevel }}</ng-container>
+          </span>
         </button>
         <div class="tree-unit-label"><span class="tree-unit-name">{{ n.title }}</span></div>
       </div>
-    </div>
-  </div>
 
-  <!-- Lesson panel (Core or a theme) -->
-  <div *ngIf="panelOpen" class="tree-sheet-backdrop" (click)="closePanel()"></div>
-  <div *ngIf="panelOpen" class="tree-sheet" role="dialog" [attr.aria-label]="panelTitle">
-    <div class="tree-sheet-grip" aria-hidden="true"></div>
-    <div class="tree-sheet-head">
-      <span class="tree-sheet-emoji" aria-hidden="true">{{ panelEmoji }}</span>
-      <div class="tree-sheet-headtext"><h2 class="tree-sheet-title">{{ panelTitle }}</h2></div>
-      <button type="button" class="tree-sheet-close" (click)="closePanel()" [attr.aria-label]="'mode.close' | translate">
-        <ion-icon name="close-outline"></ion-icon>
-      </button>
-    </div>
-
-    <div class="tree-sheet-list">
-      <div class="tree-lesson-block" *ngFor="let l of panelLessons; trackBy: trackLesson" [ngClass]="'lesson-' + l.state">
-        <button type="button" class="tree-lesson" [disabled]="l.state === 'locked' || !l.authored" (click)="openLesson(l)" [attr.aria-label]="l.aria">
-          <span class="tree-lesson-icon" aria-hidden="true">
-            <ion-icon *ngIf="l.state === 'done'" name="checkmark-circle"></ion-icon>
-            <ion-icon *ngIf="l.state === 'active'" name="play"></ion-icon>
-            <ion-icon *ngIf="l.state === 'locked'" name="lock-closed"></ion-icon>
-          </span>
-          <span class="tree-lesson-text">
-            <span class="tree-lesson-name">{{ l.title }}</span>
-            <span class="tree-lesson-meta">{{ l.subtitle }}</span>
-            <span class="tree-lesson-meta soon" *ngIf="!l.authored">{{ 'tree.comingSoon' | translate }}</span>
-          </span>
-          <ion-icon *ngIf="l.state === 'active' && l.authored" name="chevron-forward" class="tree-lesson-chev" aria-hidden="true"></ion-icon>
-        </button>
-        <!-- Preview of the words this lesson teaches. -->
-        <div class="tree-words" *ngIf="l.authored && l.words.length">
-          <span class="tree-word" *ngFor="let w of l.words">
-            <span class="w-fr">{{ w.fr }}</span><span class="w-en">{{ w.en }}</span>
-          </span>
+      <!-- Expanded sub-star: mode nodes orbiting the tapped node. -->
+      <ng-container *ngIf="expandedId">
+        <div *ngFor="let m of modeNodes; trackBy: trackMode"
+          class="tree-mode-wrap" [ngClass]="'state-' + m.state"
+          [style.--ux]="m.x" [style.--uy]="m.y" [style.--view]="view">
+          <button type="button" class="tree-mode" (click)="openMode(m)" [attr.aria-label]="m.aria" [disabled]="m.state === 'locked'">
+            <ion-icon [name]="m.icon" aria-hidden="true"></ion-icon>
+            <span *ngIf="m.state === 'done'" class="tree-mode-tick" aria-hidden="true"><ion-icon name="checkmark"></ion-icon></span>
+            <span *ngIf="m.state === 'locked'" class="tree-mode-lock" aria-hidden="true"><ion-icon name="lock-closed"></ion-icon></span>
+          </button>
+          <span class="tree-mode-label">{{ m.label }}</span>
         </div>
+      </ng-container>
+    </div>
+
+    <!-- Info strip for the expanded node: which level + word preview + close. -->
+    <div *ngIf="expandedId" class="tree-expanded-info">
+      <div class="tree-expanded-head">
+        <span class="tree-expanded-emoji" aria-hidden="true">{{ expandedEmoji }}</span>
+        <div class="tree-expanded-text">
+          <span class="tree-expanded-title">{{ expandedTitle }}</span>
+          <span class="tree-expanded-sub">{{ 'tree.levelShort' | translate:{ n: expandedTier } }} · {{ 'tree.doModesInOrder' | translate }}</span>
+        </div>
+        <button type="button" class="tree-sheet-close" (click)="collapse()" [attr.aria-label]="'mode.close' | translate">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+      <div class="tree-words" *ngIf="expandedWords.length">
+        <span class="tree-word" *ngFor="let w of expandedWords">
+          <span class="w-fr">{{ w.fr }}</span><span class="w-en">{{ w.en }}</span>
+        </span>
       </div>
     </div>
   </div>

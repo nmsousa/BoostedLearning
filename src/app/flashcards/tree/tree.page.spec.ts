@@ -7,41 +7,44 @@ import { TreePage } from './tree.page';
 import { FlashcardService } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { THEME_DEFS } from './tree-curriculum';
+import { TREE_MODES } from './tree-modes';
 
 /**
- * Tree page tests (curriculum build): Core-first gating. The synthetic deck +
- * progress are mocked. `progress` is a Map keyed `journey-flip-<level>`; the
- * page marks a milestone complete when bestScore >= 70.
- *
- * Level layout from the page's load(): Core 1..6 occupy levels 1..6, then each
- * theme contributes its authored tiers in THEME_DEFS order.
+ * Tree page tests (5-modes-per-level build). Each tier contains 5 modes
+ * (flip/quiz/write/match/builder); a tier is complete ONLY when all 5 are
+ * passed. Progress is keyed `<mode>-<level>`. Level layout: Core 1..6, then
+ * each theme's tiers in THEME_DEFS order.
  */
 
-/** Level number of theme[index]'s tier 1, given Core occupies 6 levels. */
+/** Level number of theme[index]'s tier 1 (Core occupies 6 levels). */
 function themeTier1Level(themeIndex: number): number {
-  let level = 6; // Core 1..6
+  let level = 6;
   for (let i = 0; i < THEME_DEFS.length; i++) {
-    const firstTierLevel = level + 1;
+    const first = level + 1;
     level += THEME_DEFS[i].tiers.length;
-    if (i === themeIndex) return firstTierLevel;
+    if (i === themeIndex) return first;
   }
   return level;
 }
 
-function makeProgress(passedLevels: number[]): Map<string, { bestScore: number }> {
+/** Build a progress map where the given levels are FULLY complete (all modes). */
+function makeProgress(fullyDoneLevels: number[]): Map<string, { bestScore: number }> {
   const m = new Map<string, { bestScore: number }>();
-  for (const lvl of passedLevels) m.set(`journey-flip-${lvl}`, { bestScore: 100 });
+  for (const lvl of fullyDoneLevels) {
+    for (const mode of TREE_MODES) m.set(`${mode.mode}-${lvl}`, { bestScore: 100 });
+  }
   return m;
 }
 
-let progressLevels: number[] = [];
+let doneLevels: number[] = [];
+let partial: Map<string, { bestScore: number }> | null = null;
 
 const flashcardMock = {
   initialize: () => Promise.resolve(),
   getAvailableLanguages: () => [{ code: 'fr', name: 'French' }],
   registerTreeDeck: () => 'tree-fr',
   getLevelCards: () => [],
-  getDeckLevelProgressMap: () => Promise.resolve(makeProgress(progressLevels)),
+  getDeckLevelProgressMap: () => Promise.resolve(partial ?? makeProgress(doneLevels)),
 };
 
 const settingsMock = {
@@ -51,12 +54,13 @@ const settingsMock = {
   updateSetting: () => { /* noop */ },
 };
 
-describe('TreePage (curriculum)', () => {
+describe('TreePage (5 modes per level)', () => {
   let component: TreePage;
   let fixture: ComponentFixture<TreePage>;
 
   beforeEach(async () => {
-    progressLevels = [];
+    doneLevels = [];
+    partial = null;
     await TestBed.configureTestingModule({
       imports: [TreePageModule, RouterModule.forRoot([])],
       providers: [
@@ -74,73 +78,81 @@ describe('TreePage (curriculum)', () => {
   });
 
   it('starts with Core L1 and all themes locked', async () => {
-    progressLevels = []; // nothing passed
+    doneLevels = [];
     await component.ngOnInit();
     fixture.detectChanges();
-    expect(component.coreTier).toBe(1);
-    // No theme is available until Core L1 is complete.
+    expect(component.coreAvailTier).toBe(1);
+    expect(component.coreDoneLevel).toBe(0);
     expect(component.nodes.every(n => n.state === 'locked')).toBe(true);
   });
 
-  it('unlocks themes (L1) once Core L1 is complete', async () => {
-    progressLevels = [1]; // Core 1 is level 1
+  it('requires ALL 5 modes to complete a tier (one missing = not complete)', async () => {
+    // Core L1 = level 1: pass only 4 of 5 modes → NOT complete → themes stay locked.
+    const p = new Map<string, { bestScore: number }>();
+    for (const mode of TREE_MODES.slice(0, 4)) p.set(`${mode.mode}-1`, { bestScore: 100 });
+    partial = p;
     await component.ngOnInit();
     fixture.detectChanges();
-    expect(component.coreTier).toBe(1);
-    expect(component.nodes.every(n => n.state === 'active')).toBe(true);
+    expect(component.coreDoneLevel).toBe(0);
+    expect(component.nodes.every(n => n.state === 'locked')).toBe(true);
   });
 
-  it('keeps Core at L1 until 3 distinct themes are done, then unlocks Core L2', async () => {
-    // Core 1 + tier-1 of 3 DISTINCT themes (indices 0,1,2).
-    progressLevels = [1, themeTier1Level(0), themeTier1Level(1), themeTier1Level(2)];
+  it('unlocks themes (L1) once all 5 modes of Core L1 are done', async () => {
+    doneLevels = [1];
     await component.ngOnInit();
     fixture.detectChanges();
-    expect(component.coreTier).toBe(2);
+    expect(component.coreDoneLevel).toBe(1);
+    expect(component.nodes.every(n => n.availTier >= 1)).toBe(true);
   });
 
-  it('does NOT unlock Core L2 with only 2 distinct themes done', async () => {
-    progressLevels = [1, themeTier1Level(0), themeTier1Level(1)];
+  it('shows each theme\'s last completed level on the node', async () => {
+    // Core L1 done + food (theme 0) L1 fully done.
+    doneLevels = [1, themeTier1Level(0)];
     await component.ngOnInit();
     fixture.detectChanges();
-    expect(component.coreTier).toBe(1);
+    const food = component.nodes.find(n => n.id === 'food')!;
+    expect(food.doneLevel).toBe(1);
   });
 
-  it('completing the 3 tiers of ONE theme does NOT unlock Core L2 (distinct themes only)', async () => {
-    // food has 3 tiers at levels 7,8,9 — all one theme.
-    const food0 = themeTier1Level(0);
-    progressLevels = [1, food0, food0 + 1, food0 + 2];
+  it('3 distinct themes at L1 (all modes) unlock Core L2', async () => {
+    doneLevels = [1, themeTier1Level(0), themeTier1Level(1), themeTier1Level(2)];
     await component.ngOnInit();
     fixture.detectChanges();
-    expect(component.coreTier).toBe(1);
+    expect(component.coreAvailTier).toBe(2);
   });
 
-  it('shows one radial node per theme', async () => {
+  it('expands a sub-star of 5 mode nodes when a theme is opened', async () => {
+    doneLevels = [1]; // themes L1 available
     await component.ngOnInit();
-    expect(component.nodes.length).toBe(THEME_DEFS.length);
+    const food = component.nodes.find(n => n.id === 'food')!;
+    component.openTheme(food);
+    expect(component.expandedId).toBe('food');
+    expect(component.modeNodes.length).toBe(5);
+    // First mode (flip) is active; the rest are locked until the previous passes.
+    expect(component.modeNodes[0].state).toBe('active');
+    expect(component.modeNodes[1].state).toBe('locked');
   });
 
-  it('opens the Core panel with lesson rows', async () => {
-    progressLevels = [1];
+  it('unlocks the next mode in sequence once the previous is passed', async () => {
+    // Core L1 done; food L1 flip passed only.
+    const p = makeProgress([1]);
+    const foodL1 = themeTier1Level(0);
+    p.set(`journey-flip-${foodL1}`, { bestScore: 100 });
+    partial = p;
+    await component.ngOnInit();
+    const food = component.nodes.find(n => n.id === 'food')!;
+    component.openTheme(food);
+    expect(component.modeNodes[0].state).toBe('done');   // flip done
+    expect(component.modeNodes[1].state).toBe('active'); // quiz now active
+    expect(component.modeNodes[2].state).toBe('locked'); // write still locked
+  });
+
+  it('expands the Core sub-star with 5 modes', async () => {
+    doneLevels = [];
     await component.ngOnInit();
     component.openCore();
-    expect(component.panelOpen).toBe(true);
-    expect(component.panelLessons.length).toBeGreaterThan(0);
-    // Core L1 lesson is playable (active) and authored.
-    const l1 = component.panelLessons[0];
-    expect(l1.authored).toBe(true);
-  });
-
-  it('mixes Core review words into a theme lesson once Core L1 is done', async () => {
-    progressLevels = [1]; // Core L1 complete → themes L1 available
-    await component.ngOnInit();
-    const foodNode = component.nodes.find(n => n.id === 'food') ?? component.nodes[0];
-    component.openTheme(foodNode);
-    const l1 = component.panelLessons[0];
-    // The food L1 topic words include "le café"; a Core review sample should
-    // also be present (e.g. a Core L1 word like "je / j’" or "être").
-    const frs = l1.words.map(w => w.fr);
-    expect(frs).toContain('le café');
-    const hasCoreWord = frs.some(fr => ['je / j’', 'être', 'avoir', 'le / la / l’ / les'].includes(fr));
-    expect(hasCoreWord).toBe(true);
+    expect(component.expandedId).toBe('core');
+    expect(component.modeNodes.length).toBe(5);
+    expect(component.expandedWords.length).toBeGreaterThan(0);
   });
 });

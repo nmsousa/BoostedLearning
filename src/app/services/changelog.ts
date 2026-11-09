@@ -21,6 +21,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.45',
+    notes: [
+      'Tree: each Core and theme level is now a set of 5 activities (Cards → Quiz → Write → Match → Builder), done in order like Journey. A level is complete only when all 5 are done.',
+      'Tapping a node opens a sub-star: that node in the middle with its 5 activity nodes around it. Only one node expands at a time; close it with the X.',
+      'Every node now shows its last completed level, so it\'s clear where you are. A theme can only reach the level the Core has reached.',
+    ],
+  },
+  {
     version: '1.3.44',
     notes: [
       'Tree: Core Levels 2 and 3 are now playable. The loop flows end to end: finish Core L1 to open every theme at Level 1; finish Core L2 to open Level 2; finish Core L3 to open Level 3.',
