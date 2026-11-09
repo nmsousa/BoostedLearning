@@ -157,16 +157,38 @@ export const CORE_TIERS: CoreTierDef[] = [
     title: 'Expand, describe, ask, locate',
     outcome: 'Add objects, questions, negation, quantity and place.',
     example: 'Je voudrais un café. / Je ne mange jamais ici.',
-    authored: false,
+    authored: true,
     words: [
+      // High-frequency verbs (lemmas)
       { fr: 'prendre', en: 'to take' }, { fr: 'venir', en: 'to come' },
       { fr: 'partir', en: 'to leave' }, { fr: 'acheter', en: 'to buy' },
       { fr: 'manger', en: 'to eat' }, { fr: 'boire', en: 'to drink' },
       { fr: 'devoir', en: 'must / to have to' }, { fr: 'préférer', en: 'to prefer' },
+      { fr: 'choisir', en: 'to choose' }, { fr: 'finir', en: 'to finish' },
+      { fr: 'attendre', en: 'to wait' }, { fr: 'trouver', en: 'to find' },
+      { fr: 'travailler', en: 'to work' }, { fr: 'regarder', en: 'to watch / look' },
+      { fr: 'écouter', en: 'to listen' }, { fr: 'comprendre', en: 'to understand' },
+      // Partitives & contractions
       { fr: 'du / de la / des', en: 'some (partitive)' }, { fr: 'au / aux', en: 'to the / at the' },
+      // Place prepositions
+      { fr: 'devant', en: 'in front of' }, { fr: 'derrière', en: 'behind' },
+      { fr: 'sous', en: 'under' }, { fr: 'entre', en: 'between' },
+      { fr: 'près de', en: 'near' }, { fr: 'à côté de', en: 'next to' },
+      // Negation & questions
+      { fr: 'ne… jamais', en: 'never' }, { fr: 'ne… plus', en: 'no longer' },
+      { fr: 'ne… rien', en: 'nothing' }, { fr: 'combien de', en: 'how many / much' },
+      // Quantifiers & frequency
+      { fr: 'beaucoup de', en: 'a lot of' }, { fr: 'un peu de', en: 'a little' },
+      { fr: 'trop de', en: 'too much / many' }, { fr: 'assez de', en: 'enough' },
+      { fr: 'souvent', en: 'often' }, { fr: 'parfois', en: 'sometimes' },
+      { fr: 'd’habitude', en: 'usually' },
+      // Connectors
       { fr: 'parce que', en: 'because' }, { fr: 'donc', en: 'so / therefore' },
-      { fr: 'souvent', en: 'often' }, { fr: 'ne… jamais', en: 'never' },
+      { fr: 'alors', en: 'then / so' }, { fr: 'si', en: 'if' },
+      // Practical expressions
       { fr: 'je voudrais', en: 'I would like' }, { fr: 'il faut', en: 'it is necessary' },
+      { fr: 'j’ai besoin de', en: 'I need' }, { fr: 'j’ai envie de', en: 'I feel like' },
+      { fr: 'je peux ?', en: 'may I? / can I?' }, { fr: 'ça va', en: 'OK / all good' },
     ],
   },
   {
@@ -174,15 +196,36 @@ export const CORE_TIERS: CoreTierDef[] = [
     title: 'Time, experience and plans',
     outcome: 'Talk about the past, routines and near-future plans.',
     example: 'Hier, j’ai travaillé. / Je vais visiter Paris.',
-    authored: false,
+    authored: true,
     words: [
-      { fr: 'passé composé', en: '(past tense with avoir/être)' },
-      { fr: 'futur proche', en: '(aller + infinitive)' },
-      { fr: 'venir de', en: 'to have just (done)' },
-      { fr: 'se lever', en: 'to get up' }, { fr: 'hier', en: 'yesterday' },
-      { fr: 'demain', en: 'tomorrow' }, { fr: 'd’abord', en: 'first' },
-      { fr: 'ensuite', en: 'then / next' }, { fr: 'enfin', en: 'finally' },
-      { fr: 'depuis', en: 'since / for' },
+      // Time structures (taught as chunks)
+      { fr: 'j’ai mangé', en: 'I ate / have eaten', note: 'passé composé (avoir)' },
+      { fr: 'je suis allé(e)', en: 'I went', note: 'passé composé (être)' },
+      { fr: 'je vais manger', en: 'I’m going to eat', note: 'futur proche' },
+      { fr: 'je viens de finir', en: 'I’ve just finished', note: 'passé récent' },
+      // Reflexive routine verbs
+      { fr: 'se lever', en: 'to get up' }, { fr: 'se réveiller', en: 'to wake up' },
+      { fr: 'se coucher', en: 'to go to bed' }, { fr: 's’habiller', en: 'to get dressed' },
+      // More verbs
+      { fr: 'passer', en: 'to pass / spend (time)' }, { fr: 'rencontrer', en: 'to meet' },
+      { fr: 'oublier', en: 'to forget' }, { fr: 'commencer', en: 'to begin' },
+      { fr: 'continuer', en: 'to continue' }, { fr: 'terminer', en: 'to finish' },
+      { fr: 'revenir', en: 'to come back' }, { fr: 'rester', en: 'to stay' },
+      { fr: 'ouvrir', en: 'to open' }, { fr: 'fermer', en: 'to close' },
+      // Object pronouns (common)
+      { fr: 'le / la / les', en: 'it / them (object)' }, { fr: 'lui', en: 'to him / her' },
+      // Time & sequence markers
+      { fr: 'hier', en: 'yesterday' }, { fr: 'demain', en: 'tomorrow' },
+      { fr: 'avant', en: 'before' }, { fr: 'après', en: 'after' },
+      { fr: 'pendant', en: 'during' }, { fr: 'depuis', en: 'since / for' },
+      { fr: 'd’abord', en: 'first' }, { fr: 'ensuite', en: 'then / next' },
+      { fr: 'enfin', en: 'finally' }, { fr: 'récemment', en: 'recently' },
+      // Relatives & connectors
+      { fr: 'qui', en: 'who / which' }, { fr: 'que', en: 'that / which' },
+      { fr: 'quand', en: 'when' }, { fr: 'pourtant', en: 'yet / however' },
+      // Experience nouns
+      { fr: 'le souvenir', en: 'memory' }, { fr: 'le projet', en: 'plan / project' },
+      { fr: 'l’expérience (f.)', en: 'experience' },
     ],
   },
   {

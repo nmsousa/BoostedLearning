@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.44',
+    notes: [
+      'Tree: Core Levels 2 and 3 are now playable. The loop flows end to end: finish Core L1 to open every theme at Level 1; finish Core L2 to open Level 2; finish Core L3 to open Level 3.',
+      'Theme lessons now mix in a few Core words you\'ve already learned, so core vocabulary keeps coming back as you practise topics.',
+    ],
+  },
+  {
     version: '1.3.43',
     notes: [
       'Tree: every theme now has Levels 1, 2 and 3 of vocabulary. Open a theme to see all its levels.',

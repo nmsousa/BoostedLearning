@@ -157,40 +157,24 @@ export class TreePage implements OnInit, OnDestroy {
     this.availableLanguages = this.flashcards.getAvailableLanguages().map(l => ({ ...l, flagUrl: this.flagUrl(l.code) }));
     const lang = this.settings.learningLanguage();
 
-    // Build the synthetic deck skills: Core tier 1..unlocked (one skill each),
-    // then every theme's L1 skill. (Only authored tiers carry real words; the
-    // rest are placeholders the UI marks "coming soon" and does not open.)
-    // First pass uses unlockedCoreTier=1; we recompute after reading progress.
-    const buildGroups = (unlockedCore: number) => {
-      const groups: { skill: string; words: { fr: string; en: string }[] }[] = [];
-      const skillLevels = new Map<string, number>();
-      let level = 0;
-      for (const ct of CORE_TIERS) {
-        if (ct.tier > unlockedCore) break;
-        level++;
-        const skill = `Core ${ct.tier}`;
-        skillLevels.set(skill, level);
-        groups.push({ skill, words: ct.authored ? ct.words.map(w => ({ fr: w.fr, en: w.en })) : [{ fr: '—', en: '—' }] });
-      }
-      for (const th of THEME_DEFS) {
-        // One skill per AUTHORED theme tier (L1, L2, L3…).
-        th.tiers.forEach((words, ti) => {
-          level++;
-          const skill = `${th.id}:${ti + 1}`;
-          skillLevels.set(skill, level);
-          groups.push({ skill, words: words.length ? words.map(w => ({ fr: w.fr, en: w.en })) : [{ fr: '—', en: '—' }] });
-        });
-      }
-      return { groups, skillLevels };
-    };
+    // 1) Deterministic skill→level ordering (independent of word content):
+    //    Core 1..6, then each theme's authored tiers in THEME_DEFS order.
+    const order: Array<{ skill: string } & ({ kind: 'core'; tier: number } | { kind: 'theme'; id: string; tier: number })> = [];
+    for (const ct of CORE_TIERS) order.push({ skill: `Core ${ct.tier}`, kind: 'core', tier: ct.tier });
+    for (const th of THEME_DEFS) {
+      th.tiers.forEach((_w, ti) => order.push({ skill: `${th.id}:${ti + 1}`, kind: 'theme', id: th.id, tier: ti + 1 }));
+    }
+    this.skillLevels = new Map(order.map((o, i) => [o.skill, i + 1]));
 
-    // Register with Core fully expanded (all 6 core skills) so levels are
-    // stable regardless of unlock state; unlock only gates playability.
-    const built = buildGroups(TREE_CONFIG.coreTiers);
-    this.skillLevels = built.skillLevels;
-    this.deckId = this.flashcards.registerTreeDeck(lang, built.groups);
+    // 2) Register once (any content) so progress can be read by level, THEN we
+    //    re-register below with the Core-mixed content. We need a deck id first.
+    const plain = order.map(o => ({
+      skill: o.skill,
+      words: this.wordsForSkill(o).map(w => ({ fr: w.fr, en: w.en })),
+    }));
+    this.deckId = this.flashcards.registerTreeDeck(lang, plain);
 
-    // Read which levels are passed (bestScore >= pass score) under journey-flip.
+    // 3) Read which levels are passed (bestScore >= pass score) under journey-flip.
     const progress = await this.flashcards.getDeckLevelProgressMap(this.deckId);
     this.passedLevels = new Set<number>();
     for (const [, level] of this.skillLevels) {
@@ -198,7 +182,7 @@ export class TreePage implements OnInit, OnDestroy {
       if ((p?.bestScore ?? 0) >= JOURNEY_PASS_SCORE) this.passedLevels.add(level);
     }
 
-    // Build the completed-milestone set from passed levels.
+    // 4) Completed-milestone set from passed levels.
     const completed = new Set<string>();
     for (const ct of CORE_TIERS) {
       const lvl = this.skillLevels.get(`Core ${ct.tier}`);
@@ -211,7 +195,7 @@ export class TreePage implements OnInit, OnDestroy {
       });
     }
 
-    // Compute progression. A theme has tier t if it has that many authored tiers.
+    // 5) Progression. A theme has tier t if it has that many authored tiers.
     this.prog = computeProgression({
       config: TREE_CONFIG,
       themeIds: THEME_DEFS.map(t => t.id),
@@ -221,6 +205,16 @@ export class TreePage implements OnInit, OnDestroy {
       },
       completed,
     });
+
+    // 6) Re-register with Core-MIXED content: each theme tier's session now also
+    //    includes a small review sample of the Core words learned up to that
+    //    tier (brief §7: core vocabulary recurs in theme exercises). Level order
+    //    is unchanged, so progress/levels stay valid.
+    const mixed = order.map(o => ({
+      skill: o.skill,
+      words: this.wordsForSkill(o, true).map(w => ({ fr: w.fr, en: w.en })),
+    }));
+    this.flashcards.registerTreeDeck(lang, mixed);
 
     this.rebuild();
     if (this.panelOpen) this.refreshOpenPanel();
@@ -335,10 +329,13 @@ export class TreePage implements OnInit, OnDestroy {
     const passed = this.passedLevels.has(level);
     const available = (this.prog.unlockedThemeTier[themeId] ?? 0) >= tier;
     const state: NodeState = passed ? 'done' : available ? 'active' : 'locked';
+    // Preview shows the mixed set (topic words + a Core review sample) — exactly
+    // what the session plays.
+    const words = this.wordsForSkill({ kind: 'theme', id: themeId, tier }, true);
     return {
       milestone: themeMilestoneId(themeId, tier), skill: `${themeId}:${tier}`, level,
       title: `${this.t('tree.themeLevel', { n: tier })}`,
-      subtitle: '', words: th.tiers[tier - 1] ?? [], state, authored: true,
+      subtitle: '', words, state, authored: true,
       aria: `${this.t(th.nameKey)} ${tier}, ${this.t(`tree.unit.${state}`)}`,
     };
   }
@@ -413,6 +410,49 @@ export class TreePage implements OnInit, OnDestroy {
       const lvl = this.skillLevels.get(`Core ${tier}`);
       if (lvl && !this.passedLevels.has(lvl)) { await this.adminPassLevel(lvl); return; }
     }
+  }
+
+  /** Max Core review words mixed into a theme session (brief §7.1: a manageable
+   *  subset, not every mastered word). */
+  private static readonly CORE_MIX = 5;
+
+  /** The words for a skill. For a THEME tier, when `mix` is true, append a small
+   *  review sample of the Core vocabulary learned up to that tier (Core 1..tier)
+   *  so core words recur in theme practice. Core tiers themselves never mix. */
+  private wordsForSkill(
+    o: { kind: 'core'; tier: number } | { kind: 'theme'; id: string; tier: number },
+    mix = false,
+  ): CoreWord[] {
+    if (o.kind === 'core') {
+      const ct = CORE_TIERS.find(c => c.tier === o.tier);
+      return ct?.authored ? ct.words : [{ fr: '—', en: '—' }];
+    }
+    const th = THEME_DEFS.find(t => t.id === o.id);
+    const own = th?.tiers[o.tier - 1] ?? [];
+    if (own.length === 0) return [{ fr: '—', en: '—' }];
+    if (!mix) return own;
+
+    // Pool of Core words from tiers 1..o.tier (authored only), deduped by fr.
+    const pool: CoreWord[] = [];
+    const seen = new Set<string>();
+    for (const ct of CORE_TIERS) {
+      if (ct.tier > o.tier || !ct.authored) continue;
+      for (const w of ct.words) {
+        if (!seen.has(w.fr)) { seen.add(w.fr); pool.push(w); }
+      }
+    }
+    // Deterministic sample: spread across the pool so it isn't always the first
+    // few. Take up to CORE_MIX, skipping words already in the theme set.
+    const ownFr = new Set(own.map(w => w.fr));
+    const sample: CoreWord[] = [];
+    if (pool.length) {
+      const step = Math.max(1, Math.floor(pool.length / TreePage.CORE_MIX));
+      for (let i = 0; i < pool.length && sample.length < TreePage.CORE_MIX; i += step) {
+        const w = pool[i];
+        if (!ownFr.has(w.fr)) sample.push(w);
+      }
+    }
+    return [...own, ...sample];
   }
 
   close(): void { this.router.navigate(['/home']); }

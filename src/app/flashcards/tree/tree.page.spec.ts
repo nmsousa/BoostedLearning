@@ -129,4 +129,18 @@ describe('TreePage (curriculum)', () => {
     const l1 = component.panelLessons[0];
     expect(l1.authored).toBe(true);
   });
+
+  it('mixes Core review words into a theme lesson once Core L1 is done', async () => {
+    progressLevels = [1]; // Core L1 complete → themes L1 available
+    await component.ngOnInit();
+    const foodNode = component.nodes.find(n => n.id === 'food') ?? component.nodes[0];
+    component.openTheme(foodNode);
+    const l1 = component.panelLessons[0];
+    // The food L1 topic words include "le café"; a Core review sample should
+    // also be present (e.g. a Core L1 word like "je / j’" or "être").
+    const frs = l1.words.map(w => w.fr);
+    expect(frs).toContain('le café');
+    const hasCoreWord = frs.some(fr => ['je / j’', 'être', 'avoir', 'le / la / l’ / les'].includes(fr));
+    expect(hasCoreWord).toBe(true);
+  });
 });
