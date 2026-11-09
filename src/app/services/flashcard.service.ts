@@ -777,6 +777,71 @@ export class FlashcardService {
   }
 
   /**
+   * Build & register (idempotently) the synthetic "Tree" curriculum deck for a
+   * language, from the provided skill groups. Each group becomes a `skill` so
+   * the existing skill-based level/exercise/progress engine works unchanged.
+   *
+   * The deck id is `tree-<lang>` so its `journey-*` progress is fully separate
+   * from the real course deck — the Tree curriculum never collides with the
+   * Journey maps. Cards are keyed by a stable id derived from the skill +
+   * french text so progress survives across rebuilds. Returns the deck id.
+   */
+  registerTreeDeck(
+    languageCode: string,
+    groups: { skill: string; words: { fr: string; en: string }[] }[],
+  ): string {
+    const deckId = `tree-${languageCode}`;
+    const cards: Flashcard[] = [];
+    groups.forEach((g, gi) => {
+      g.words.forEach((w, wi) => {
+        cards.push({
+          id: `${deckId}-${gi}-${wi}`,
+          deckId,
+          text: w.fr,
+          translations: [w.en],
+          skill: g.skill,
+          skillOrder: gi + 1,
+          correctCount: 0,
+          incorrectCount: 0,
+          lastSeen: null,
+          nextReview: null,
+          streak: 0,
+        } as Flashcard);
+      });
+    });
+
+    const deck: FlashcardDeck = {
+      id: deckId,
+      name: 'Tree',
+      languageCode,
+      description: 'Core Vocabulary + thematic curriculum',
+      isBundled: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      cards,
+    };
+
+    const existing = this.decksSignal().find(d => d.id === deckId);
+    if (existing) {
+      // Preserve live card progress (correct/incorrect/streak) across rebuilds
+      // by copying it onto the matching new card by id.
+      const prev = new Map(existing.cards.map(c => [c.id, c]));
+      for (const c of deck.cards) {
+        const p = prev.get(c.id);
+        if (p) {
+          c.correctCount = p.correctCount; c.incorrectCount = p.incorrectCount;
+          c.mediumCount = p.mediumCount; c.streak = p.streak; c.lastSeen = p.lastSeen;
+        }
+      }
+      this.decksSignal.update(list => list.map(d => (d.id === deckId ? deck : d)));
+    } else {
+      this.decksSignal.update(list => [...list, deck]);
+    }
+    this.invalidateDedupe(deckId);
+    return deckId;
+  }
+
+  /**
    * Distinct learning languages that currently have a deck (bundled or
    * imported). Drives the home language selector so imported languages show up.
    */

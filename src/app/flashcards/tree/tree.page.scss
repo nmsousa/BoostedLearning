@@ -239,3 +239,27 @@
   .state-active .tree-unit { animation: none !important; }
   .tree-sheet, .tree-sheet-backdrop { animation: none !important; }
 }
+
+// ── Lesson block + word preview (curriculum panel) ───────────────────────────
+.tree-lesson-block { display: flex; flex-direction: column; gap: 6px; }
+.tree-lesson-block + .tree-lesson-block { margin-top: 4px; }
+.tree-lesson-meta.soon { color: #ffd27a; }
+
+.tree-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 2px 6px 46px; // align under the lesson text (icon width + gap)
+}
+.tree-word {
+  display: inline-flex;
+  flex-direction: column;
+  padding: 5px 9px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--tree-glass-line);
+  min-width: 0;
+
+  .w-fr { font-size: 0.82rem; font-weight: 700; color: #eef1ff; }
+  .w-en { font-size: 0.68rem; color: var(--tree-muted); }
+}
