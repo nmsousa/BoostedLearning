@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.47',
+    notes: [
+      'Tree: when a node is expanded, the lines to the other nodes are now hidden instead of showing through the dimmed nodes.',
+    ],
+  },
+  {
     version: '1.3.46',
     notes: [
       'Tree: you can now drag to pan around the map and pinch (or scroll) to zoom, so nodes that fall off-screen are reachable.',

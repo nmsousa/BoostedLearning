@@ -129,11 +129,12 @@
   &.is-active { stroke: rgba(120, 200, 255, 0.55); stroke-width: 4; }
   &.is-done { stroke: rgba(76, 245, 154, 0.5); stroke-width: 4; }
 }
-// When a sub-star is open, fade the main Core→theme links right down so they
-// don't visually cross the theme nodes / compete with the sub-star.
+// When a sub-star is open, HIDE the main Core→theme links entirely. The theme
+// nodes are dimmed (opacity 0.25), so a faded line sitting BEHIND them still
+// shows THROUGH the near-transparent node and looks like it's crossing over.
+// Removing the main lines (only the sub-star's mode links remain) fixes that.
 .tree-stage.has-expanded .tree-link:not(.mode-link) {
-  stroke: rgba(150, 160, 255, 0.1) !important;
-  stroke-width: 2;
+  display: none;
 }
 
 // ── Central hub ──────────────────────────────────────────────────────────────
