@@ -21,6 +21,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.43',
+    notes: [
+      'Tree: every theme now has Levels 1, 2 and 3 of vocabulary. Open a theme to see all its levels.',
+      'Admin (testing): double-tap a theme or the Core node to instantly complete its next available level. A tip shows at the top when admin mode is on.',
+      'Tree: the Core node now shows just "Level x" (the redundant "Core" label was removed).',
+    ],
+  },
+  {
     version: '1.3.42',
     notes: [
       'Fixed "What\'s new": it now lists every update again (it had been stuck showing 1.3.30 even after newer updates installed).',

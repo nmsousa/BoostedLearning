@@ -30,6 +30,12 @@
 <ion-content class="tree-content" [scrollY]="true">
   <div *ngIf="isLoading || switchingLanguage" class="tree-loading"><ion-spinner name="crescent"></ion-spinner></div>
 
+  <!-- Admin tip: double-tap a node to complete its next level. -->
+  <div *ngIf="!isLoading && adminMode" class="tree-admin-tip">
+    <ion-icon name="sparkles-outline" aria-hidden="true"></ion-icon>
+    <span>{{ 'tree.adminTip' | translate }}</span>
+  </div>
+
   <div *ngIf="!isLoading" class="tree-scene" #scene>
     <div class="tree-stage">
       <svg class="tree-links" [attr.viewBox]="'0 0 ' + view + ' ' + view" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
@@ -39,18 +45,18 @@
       </svg>
 
       <!-- Central Core node (openable). -->
-      <button type="button" class="tree-hub" [class.started]="corePct > 0" (click)="openCore()"
-        [attr.aria-label]="('tree.hubTitle' | translate) + ', ' + ('tree.coreLevel' | translate:{ n: coreTier })">
+      <button type="button" class="tree-hub" [class.started]="corePct > 0" (click)="onCoreTap()"
+        [attr.aria-label]="('tree.hubTitle' | translate) + ', ' + ('tree.levelShort' | translate:{ n: coreTier })">
         <ion-icon name="book" class="tree-hub-icon" aria-hidden="true"></ion-icon>
         <span class="tree-hub-title">{{ 'tree.hubTitle' | translate }}</span>
-        <span class="tree-hub-pct">{{ 'tree.coreLevel' | translate:{ n: coreTier } }}</span>
+        <span class="tree-hub-pct">{{ 'tree.levelShort' | translate:{ n: coreTier } }}</span>
       </button>
 
       <!-- Theme nodes -->
       <div *ngFor="let n of nodes; trackBy: trackNode"
         class="tree-unit-wrap" [ngClass]="'state-' + n.state"
         [style.--ux]="n.x" [style.--uy]="n.y" [style.--view]="view" [style.--hue]="n.hue">
-        <button type="button" class="tree-unit" (click)="openTheme(n)" [attr.aria-label]="n.aria">
+        <button type="button" class="tree-unit" (click)="onNodeTap(n)" [attr.aria-label]="n.aria">
           <span class="tree-unit-emoji" aria-hidden="true">{{ n.emoji }}</span>
           <span *ngIf="n.state === 'locked'" class="tree-unit-lock" aria-hidden="true"><ion-icon name="lock-closed"></ion-icon></span>
           <span *ngIf="n.state === 'done'" class="tree-unit-tick" aria-hidden="true"><ion-icon name="checkmark"></ion-icon></span>

@@ -137,7 +137,10 @@ export class TreePage implements OnInit, OnDestroy {
     await this.load();
   }
 
-  ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); }
+  ngOnDestroy(): void {
+    this.backInterceptor.clear(this.onHardwareBack);
+    if (this.tapTimer) { clearTimeout(this.tapTimer); this.tapTimer = null; }
+  }
 
   async ionViewWillEnter(): Promise<void> {
     this.backInterceptor.register(this.onHardwareBack);
@@ -170,11 +173,13 @@ export class TreePage implements OnInit, OnDestroy {
         groups.push({ skill, words: ct.authored ? ct.words.map(w => ({ fr: w.fr, en: w.en })) : [{ fr: '—', en: '—' }] });
       }
       for (const th of THEME_DEFS) {
-        level++;
-        const skill = `${th.id}:1`;
-        skillLevels.set(skill, level);
-        const words = th.tiers[0] ?? [];
-        groups.push({ skill, words: words.length ? words.map(w => ({ fr: w.fr, en: w.en })) : [{ fr: '—', en: '—' }] });
+        // One skill per AUTHORED theme tier (L1, L2, L3…).
+        th.tiers.forEach((words, ti) => {
+          level++;
+          const skill = `${th.id}:${ti + 1}`;
+          skillLevels.set(skill, level);
+          groups.push({ skill, words: words.length ? words.map(w => ({ fr: w.fr, en: w.en })) : [{ fr: '—', en: '—' }] });
+        });
       }
       return { groups, skillLevels };
     };
@@ -200,15 +205,20 @@ export class TreePage implements OnInit, OnDestroy {
       if (lvl && this.passedLevels.has(lvl)) completed.add(coreMilestoneId(ct.tier));
     }
     for (const th of THEME_DEFS) {
-      const lvl = this.skillLevels.get(`${th.id}:1`);
-      if (lvl && this.passedLevels.has(lvl)) completed.add(themeMilestoneId(th.id, 1));
+      th.tiers.forEach((_w, ti) => {
+        const lvl = this.skillLevels.get(`${th.id}:${ti + 1}`);
+        if (lvl && this.passedLevels.has(lvl)) completed.add(themeMilestoneId(th.id, ti + 1));
+      });
     }
 
-    // Compute progression.
+    // Compute progression. A theme has tier t if it has that many authored tiers.
     this.prog = computeProgression({
       config: TREE_CONFIG,
       themeIds: THEME_DEFS.map(t => t.id),
-      themeHasTier: (_id, tier) => tier === 1, // only L1 authored for themes now
+      themeHasTier: (id, tier) => {
+        const th = THEME_DEFS.find(t => t.id === id);
+        return !!th && tier >= 1 && tier <= th.tiers.length;
+      },
       completed,
     });
 
@@ -246,14 +256,22 @@ export class TreePage implements OnInit, OnDestroy {
       const angle = (360 / n) * i - 90;
       const rad = (angle * Math.PI) / 180;
       const x = cx + r * Math.cos(rad), y = cy + r * Math.sin(rad);
-      const tier = this.prog.unlockedThemeTier[th.id] ?? 0;
-      const lvl = this.skillLevels.get(`${th.id}:1`)!;
-      const passed = this.passedLevels.has(lvl);
-      const state: NodeState = passed ? 'done' : tier >= 1 ? 'active' : 'locked';
+      const availTier = this.prog.unlockedThemeTier[th.id] ?? 0;
+      // Count passed tiers up to the available one.
+      let passedTiers = 0;
+      for (let tr = 1; tr <= th.tiers.length; tr++) {
+        if (this.passedLevels.has(this.skillLevels.get(`${th.id}:${tr}`)!)) passedTiers++;
+      }
+      // done = every available tier passed; locked = no tier available; else active.
+      const state: NodeState =
+        availTier === 0 ? 'locked'
+          : passedTiers >= availTier ? 'done'
+            : 'active';
+      const pct = th.tiers.length ? Math.round((passedTiers / th.tiers.length) * 100) : 0;
       const title = this.t(th.nameKey);
       return {
         id: th.id, index: i, title, emoji: th.emoji, hue: th.hue,
-        state, tier, pct: passed ? 100 : 0, authored: true, x, y,
+        state, tier: availTier, pct, authored: true, x, y,
         aria: `${title}, ${this.t(`tree.unit.${state}`)}`,
       };
     });
@@ -277,7 +295,8 @@ export class TreePage implements OnInit, OnDestroy {
     this.panelOpen = true;
     this.panelEmoji = th.emoji;
     this.panelTitle = node.title;
-    this.panelLessons = [this.themeLesson(th.id, 1)];
+    // All authored tiers of this theme, each gated by the progression engine.
+    this.panelLessons = th.tiers.map((_w, ti) => this.themeLesson(th.id, ti + 1));
     this.cdr.detectChanges();
   }
 
@@ -330,6 +349,70 @@ export class TreePage implements OnInit, OnDestroy {
     void this.navCtrl.navigateForward(['/practice/flip', this.deckId], {
       queryParams: { level: lesson.level, mode: 'journey-flip', from: JOURNEY_TREE_FROM },
     });
+  }
+
+  // ── Admin double-tap to complete the next available tier ────────────────────
+  get adminMode(): boolean { return this.settings.adminMode(); }
+
+  private static readonly DOUBLE_TAP_MS = 320;
+  private tapTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingTapKey: string | null = null;
+
+  /** Tap a theme node. Non-admin (or no second tap) opens the theme panel; an
+   *  admin double-tap completes that theme's next available-not-done tier. */
+  onNodeTap(node: ThemeNode): void {
+    if (!this.adminMode) { this.openTheme(node); return; }
+    this.handleAdminDoubleTap(`theme:${node.id}`, () => this.openTheme(node), () => this.adminCompleteTheme(node.id));
+  }
+
+  /** Tap the Core hub. Admin double-tap completes the next Core tier. */
+  onCoreTap(): void {
+    if (!this.adminMode) { this.openCore(); return; }
+    this.handleAdminDoubleTap('core', () => this.openCore(), () => this.adminCompleteCore());
+  }
+
+  private handleAdminDoubleTap(key: string, single: () => void, double: () => void): void {
+    if (this.tapTimer && this.pendingTapKey === key) {
+      clearTimeout(this.tapTimer); this.tapTimer = null; this.pendingTapKey = null;
+      void double();
+      return;
+    }
+    if (this.tapTimer) clearTimeout(this.tapTimer);
+    this.pendingTapKey = key;
+    this.tapTimer = setTimeout(() => {
+      this.tapTimer = null; this.pendingTapKey = null; single();
+    }, TreePage.DOUBLE_TAP_MS);
+  }
+
+  /** Admin: mark a deck level as passed (100%) under journey-flip, then reload. */
+  private async adminPassLevel(level: number): Promise<void> {
+    if (!this.deckId) return;
+    const cards = this.flashcards.getLevelCards(this.deckId, level);
+    const n = Math.max(1, cards.length);
+    try { await this.flashcards.saveLevelProgress(this.deckId, 'journey-flip', level, n, n); }
+    catch { /* best-effort */ }
+    await this.load();
+  }
+
+  /** Admin: complete the next available, not-yet-passed tier of a theme. */
+  private async adminCompleteTheme(themeId: string): Promise<void> {
+    if (!this.adminMode) return;
+    const avail = this.prog.unlockedThemeTier[themeId] ?? 0;
+    for (let tier = 1; tier <= avail; tier++) {
+      const lvl = this.skillLevels.get(`${themeId}:${tier}`);
+      if (lvl && !this.passedLevels.has(lvl)) { await this.adminPassLevel(lvl); return; }
+    }
+  }
+
+  /** Admin: complete the current (unlocked, not-passed) Core tier. */
+  private async adminCompleteCore(): Promise<void> {
+    if (!this.adminMode) return;
+    for (let tier = 1; tier <= this.prog.unlockedCoreTier; tier++) {
+      const ct = CORE_TIERS.find(c => c.tier === tier);
+      if (!ct?.authored) continue;
+      const lvl = this.skillLevels.get(`Core ${tier}`);
+      if (lvl && !this.passedLevels.has(lvl)) { await this.adminPassLevel(lvl); return; }
+    }
   }
 
   close(): void { this.router.navigate(['/home']); }

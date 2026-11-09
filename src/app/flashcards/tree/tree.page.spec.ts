@@ -13,9 +13,20 @@ import { THEME_DEFS } from './tree-curriculum';
  * progress are mocked. `progress` is a Map keyed `journey-flip-<level>`; the
  * page marks a milestone complete when bestScore >= 70.
  *
- * Level layout from the page's load(): Core 1..6 occupy levels 1..6, then the
- * themes occupy levels 7.. in THEME_DEFS order.
+ * Level layout from the page's load(): Core 1..6 occupy levels 1..6, then each
+ * theme contributes its authored tiers in THEME_DEFS order.
  */
+
+/** Level number of theme[index]'s tier 1, given Core occupies 6 levels. */
+function themeTier1Level(themeIndex: number): number {
+  let level = 6; // Core 1..6
+  for (let i = 0; i < THEME_DEFS.length; i++) {
+    const firstTierLevel = level + 1;
+    level += THEME_DEFS[i].tiers.length;
+    if (i === themeIndex) return firstTierLevel;
+  }
+  return level;
+}
 
 function makeProgress(passedLevels: number[]): Map<string, { bestScore: number }> {
   const m = new Map<string, { bestScore: number }>();
@@ -29,6 +40,7 @@ const flashcardMock = {
   initialize: () => Promise.resolve(),
   getAvailableLanguages: () => [{ code: 'fr', name: 'French' }],
   registerTreeDeck: () => 'tree-fr',
+  getLevelCards: () => [],
   getDeckLevelProgressMap: () => Promise.resolve(makeProgress(progressLevels)),
 };
 
@@ -79,17 +91,24 @@ describe('TreePage (curriculum)', () => {
   });
 
   it('keeps Core at L1 until 3 distinct themes are done, then unlocks Core L2', async () => {
-    // Core 1 (level 1) + first 3 theme L1s (levels 7,8,9).
-    const coreLevel = 1;
-    const themeLevels = [7, 8, 9];
-    progressLevels = [coreLevel, ...themeLevels];
+    // Core 1 + tier-1 of 3 DISTINCT themes (indices 0,1,2).
+    progressLevels = [1, themeTier1Level(0), themeTier1Level(1), themeTier1Level(2)];
     await component.ngOnInit();
     fixture.detectChanges();
     expect(component.coreTier).toBe(2);
   });
 
-  it('does NOT unlock Core L2 with only 2 themes done', async () => {
-    progressLevels = [1, 7, 8];
+  it('does NOT unlock Core L2 with only 2 distinct themes done', async () => {
+    progressLevels = [1, themeTier1Level(0), themeTier1Level(1)];
+    await component.ngOnInit();
+    fixture.detectChanges();
+    expect(component.coreTier).toBe(1);
+  });
+
+  it('completing the 3 tiers of ONE theme does NOT unlock Core L2 (distinct themes only)', async () => {
+    // food has 3 tiers at levels 7,8,9 — all one theme.
+    const food0 = themeTier1Level(0);
+    progressLevels = [1, food0, food0 + 1, food0 + 2];
     await component.ngOnInit();
     fixture.detectChanges();
     expect(component.coreTier).toBe(1);

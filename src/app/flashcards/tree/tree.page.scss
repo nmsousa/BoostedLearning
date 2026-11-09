@@ -263,3 +263,19 @@
   .w-fr { font-size: 0.82rem; font-weight: 700; color: #eef1ff; }
   .w-en { font-size: 0.68rem; color: var(--tree-muted); }
 }
+
+// ── Admin tip banner ─────────────────────────────────────────────────────────
+.tree-admin-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 12px 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 207, 63, 0.14);
+  border: 1px solid rgba(255, 207, 63, 0.4);
+  color: #ffe6a6;
+  font-size: 0.82rem;
+  font-weight: 600;
+  ion-icon { font-size: 18px; flex: 0 0 auto; color: #ffcf3f; }
+}
