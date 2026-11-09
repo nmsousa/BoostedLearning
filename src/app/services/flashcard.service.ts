@@ -1915,27 +1915,38 @@ export class FlashcardService {
       raw.set(skill, g);
     }
 
-    // Walk skills in skillOrder and de-duplicate prompts GLOBALLY: a prompt key
-    // lands only in the FIRST (earliest-order) skill that teaches it, and never
-    // repeats in later levels. (Previously the `seen` set was per-skill, so a
-    // word taught early reappeared in later skills.) Shared forms like ta/ton
-    // (both "your") still collapse into one card that accepts every form.
+    // The synthetic "Tree" curriculum deck (id "tree-*") is authored content
+    // where the SAME word deliberately recurs across skills (core words reused
+    // across themes). For it we de-duplicate only WITHIN a skill and never drop
+    // a skill — otherwise a theme sharing a word with an earlier skill would
+    // lose cards or collapse, shifting every level's index (the reported
+    // "Travel opens Education" bug). For normal course decks we keep the global
+    // de-dup that prevents a word reappearing in later levels.
+    const isTreeDeck = deckId.startsWith('tree-');
+
     const seen = new Set<string>();
     const result = [...raw.values()]
       .sort((a, b) => a.order - b.order)
       .map(g => {
         const cards: Flashcard[] = [];
+        const localSeen = new Set<string>();
         for (const card of g.cards) {
           const key = this.promptKeyOf(card);
-          if (seen.has(key)) continue;
-          seen.add(key);
+          if (isTreeDeck) {
+            if (localSeen.has(key)) continue;
+            localSeen.add(key);
+          } else {
+            if (seen.has(key)) continue;
+            seen.add(key);
+          }
           cards.push({ ...card, acceptedForms: formsByPrompt.get(key) ?? [card.text] });
         }
         return cards;
       })
       // A skill whose every prompt was already taught earlier collapses to
-      // nothing — drop it so levels stay contiguous (no empty levels).
-      .filter(cards => cards.length > 0);
+      // nothing — drop it so levels stay contiguous (no empty levels). The tree
+      // deck never collapses skills (each is a distinct curriculum milestone).
+      .filter(cards => isTreeDeck || cards.length > 0);
     this.skillLevelsCache.set(deckId, { cards: deck.cards, result });
     return result;
   }
