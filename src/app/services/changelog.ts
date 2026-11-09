@@ -21,6 +21,80 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.42',
+    notes: [
+      'Fixed "What\'s new": it now lists every update again (it had been stuck showing 1.3.30 even after newer updates installed).',
+    ],
+  },
+  {
+    version: '1.3.41',
+    notes: [
+      'Tree: fixed a bug where opening a theme could start a different theme\'s lesson (e.g. Travel launched Education). Each lesson now opens its own words, even when a word is shared across themes.',
+    ],
+  },
+  {
+    version: '1.3.40',
+    notes: [
+      'Tree mode: Core Vocabulary is now a real, playable unit. Core Level 1 is the first node; completing it unlocks the themes; completing three themes unlocks Core Level 2, and so on.',
+      'Each theme shows around ten topic words. (The French content is a first draft pending review.)',
+    ],
+  },
+  {
+    version: '1.3.39',
+    notes: [
+      'Tree: the central Core Vocabulary hub is a progress marker and no longer opens a theme when tapped.',
+    ],
+  },
+  {
+    version: '1.3.38',
+    notes: [
+      'Tree mode is now readable: the many skills are grouped into about a dozen themed units around the Core Vocabulary hub. Tap a theme to see its lessons.',
+    ],
+  },
+  {
+    version: '1.3.37',
+    notes: [
+      'New experimental Tree mode: a radial "learning network" map, opened from the home screen. Shares the same progress and exercises as the Journey maps.',
+    ],
+  },
+  {
+    version: '1.3.36',
+    notes: [
+      'Journey++: long chapter names are now readable — they wrap to two lines in both the chapter header and the top title instead of being cut off.',
+    ],
+  },
+  {
+    version: '1.3.35',
+    notes: [
+      'Fixed phone back when returning from a Journey node exercise: it no longer skips past the map straight to Home.',
+    ],
+  },
+  {
+    version: '1.3.34',
+    notes: [
+      'Journey++: the header no longer briefly flashes the wrong chapter when you switch language.',
+    ],
+  },
+  {
+    version: '1.3.33',
+    notes: [
+      'Journey++: more header polish when switching language (the title settles on the on-screen chapter before the view is shown).',
+    ],
+  },
+  {
+    version: '1.3.32',
+    notes: [
+      'Journey++: admin double-tap-to-complete now only works on the current (blue) node. Admin mode is on by default during testing.',
+    ],
+  },
+  {
+    version: '1.3.31',
+    notes: [
+      'Journey++: clearer decorative lines beside chapter titles, more spacing above the active node, and the Continue button now works while the map is still scrolling.',
+      'Flashcards: the flip card back is a deeper blue (not red), no flicker when advancing, and no stars on the complete screen.',
+    ],
+  },
+  {
     version: '1.3.30',
     notes: [
       'Journey++ visual polish: cleaner purple rings on the back/flag buttons and locked nodes, decorative lines beside chapter titles, brighter completed nodes with a check + chevron badge, bigger and clearer Quiz and Write icons, larger nodes with the lock tucked into the corner, a more premium blue action button and a more 3D "Continue" button, plus a nicer top progress bar.',
