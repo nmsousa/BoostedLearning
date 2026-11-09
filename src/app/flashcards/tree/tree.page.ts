@@ -237,6 +237,16 @@ export class TreePage implements OnInit, OnDestroy {
    *  follow a pan are ignored). */
   private get wasPanning(): boolean { return this.panMoved; }
 
+  /** A click on the empty background (not a node/button) closes the open
+   *  sub-star and returns to the main tree. Ignores clicks that land on a node,
+   *  a mode node or the info strip, and clicks that ended a pan/pinch. */
+  onBackgroundClick(ev: Event): void {
+    if (!this.expandedId || this.wasPanning) return;
+    const el = ev.target as HTMLElement | null;
+    if (el && el.closest('.tree-mode, .tree-unit, .tree-hub, .tree-expanded-info')) return;
+    this.collapse();
+  }
+
   // ── Data ────────────────────────────────────────────────────────────────────
   private async load(): Promise<void> {
     this.availableLanguages = this.flashcards.getAvailableLanguages().map(l => ({ ...l, flagUrl: this.flagUrl(l.code) }));

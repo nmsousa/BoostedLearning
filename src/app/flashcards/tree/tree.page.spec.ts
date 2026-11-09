@@ -175,4 +175,30 @@ describe('TreePage (5 modes per level)', () => {
     // Clamped to the max zoom.
     expect(component.viewportTransform).toContain('scale(2.4)');
   });
+
+  it('closes the sub-star on a background click', async () => {
+    doneLevels = [1];
+    await component.ngOnInit();
+    const food = component.nodes.find(n => n.id === 'food')!;
+    component.openTheme(food);
+    expect(component.expandedId).toBe('food');
+    // Click on a plain background element (not a node/button).
+    const bg = document.createElement('div');
+    component.onBackgroundClick({ target: bg } as unknown as Event);
+    expect(component.expandedId).toBeNull();
+  });
+
+  it('does NOT close when the click lands on a mode node', async () => {
+    doneLevels = [1];
+    await component.ngOnInit();
+    const food = component.nodes.find(n => n.id === 'food')!;
+    component.openTheme(food);
+    // Simulate a click whose target is inside a .tree-mode element.
+    const modeBtn = document.createElement('button');
+    modeBtn.className = 'tree-mode';
+    const icon = document.createElement('span');
+    modeBtn.appendChild(icon);
+    component.onBackgroundClick({ target: icon } as unknown as Event);
+    expect(component.expandedId).toBe('food');
+  });
 });

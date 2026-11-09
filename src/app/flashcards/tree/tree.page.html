@@ -38,7 +38,7 @@
   <div *ngIf="!isLoading" class="tree-scene" #scene
     (pointerdown)="onPanPointerDown($event)" (pointermove)="onPanPointerMove($event)"
     (pointerup)="onPanPointerUp($event)" (pointercancel)="onPanPointerUp($event)"
-    (wheel)="onWheelZoom($event)">
+    (wheel)="onWheelZoom($event)" (click)="onBackgroundClick($event)">
     <div class="tree-viewport" #viewport>
     <div class="tree-pan" [style.transform]="viewportTransform">
     <div class="tree-stage" [class.has-expanded]="expandedId">

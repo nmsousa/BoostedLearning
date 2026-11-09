@@ -21,6 +21,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.48',
+    notes: [
+      'Tree: tapping the empty space outside an open sub-star now closes it and returns to the main tree.',
+    ],
+  },
+  {
     version: '1.3.47',
     notes: [
       'Tree: when a node is expanded, the lines to the other nodes are now hidden instead of showing through the dimmed nodes.',
