@@ -27,7 +27,9 @@ import { FlashcardService } from '../../services/flashcard.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../journey/journey-back';
-import { buildTokens, generatePhrases, type GeneratedPhrase } from '../../../core/phrase-builder/phrase-builder';
+import {
+  buildTokens, buildTreeTokens, generatePhrases, type GeneratedPhrase,
+} from '../../../core/phrase-builder/phrase-builder';
 
 interface BuilderWord { text: string; translations: string[]; article?: string; lemma?: string; }
 interface BuilderGroup { id: string; category: string; name: string; order: number; words: BuilderWord[]; }
@@ -255,14 +257,28 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
 
     const toSrc = (c: { text: string; translations: string[] }) => ({ text: c.text, translations: c.translations });
     const current = this.flashcards.getLevelCards(deckId, level).map(toSrc);
+    // Earlier words to combine with: the explicit `pool` levels when the
+    // caller provides them (the Tree's fixed-slot layout, where "earlier deck
+    // levels" aren't earlier lessons), else every level before this one.
+    const earlierLevels = this.poolLevels(level) ?? Array.from({ length: Math.max(0, level - 1) }, (_v, i) => i + 1);
     const earlier: { text: string; translations: string[] }[] = [];
-    for (let n = 1; n < level; n++) {
+    for (const n of earlierLevels) {
       for (const c of this.flashcards.getLevelCards(deckId, n)) earlier.push(toSrc(c));
     }
-    const tokens = buildTokens(current, earlier);
-    this.journeyPhrases = generatePhrases(tokens, 5);
-    // Pool of every single-word token in the chapter, for bank distractors.
-    this.journeyWordPool = tokens.map(t => t.text).filter(w => w && !/\s/.test(w));
+
+    if (this.flashcards.isTreeDeckId(deckId)) {
+      // Tree: authored nouns with articles + Core chunks → the v2 generator
+      // (real phrases like "un professeur et un élève"). A random seed varies
+      // the phrases between sessions.
+      const tokens = buildTreeTokens(current, earlier);
+      this.journeyPhrases = generatePhrases(tokens, 5, 'fr', { engine: 'v2', seed: 1 + Math.floor(Math.random() * 1e6) });
+      this.journeyWordPool = [];
+    } else {
+      const tokens = buildTokens(current, earlier);
+      this.journeyPhrases = generatePhrases(tokens, 5);
+      // Pool of every single-word token in the chapter, for bank distractors.
+      this.journeyWordPool = tokens.map(t => t.text).filter(w => w && !/\s/.test(w));
+    }
 
     if (this.journeyPhrases.length === 0) {
       // Nothing to build (no noun to anchor a phrase, or the level had no
@@ -281,6 +297,18 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
     this.openJourneyPhrase();
   }
 
+  /**
+   * Levels named by the `pool` query param ("1,2,21"), excluding this level;
+   * null when absent/empty so the caller falls back to 1..level-1.
+   */
+  private poolLevels(level: number): number[] | null {
+    const raw = this.route.snapshot.queryParamMap.get('pool');
+    if (!raw) return null;
+    const levels = [...new Set(raw.split(',').map(s => Number(s.trim())))]
+      .filter(n => Number.isInteger(n) && n > 0 && n !== level);
+    return levels.length ? levels : null;
+  }
+
   /** Load the current generated phrase into the phrase stage. */
   private openJourneyPhrase(): void {
     const p = this.journeyPhrases[this.journeyIndex];
@@ -289,7 +317,9 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
       target: p.target, en: p.en, tokens: p.tokens,
     };
     this.clearWrong();
-    this.bank = this.buildBank(phrase.tokens, this.journeyWordPool);
+    // v2 phrases bring their own distractors (chosen so they never form a
+    // second correct answer); legacy phrases draw from the chapter's words.
+    this.bank = this.buildBank(phrase.tokens, p.distractors ?? this.journeyWordPool);
     this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
     this.cdr.detectChanges();
   }

@@ -273,12 +273,14 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
 
     // Gather distractors from other cards in the deck (clean translations),
     // excluding any that equal the correct answer or the prompt word itself.
+    // "—" is the Tree deck's placeholder for not-yet-authored levels; it is
+    // never a meaningful option.
     const pool = (this.deck?.cards ?? [])
       .filter(c => c.id !== card.id)
       .map(c => this.flashcardService.bestTranslation(c))
       .filter(t => {
         const tl = t.trim().toLowerCase();
-        return tl && tl !== correctLabel.toLowerCase() && tl !== promptLower;
+        return tl && tl !== '—' && tl !== correctLabel.toLowerCase() && tl !== promptLower;
       });
 
     const distractors = this.pickDistractors(pool, correctLabel, this.OPTION_COUNT - 1);

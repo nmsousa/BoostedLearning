@@ -1,30 +1,26 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterModule } from '@angular/router';
+import { NavController } from '@ionic/angular';
 
 import { TreePageModule } from './tree.module';
 import { TreePage } from './tree.page';
 import { FlashcardService } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
-import { THEME_DEFS } from './tree-curriculum';
+import { THEME_DEFS, TREE_LAYOUT, themeLevelOf } from './tree-curriculum';
 import { TREE_MODES } from './tree-modes';
 
 /**
  * Tree page tests (5-modes-per-level build). Each tier contains 5 modes
  * (flip/quiz/write/match/builder); a tier is complete ONLY when all 5 are
- * passed. Progress is keyed `<mode>-<level>`. Level layout: Core 1..6, then
- * each theme's tiers in THEME_DEFS order.
+ * passed. Progress is keyed `<mode>-<level>`. Level layout is FIXED
+ * (TREE_LAYOUT): Core tier t → level t; theme #i tier t → coreSlots +
+ * i*themeSlots + t.
  */
 
-/** Level number of theme[index]'s tier 1 (Core occupies 6 levels). */
+/** Level number of theme[index]'s tier 1. */
 function themeTier1Level(themeIndex: number): number {
-  let level = 6;
-  for (let i = 0; i < THEME_DEFS.length; i++) {
-    const first = level + 1;
-    level += THEME_DEFS[i].tiers.length;
-    if (i === themeIndex) return first;
-  }
-  return level;
+  return themeLevelOf(themeIndex, 1);
 }
 
 /** Build a progress map where the given levels are FULLY complete (all modes). */
@@ -39,10 +35,15 @@ function makeProgress(fullyDoneLevels: number[]): Map<string, { bestScore: numbe
 let doneLevels: number[] = [];
 let partial: Map<string, { bestScore: number }> | null = null;
 
+let registered: { lang: string; groups: { skill: string }[]; prefix?: string } | null = null;
+
 const flashcardMock = {
   initialize: () => Promise.resolve(),
   getAvailableLanguages: () => [{ code: 'fr', name: 'French' }],
-  registerTreeDeck: () => 'tree-fr',
+  registerTreeDeck: (lang: string, groups: { skill: string }[], prefix?: string) => {
+    registered = { lang, groups, prefix };
+    return `${prefix ?? 'tree'}-${lang}`;
+  },
   getLevelCards: () => [],
   getDeckLevelProgressMap: () => Promise.resolve(partial ?? makeProgress(doneLevels)),
 };
@@ -75,6 +76,33 @@ describe('TreePage (5 modes per level)', () => {
 
   it('creates', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('registers a fixed-slot deck (tree-v2) so levels never shift', async () => {
+    await component.ngOnInit();
+    expect(component.deckId).toBe('tree-v2-fr');
+    const skills = registered!.groups.map(g => g.skill);
+    // Group index + 1 === deck level.
+    expect(skills.length).toBe(TREE_LAYOUT.coreSlots + THEME_DEFS.length * TREE_LAYOUT.themeSlots);
+    expect(skills[0]).toBe('Core 1');
+    expect(skills[TREE_LAYOUT.coreSlots - 1]).toBe(`Core ${TREE_LAYOUT.coreSlots}`);
+    THEME_DEFS.forEach((th, i) => expect(skills[themeLevelOf(i, 1) - 1]).toBe(`${th.id}:1`));
+  });
+
+  it('passes the Builder a pool of Core 1..T + the theme\'s earlier tiers', async () => {
+    // Core L1 + L2 done, food L1 done → food L2 is open.
+    doneLevels = [1, 2, themeTier1Level(0), themeTier1Level(1), themeTier1Level(2)];
+    await component.ngOnInit();
+    const nav = TestBed.inject(NavController);
+    const spy = vi.spyOn(nav, 'navigateForward').mockResolvedValue(true);
+    const food = component.nodes.find(n => n.id === 'food')!;
+    component.openTheme(food);
+    expect(component.expandedTier).toBe(2);
+    const builder = component.modeNodes.find(m => m.id === 'builder')!;
+    component.openMode({ ...builder, state: 'active' });
+    const extras = spy.mock.calls[0][1] as { queryParams: Record<string, string | number> };
+    expect(extras.queryParams['level']).toBe(themeLevelOf(0, 2));
+    expect(extras.queryParams['pool']).toBe(`1,2,${themeLevelOf(0, 1)}`);
   });
 
   it('starts with Core L1 and all themes locked', async () => {

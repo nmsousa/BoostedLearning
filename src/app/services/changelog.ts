@@ -21,6 +21,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.50',
+    notes: [
+      'Tree: the Core is now split into small levels of about a dozen words each, so you can start building phrases after Core 1 instead of learning 64 words first.',
+      'Tree Builder: it now builds real phrases from the words you\'ve learned — e.g. Core 1 + Education makes "Un professeur et un élève", "C\'est une école", "J\'ai un livre".',
+      'Tree: each new Core level adds one idea (être/avoir, describing things, plurals, places, everyday verbs, questions, time…). Themes still have levels 1–3.',
+      'Tree Write: gender hints like "(f.)" moved off the French word, so typing "l\'école" is accepted.',
+      'Note: Tree progress restarts with the new layout — admin double-tap can fast-forward you.',
+    ],
+  },
+  {
     version: '1.3.49',
     notes: [
       'Tree: closing a sub-star now smoothly recenters the main map.',

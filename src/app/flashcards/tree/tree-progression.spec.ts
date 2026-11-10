@@ -96,6 +96,35 @@ describe('tree-progression', () => {
     expect(s.unlockedCoreTier).toBe(2);
   });
 
+  it('lets the Core continue alone past the last authored theme tier', () => {
+    // Themes only have tiers 1..2; Core has 6. After Core 2 (+3 themes at 2),
+    // Core 3 needs no theme milestone (none exist at tier 3) and so on.
+    const completed = [
+      coreMilestoneId(1),
+      themeMilestoneId('food', 1), themeMilestoneId('travel', 1), themeMilestoneId('health', 1),
+      coreMilestoneId(2),
+      themeMilestoneId('food', 2), themeMilestoneId('travel', 2), themeMilestoneId('health', 2),
+      coreMilestoneId(3),
+      coreMilestoneId(4),
+    ];
+    const s = computeProgression(input(completed, { themeHasTier: (_id, tier) => tier <= 2 }));
+    expect(s.unlockedCoreTier).toBe(5);
+    // Themes still cap at their last authored tier.
+    expect(s.unlockedThemeTier['food']).toBe(2);
+  });
+
+  it('still requires the theme gate where theme content exists', () => {
+    // Core 2 done but only 2 themes at tier 2 (themes HAVE tier 2) → Core 3 stays locked.
+    const completed = [
+      coreMilestoneId(1),
+      themeMilestoneId('food', 1), themeMilestoneId('travel', 1), themeMilestoneId('health', 1),
+      coreMilestoneId(2),
+      themeMilestoneId('food', 2), themeMilestoneId('travel', 2),
+    ];
+    const s = computeProgression(input(completed, { themeHasTier: (_id, tier) => tier <= 2 }));
+    expect(s.unlockedCoreTier).toBe(2);
+  });
+
   it('never exceeds the configured number of Core tiers', () => {
     // Complete everything; cap at 6.
     const completed: string[] = [];

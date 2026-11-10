@@ -2,12 +2,25 @@
  * Tree curriculum — French Core Vocabulary + thematic progression.
  *
  * Implements the curriculum brief in
- * mockups/Boostionary_French_Core_Vocabulary_Curriculum_for_Kiro.md:
- *  - SIX Core tiers (Pre-A1/A1 → B1/B2), each the "sentence-evolution" step
- *    (L1 = subject+verb … L6 = subordinate clauses + connectors + nuance);
- *  - thematic branches (Travel, Food, Health, …) with their own tiers;
- *  - the Core words per tier are taken from the brief; each theme has ~10
- *    topic words at L1 (more tiers to be authored later).
+ * mockups/Boostionary_French_Core_Vocabulary_Curriculum_for_Kiro.md, with the
+ * Core split into SMALL tiers (about a dozen words each) so the learner can
+ * start building phrases almost immediately:
+ *  - Core 1 is the bare minimum to name things and join them
+ *    ("un professeur et un élève", "c’est une école", "j’ai un livre");
+ *  - each next tier adds ONE grammar idea (être/avoir, describing, plurals,
+ *    places, everyday verbs, questions/negation, time, …);
+ *  - thematic branches (Travel, Food, Health, …) have their own tiers; theme
+ *    tier N becomes available once Core tier N is complete.
+ *
+ * Authoring rules (keep the Write mode fair):
+ *  - the French side is exactly what the learner types: no "(m.)" notes and no
+ *    "a / b" alternatives in `fr`. Grammar hints (gender, plural) go on the
+ *    ENGLISH side, e.g. { fr: 'l’école', en: 'school (f.)' };
+ *  - nouns are shown WITH their article; nouns starting with l’ (or plural
+ *    les) carry their gender in the English note so the phrase builder can
+ *    pick un/une correctly;
+ *  - English prompts must be unique within a tier (the deck de-duplicates
+ *    cards by English prompt inside a level).
  *
  * This is a DATA module (no Angular). The unlock engine (tree-progression.ts)
  * and the Tree page read from it. The number of tiers and the "distinct themes
@@ -25,17 +38,17 @@
 export interface CoreWord {
   /** French display form (noun shown WITH its article, e.g. "la maison"). */
   fr: string;
-  /** English meaning(s). */
+  /** English meaning(s). Gender/plural notes live here, e.g. "school (f.)". */
   en: string;
-  /** Optional grammatical note shown to English speakers. */
+  /** Optional grammatical note (documentation; not shown in exercises). */
   note?: string;
 }
 
 /** A Core tier: a reusable grammar/vocabulary toolkit step. */
 export interface CoreTierDef {
-  tier: number;                 // 1..6
+  tier: number;                 // 1..N
   id: string;                   // "fr-core-1"
-  cefr: string;                 // "Pre-A1 / A1"
+  cefr: string;                 // "Pre-A1"
   /** i18n-free short English title (the UI can wrap/translate the label). */
   title: string;
   /** The "sentence evolution" outcome for this tier. */
@@ -57,179 +70,311 @@ export interface ThemeDef2 {
   tiers: CoreWord[][];
 }
 
-/** Config: tiers + the distinct-themes-per-tier threshold (brief §6.1). */
-export const TREE_CONFIG = {
-  coreTiers: 6,
-  /** Distinct theme milestones at tier N needed to unlock Core tier N+1. */
-  themesToAdvance: 3,
-};
-
 // ───────────────────────────────────────────────────────────────────────────
-// CORE TIERS — words taken from the curriculum brief (§4). Only L1 is fully
-// authored/playable for now; L2–L6 list their target words from the brief but
-// are marked authored:false until their lessons + review are done.
+// CORE TIERS — small steps. Tiers 1–14 are authored; 15–17 keep the brief's
+// later targets (connected discourse, nuance) as "coming soon".
 // ───────────────────────────────────────────────────────────────────────────
 
 export const CORE_TIERS: CoreTierDef[] = [
   {
-    tier: 1, id: 'fr-core-1', cefr: 'Pre-A1 / A1',
-    title: 'The basic sentence',
-    outcome: 'Subject + verb: say who you are and what you do.',
-    example: 'Je suis étudiant. / J’aime le café.',
+    tier: 1, id: 'fr-core-1', cefr: 'Pre-A1',
+    title: 'Name things',
+    outcome: 'Name people and things, and join them with “and” / “or”.',
+    example: 'Un professeur et un élève. / C’est une école. / J’ai un livre.',
     authored: true,
     words: [
-      // Subject pronouns
-      { fr: 'je / j’', en: 'I', note: 'j’ before a vowel or mute h' },
-      { fr: 'tu', en: 'you (informal)' },
-      { fr: 'il', en: 'he / it (m.)' },
-      { fr: 'elle', en: 'she / it (f.)' },
-      { fr: 'on', en: 'we / one / people', note: 'very common spoken “we”' },
+      { fr: 'je', en: 'I', note: 'becomes j’ before a vowel (j’ai)' },
+      { fr: 'un', en: 'a (m.)' },
+      { fr: 'une', en: 'a (f.)' },
+      { fr: 'le', en: 'the (m.)' },
+      { fr: 'la', en: 'the (f.)' },
+      { fr: 'l’', en: 'the (before a vowel)', note: 'l’école, l’ami' },
+      { fr: 'et', en: 'and' },
+      { fr: 'ou', en: 'or' },
+      { fr: 'oui', en: 'yes' },
+      { fr: 'non', en: 'no' },
+      { fr: 'c’est', en: 'it is / this is' },
+      { fr: 'j’ai', en: 'I have' },
+      { fr: 'l’ami', en: 'friend (m.)' },
+      { fr: 'l’amie', en: 'friend (f.)' },
+    ],
+  },
+  {
+    tier: 2, id: 'fr-core-2', cefr: 'Pre-A1',
+    title: 'Be & have',
+    outcome: 'Say who is where and who has what.',
+    example: 'Je suis ici. / Tu as un livre, mais il a une question.',
+    authored: true,
+    words: [
+      { fr: 'être', en: 'to be' },
+      { fr: 'avoir', en: 'to have' },
+      { fr: 'je suis', en: 'I am' },
+      { fr: 'tu es', en: 'you are' },
+      { fr: 'il est', en: 'he is / it is' },
+      { fr: 'elle est', en: 'she is / it is' },
+      { fr: 'tu as', en: 'you have' },
+      { fr: 'il a', en: 'he has' },
+      { fr: 'elle a', en: 'she has' },
+      { fr: 'ici', en: 'here' },
+      { fr: 'là', en: 'there' },
+      { fr: 'mais', en: 'but' },
+    ],
+  },
+  {
+    tier: 3, id: 'fr-core-3', cefr: 'A1',
+    title: 'Describe',
+    outcome: 'Say whose it is and what it is like.',
+    example: 'C’est mon livre. / Une petite maison. / Elle est très contente.',
+    authored: true,
+    words: [
+      { fr: 'mon', en: 'my (m.)', note: 'also before a vowel: mon école' },
+      { fr: 'ma', en: 'my (f.)' },
+      { fr: 'ton', en: 'your (m.)', note: 'informal (tu)' },
+      { fr: 'ta', en: 'your (f.)', note: 'informal (tu)' },
+      { fr: 'grand', en: 'big / tall', note: 'f. grande' },
+      { fr: 'petit', en: 'small / little', note: 'f. petite' },
+      { fr: 'bon', en: 'good', note: 'f. bonne' },
+      { fr: 'mauvais', en: 'bad', note: 'f. mauvaise' },
+      { fr: 'nouveau', en: 'new', note: 'f. nouvelle; nouvel before a vowel' },
+      { fr: 'content', en: 'happy / glad', note: 'f. contente' },
+      { fr: 'très', en: 'very' },
+      { fr: 'aussi', en: 'also / too' },
+    ],
+  },
+  {
+    tier: 4, id: 'fr-core-4', cefr: 'A1',
+    title: 'More people, more things',
+    outcome: 'Use plurals and every person of être / avoir.',
+    example: 'Nous avons des livres. / Ils sont contents.',
+    authored: true,
+    words: [
+      { fr: 'les', en: 'the (plural)' },
+      { fr: 'des', en: 'some (plural)' },
+      { fr: 'on', en: 'we / people (informal)' },
       { fr: 'nous', en: 'we' },
       { fr: 'vous', en: 'you (plural / polite)' },
       { fr: 'ils', en: 'they (m. / mixed)' },
       { fr: 'elles', en: 'they (f.)' },
-      // Articles
-      { fr: 'le / la / l’ / les', en: 'the', note: 'definite articles' },
-      { fr: 'un / une / des', en: 'a / an / some', note: 'indefinite articles' },
-      // Foundational verbs (lemma + key use)
-      { fr: 'être', en: 'to be', note: 'je suis, tu es, il/elle est…' },
-      { fr: 'avoir', en: 'to have', note: 'j’ai, tu as, il/elle a…' },
-      { fr: 's’appeler', en: 'to be called', note: 'je m’appelle…' },
-      { fr: 'habiter', en: 'to live / reside', note: 'j’habite à…' },
-      { fr: 'aimer', en: 'to like / love', note: 'j’aime…, je n’aime pas…' },
-      { fr: 'parler', en: 'to speak', note: 'je parle français' },
-      { fr: 'aller', en: 'to go', note: 'je vais à…' },
-      { fr: 'faire', en: 'to do / make', note: 'je fais…; il fait…' },
-      { fr: 'vouloir', en: 'to want', note: 'je veux…' },
-      { fr: 'pouvoir', en: 'can / to be able', note: 'je peux…' },
-      // Possessives / determiners
-      { fr: 'mon / ma / mes', en: 'my' },
-      { fr: 'ton / ta / tes', en: 'your (informal)' },
-      { fr: 'son / sa / ses', en: 'his / her / its', note: 'agrees with the noun, not the owner' },
-      { fr: 'ce / cet / cette / ces', en: 'this / that / these' },
-      // Sentence glue
-      { fr: 'et', en: 'and' },
-      { fr: 'ou', en: 'or' },
-      { fr: 'mais', en: 'but' },
-      { fr: 'avec', en: 'with' },
-      { fr: 'sans', en: 'without' },
-      { fr: 'à', en: 'to / at / in', note: 'context-dependent' },
-      { fr: 'de / d’', en: 'of / from', note: 'context-dependent' },
+      { fr: 'nous sommes', en: 'we are' },
+      { fr: 'vous êtes', en: 'you are (plural / polite)' },
+      { fr: 'ils sont', en: 'they are' },
+      { fr: 'nous avons', en: 'we have' },
+      { fr: 'vous avez', en: 'you have (plural / polite)' },
+      { fr: 'ils ont', en: 'they have' },
+    ],
+  },
+  {
+    tier: 5, id: 'fr-core-5', cefr: 'A1',
+    title: 'Where things are',
+    outcome: 'Place people and things.',
+    example: 'Le livre est sur la table. / Il y a un chat sous le lit.',
+    authored: true,
+    words: [
       { fr: 'dans', en: 'in / inside' },
       { fr: 'sur', en: 'on' },
-      { fr: 'ici', en: 'here' },
-      { fr: 'là', en: 'there' },
-      { fr: 'oui', en: 'yes' },
-      { fr: 'non', en: 'no' },
-      { fr: 'ne… pas', en: 'not', note: 'a paired construction around the verb' },
-      // Question words
-      { fr: 'qui', en: 'who' },
-      { fr: 'qu’est-ce que', en: 'what' },
-      { fr: 'où', en: 'where' },
-      { fr: 'quand', en: 'when' },
-      { fr: 'comment', en: 'how' },
-      { fr: 'pourquoi', en: 'why' },
-      { fr: 'combien', en: 'how much / many' },
-      { fr: 'quel / quelle', en: 'which / what', note: 'agrees with the noun' },
-      { fr: 'est-ce que', en: '(question marker)' },
-      // Core adjectives
-      { fr: 'bon / bonne', en: 'good' },
-      { fr: 'mauvais / mauvaise', en: 'bad' },
-      { fr: 'grand / grande', en: 'big / tall' },
-      { fr: 'petit / petite', en: 'small' },
-      { fr: 'nouveau / nouvelle', en: 'new' },
-      { fr: 'content / contente', en: 'happy / glad' },
-      { fr: 'français / française', en: 'French' },
-      // Adverbs / expressions
-      { fr: 'très', en: 'very' },
-      { fr: 'bien', en: 'well' },
-      { fr: 'aussi', en: 'also / too' },
-      { fr: 'beaucoup', en: 'a lot' },
-      { fr: 'un peu', en: 'a little' },
-      { fr: 'maintenant', en: 'now' },
-      { fr: 'aujourd’hui', en: 'today' },
-      { fr: 'c’est', en: 'it is / this is' },
+      { fr: 'sous', en: 'under' },
+      { fr: 'devant', en: 'in front of' },
+      { fr: 'derrière', en: 'behind' },
+      { fr: 'à côté de', en: 'next to' },
+      { fr: 'avec', en: 'with' },
+      { fr: 'sans', en: 'without' },
+      { fr: 'à', en: 'to / at / in' },
+      { fr: 'au', en: 'to the / at the (m.)', note: 'à + le' },
+      { fr: 'à la', en: 'to the / at the (f.)' },
       { fr: 'il y a', en: 'there is / there are' },
     ],
   },
   {
-    tier: 2, id: 'fr-core-2', cefr: 'A1 / A2',
-    title: 'Expand, describe, ask, locate',
-    outcome: 'Add objects, questions, negation, quantity and place.',
-    example: 'Je voudrais un café. / Je ne mange jamais ici.',
+    tier: 6, id: 'fr-core-6', cefr: 'A1',
+    title: 'Everyday verbs',
+    outcome: 'Say what you like, want, can do and where you go.',
+    example: 'J’aime le café. / Je vais à la gare. / Je veux apprendre.',
     authored: true,
     words: [
-      // High-frequency verbs (lemmas)
-      { fr: 'prendre', en: 'to take' }, { fr: 'venir', en: 'to come' },
-      { fr: 'partir', en: 'to leave' }, { fr: 'acheter', en: 'to buy' },
-      { fr: 'manger', en: 'to eat' }, { fr: 'boire', en: 'to drink' },
-      { fr: 'devoir', en: 'must / to have to' }, { fr: 'préférer', en: 'to prefer' },
-      { fr: 'choisir', en: 'to choose' }, { fr: 'finir', en: 'to finish' },
-      { fr: 'attendre', en: 'to wait' }, { fr: 'trouver', en: 'to find' },
-      { fr: 'travailler', en: 'to work' }, { fr: 'regarder', en: 'to watch / look' },
-      { fr: 'écouter', en: 'to listen' }, { fr: 'comprendre', en: 'to understand' },
-      // Partitives & contractions
-      { fr: 'du / de la / des', en: 'some (partitive)' }, { fr: 'au / aux', en: 'to the / at the' },
-      // Place prepositions
-      { fr: 'devant', en: 'in front of' }, { fr: 'derrière', en: 'behind' },
-      { fr: 'sous', en: 'under' }, { fr: 'entre', en: 'between' },
-      { fr: 'près de', en: 'near' }, { fr: 'à côté de', en: 'next to' },
-      // Negation & questions
-      { fr: 'ne… jamais', en: 'never' }, { fr: 'ne… plus', en: 'no longer' },
-      { fr: 'ne… rien', en: 'nothing' }, { fr: 'combien de', en: 'how many / much' },
-      // Quantifiers & frequency
-      { fr: 'beaucoup de', en: 'a lot of' }, { fr: 'un peu de', en: 'a little' },
-      { fr: 'trop de', en: 'too much / many' }, { fr: 'assez de', en: 'enough' },
-      { fr: 'souvent', en: 'often' }, { fr: 'parfois', en: 'sometimes' },
-      { fr: 'd’habitude', en: 'usually' },
-      // Connectors
-      { fr: 'parce que', en: 'because' }, { fr: 'donc', en: 'so / therefore' },
-      { fr: 'alors', en: 'then / so' }, { fr: 'si', en: 'if' },
-      // Practical expressions
-      { fr: 'je voudrais', en: 'I would like' }, { fr: 'il faut', en: 'it is necessary' },
-      { fr: 'j’ai besoin de', en: 'I need' }, { fr: 'j’ai envie de', en: 'I feel like' },
-      { fr: 'je peux ?', en: 'may I? / can I?' }, { fr: 'ça va', en: 'OK / all good' },
+      { fr: 'aimer', en: 'to like / to love' },
+      { fr: 'aller', en: 'to go' },
+      { fr: 'faire', en: 'to do / to make' },
+      { fr: 'vouloir', en: 'to want' },
+      { fr: 'pouvoir', en: 'can / to be able to' },
+      { fr: 'parler', en: 'to speak / to talk' },
+      { fr: 'j’aime', en: 'I like / I love' },
+      { fr: 'je vais', en: 'I go / I’m going' },
+      { fr: 'je fais', en: 'I do / I make' },
+      { fr: 'je veux', en: 'I want' },
+      { fr: 'je peux', en: 'I can' },
+      { fr: 'je parle', en: 'I speak' },
     ],
   },
   {
-    tier: 3, id: 'fr-core-3', cefr: 'A2',
-    title: 'Time, experience and plans',
-    outcome: 'Talk about the past, routines and near-future plans.',
-    example: 'Hier, j’ai travaillé. / Je vais visiter Paris.',
+    tier: 7, id: 'fr-core-7', cefr: 'A1',
+    title: 'Ask & say no',
+    outcome: 'Ask simple questions, say “not” and give a reason.',
+    example: 'Où est la gare ? / Ce n’est pas un livre.',
     authored: true,
     words: [
-      // Time structures (taught as chunks)
-      { fr: 'j’ai mangé', en: 'I ate / have eaten', note: 'passé composé (avoir)' },
-      { fr: 'je suis allé(e)', en: 'I went', note: 'passé composé (être)' },
+      { fr: 'qui', en: 'who' },
+      { fr: 'qu’est-ce que', en: 'what (in a question)' },
+      { fr: 'où', en: 'where' },
+      { fr: 'quand', en: 'when' },
+      { fr: 'comment', en: 'how' },
+      { fr: 'pourquoi', en: 'why' },
+      { fr: 'combien', en: 'how much / how many' },
+      { fr: 'quel', en: 'which / what (m.)' },
+      { fr: 'quelle', en: 'which / what (f.)' },
+      { fr: 'est-ce que', en: '(yes/no question marker)' },
+      { fr: 'ne… pas', en: 'not', note: 'goes around the verb: je ne suis pas…' },
+      { fr: 'parce que', en: 'because' },
+    ],
+  },
+  {
+    tier: 8, id: 'fr-core-8', cefr: 'A1',
+    title: 'About me & when',
+    outcome: 'Introduce yourself and say when things happen.',
+    example: 'J’habite ici. / J’ai un examen demain.',
+    authored: true,
+    words: [
+      { fr: 's’appeler', en: 'to be called' },
+      { fr: 'je m’appelle', en: 'my name is' },
+      { fr: 'habiter', en: 'to live (somewhere)' },
+      { fr: 'j’habite', en: 'I live' },
+      { fr: 'maintenant', en: 'now' },
+      { fr: 'aujourd’hui', en: 'today' },
+      { fr: 'demain', en: 'tomorrow' },
+      { fr: 'hier', en: 'yesterday' },
+      { fr: 'bien', en: 'well' },
+      { fr: 'beaucoup', en: 'a lot / very much' },
+      { fr: 'un peu', en: 'a little' },
+      { fr: 'toujours', en: 'always / still' },
+    ],
+  },
+  {
+    tier: 9, id: 'fr-core-9', cefr: 'A1 / A2',
+    title: 'Daily actions',
+    outcome: 'Take, eat, drink, buy, come and leave.',
+    example: 'Je prends le train. / Je mange une pomme.',
+    authored: true,
+    words: [
+      { fr: 'prendre', en: 'to take' },
+      { fr: 'je prends', en: 'I take / I’ll have' },
+      { fr: 'manger', en: 'to eat' },
+      { fr: 'je mange', en: 'I eat' },
+      { fr: 'boire', en: 'to drink' },
+      { fr: 'je bois', en: 'I drink' },
+      { fr: 'acheter', en: 'to buy' },
+      { fr: 'j’achète', en: 'I buy' },
+      { fr: 'venir', en: 'to come' },
+      { fr: 'je viens', en: 'I come' },
+      { fr: 'partir', en: 'to leave' },
+      { fr: 'je pars', en: 'I leave' },
+    ],
+  },
+  {
+    tier: 10, id: 'fr-core-10', cefr: 'A2',
+    title: 'How much & how often',
+    outcome: 'Talk about quantities (some, a lot of) and frequency.',
+    example: 'Je bois de l’eau. / J’ai beaucoup de livres.',
+    authored: true,
+    words: [
+      { fr: 'du', en: 'some (m.)', note: 'de + le' },
+      { fr: 'de la', en: 'some (f.)' },
+      { fr: 'de l’', en: 'some (before a vowel)' },
+      { fr: 'beaucoup de', en: 'a lot of' },
+      { fr: 'un peu de', en: 'a little (of)' },
+      { fr: 'trop de', en: 'too much / too many' },
+      { fr: 'assez de', en: 'enough' },
+      { fr: 'souvent', en: 'often' },
+      { fr: 'parfois', en: 'sometimes' },
+      { fr: 'd’habitude', en: 'usually' },
+      { fr: 'rarement', en: 'rarely' },
+      { fr: 'combien de', en: 'how much / how many (of)' },
+    ],
+  },
+  {
+    tier: 11, id: 'fr-core-11', cefr: 'A2',
+    title: 'Needs & wishes',
+    outcome: 'Ask politely, say what you need, must or prefer.',
+    example: 'Je voudrais un café. / J’ai besoin d’un billet.',
+    authored: true,
+    words: [
+      { fr: 'je voudrais', en: 'I would like' },
+      { fr: 'j’ai besoin de', en: 'I need' },
+      { fr: 'j’ai envie de', en: 'I feel like' },
+      { fr: 'il faut', en: 'you have to / it’s necessary' },
+      { fr: 'devoir', en: 'must / to have to' },
+      { fr: 'je dois', en: 'I must / I have to' },
+      { fr: 'préférer', en: 'to prefer' },
+      { fr: 'je préfère', en: 'I prefer' },
+      { fr: 'donc', en: 'so / therefore' },
+      { fr: 'alors', en: 'then / so' },
+      { fr: 'si', en: 'if' },
+      { fr: 'ça va', en: 'how’s it going? / fine' },
+    ],
+  },
+  {
+    tier: 12, id: 'fr-core-12', cefr: 'A2',
+    title: 'Past & plans',
+    outcome: 'Say what you did, just did, or are going to do.',
+    example: 'J’ai fini le livre. / Elle est allée à la gare.',
+    authored: true,
+    words: [
+      { fr: 'j’ai mangé', en: 'I ate / I have eaten', note: 'passé composé (avoir)' },
+      { fr: 'j’ai fini', en: 'I finished / I have finished' },
+      { fr: 'il est allé', en: 'he went', note: 'passé composé (être)' },
+      { fr: 'elle est allée', en: 'she went' },
       { fr: 'je vais manger', en: 'I’m going to eat', note: 'futur proche' },
       { fr: 'je viens de finir', en: 'I’ve just finished', note: 'passé récent' },
-      // Reflexive routine verbs
-      { fr: 'se lever', en: 'to get up' }, { fr: 'se réveiller', en: 'to wake up' },
-      { fr: 'se coucher', en: 'to go to bed' }, { fr: 's’habiller', en: 'to get dressed' },
-      // More verbs
-      { fr: 'passer', en: 'to pass / spend (time)' }, { fr: 'rencontrer', en: 'to meet' },
-      { fr: 'oublier', en: 'to forget' }, { fr: 'commencer', en: 'to begin' },
-      { fr: 'continuer', en: 'to continue' }, { fr: 'terminer', en: 'to finish' },
-      { fr: 'revenir', en: 'to come back' }, { fr: 'rester', en: 'to stay' },
-      { fr: 'ouvrir', en: 'to open' }, { fr: 'fermer', en: 'to close' },
-      // Object pronouns (common)
-      { fr: 'le / la / les', en: 'it / them (object)' }, { fr: 'lui', en: 'to him / her' },
-      // Time & sequence markers
-      { fr: 'hier', en: 'yesterday' }, { fr: 'demain', en: 'tomorrow' },
-      { fr: 'avant', en: 'before' }, { fr: 'après', en: 'after' },
-      { fr: 'pendant', en: 'during' }, { fr: 'depuis', en: 'since / for' },
-      { fr: 'd’abord', en: 'first' }, { fr: 'ensuite', en: 'then / next' },
-      { fr: 'enfin', en: 'finally' }, { fr: 'récemment', en: 'recently' },
-      // Relatives & connectors
-      { fr: 'qui', en: 'who / which' }, { fr: 'que', en: 'that / which' },
-      { fr: 'quand', en: 'when' }, { fr: 'pourtant', en: 'yet / however' },
-      // Experience nouns
-      { fr: 'le souvenir', en: 'memory' }, { fr: 'le projet', en: 'plan / project' },
-      { fr: 'l’expérience (f.)', en: 'experience' },
+      { fr: 'd’abord', en: 'first' },
+      { fr: 'ensuite', en: 'then / next' },
+      { fr: 'enfin', en: 'finally' },
+      { fr: 'avant', en: 'before' },
+      { fr: 'après', en: 'after' },
+      { fr: 'pendant', en: 'during' },
     ],
   },
   {
-    tier: 4, id: 'fr-core-4', cefr: 'A2 / B1',
+    tier: 13, id: 'fr-core-13', cefr: 'A2',
+    title: 'Routines',
+    outcome: 'Describe your day with reflexive and common action verbs.',
+    example: 'Je me lève. / Je dois fermer la porte.',
+    authored: true,
+    words: [
+      { fr: 'se lever', en: 'to get up' },
+      { fr: 'se réveiller', en: 'to wake up' },
+      { fr: 'se coucher', en: 'to go to bed' },
+      { fr: 's’habiller', en: 'to get dressed' },
+      { fr: 'je me lève', en: 'I get up' },
+      { fr: 'commencer', en: 'to begin / to start' },
+      { fr: 'terminer', en: 'to finish / to end' },
+      { fr: 'continuer', en: 'to continue' },
+      { fr: 'oublier', en: 'to forget' },
+      { fr: 'rencontrer', en: 'to meet' },
+      { fr: 'ouvrir', en: 'to open' },
+      { fr: 'fermer', en: 'to close' },
+    ],
+  },
+  {
+    tier: 14, id: 'fr-core-14', cefr: 'A2',
+    title: 'Linking ideas',
+    outcome: 'Replace nouns with pronouns and link sentences.',
+    example: 'Je le prends. / C’est le livre que je veux.',
+    authored: true,
+    words: [
+      { fr: 'le', en: 'him / it (object)' },
+      { fr: 'la', en: 'her / it (object)' },
+      { fr: 'les', en: 'them (object)' },
+      { fr: 'lui', en: 'to him / to her' },
+      { fr: 'qui', en: 'who / which (relative)' },
+      { fr: 'que', en: 'that / which (relative)' },
+      { fr: 'pourtant', en: 'yet / however' },
+      { fr: 'récemment', en: 'recently' },
+      { fr: 'depuis', en: 'since / for' },
+      { fr: 'le souvenir', en: 'memory / souvenir' },
+      { fr: 'le projet', en: 'plan / project' },
+      { fr: 'l’expérience', en: 'experience (f.)' },
+    ],
+  },
+  {
+    tier: 15, id: 'fr-core-15', cefr: 'A2 / B1',
     title: 'Flexible sentences & linking ideas',
     outcome: 'Compare, explain reasons, use pronouns and conditionals.',
     example: 'C’est le meilleur choix parce qu’il est pratique.',
@@ -244,7 +389,7 @@ export const CORE_TIERS: CoreTierDef[] = [
     ],
   },
   {
-    tier: 5, id: 'fr-core-5', cefr: 'B1',
+    tier: 16, id: 'fr-core-16', cefr: 'B1',
     title: 'Connected discourse & opinions',
     outcome: 'Narrate, give opinions, hypothesise and justify.',
     example: 'À mon avis, cette solution est plus efficace.',
@@ -258,7 +403,7 @@ export const CORE_TIERS: CoreTierDef[] = [
     ],
   },
   {
-    tier: 6, id: 'fr-core-6', cefr: 'B1 / B2',
+    tier: 17, id: 'fr-core-17', cefr: 'B1 / B2',
     title: 'Precision, nuance & argument',
     outcome: 'Qualify claims, structure arguments, discuss abstractions.',
     example: 'Bien que cette technologie présente des avantages…',
@@ -273,9 +418,39 @@ export const CORE_TIERS: CoreTierDef[] = [
   },
 ];
 
+/** Config: tiers + the distinct-themes-per-tier threshold (brief §6.1). */
+export const TREE_CONFIG = {
+  coreTiers: CORE_TIERS.length,
+  /** Distinct theme milestones at tier N needed to unlock Core tier N+1. */
+  themesToAdvance: 3,
+};
+
+/**
+ * Stable deck-level layout. Every Core tier and every theme tier owns a FIXED
+ * level number, so adding content later (more Core tiers, theme L4+) never
+ * shifts existing levels — progress is stored per level number.
+ *   Core tier t           → level t                       (t = 1..coreSlots)
+ *   Theme #i (0-based), t → level coreSlots + i*themeSlots + t
+ * Slots without authored content are registered as a "—" placeholder level.
+ */
+export const TREE_LAYOUT = {
+  coreSlots: 20,
+  themeSlots: 20,
+};
+
+/** Deck level of a Core tier (1-based). */
+export function coreLevelOf(tier: number): number {
+  return tier;
+}
+
+/** Deck level of a theme tier (theme index in THEME_DEFS, tier 1-based). */
+export function themeLevelOf(themeIndex: number, tier: number): number {
+  return TREE_LAYOUT.coreSlots + themeIndex * TREE_LAYOUT.themeSlots + tier;
+}
+
 // ───────────────────────────────────────────────────────────────────────────
-// THEME TIERS — ~10 L1 topic words per theme (brief §5.2). Higher tiers to be
-// authored later; L1 is the playable milestone for each theme.
+// THEME TIERS — ~10 topic words per theme tier (brief §5.2). Theme tier N is
+// meant to be practised with Core tiers 1..N.
 // ───────────────────────────────────────────────────────────────────────────
 
 export const THEME_DEFS: ThemeDef2[] = [
@@ -284,13 +459,13 @@ export const THEME_DEFS: ThemeDef2[] = [
     tiers: [
       [
         { fr: 'le café', en: 'coffee' }, { fr: 'le thé', en: 'tea' },
-        { fr: 'l’eau (f.)', en: 'water' }, { fr: 'le pain', en: 'bread' },
+        { fr: 'l’eau', en: 'water (f.)' }, { fr: 'le pain', en: 'bread' },
         { fr: 'la pomme', en: 'apple' }, { fr: 'le fromage', en: 'cheese' },
         { fr: 'le repas', en: 'meal' }, { fr: 'le restaurant', en: 'restaurant' },
         { fr: 'manger', en: 'to eat' }, { fr: 'boire', en: 'to drink' },
       ],
       [ // L2 — quantities, ingredients, preferences, menu, prices
-        { fr: 'le menu', en: 'menu' }, { fr: 'l’addition (f.)', en: 'the bill' },
+        { fr: 'le menu', en: 'menu' }, { fr: 'l’addition', en: 'bill (f.)' },
         { fr: 'le légume', en: 'vegetable' }, { fr: 'la viande', en: 'meat' },
         { fr: 'le poisson', en: 'fish' }, { fr: 'le dessert', en: 'dessert' },
         { fr: 'le sucre', en: 'sugar' }, { fr: 'le sel', en: 'salt' },
@@ -309,21 +484,21 @@ export const THEME_DEFS: ThemeDef2[] = [
     id: 'travel', nameKey: 'tree.theme.travel', emoji: '✈️', hue: 350,
     tiers: [
       [
-        { fr: 'la gare', en: 'train station' }, { fr: 'l’aéroport (m.)', en: 'airport' },
+        { fr: 'la gare', en: 'train station' }, { fr: 'l’aéroport', en: 'airport (m.)' },
         { fr: 'le train', en: 'train' }, { fr: 'le billet', en: 'ticket' },
-        { fr: 'l’hôtel (m.)', en: 'hotel' }, { fr: 'la valise', en: 'suitcase' },
+        { fr: 'l’hôtel', en: 'hotel (m.)' }, { fr: 'la valise', en: 'suitcase' },
         { fr: 'le voyage', en: 'trip / journey' }, { fr: 'la route', en: 'road / way' },
         { fr: 'voyager', en: 'to travel' }, { fr: 'partir', en: 'to leave / depart' },
       ],
       [ // L2 — booking, prices, times, luggage, help
-        { fr: 'le vol', en: 'flight' }, { fr: 'le bagage', en: 'luggage' },
+        { fr: 'le vol', en: 'flight' }, { fr: 'le bagage', en: 'bag / luggage' },
         { fr: 'la chambre', en: 'room' }, { fr: 'la clé', en: 'key' },
-        { fr: 'l’horaire (m.)', en: 'timetable' }, { fr: 'le quai', en: 'platform' },
+        { fr: 'l’horaire', en: 'timetable (m.)' }, { fr: 'le quai', en: 'platform' },
         { fr: 'le plan', en: 'map' }, { fr: 'à gauche', en: 'on the left' },
         { fr: 'à droite', en: 'on the right' }, { fr: 'tout droit', en: 'straight ahead' },
       ],
       [ // L3 — past trips, delays, experiences, future itinerary
-        { fr: 'les vacances (f.)', en: 'holidays / vacation' }, { fr: 'le retard', en: 'delay' },
+        { fr: 'les vacances', en: 'holidays / vacation (f. pl.)' }, { fr: 'le retard', en: 'delay' },
         { fr: 'la frontière', en: 'border' }, { fr: 'le passeport', en: 'passport' },
         { fr: 'la douane', en: 'customs' }, { fr: 'le séjour', en: 'stay' },
         { fr: 'visiter', en: 'to visit' }, { fr: 'arriver', en: 'to arrive' },
@@ -335,16 +510,16 @@ export const THEME_DEFS: ThemeDef2[] = [
     id: 'relationships', nameKey: 'tree.theme.relationships', emoji: '❤️', hue: 275,
     tiers: [
       [
-        { fr: 'la famille', en: 'family' }, { fr: 'l’ami (m.)', en: 'friend (m.)' },
-        { fr: 'l’amie (f.)', en: 'friend (f.)' }, { fr: 'la mère', en: 'mother' },
+        { fr: 'la famille', en: 'family' }, { fr: 'le fils', en: 'son' },
+        { fr: 'la fille', en: 'daughter' }, { fr: 'la mère', en: 'mother' },
         { fr: 'le père', en: 'father' }, { fr: 'le frère', en: 'brother' },
-        { fr: 'la sœur', en: 'sister' }, { fr: 'l’enfant', en: 'child' },
+        { fr: 'la sœur', en: 'sister' }, { fr: 'l’enfant', en: 'child (m./f.)' },
         { fr: 'aimer', en: 'to love / like' }, { fr: 'rencontrer', en: 'to meet' },
       ],
       [ // L2 — personality, invitations, feelings, social
         { fr: 'le voisin', en: 'neighbour' }, { fr: 'le collègue', en: 'colleague' },
         { fr: 'gentil', en: 'kind / nice' }, { fr: 'sympa', en: 'friendly (informal)' },
-        { fr: 'timide', en: 'shy' }, { fr: 'l’invitation (f.)', en: 'invitation' },
+        { fr: 'timide', en: 'shy' }, { fr: 'l’invitation', en: 'invitation (f.)' },
         { fr: 'inviter', en: 'to invite' }, { fr: 'sortir', en: 'to go out' },
         { fr: 'heureux', en: 'happy' }, { fr: 'triste', en: 'sad' },
       ],
@@ -361,7 +536,7 @@ export const THEME_DEFS: ThemeDef2[] = [
     id: 'home', nameKey: 'tree.theme.home', emoji: '🏠', hue: 190,
     tiers: [
       [
-        { fr: 'la maison', en: 'house' }, { fr: 'l’appartement (m.)', en: 'apartment' },
+        { fr: 'la maison', en: 'house' }, { fr: 'l’appartement', en: 'apartment (m.)' },
         { fr: 'la chambre', en: 'bedroom' }, { fr: 'la cuisine', en: 'kitchen' },
         { fr: 'la table', en: 'table' }, { fr: 'la chaise', en: 'chair' },
         { fr: 'le lit', en: 'bed' }, { fr: 'la porte', en: 'door' },
@@ -376,10 +551,10 @@ export const THEME_DEFS: ThemeDef2[] = [
       ],
       [ // L3 — moving house, past arrangements, repairs, future plans
         { fr: 'le quartier', en: 'neighbourhood' }, { fr: 'le voisin', en: 'neighbour' },
-        { fr: 'l’immeuble (m.)', en: 'building' }, { fr: 'l’étage (m.)', en: 'floor / storey' },
+        { fr: 'l’immeuble', en: 'building (m.)' }, { fr: 'l’étage', en: 'floor / storey (m.)' },
         { fr: 'déménager', en: 'to move house' }, { fr: 'louer', en: 'to rent' },
         { fr: 'réparer', en: 'to repair' }, { fr: 'construire', en: 'to build' },
-        { fr: 'l’ascenseur (m.)', en: 'lift / elevator' }, { fr: 'le propriétaire', en: 'owner / landlord' },
+        { fr: 'l’ascenseur', en: 'lift / elevator (m.)' }, { fr: 'le propriétaire', en: 'owner / landlord' },
       ],
     ],
   },
@@ -394,15 +569,15 @@ export const THEME_DEFS: ThemeDef2[] = [
         { fr: 'avoir mal à', en: 'to have pain in' }, { fr: 'se sentir', en: 'to feel' },
       ],
       [ // L2 — appointments, treatments, frequency, needs
-        { fr: 'le rendez-vous', en: 'appointment' }, { fr: 'l’ordonnance (f.)', en: 'prescription' },
-        { fr: 'la fièvre', en: 'fever' }, { fr: 'le rhume', en: 'a cold' },
+        { fr: 'le rendez-vous', en: 'appointment' }, { fr: 'l’ordonnance', en: 'prescription (f.)' },
+        { fr: 'la fièvre', en: 'fever' }, { fr: 'le rhume', en: 'cold (illness)' },
         { fr: 'le dos', en: 'back' }, { fr: 'la gorge', en: 'throat' },
         { fr: 'la dent', en: 'tooth' }, { fr: 'guérir', en: 'to heal / recover' },
         { fr: 'se reposer', en: 'to rest' }, { fr: 'fatigué', en: 'tired' },
       ],
       [ // L3 — past illness/injury, symptoms over time, visits
-        { fr: 'l’hôpital (m.)', en: 'hospital' }, { fr: 'l’infirmier (m.)', en: 'nurse' },
-        { fr: 'la blessure', en: 'injury' }, { fr: 'l’accident (m.)', en: 'accident' },
+        { fr: 'l’hôpital', en: 'hospital (m.)' }, { fr: 'l’infirmier', en: 'nurse (m.)' },
+        { fr: 'la blessure', en: 'injury' }, { fr: 'l’accident', en: 'accident (m.)' },
         { fr: 'tomber', en: 'to fall' }, { fr: 'se blesser', en: 'to get injured' },
         { fr: 'tousser', en: 'to cough' }, { fr: 'vacciner', en: 'to vaccinate' },
         { fr: 'grave', en: 'serious' }, { fr: 'le symptôme', en: 'symptom' },
@@ -413,21 +588,22 @@ export const THEME_DEFS: ThemeDef2[] = [
     id: 'education', nameKey: 'tree.theme.education', emoji: '🎓', hue: 215,
     tiers: [
       [
-        { fr: 'l’école (f.)', en: 'school' }, { fr: 'le cours', en: 'class / course' },
-        { fr: 'le professeur', en: 'teacher' }, { fr: 'l’étudiant (m.)', en: 'student' },
-        { fr: 'le livre', en: 'book' }, { fr: 'l’examen (m.)', en: 'exam' },
-        { fr: 'la leçon', en: 'lesson' }, { fr: 'la question', en: 'question' },
+        { fr: 'l’école', en: 'school (f.)' }, { fr: 'le cours', en: 'class / course' },
+        { fr: 'le professeur', en: 'teacher' }, { fr: 'l’élève', en: 'pupil (m./f.)' },
+        { fr: 'l’étudiant', en: 'student (m.)' }, { fr: 'le livre', en: 'book' },
+        { fr: 'l’examen', en: 'exam (m.)' }, { fr: 'la leçon', en: 'lesson' },
+        { fr: 'la question', en: 'question' },
         { fr: 'étudier', en: 'to study' }, { fr: 'apprendre', en: 'to learn' },
       ],
       [ // L2 — timetable, exams, skills, courses, asking for help
         { fr: 'le cahier', en: 'notebook' }, { fr: 'le stylo', en: 'pen' },
-        { fr: 'la note', en: 'grade / mark' }, { fr: 'le devoir', en: 'homework' },
+        { fr: 'la note', en: 'grade / mark' }, { fr: 'le devoir', en: 'assignment / homework' },
         { fr: 'la matière', en: 'subject' }, { fr: 'la bibliothèque', en: 'library' },
         { fr: 'expliquer', en: 'to explain' }, { fr: 'comprendre', en: 'to understand' },
         { fr: 'réviser', en: 'to revise' }, { fr: 'réussir', en: 'to succeed / pass' },
       ],
       [ // L3 — past studies, learning experiences, future goals
-        { fr: 'l’université (f.)', en: 'university' }, { fr: 'le diplôme', en: 'diploma / degree' },
+        { fr: 'l’université', en: 'university (f.)' }, { fr: 'le diplôme', en: 'diploma / degree' },
         { fr: 'la rentrée', en: 'back-to-school' }, { fr: 'le résultat', en: 'result' },
         { fr: 's’inscrire', en: 'to enrol' }, { fr: 'passer un examen', en: 'to take an exam' },
         { fr: 'échouer', en: 'to fail' }, { fr: 'obtenir', en: 'to obtain' },
@@ -439,25 +615,25 @@ export const THEME_DEFS: ThemeDef2[] = [
     id: 'work', nameKey: 'tree.theme.work', emoji: '💼', hue: 255,
     tiers: [
       [
-        { fr: 'le travail', en: 'work / job' }, { fr: 'le bureau', en: 'office / desk' },
+        { fr: 'le travail', en: 'job / work' }, { fr: 'le bureau', en: 'office / desk' },
         { fr: 'le collègue', en: 'colleague' }, { fr: 'la réunion', en: 'meeting' },
-        { fr: 'le patron', en: 'boss' }, { fr: 'l’entreprise (f.)', en: 'company' },
-        { fr: 'le projet', en: 'project' }, { fr: 'l’argent (m.)', en: 'money' },
+        { fr: 'le patron', en: 'boss' }, { fr: 'l’entreprise', en: 'company (f.)' },
+        { fr: 'le projet', en: 'project' }, { fr: 'l’argent', en: 'money (m.)' },
         { fr: 'travailler', en: 'to work' }, { fr: 'gagner', en: 'to earn / win' },
       ],
       [ // L2 — schedule, responsibilities, simple requests, emails
         { fr: 'le client', en: 'client / customer' }, { fr: 'le salaire', en: 'salary' },
         { fr: 'le contrat', en: 'contract' }, { fr: 'la tâche', en: 'task' },
-        { fr: 'le courriel', en: 'email' }, { fr: 'l’horaire (m.)', en: 'schedule' },
+        { fr: 'le courriel', en: 'email' }, { fr: 'l’horaire', en: 'schedule (m.)' },
         { fr: 'envoyer', en: 'to send' }, { fr: 'organiser', en: 'to organise' },
         { fr: 'occupé', en: 'busy' }, { fr: 'ensemble', en: 'together' },
       ],
       [ // L3 — work experience, projects, achievements, future plans
-        { fr: 'le métier', en: 'profession / trade' }, { fr: 'l’emploi (m.)', en: 'job / employment' },
-        { fr: 'l’entretien (m.)', en: 'interview' }, { fr: 'le chômage', en: 'unemployment' },
+        { fr: 'le métier', en: 'profession / trade' }, { fr: 'l’emploi', en: 'job / employment (m.)' },
+        { fr: 'l’entretien', en: 'interview (m.)' }, { fr: 'le chômage', en: 'unemployment' },
         { fr: 'embaucher', en: 'to hire' }, { fr: 'démissionner', en: 'to resign' },
         { fr: 'diriger', en: 'to manage / lead' }, { fr: 'réussir', en: 'to succeed' },
-        { fr: 'l’objectif (m.)', en: 'goal / objective' }, { fr: 'la promotion', en: 'promotion' },
+        { fr: 'l’objectif', en: 'goal / objective (m.)' }, { fr: 'la promotion', en: 'promotion' },
       ],
     ],
   },
@@ -466,8 +642,8 @@ export const THEME_DEFS: ThemeDef2[] = [
     tiers: [
       [
         { fr: 'le magasin', en: 'shop / store' }, { fr: 'le prix', en: 'price' },
-        { fr: 'les vêtements (m.)', en: 'clothes' }, { fr: 'la chemise', en: 'shirt' },
-        { fr: 'le pantalon', en: 'trousers' }, { fr: 'la chaussure', en: 'shoe' },
+        { fr: 'les vêtements', en: 'clothes (m. pl.)' }, { fr: 'la chemise', en: 'shirt' },
+        { fr: 'le pantalon', en: 'pair of trousers' }, { fr: 'la chaussure', en: 'shoe' },
         { fr: 'la taille', en: 'size' }, { fr: 'la carte', en: 'card' },
         { fr: 'acheter', en: 'to buy' }, { fr: 'payer', en: 'to pay' },
       ],
@@ -479,7 +655,7 @@ export const THEME_DEFS: ThemeDef2[] = [
         { fr: 'essayer', en: 'to try on' }, { fr: 'choisir', en: 'to choose' },
       ],
       [ // L3 — past purchases, returns, comparisons, future plans
-        { fr: 'le marché', en: 'market' }, { fr: 'les soldes (m.)', en: 'the sales' },
+        { fr: 'le marché', en: 'market' }, { fr: 'les soldes', en: 'sales (m. pl.)' },
         { fr: 'la réduction', en: 'discount' }, { fr: 'la vitrine', en: 'shop window' },
         { fr: 'rembourser', en: 'to refund' }, { fr: 'échanger', en: 'to exchange' },
         { fr: 'dépenser', en: 'to spend' }, { fr: 'coûter cher', en: 'to be expensive' },
@@ -493,20 +669,20 @@ export const THEME_DEFS: ThemeDef2[] = [
       [
         { fr: 'la musique', en: 'music' }, { fr: 'le film', en: 'film / movie' },
         { fr: 'le livre', en: 'book' }, { fr: 'le concert', en: 'concert' },
-        { fr: 'le théâtre', en: 'theatre' }, { fr: 'l’art (m.)', en: 'art' },
+        { fr: 'le théâtre', en: 'theatre' }, { fr: 'l’art', en: 'art (m.)' },
         { fr: 'le musée', en: 'museum' }, { fr: 'la fête', en: 'party / festival' },
         { fr: 'écouter', en: 'to listen' }, { fr: 'regarder', en: 'to watch' },
       ],
       [ // L2 — describe a work/event, make plans and recommendations
-        { fr: 'la chanson', en: 'song' }, { fr: 'l’acteur (m.)', en: 'actor' },
+        { fr: 'la chanson', en: 'song' }, { fr: 'l’acteur', en: 'actor (m.)' },
         { fr: 'le roman', en: 'novel' }, { fr: 'le billet', en: 'ticket' },
         { fr: 'la scène', en: 'stage / scene' }, { fr: 'le spectacle', en: 'show' },
         { fr: 'jouer', en: 'to play / act' }, { fr: 'chanter', en: 'to sing' },
         { fr: 'danser', en: 'to dance' }, { fr: 'préférer', en: 'to prefer' },
       ],
       [ // L3 — a performance/exhibition experienced, compare genres
-        { fr: 'l’exposition (f.)', en: 'exhibition' }, { fr: 'le festival', en: 'festival' },
-        { fr: 'l’artiste', en: 'artist' }, { fr: 'le public', en: 'audience' },
+        { fr: 'l’exposition', en: 'exhibition (f.)' }, { fr: 'le festival', en: 'festival' },
+        { fr: 'l’artiste', en: 'artist (m./f.)' }, { fr: 'le public', en: 'audience' },
         { fr: 'le tableau', en: 'painting' }, { fr: 'la critique', en: 'review' },
         { fr: 'applaudir', en: 'to applaud' }, { fr: 'assister à', en: 'to attend' },
         { fr: 'célèbre', en: 'famous' }, { fr: 'ennuyeux', en: 'boring' },
@@ -517,8 +693,8 @@ export const THEME_DEFS: ThemeDef2[] = [
     id: 'nature', nameKey: 'tree.theme.nature', emoji: '🌳', hue: 100,
     tiers: [
       [
-        { fr: 'la nature', en: 'nature' }, { fr: 'l’arbre (m.)', en: 'tree' },
-        { fr: 'la fleur', en: 'flower' }, { fr: 'l’animal (m.)', en: 'animal' },
+        { fr: 'la nature', en: 'nature' }, { fr: 'l’arbre', en: 'tree (m.)' },
+        { fr: 'la fleur', en: 'flower' }, { fr: 'l’animal', en: 'animal (m.)' },
         { fr: 'le chien', en: 'dog' }, { fr: 'le chat', en: 'cat' },
         { fr: 'le temps', en: 'weather / time' }, { fr: 'la pluie', en: 'rain' },
         { fr: 'le soleil', en: 'sun' }, { fr: 'il fait', en: 'it is (weather)' },
@@ -532,10 +708,10 @@ export const THEME_DEFS: ThemeDef2[] = [
       ],
       [ // L3 — an outdoor experience, weather events, changes
         { fr: 'la rivière', en: 'river' }, { fr: 'la plage', en: 'beach' },
-        { fr: 'l’oiseau (m.)', en: 'bird' }, { fr: 'la saison', en: 'season' },
-        { fr: 'l’orage (m.)', en: 'storm' }, { fr: 'la température', en: 'temperature' },
+        { fr: 'l’oiseau', en: 'bird (m.)' }, { fr: 'la saison', en: 'season' },
+        { fr: 'l’orage', en: 'storm (m.)' }, { fr: 'la température', en: 'temperature' },
         { fr: 'protéger', en: 'to protect' }, { fr: 'polluer', en: 'to pollute' },
-        { fr: 'le déchet', en: 'waste / rubbish' }, { fr: 'le climat', en: 'climate' },
+        { fr: 'le déchet', en: 'piece of rubbish / waste' }, { fr: 'le climat', en: 'climate' },
       ],
     ],
   },
@@ -543,9 +719,9 @@ export const THEME_DEFS: ThemeDef2[] = [
     id: 'science', nameKey: 'tree.theme.science', emoji: '🔬', hue: 85,
     tiers: [
       [
-        { fr: 'l’ordinateur (m.)', en: 'computer' }, { fr: 'le téléphone', en: 'phone' },
-        { fr: 'l’écran (m.)', en: 'screen' }, { fr: 'internet (m.)', en: 'internet' },
-        { fr: 'l’application (f.)', en: 'app' }, { fr: 'le message', en: 'message' },
+        { fr: 'l’ordinateur', en: 'computer (m.)' }, { fr: 'le téléphone', en: 'phone' },
+        { fr: 'l’écran', en: 'screen (m.)' }, { fr: 'internet', en: 'internet (m.)' },
+        { fr: 'l’application', en: 'app (f.)' }, { fr: 'le message', en: 'message' },
         { fr: 'la science', en: 'science' }, { fr: 'la technologie', en: 'technology' },
         { fr: 'utiliser', en: 'to use' }, { fr: 'envoyer', en: 'to send' },
       ],
@@ -557,9 +733,9 @@ export const THEME_DEFS: ThemeDef2[] = [
         { fr: 'allumer', en: 'to turn on' }, { fr: 'éteindre', en: 'to turn off' },
       ],
       [ // L3 — a technical issue, past experience, planned solution
-        { fr: 'le logiciel', en: 'software' }, { fr: 'la panne', en: 'breakdown / outage' },
-        { fr: 'la mise à jour', en: 'update' }, { fr: 'la données', en: 'data' },
-        { fr: 'le robot', en: 'robot' }, { fr: 'l’intelligence artificielle (f.)', en: 'AI' },
+        { fr: 'le logiciel', en: 'program / software' }, { fr: 'la panne', en: 'breakdown / outage' },
+        { fr: 'la mise à jour', en: 'update' }, { fr: 'les données', en: 'data (f. pl.)' },
+        { fr: 'le robot', en: 'robot' }, { fr: 'l’intelligence artificielle', en: 'AI (f.)' },
         { fr: 'réparer', en: 'to fix' }, { fr: 'sauvegarder', en: 'to save / back up' },
         { fr: 'connecter', en: 'to connect' }, { fr: 'inventer', en: 'to invent' },
       ],

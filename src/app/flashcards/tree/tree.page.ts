@@ -13,11 +13,13 @@
  *  - A theme can advance at most to the Core's completed tier; within a theme
  *    level the 5 modes unlock in sequence.
  *
- * Progress is per-mode on the synthetic Tree deck (deck id "tree-<lang>"),
- * independent from the real Journey.
+ * Progress is per-mode on the synthetic Tree deck (deck id "tree-v2-<lang>"),
+ * independent from the real Journey. Every Core/theme tier owns a FIXED deck
+ * level (TREE_LAYOUT), so authoring more tiers never shifts saved progress.
  *
- * NOTE: Core L1–L3 and all theme L1–L3 are authored; Core L4–L6 are "coming
- * soon".
+ * NOTE: Core tiers 1–14 and all theme L1–L3 are authored; the last Core tiers
+ * are "coming soon". After Core 3 the Core continues on its own until theme
+ * L4+ content exists.
  *
  * @module app/flashcards/tree
  */
@@ -34,7 +36,9 @@ import { I18nAngularService } from '../../services/i18n.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { JOURNEY_TREE_FROM } from '../journey/journey-back';
 import { JOURNEY_PASS_SCORE } from '../journey/journey-model';
-import { CORE_TIERS, THEME_DEFS, TREE_CONFIG, type CoreWord } from './tree-curriculum';
+import {
+  CORE_TIERS, THEME_DEFS, TREE_CONFIG, TREE_LAYOUT, coreLevelOf, themeLevelOf, type CoreWord,
+} from './tree-curriculum';
 import { TREE_MODES } from './tree-modes';
 import {
   computeProgression, coreMilestoneId, themeMilestoneId, type ProgressionState,
@@ -113,7 +117,15 @@ export class TreePage implements OnInit, OnDestroy {
   // Hub (Core)
   coreDoneLevel = 0;
   coreAvailTier = 1;
-  get coreState(): NodeState { return this.coreDoneLevel >= CORE_TIERS.length ? 'done' : 'active'; }
+  /** Done once every AUTHORED Core tier is complete ("coming soon" tiers don't count). */
+  get coreState(): NodeState {
+    const authored = CORE_TIERS.filter(c => c.authored).length;
+    return this.coreDoneLevel >= authored ? 'done' : 'active';
+  }
+
+  /** Deck id prefix. "tree-v2" = the stable-slot layout with the small Core
+   *  tiers; the old "tree-<lang>" progress used a different level layout. */
+  private static readonly DECK_PREFIX = 'tree-v2';
 
   /** Currently expanded node id ('core' or a theme id), null = none. */
   expandedId: string | null = null;
@@ -258,17 +270,24 @@ export class TreePage implements OnInit, OnDestroy {
     this.availableLanguages = this.flashcards.getAvailableLanguages().map(l => ({ ...l, flagUrl: this.flagUrl(l.code) }));
     const lang = this.settings.learningLanguage();
 
-    // Deterministic skill→level order: Core 1..6, then each theme's tiers.
-    const order: Array<{ skill: string } & ({ kind: 'core'; tier: number } | { kind: 'theme'; id: string; tier: number })> = [];
-    for (const ct of CORE_TIERS) order.push({ skill: `Core ${ct.tier}`, kind: 'core', tier: ct.tier });
-    for (const th of THEME_DEFS) {
-      th.tiers.forEach((_w, ti) => order.push({ skill: `${th.id}:${ti + 1}`, kind: 'theme', id: th.id, tier: ti + 1 }));
+    // Stable skill→level layout (TREE_LAYOUT): Core tier t → level t; theme #i
+    // tier t → coreSlots + i*themeSlots + t. Slots without authored content
+    // are registered as a "—" placeholder so the numbering never shifts.
+    // Groups are pushed in level order, so group index + 1 === level.
+    const order: Array<{ skill: string; level: number } & ({ kind: 'core'; tier: number } | { kind: 'theme'; id: string; tier: number })> = [];
+    for (let t = 1; t <= TREE_LAYOUT.coreSlots; t++) {
+      order.push({ skill: `Core ${t}`, level: coreLevelOf(t), kind: 'core', tier: t });
     }
-    this.skillLevels = new Map(order.map((o, i) => [o.skill, i + 1]));
+    THEME_DEFS.forEach((th, i) => {
+      for (let t = 1; t <= TREE_LAYOUT.themeSlots; t++) {
+        order.push({ skill: `${th.id}:${t}`, level: themeLevelOf(i, t), kind: 'theme', id: th.id, tier: t });
+      }
+    });
+    this.skillLevels = new Map(order.map(o => [o.skill, o.level]));
 
     // Register the deck (Core-mixed content for theme tiers).
     const groups = order.map(o => ({ skill: o.skill, words: this.wordsForSkill(o, true).map(w => ({ fr: w.fr, en: w.en })) }));
-    this.deckId = this.flashcards.registerTreeDeck(lang, groups);
+    this.deckId = this.flashcards.registerTreeDeck(lang, groups, TreePage.DECK_PREFIX);
 
     // Read per-MODE pass state for every level.
     const progress = await this.flashcards.getDeckLevelProgressMap(this.deckId);
@@ -373,7 +392,9 @@ export class TreePage implements OnInit, OnDestroy {
   openCore(): void {
     const tier = this.openTierFor(this.coreDoneLevel, this.coreAvailTier);
     if (tier === 0) return;
-    const ct = CORE_TIERS.find(c => c.tier === tier)!;
+    const ct = CORE_TIERS.find(c => c.tier === tier);
+    const level = this.skillLevels.get(`Core ${tier}`);
+    if (!ct || !level) return;
     this.expandedId = 'core';
     this.expandedTitle = this.t('tree.hubTitle');
     this.expandedEmoji = '📖';
@@ -381,7 +402,7 @@ export class TreePage implements OnInit, OnDestroy {
     this.expandedCenterX = TreePage.VIEW / 2;
     this.expandedCenterY = TreePage.VIEW / 2;
     this.expandedWords = ct.authored ? ct.words : [];
-    this.buildModeNodes(this.skillLevels.get(`Core ${tier}`)!, ct.authored);
+    this.buildModeNodes(level, ct.authored);
     this.cdr.detectChanges();
     this.autoPanToExpanded();
   }
@@ -497,9 +518,41 @@ export class TreePage implements OnInit, OnDestroy {
     const level = this.skillLevels.get(skill);
     if (!level) return;
     const def = TREE_MODES[m.modeIndex];
-    void this.navCtrl.navigateForward([def.route, this.deckId], {
-      queryParams: { level, mode: def.mode, from: JOURNEY_TREE_FROM },
-    });
+    const queryParams: Record<string, string | number> = { level, mode: def.mode, from: JOURNEY_TREE_FROM };
+    // The Builder combines this level's words with what the learner already
+    // knows. In the fixed-slot layout "earlier deck levels" are NOT earlier
+    // lessons, so tell it exactly which levels to draw from.
+    if (def.id === 'builder') {
+      const pool = this.builderPoolLevels();
+      if (pool.length) queryParams['pool'] = pool.join(',');
+    }
+    void this.navCtrl.navigateForward([def.route, this.deckId], { queryParams });
+  }
+
+  /**
+   * Levels the Builder may combine with the expanded tier:
+   *  - theme tier T → Core tiers 1..T + the same theme's tiers 1..T-1;
+   *  - Core tier N  → Core tiers 1..N-1 + every COMPLETED theme tier ≤ N-1
+   *    (the nouns the learner has actually studied).
+   */
+  private builderPoolLevels(): number[] {
+    const tier = this.expandedTier;
+    const levels: number[] = [];
+    if (this.expandedId === 'core') {
+      for (let t = 1; t < tier; t++) levels.push(coreLevelOf(t));
+      THEME_DEFS.forEach((th, i) => {
+        for (let t = 1; t <= Math.min(tier - 1, th.tiers.length); t++) {
+          const lvl = themeLevelOf(i, t);
+          if (this.tierComplete(lvl)) levels.push(lvl);
+        }
+      });
+      return levels;
+    }
+    const i = THEME_DEFS.findIndex(th => th.id === this.expandedId);
+    if (i < 0) return levels;
+    for (let t = 1; t <= tier; t++) levels.push(coreLevelOf(t));
+    for (let t = 1; t < tier; t++) levels.push(themeLevelOf(i, t));
+    return levels;
   }
 
   // ── Admin double-tap to complete the next available tier (all 5 modes) ──────

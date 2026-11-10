@@ -75,9 +75,11 @@ export function computeProgression(input: ProgressionInput): ProgressionState {
     const coreNdone = completed.has(coreMilestoneId(n));
     if (!coreNdone) break;
 
-    // How many themes even have tier-n content?
+    // How many themes even have tier-n content? When NONE do (the Core runs
+    // ahead of the authored theme tiers), the Core continues on its own —
+    // requiring a theme milestone that can't exist would dead-end the tree.
     const available = themeIds.filter(id => themeHasTier(id, n)).length;
-    const needed = Math.min(config.themesToAdvance, Math.max(1, available));
+    const needed = available === 0 ? 0 : Math.min(config.themesToAdvance, available);
     const done = distinctThemesCompletedAtTier(themeIds, n, completed);
     if (done < needed) break;
 

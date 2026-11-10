@@ -781,16 +781,20 @@ export class FlashcardService {
    * language, from the provided skill groups. Each group becomes a `skill` so
    * the existing skill-based level/exercise/progress engine works unchanged.
    *
-   * The deck id is `tree-<lang>` so its `journey-*` progress is fully separate
-   * from the real course deck — the Tree curriculum never collides with the
-   * Journey maps. Cards are keyed by a stable id derived from the skill +
-   * french text so progress survives across rebuilds. Returns the deck id.
+   * The deck id is `<idPrefix>-<lang>` (default "tree-<lang>"; the prefix must
+   * start with "tree" so the tree-deck rules apply) so its `journey-*` progress
+   * is fully separate from the real course deck — the Tree curriculum never
+   * collides with the Journey maps. A new prefix (e.g. "tree-v2") starts a
+   * fresh progress namespace when the level layout changes. Cards are keyed by
+   * a stable id derived from the group + word position so progress survives
+   * across rebuilds. Returns the deck id.
    */
   registerTreeDeck(
     languageCode: string,
     groups: { skill: string; words: { fr: string; en: string }[] }[],
+    idPrefix = 'tree',
   ): string {
-    const deckId = `tree-${languageCode}`;
+    const deckId = `${idPrefix}-${languageCode}`;
     const cards: Flashcard[] = [];
     groups.forEach((g, gi) => {
       g.words.forEach((w, wi) => {
@@ -839,6 +843,11 @@ export class FlashcardService {
     }
     this.invalidateDedupe(deckId);
     return deckId;
+  }
+
+  /** True for the synthetic Tree curriculum decks ("tree-<lang>", "tree-v2-<lang>"…). */
+  isTreeDeckId(deckId: string | null | undefined): boolean {
+    return !!deckId && deckId.startsWith('tree-');
   }
 
   /**
@@ -1393,6 +1402,17 @@ export class FlashcardService {
   }
 
   /**
+   * Curated English override for a card, if any. Tree decks are authored
+   * content with deliberate glosses ("the (m.)", "my (f.)"), so the curated
+   * fixes for scraped course data never apply to them.
+   */
+  private curatedTranslation(card: Flashcard): string | undefined {
+    if (this.isTreeDeckId(card.deckId)) return undefined;
+    const langCode = this.getDeck(card.deckId)?.languageCode ?? '';
+    return this.CURATED_TRANSLATIONS[langCode]?.[card.text.trim().toLowerCase()];
+  }
+
+  /**
    * Choose the best English translation to DISPLAY for a card.
    *
    *   1. Curated override wins (fixes words whose data is wrong/arbitrary).
@@ -1403,8 +1423,7 @@ export class FlashcardService {
    *   5. Else the shortest raw option.
    */
   bestTranslation(card: Flashcard): string {
-    const langCode = this.getDeck(card.deckId)?.languageCode ?? '';
-    const curated = this.CURATED_TRANSLATIONS[langCode]?.[card.text.trim().toLowerCase()];
+    const curated = this.curatedTranslation(card);
     if (curated) return curated;
 
     const all = (card.translations ?? []).map(s => s.trim()).filter(Boolean);
@@ -1445,8 +1464,7 @@ export class FlashcardService {
       out.push(s.trim());
     };
 
-    const langCode = this.getDeck(card.deckId)?.languageCode ?? '';
-    const curated = this.CURATED_TRANSLATIONS[langCode]?.[card.text.trim().toLowerCase()];
+    const curated = this.curatedTranslation(card);
     if (curated) add(curated);
 
     for (const t of card.translations ?? []) {
@@ -1922,7 +1940,7 @@ export class FlashcardService {
     // lose cards or collapse, shifting every level's index (the reported
     // "Travel opens Education" bug). For normal course decks we keep the global
     // de-dup that prevents a word reappearing in later levels.
-    const isTreeDeck = deckId.startsWith('tree-');
+    const isTreeDeck = this.isTreeDeckId(deckId);
 
     const seen = new Set<string>();
     const result = [...raw.values()]
@@ -2073,6 +2091,10 @@ export class FlashcardService {
   getMatchSessionCards(deckId: string, levelNumber: number): Flashcard[] {
     const levelCards = this.getLevelCards(deckId, levelNumber);
     if (levelNumber <= 1) return levelCards; // no earlier levels to review
+    // Tree decks: earlier deck levels are NOT "earlier lessons" (the layout
+    // reserves fixed slots: unlearned Core tiers, other themes, "—"
+    // placeholders), so Match plays only the level's own words.
+    if (this.isTreeDeckId(deckId)) return levelCards;
 
     const levelIds = new Set(levelCards.map(c => c.id));
 
@@ -2227,6 +2249,9 @@ export class FlashcardService {
   private getReviewPool(deckId: string, levelNumber: number): Flashcard[] {
     const deck = this.getDeck(deckId);
     if (!deck || levelNumber <= 1) return [];
+    // Tree decks: other levels are fixed curriculum slots (unlearned tiers,
+    // other themes, "—" placeholders), not earlier lessons — no review pool.
+    if (this.isTreeDeckId(deckId)) return [];
     const deduped = this.getDedupedCards(deckId);
     const levelIds = new Set(this.getLevelCards(deckId, levelNumber).map(c => c.id));
     // Candidate review = everything not in the current level.

@@ -22,6 +22,8 @@
  * @module core/phrase-builder
  */
 
+import { generateFrenchV2 } from './french-v2';
+
 /** Languages the builder knows closed-class vocabulary for. */
 export type BuilderLang = 'fr' | 'nl';
 
@@ -69,6 +71,23 @@ export interface GeneratedPhrase {
   blankIndex?: number;
   /** Grammatical category of the blanked token, for picking plausible options. */
   blankCategory?: WordCategory;
+  /**
+   * Suggested wrong chips for the word bank (v2 only): gender/agreement swaps
+   * and other nouns, chosen so they never form an alternative CORRECT answer.
+   */
+  distractors?: string[];
+}
+
+/** Options for `generatePhrases`. */
+export interface GenerateOptions {
+  /**
+   * 'v2' = the Tree-curriculum generator (french-v2.ts) for AUTHORED decks
+   * whose nouns carry their article/gender. Default 'legacy' keeps the
+   * original behaviour for the scraped course decks (Journey, Blanks).
+   */
+  engine?: 'legacy' | 'v2';
+  /** v2: non-zero seed shuffles the word order for variety between sessions. */
+  seed?: number;
 }
 
 /** A raw card the generator consumes (subset of the app's Flashcard). */
@@ -244,6 +263,37 @@ export function buildTokens(
   return out;
 }
 
+/**
+ * Tokens for the v2 (Tree) generator. Unlike `buildTokens` it keeps homographs
+ * with different meanings (the article "le" vs the object pronoun "le" =
+ * "him / it") — cards are keyed by French + English, not French alone — and a
+ * current-level card the learner already knows (same French + English in
+ * `earlier`, e.g. Core words mixed into a theme level) counts as review, so
+ * phrases anchor on the level's NEW words.
+ */
+export function buildTreeTokens(current: SourceCard[], earlier: SourceCard[]): BuilderToken[] {
+  const key = (c: SourceCard) => `${norm(c.text)}|${norm(c.translations?.[0] ?? '')}`;
+  const known = new Set(earlier.map(key));
+  const seen = new Set<string>();
+  const out: BuilderToken[] = [];
+  const add = (card: SourceCard, fromCurrent: boolean) => {
+    const k = key(card);
+    if (!norm(card.text) || norm(card.text) === '—' || seen.has(k)) return;
+    seen.add(k);
+    const { category, gender } = classifyCard(card, 'fr');
+    out.push({
+      text: card.text.trim(),
+      translation: card.translations?.[0] ?? card.text,
+      category,
+      gender,
+      fromCurrentChapter: fromCurrent,
+    });
+  };
+  for (const c of current) add(c, !known.has(key(c)));
+  for (const c of earlier) add(c, false);
+  return out;
+}
+
 // ── Phrase generation ────────────────────────────────────────────────────────
 
 /**
@@ -262,10 +312,11 @@ export function generatePhrases(
   tokens: BuilderToken[],
   max = 6,
   lang: BuilderLang = 'fr',
+  opts: GenerateOptions = {},
 ): GeneratedPhrase[] {
-  return lang === 'nl'
-    ? generateDutch(tokens, max)
-    : generateFrench(tokens, max);
+  if (lang === 'nl') return generateDutch(tokens, max);
+  if (opts.engine === 'v2') return generateFrenchV2(tokens, max, opts.seed ?? 0);
+  return generateFrench(tokens, max);
 }
 
 // French generator (unchanged behaviour) —————————————————————————————————————

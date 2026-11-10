@@ -36,6 +36,28 @@ describe('Tree synthetic deck level mapping', () => {
     expect(svc.getLevelCards(deckId, 4).map(c => c.text)).toEqual(['l’arbre']);
   });
 
+  it('uses the id prefix for a fresh progress namespace', () => {
+    const deckId = svc.registerTreeDeck('fr', [{ skill: 'Core 1', words: [{ fr: 'je', en: 'I' }] }], 'tree-v2');
+    expect(deckId).toBe('tree-v2-fr');
+    expect(svc.isTreeDeckId(deckId)).toBe(true);
+    expect(svc.getLevelCards(deckId, 1)[0].id).toBe('tree-v2-fr-0-0');
+  });
+
+  it('plays only the level\'s own words in Match (other slots are not lessons)', () => {
+    const groups = [
+      { skill: 'Core 1', words: [{ fr: 'je', en: 'I' }, { fr: 'et', en: 'and' }] },
+      { skill: 'Core 2', words: [{ fr: '—', en: '—' }] },
+      { skill: 'food:1', words: [{ fr: 'le café', en: 'coffee' }, { fr: 'le thé', en: 'tea' }] },
+    ];
+    const deckId = svc.registerTreeDeck('fr', groups, 'tree-v2');
+    expect(svc.getMatchSessionCards(deckId, 3).map(c => c.text)).toEqual(['le café', 'le thé']);
+  });
+
+  it('shows the authored English, never the course deck\'s curated overrides', () => {
+    const deckId = svc.registerTreeDeck('fr', [{ skill: 'Core 3', words: [{ fr: 'ma', en: 'my (f.)' }] }], 'tree-v2');
+    expect(svc.bestTranslation(svc.getLevelCards(deckId, 1)[0])).toBe('my (f.)');
+  });
+
   it('exposes one level per registered skill', async () => {
     const groups = [
       { skill: 'Core 1', words: [{ fr: 'je', en: 'I' }] },
