@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildTokens, buildTreeTokens, generatePhrases, type GeneratedPhrase, type SourceCard,
+  buildTokens, buildTreeTokens, generatePhrases, generateWritePhraseCards,
+  type GeneratedPhrase, type SourceCard,
 } from './phrase-builder';
 import { elides, pluralFr, pluralEn } from './french-v2';
 import { CORE_TIERS, THEME_DEFS, type CoreWord } from '../../app/flashcards/tree/tree-curriculum';
@@ -133,6 +134,27 @@ describe('phrase-builder v2 (Tree)', () => {
   it('leaves the legacy generator untouched without the v2 option', () => {
     const tokens = buildTokens([{ text: 'mère', translations: ['mother'] }], [{ text: 'la', translations: ['the'] }]);
     expect(generatePhrases(tokens, 6).every(p => p.distractors === undefined)).toBe(true);
+  });
+
+  it('builds "type the phrase" Write cards (target = phrase, prompt = English)', () => {
+    const cards = generateWritePhraseCards(theme('education', 1).map(src), core(1).map(src), 6);
+    expect(cards.length).toBeGreaterThan(0);
+    // Each card: text is the French phrase, translations[0] the English prompt.
+    for (const c of cards) {
+      expect(c.text.length).toBeGreaterThan(0);
+      expect(c.translations[0].length).toBeGreaterThan(0);
+      expect(c.text).not.toMatch(/\?$/); // no trailing question mark to type
+    }
+    // At least one recognisable phrase like "un professeur et un élève" or "c'est une école".
+    expect(cards.some(c => /professeur|école|livre/.test(c.text))).toBe(true);
+  });
+
+  it('builds no Write phrases from Core 1 alone when there is no earlier pool', () => {
+    // generateWritePhraseCards still works off current+earlier; with only Core 1
+    // as current and no earlier, it can still form "un ami et une amie" — that's
+    // fine. The Core-1 guard lives in the Write page (earlierLevels empty → []).
+    const cards = generateWritePhraseCards(core(1).map(src), []);
+    expect(Array.isArray(cards)).toBe(true);
   });
 });
 

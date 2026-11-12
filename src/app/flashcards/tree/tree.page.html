@@ -105,10 +105,24 @@
           <ion-icon name="close-outline"></ion-icon>
         </button>
       </div>
-      <div class="tree-words" *ngIf="expandedWords.length">
-        <span class="tree-word" *ngFor="let w of expandedWords">
-          <span class="w-fr">{{ w.fr }}</span><span class="w-en">{{ w.en }}</span>
-        </span>
+
+      <!-- Levels of this branch: the current level plus every earlier one,
+           grouped so you can see which words belong to which level. Tap a
+           level header to review or replay that level. -->
+      <div class="tree-levels" *ngIf="tierPreviews.length">
+        <div class="tree-level-group" *ngFor="let tp of tierPreviews" [class.active]="tp.active">
+          <button type="button" class="tree-level-head" (click)="selectTier(tp.tier)"
+            [attr.aria-pressed]="tp.active" [attr.aria-label]="tp.label">
+            <span class="tree-level-name">{{ tp.label }}</span>
+            <ion-icon *ngIf="tp.done" name="checkmark-circle" class="tree-level-done" aria-hidden="true"></ion-icon>
+            <span class="tree-level-current" *ngIf="tp.active">{{ 'tree.viewing' | translate }}</span>
+          </button>
+          <div class="tree-words" *ngIf="tp.words.length">
+            <span class="tree-word" *ngFor="let w of tp.words">
+              <span class="w-fr">{{ w.fr }}</span><span class="w-en">{{ w.en }}</span>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

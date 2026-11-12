@@ -15,6 +15,7 @@
       <header class="changelog-entry-head">
         <span class="changelog-version">{{ t('settings.versionLabel', { v: entry.version }) }}</span>
         <span class="changelog-current-tag" *ngIf="isCurrent(entry)">{{ t('settings.currentVersionTag') }}</span>
+        <span class="changelog-date" *ngIf="formatDate(entry.date)">{{ formatDate(entry.date) }}</span>
       </header>
       <ul class="changelog-notes">
         <li *ngFor="let note of entry.notes">{{ note }}</li>

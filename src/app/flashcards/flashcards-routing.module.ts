@@ -62,10 +62,21 @@ const routes: Routes = [
     loadChildren: () => import('./tree/tree.module').then(m => m.TreePageModule)
   },
   {
+    // EXPERIMENTAL: Tree+ — the same Tree engine/data in a vertical, card-based
+    // layout (top-to-bottom) instead of the radial star. Shares the Tree deck.
+    path: 'tree-plus',
+    loadChildren: () => import('./tree-plus/tree-plus.module').then(m => m.TreePlusPageModule)
+  },
+  {
     // EXPERIMENTAL: a Journey level reuses the Write exercise, scored under
     // the 'journey' mode (via ?mode=journey).
     path: 'journey-play/:id',
     loadChildren: () => import('./study/study.module').then(m => m.StudyPageModule)
+  },
+  {
+    // Learn: the intro step (meaning + grammar/emoji) before the Tree drills.
+    path: 'learn/:id',
+    loadChildren: () => import('./learn/learn.module').then(m => m.LearnPageModule)
   },
   {
     // EXPERIMENTAL: Builder mode (grammar groups -> phrases). Its own page.

@@ -17,11 +17,31 @@ export interface ChangelogEntry {
   version: string;
   /** Short, user-facing bullet points. */
   notes: string[];
+  /**
+   * When this version was published, as an ISO 8601 UTC string (the GitHub
+   * release time). Shown in the "What's new" list. Optional: older entries
+   * from before dates were tracked simply omit it.
+   */
+  date?: string;
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.51',
+    date: '2026-11-12T00:30:00Z',
+    notes: [
+      'New "Learn" step: every Tree level now starts with a quick intro that teaches each word before the drills — meaning + a grammar/usage note for Core words, and an emoji + meaning for early theme words.',
+      'New "Match Audio" mode: hear a word or phrase and pick its written translation. Available on its own from the home page and inside Journey, Journey+, Journey++ and the Tree.',
+      'Tree Write now also asks you to type short phrases (e.g. "the doctor" → "le médecin"), not just single words, once you\'re past Core 1.',
+      'Write: tap the prompt word to reveal its translation when you need a hand.',
+      'Tree: known words stop being drilled as single cards (spaced out instead), but still appear inside phrases where they\'re useful.',
+      'New "Tree+" layout: the same Tree, shown as a vertical list with progress bars — try it and tell us which you prefer.',
+      '"What\'s new" now shows each version\'s publish date.',
+    ],
+  },
+  {
     version: '1.3.50',
+    date: '2026-11-10T03:40:08Z',
     notes: [
       'Tree: the Core is now split into small levels of about a dozen words each, so you can start building phrases after Core 1 instead of learning 64 words first.',
       'Tree Builder: it now builds real phrases from the words you\'ve learned — e.g. Core 1 + Education makes "Un professeur et un élève", "C\'est une école", "J\'ai un livre".',
@@ -32,6 +52,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
   {
     version: '1.3.49',
+    date: '2026-11-09T19:46:46Z',
     notes: [
       'Tree: closing a sub-star now smoothly recenters the main map.',
       'Tree: connector lines no longer show through the dimmed nodes — they correctly pass under them, while staying faintly visible in the open spaces.',
@@ -39,18 +60,21 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
   {
     version: '1.3.48',
+    date: '2026-11-09T19:06:02Z',
     notes: [
       'Tree: tapping the empty space outside an open sub-star now closes it and returns to the main tree.',
     ],
   },
   {
     version: '1.3.47',
+    date: '2026-11-09T19:00:16Z',
     notes: [
       'Tree: when a node is expanded, the lines to the other nodes are now hidden instead of showing through the dimmed nodes.',
     ],
   },
   {
     version: '1.3.46',
+    date: '2026-11-09T18:52:35Z',
     notes: [
       'Tree: you can now drag to pan around the map and pinch (or scroll) to zoom, so nodes that fall off-screen are reachable.',
       'Tree: when a node is expanded, the lines to the other nodes fade back and no longer cross over them.',
@@ -59,6 +83,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
   {
     version: '1.3.45',
+    date: '2026-11-09T18:34:26Z',
     notes: [
       'Tree: each Core and theme level is now a set of 5 activities (Cards → Quiz → Write → Match → Builder), done in order like Journey. A level is complete only when all 5 are done.',
       'Tapping a node opens a sub-star: that node in the middle with its 5 activity nodes around it. Only one node expands at a time; close it with the X.',

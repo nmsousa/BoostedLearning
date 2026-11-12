@@ -21,6 +21,7 @@ import { AddWordService } from '../../services/add-word.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { journeyBackUrl } from '../journey/journey-back';
 import { gradeAnswer } from '../../../core/answer-validator/typo-grader';
+import { generateWritePhraseCards } from '../../../core/phrase-builder/phrase-builder';
 
 type StudyPhase = 'question' | 'feedback' | 'complete';
 type FeedbackResult = 'correct' | 'almost' | 'incorrect';
@@ -153,6 +154,9 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
   hintText = '';
   usedHint = false;      // Track if any hint was used for this card
   revealedViaHint = false; // true when the answer was fully revealed via hints
+  /** The translation shown when the learner taps the prompt to peek (empty =
+   *  hidden). A deliberate help for writing phrases; counts as using a hint. */
+  peekedAnswer = '';
   
   // Number of unique cards in this session (after de-duplicating prompts).
   totalUnique = 0;
@@ -220,6 +224,10 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
         this.round = 1;
         this.roundsCompleted = 0;
         cards = this.flashcardService.getRoundCards(deckId, this.levelNumber, 1);
+        // Tree Write past Core 1: also ask the learner to TYPE a few short
+        // phrases built from this level's words + earlier ones (e.g.
+        // "le médecin" for "the doctor"), so Write isn't only single words.
+        cards = [...cards, ...this.buildPhraseCards(deckId)];
       } else {
         // Start the 5-round sequence from where the user left off (so finishing
         // round 2 earlier resumes at round 3).
@@ -253,12 +261,62 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
    * its prompt), computed by the service. Here we only assign the typing
    * direction based on the user's setting.
    */
+  /**
+   * Build a few "type the phrase" cards for the Tree Write mode: short phrases
+   * combining this level's words with earlier Core/theme words (e.g. "le
+   * médecin" for "the doctor"). Returns [] for non-tree decks, for Core 1 (too
+   * little grammar), or when there's no earlier pool to borrow grammar from.
+   *
+   * Review words the learner has already mastered are NOT used as the phrase's
+   * anchor — phrases are built around this level's own (still-being-learned)
+   * words, with mastered function words reused silently inside them.
+   */
+  private buildPhraseCards(deckId: string): Flashcard[] {
+    if (!this.flashcardService.isTreeDeckId(deckId)) return [];
+    if ((this.deck?.languageCode ?? '') !== 'fr') return [];
+    const level = this.levelNumber;
+
+    // Earlier pool: explicit ?pool= (the Tree passes it), else levels 1..N-1.
+    const poolParam = this.route.snapshot.queryParamMap.get('pool');
+    const earlierLevels = poolParam
+      ? [...new Set(poolParam.split(',').map(s => Number(s.trim())))].filter(n => Number.isInteger(n) && n > 0 && n !== level)
+      : Array.from({ length: Math.max(0, level - 1) }, (_v, i) => i + 1);
+    if (earlierLevels.length === 0) return []; // Core 1 / nothing learned yet
+
+    const toSrc = (c: Flashcard) => ({ text: c.text, translations: c.translations });
+    const current = this.flashcardService.getLevelCards(deckId, level).map(toSrc);
+    const earlier: { text: string; translations: string[] }[] = [];
+    for (const n of earlierLevels) {
+      for (const c of this.flashcardService.getLevelCards(deckId, n)) earlier.push(toSrc(c));
+    }
+
+    const phrases = generateWritePhraseCards(current, earlier, this.PHRASE_WRITE_COUNT, 1 + Math.floor(Math.random() * 1e6));
+    const skill = current.length ? this.flashcardService.getLevelCards(deckId, level)[0]?.skill ?? '' : '';
+    return phrases.map((p, i) => ({
+      id: `${deckId}-phrase-${level}-${i}`,
+      deckId,
+      text: p.text,
+      translations: p.translations,
+      skill,
+      correctCount: 0, incorrectCount: 0, lastSeen: null, nextReview: null, streak: 0,
+      // The whole phrase is the only accepted answer.
+      acceptedForms: [p.text],
+    } as Flashcard));
+  }
+
+  /** How many phrase cards to append in the Tree Write mode. */
+  private readonly PHRASE_WRITE_COUNT = 3;
+
   private buildStudyCards(cards: Flashcard[]): StudyCard[] {
     const mixed = this.settings.flashcardDirection() === 'mixed';
 
     return cards.map((card, index) => ({
       card,
-      direction: (mixed && index % 5 === 0 ? 'target-to-en' : 'en-to-target') as CardDirection,
+      // Phrase cards are always typed in the target language (type the French
+      // phrase for the English prompt); never flipped to target-to-en.
+      direction: (card.id.includes('-phrase-')
+        ? 'en-to-target'
+        : (mixed && index % 5 === 0 ? 'target-to-en' : 'en-to-target')) as CardDirection,
       isRetry: false,
       acceptedForms: card.acceptedForms ?? [card.text],
     }));
@@ -782,6 +840,20 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
     this.cdr.detectChanges();
   }
 
+  /**
+   * Tapping the prompt word(s) toggles a peek at the answer (what to type), to
+   * help the learner write it — useful once Write asks for phrases. It reveals
+   * the full target, so it counts as having used a hint (fair scoring), the
+   * same as fully revealing via the bulb. Tap again to hide.
+   */
+  peekAnswer(): void {
+    if (this.phase !== 'question') return;
+    if (this.peekedAnswer) { this.peekedAnswer = ''; this.cdr.detectChanges(); return; }
+    this.peekedAnswer = this.hintAnswer;
+    this.usedHint = true;
+    this.cdr.detectChanges();
+  }
+
   tryAgain(): void {
     this.isRetryAttempt = true;
     this.userAnswer = '';
@@ -812,6 +884,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
     this.hintText = '';
     this.usedHint = false;
     this.revealedViaHint = false;
+    this.peekedAnswer = '';
     this.playCount = 0;
 
     // The session ends only when every unique card has been answered

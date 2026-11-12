@@ -42,6 +42,15 @@
   background: var(--ion-color-primary);
 }
 
+// Published date, pushed to the end of the header row.
+.changelog-date {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 0.74rem;
+  color: var(--ion-color-medium);
+  white-space: nowrap;
+}
+
 .changelog-notes {
   margin: 0;
   padding-left: 20px;

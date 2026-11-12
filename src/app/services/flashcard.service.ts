@@ -34,12 +34,17 @@ export type FlashcardRating = 'hard' | 'medium' | 'easy';
  * old single 'journey' mode is kept for back-compat (unused by the new page).
  */
 export type PracticeMode =
+  // Match Audio (listen → pick translation): standalone + Journey node.
+  | 'match-audio' | 'journey-match-audio'
+  // Learn (intro: meaning + grammar/emoji) — a Tree node, first in a level.
+  | 'journey-learn'
   | 'flip' | 'write' | 'match' | 'quiz' | 'journey' | 'builder' | 'blanks'
   | 'journey-flip' | 'journey-quiz' | 'journey-match' | 'journey-write' | 'journey-builder' | 'journey-blanks';
 
-/** The Journey chapter node modes, in play order (French chapters add Blanks). */
+/** The Journey chapter node modes, in play order (French chapters add Blanks).
+ *  'journey-match-audio' is a single-pass node too (used by the Tree). */
 export const JOURNEY_NODE_MODES: PracticeMode[] =
-  ['journey-flip', 'journey-quiz', 'journey-write', 'journey-match', 'journey-builder', 'journey-blanks'];
+  ['journey-learn', 'journey-flip', 'journey-quiz', 'journey-write', 'journey-match', 'journey-match-audio', 'journey-builder', 'journey-blanks'];
 
 /** True for any Journey single-pass node mode. */
 export function isJourneyNodeMode(mode: PracticeMode): boolean {
@@ -2243,6 +2248,58 @@ export class FlashcardService {
     const reviewPart = reviewPool.slice(0, reviewCount);
 
     return this.shuffleArr([...newPart, ...reviewPart]);
+  }
+
+  // ── Mastery (identity-keyed, for drill/review gating) ──────────────────────
+  /** Correct-in-a-row at/above which a word counts as "known" for drill gating. */
+  readonly DRILL_MASTERY_STREAK = 3;
+
+  /**
+   * Identity of a word across all its duplicate cards: normalized target text +
+   * primary English prompt. The SAME word (e.g. "une") is registered as many
+   * separate cards across tree levels; mastery is judged on the word, not one
+   * card, so a word known anywhere is known everywhere.
+   */
+  wordIdentity(card: { text: string; translations: string[] }): string {
+    return `${this.normalizeKey(card.text)}|${this.normalizeKey(card.translations[0] ?? '')}`;
+  }
+
+  /**
+   * Set of word identities the learner has "mastered" for drill purposes:
+   * aggregated best streak ≥ DRILL_MASTERY_STREAK across every card sharing the
+   * identity AND not currently due for review (so spaced repetition still
+   * resurfaces them on schedule instead of hiding them forever). Used to drop
+   * already-known REVIEW words from exercises; a word in its OWN level is never
+   * gated by the caller. Empty for non-tree decks (course decks are unchanged).
+   */
+  masteredWordIdentities(deckId: string): Set<string> {
+    const deck = this.getDeck(deckId);
+    if (!deck || !this.isTreeDeckId(deckId)) return new Set();
+    const now = Date.now();
+    // Aggregate per identity across every copy of the word:
+    //   bestStreak — the strongest run on any copy,
+    //   latestReview — the furthest-ahead scheduled review of any SEEN copy
+    //     (unseen copies, nextReview = null, don't drag the word "due"; a word
+    //     mastered on one copy stays known even if a duplicate was never seen),
+    //   seen — practised on at least one copy.
+    const agg = new Map<string, { streak: number; latestReview: number; seen: boolean }>();
+    for (const c of deck.cards) {
+      const id = this.wordIdentity(c);
+      const seen = (c.correctCount + c.incorrectCount) > 0 || !!c.lastSeen;
+      const prev = agg.get(id) ?? { streak: 0, latestReview: 0, seen: false };
+      const review = seen && c.nextReview ? new Date(c.nextReview).getTime() : prev.latestReview;
+      agg.set(id, {
+        streak: Math.max(prev.streak, c.streak ?? 0),
+        latestReview: Math.max(prev.latestReview, review),
+        seen: prev.seen || seen,
+      });
+    }
+    const out = new Set<string>();
+    for (const [id, s] of agg) {
+      // Mastered = practised, strong streak, and its next review is still ahead.
+      if (s.seen && s.streak >= this.DRILL_MASTERY_STREAK && s.latestReview > now) out.add(id);
+    }
+    return out;
   }
 
   /** Earlier-level words ordered worst-first (weakest accuracy). */

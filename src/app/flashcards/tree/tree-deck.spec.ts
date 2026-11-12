@@ -58,6 +58,49 @@ describe('Tree synthetic deck level mapping', () => {
     expect(svc.bestTranslation(svc.getLevelCards(deckId, 1)[0])).toBe('my (f.)');
   });
 
+  it('reports a word as mastered only when its streak is high AND it is not due', () => {
+    const deckId = svc.registerTreeDeck('fr', [
+      { skill: 'Core 1', words: [{ fr: 'une', en: 'a (f.)' }, { fr: 'et', en: 'and' }] },
+    ], 'tree-v2');
+    // Mutate the REAL deck cards (getLevelCards returns deduped copies).
+    const cards = svc.getDeck(deckId)!.cards;
+    const une = cards.find(c => c.text === 'une')!;
+    const et = cards.find(c => c.text === 'et')!;
+    const future = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const past = new Date(Date.now() - 1000).toISOString();
+
+    // "une": strong streak, scheduled ahead → mastered (drop from drills).
+    une.streak = 3; une.correctCount = 3; une.lastSeen = past; une.nextReview = future;
+    // "et": strong streak but DUE now → not mastered (spaced-rep resurfaces it).
+    et.streak = 5; et.correctCount = 5; et.lastSeen = past; et.nextReview = past;
+
+    const mastered = svc.masteredWordIdentities(deckId);
+    expect(mastered.has(svc.wordIdentity(une))).toBe(true);
+    expect(mastered.has(svc.wordIdentity(et))).toBe(false);
+  });
+
+  it('shares mastery across duplicate cards of the same word (identity-keyed)', () => {
+    // "une" appears in two levels (Core 1 + a theme) as separate cards; mastering
+    // either copy marks the word known everywhere.
+    const deckId = svc.registerTreeDeck('fr', [
+      { skill: 'Core 1', words: [{ fr: 'une', en: 'a (f.)' }] },
+      { skill: 'food:1', words: [{ fr: 'une', en: 'a (f.)' }, { fr: 'le café', en: 'coffee' }] },
+    ], 'tree-v2');
+    const future = new Date(Date.now() + 3600_000).toISOString();
+    const cards = svc.getDeck(deckId)!.cards;
+    // Master only the Core-1 copy of "une".
+    const uneCore = cards.find(c => c.text === 'une' && c.skill === 'Core 1')!;
+    uneCore.streak = 4; uneCore.correctCount = 4; uneCore.lastSeen = future; uneCore.nextReview = future;
+    const mastered = svc.masteredWordIdentities(deckId);
+    // The theme copy of "une" shares the identity → also considered mastered.
+    const uneTheme = svc.getLevelCards(deckId, 2).find(c => c.text === 'une')!;
+    expect(mastered.has(svc.wordIdentity(uneTheme))).toBe(true);
+  });
+
+  it('never reports mastery for a non-tree deck', () => {
+    expect(svc.masteredWordIdentities('french').size).toBe(0);
+  });
+
   it('exposes one level per registered skill', async () => {
     const groups = [
       { skill: 'Core 1', words: [{ fr: 'je', en: 'I' }] },

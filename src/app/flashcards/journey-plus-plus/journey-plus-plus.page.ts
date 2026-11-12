@@ -117,7 +117,7 @@ export class JourneyPlusPlusPage implements OnInit, AfterViewInit, OnDestroy {
   /** Display-only reward per activity (the app has no XP system yet). */
   private static readonly XP_PER_NODE = 10;
   private static readonly SECONDS_PER_WORD: Record<JourneyNodeType, number> = {
-    flip: 5, quiz: 6, write: 12, match: 4, builder: 0, blanks: 8,
+    flip: 5, quiz: 6, write: 12, match: 4, 'match-audio': 4, builder: 0, blanks: 8,
   };
   private static readonly BUILDER_SECONDS = 180;
 

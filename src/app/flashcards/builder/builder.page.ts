@@ -74,10 +74,17 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
   ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
   ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
 
-  /** True when the user is mid-activity (a group or phrase stage is open). On
-   *  the map there's nothing to lose. */
+  /**
+   * True only when there's actual work to lose. Just OPENING a phrase (the
+   * Tree/journey Builder jumps straight into one) is NOT progress — the user
+   * hasn't placed anything yet. Progress means: a group flip is underway, or a
+   * phrase has at least one word placed but isn't finished. A completed phrase
+   * is already saved, so there's nothing to lose there either.
+   */
   private get hasProgress(): boolean {
-    return this.stage.kind !== 'map';
+    if (this.stage.kind === 'group') return true;
+    if (this.stage.kind === 'phrase') return this.stage.chosen.length > 0 && !this.stage.done;
+    return false;
   }
 
   /** Leave the Builder (shared by the X and the confirm's End). */

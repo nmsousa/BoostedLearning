@@ -8,7 +8,7 @@
     <!-- Skill name only (the redundant "Level N ·" prefix is dropped). -->
     <ion-title>
       <ng-container *ngIf="levelTitle">{{ levelTitle }}</ng-container>
-      <ng-container *ngIf="!levelTitle">{{ 'mode.titleMatch' | translate }}</ng-container>
+      <ng-container *ngIf="!levelTitle">{{ (isAudio ? 'mode.titleMatchAudio' : 'mode.titleMatch') | translate }}</ng-container>
     </ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="openMenu()" [attr.aria-label]="'mode.addWord' | translate">
@@ -42,9 +42,9 @@
     </div>
 
     <div class="match-board-wrap">
-    <p class="match-hint">{{ 'mode.tapWordThenTranslation' | translate }}</p>
+    <p class="match-hint">{{ (isAudio ? 'mode.tapAudioThenTranslation' : 'mode.tapWordThenTranslation') | translate }}</p>
     <div class="match-board" [style.min-height.px]="boardMinHeight">
-      <!-- Left column: Dutch -->
+      <!-- Left column: the word (normal) or a listen tile (audio mode). -->
       <div class="match-col">
         <button
           *ngFor="let item of leftItems"
@@ -53,9 +53,12 @@
           [class.selected]="isSelected(item)"
           [class.matched]="item.matched"
           [class.wrong]="item.wrong"
+          [class.audio-item]="isAudio"
           [disabled]="item.matched"
-          (click)="select(item)">
-          {{ item.label }}
+          (click)="select(item)"
+          [attr.aria-label]="isAudio ? ('mode.playPronunciation' | translate) : item.label">
+          <ng-container *ngIf="!isAudio">{{ item.label }}</ng-container>
+          <ion-icon *ngIf="isAudio" name="volume-high" class="audio-icon" aria-hidden="true"></ion-icon>
         </button>
       </div>
 

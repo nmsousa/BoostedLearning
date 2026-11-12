@@ -14,8 +14,10 @@ import type { ParamMap } from '@angular/router';
 export const JOURNEY_PLUS_FROM = 'journey-plus';
 /** `from` value passed by Journey++. */
 export const JOURNEY_PLUS_PLUS_FROM = 'journey-plus-plus';
-/** `from` value passed by the Tree map. */
+/** `from` value passed by the Tree map (radial star). */
 export const JOURNEY_TREE_FROM = 'tree';
+/** `from` value passed by the Tree+ map (vertical list). */
+export const JOURNEY_TREE_PLUS_FROM = 'tree-plus';
 
 /** Return route for a Journey node exercise. */
 export function journeyBackUrl(query: ParamMap): string {
@@ -23,6 +25,7 @@ export function journeyBackUrl(query: ParamMap): string {
     case JOURNEY_PLUS_FROM: return '/practice/journey-plus';
     case JOURNEY_PLUS_PLUS_FROM: return '/practice/journey-plus-plus';
     case JOURNEY_TREE_FROM: return '/practice/tree';
+    case JOURNEY_TREE_PLUS_FROM: return '/practice/tree-plus';
     default: return '/practice/journey';
   }
 }

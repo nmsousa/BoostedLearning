@@ -15,6 +15,8 @@ import { NavController, ViewWillEnter, ViewWillLeave } from '@ionic/angular';
 import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
+import { AudioService } from '../../services/audio.service';
+import { SettingsService } from '../../services/settings.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../journey/journey-back';
@@ -28,6 +30,9 @@ interface MatchItem {
   side: Side;
   matched: boolean;  // locked in as a correct pair
   wrong: boolean;    // transient wrong-flash state
+  /** Match Audio only: the target word + recording for the left (listen) tile. */
+  audioText?: string;
+  audioUrl?: string | null;
 }
 
 @Component({
@@ -45,6 +50,8 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   private cdr = inject(ChangeDetectorRef);
   private i18n = inject(I18nAngularService);
   private addWordService = inject(AddWordService);
+  private audio = inject(AudioService);
+  private settings = inject(SettingsService);
   private backInterceptor = inject(BackInterceptorService);
   private exitConfirm = inject(ExitConfirmService);
 
@@ -76,7 +83,8 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
       onAdminComplete: (stars) => this.adminCompleteLevel(stars, false),
       // Match counts each board as one of 5 rounds → offer "complete all 5"
       // for standalone play (not as a journey single-pass node).
-      onAdminCompleteAll: this.mode === 'journey-match' ? undefined : (stars) => this.adminCompleteLevel(stars, true),
+      onAdminCompleteAll: (this.mode === 'journey-match' || this.mode === 'journey-match-audio')
+        ? undefined : (stars) => this.adminCompleteLevel(stars, true),
     });
   }
 
@@ -94,8 +102,10 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
 
   deck: FlashcardDeck | null = null;
   levelNumber = 0;
-  /** Progress namespace: 'match' normally, 'journey-match' as a Journey node. */
+  /** Progress namespace: 'match'/'journey-match', or the audio variants. */
   private mode: PracticeMode = 'match';
+  /** Match Audio: left tiles play the word's audio instead of showing text. */
+  isAudio = false;
   private backUrl = '/practice';
 
   // How many pairs are visible on the board at once. As each correct match is
@@ -151,12 +161,17 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     const deckId = this.route.snapshot.paramMap.get('id');
     const levelParam = this.route.snapshot.queryParamMap.get('level');
     this.levelNumber = levelParam ? parseInt(levelParam, 10) : 0;
-    // Journey Match node: score under 'journey-match', back to the map. (Match
-    // is already single-pass — one board is one play.)
-    if (this.route.snapshot.queryParamMap.get('mode') === 'journey-match') {
-      this.mode = 'journey-match';
+    // Mode from the query param. 'journey-match[-audio]' are Journey nodes
+    // (back to the map); the '-audio' variants turn the left column into
+    // listen-and-match tiles. Standalone audio uses the 'match-audio' route.
+    const modeParam = this.route.snapshot.queryParamMap.get('mode');
+    if (modeParam === 'journey-match' || modeParam === 'journey-match-audio') {
+      this.mode = modeParam;
       this.backUrl = journeyBackUrl(this.route.snapshot.queryParamMap);
+    } else if (modeParam === 'match-audio') {
+      this.mode = 'match-audio';
     }
+    this.isAudio = this.mode === 'match-audio' || this.mode === 'journey-match-audio';
 
     if (!deckId) {
       this.router.navigate([this.backUrl]);
@@ -246,12 +261,22 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     return (this.solvedPairs / this.totalPairs) * 100;
   }
 
-  /** Build the two tiles (left + right) for one card. */
+  /** Build the two tiles (left + right) for one card. In audio mode the left
+   *  tile hides the word and plays its audio; the right stays the translation. */
   private makePair(card: Flashcard): { left: MatchItem; right: MatchItem } {
     return {
-      left: { id: card.id, label: card.text, side: 'left', matched: false, wrong: false },
+      left: {
+        id: card.id, label: card.text, side: 'left', matched: false, wrong: false,
+        audioText: card.text, audioUrl: card.audioUrl,
+      },
       right: { id: card.id, label: this.flashcardService.bestTranslation(card), side: 'right', matched: false, wrong: false },
     };
+  }
+
+  /** Play a listen tile's word (recorded clip, else TTS). Auto-plays on select. */
+  playItem(item: MatchItem): void {
+    if (!item.audioText) return;
+    void this.audio.playWord(item.audioText, item.audioUrl, this.settings.learningLanguage());
   }
 
   /** Initial board fill: up to VISIBLE_PAIRS pairs from the queue. */
@@ -328,9 +353,10 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     if (this.locked || item.matched) return;
 
     if (item.side === 'left') {
-      this.selectedLeft = this.selectedLeft?.id === item.id && this.selectedLeft.side === item.side
-        ? null
-        : item;
+      const deselect = this.selectedLeft?.id === item.id && this.selectedLeft.side === item.side;
+      this.selectedLeft = deselect ? null : item;
+      // Audio mode: hearing the word IS the prompt, so play it on select.
+      if (this.isAudio && !deselect) this.playItem(item);
     } else {
       this.selectedRight = this.selectedRight === item ? null : item;
     }

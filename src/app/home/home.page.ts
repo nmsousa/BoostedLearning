@@ -304,7 +304,7 @@ export class HomePage implements OnInit {
    * Open the deck/level list for a chosen practice mode. The flashcards page
    * reads the mode and launches each level directly in that mode.
    */
-  startMode(mode: 'flip' | 'write' | 'match' | 'quiz' | 'blanks'): void {
+  startMode(mode: 'flip' | 'write' | 'match' | 'match-audio' | 'quiz' | 'blanks'): void {
     this.router.navigate(['/practice'], { queryParams: { mode } });
   }
 
@@ -328,6 +328,10 @@ export class HomePage implements OnInit {
 
   startTree(): void {
     this.router.navigate(['/practice/tree']);
+  }
+
+  startTreePlus(): void {
+    this.router.navigate(['/practice/tree-plus']);
   }
 
   startBuilder(): void {

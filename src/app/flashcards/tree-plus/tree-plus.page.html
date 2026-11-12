@@ -1,0 +1,129 @@
+<ion-header class="tp-header ion-no-border">
+  <ion-toolbar>
+    <div class="tp-head">
+      <button type="button" class="tp-back" (click)="expandedId ? collapse() : close()" [attr.aria-label]="'journeyPlus.back' | translate">
+        <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
+      </button>
+      <h1 class="tp-title">{{ 'tree.title' | translate }}</h1>
+      <button type="button" class="tp-lang" id="tp-lang-trigger" [attr.aria-label]="'journeyPlus.changeLanguage' | translate">
+        <span class="tp-flag"><img [src]="currentLanguage.flagUrl" alt="" /></span>
+        <ion-icon name="chevron-down" class="tp-lang-caret" aria-hidden="true"></ion-icon>
+      </button>
+      <ion-popover trigger="tp-lang-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
+        <ng-template>
+          <ion-list class="lang-list">
+            <ion-item *ngFor="let lang of availableLanguages" button detail="false" lines="none"
+              [class.active]="lang.code === learningLanguage" (click)="selectLanguage(lang.code)">
+              <img class="flag" slot="start" [src]="lang.flagUrl" [alt]="lang.name" />
+              <ion-label>{{ lang.name }}</ion-label>
+              <ion-icon *ngIf="lang.code === learningLanguage" name="checkmark" slot="end" color="primary"></ion-icon>
+            </ion-item>
+          </ion-list>
+        </ng-template>
+      </ion-popover>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tp-content" [scrollY]="true">
+  <div *ngIf="isLoading || switchingLanguage" class="tp-loading"><ion-spinner name="crescent"></ion-spinner></div>
+
+  <div *ngIf="!isLoading && !switchingLanguage" class="tp-body">
+    <div *ngIf="adminMode" class="tp-admin-tip">
+      <ion-icon name="sparkles-outline" aria-hidden="true"></ion-icon>
+      <span>{{ 'tree.adminTip' | translate }}</span>
+    </div>
+
+    <p class="tp-tagline">✨ {{ 'treePlus.tagline' | translate }}</p>
+
+    <!-- Hero: Core Vocabulary -->
+    <button type="button" class="tp-core" [class.done]="core.state === 'done'" (click)="toggleNode(core)"
+      [attr.aria-expanded]="expandedId === 'core'"
+      [attr.aria-label]="core.title + ', ' + nodeStatus(core) + ', ' + percentOf(core) + '%'">
+      <span class="tp-core-icon" aria-hidden="true"><ion-icon name="book"></ion-icon></span>
+      <span class="tp-core-text">
+        <span class="tp-core-title">{{ core.title }}</span>
+        <span class="tp-core-level">{{ 'tree.levelShort' | translate:{ n: core.doneLevel } }}</span>
+        <span class="tp-core-sub">{{ 'treePlus.foundation' | translate }}</span>
+        <span class="tp-core-progress">
+          <span class="tp-progress-track"><span class="tp-progress-fill" [style.width.%]="percentOf(core)"></span></span>
+          <span class="tp-progress-pct">{{ percentOf(core) }}%</span>
+        </span>
+      </span>
+      <ion-icon class="tp-core-caret" [name]="expandedId === 'core' ? 'chevron-up' : 'chevron-forward'" aria-hidden="true"></ion-icon>
+    </button>
+
+    <!-- Inline activities for the Core, when expanded -->
+    <div *ngIf="expandedId === 'core'" class="tp-expand">
+      <ng-container *ngTemplateOutlet="tiersTpl"></ng-container>
+    </div>
+
+    <div class="tp-choose">
+      <ion-icon name="arrow-down" aria-hidden="true"></ion-icon>
+      <span>{{ 'treePlus.chooseTopic' | translate }}</span>
+    </div>
+
+    <!-- Theme grid (two columns) -->
+    <div class="tp-grid">
+      <ng-container *ngFor="let node of themes; trackBy: trackNode">
+        <button type="button" class="tp-topic" [ngClass]="'state-' + node.state" [class.expanded]="expandedId === node.id"
+          [style.--hue]="node.hue" (click)="toggleNode(node)"
+          [attr.aria-expanded]="expandedId === node.id"
+          [attr.aria-label]="node.title + ', ' + nodeStatus(node) + ', ' + percentOf(node) + '%'">
+          <!-- Icon on top; status badge overlaid on its corner. -->
+          <span class="tp-topic-emoji" aria-hidden="true">
+            {{ node.emoji }}
+            <ion-icon *ngIf="node.state === 'done'" class="tp-topic-badge done" name="checkmark-circle" aria-hidden="true"></ion-icon>
+            <ion-icon *ngIf="node.state === 'locked'" class="tp-topic-badge lock" name="lock-closed" aria-hidden="true"></ion-icon>
+          </span>
+          <span class="tp-topic-name">{{ node.title }}</span>
+          <span class="tp-topic-status">{{ nodeStatus(node) }}</span>
+          <!-- Progress bar for every unlocked node (locked show an empty track). -->
+          <span class="tp-progress">
+            <span class="tp-progress-track"><span class="tp-progress-fill" [style.width.%]="percentOf(node)"></span></span>
+            <span class="tp-progress-pct">{{ percentOf(node) }}%</span>
+          </span>
+        </button>
+
+        <!-- Inline activities for a theme, spanning both columns, right after it -->
+        <div *ngIf="expandedId === node.id" class="tp-expand tp-expand-grid">
+          <ng-container *ngTemplateOutlet="tiersTpl"></ng-container>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Next Core strip -->
+    <div class="tp-next" [class.locked]="!nextCoreUnlocked">
+      <ion-icon [name]="nextCoreUnlocked ? 'arrow-forward-circle' : 'lock-closed'" aria-hidden="true"></ion-icon>
+      <div class="tp-next-text">
+        <span class="tp-next-title">{{ 'treePlus.nextCore' | translate:{ n: nextCoreTier } }}</span>
+        <span class="tp-next-sub">{{ 'treePlus.nextCoreSub' | translate }}</span>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<!-- Shared template: the expanded node's levels (newest first) + 5 activities -->
+<ng-template #tiersTpl>
+  <div class="tp-tier" *ngFor="let tier of expandedTiers; trackBy: trackTier" [class.done]="tier.done">
+    <div class="tp-tier-head">
+      <span class="tp-tier-name">{{ tier.label }}</span>
+      <ion-icon *ngIf="tier.done" name="checkmark-circle" class="tp-tier-done" aria-hidden="true"></ion-icon>
+    </div>
+    <div class="tp-words" *ngIf="tier.words.length">
+      <span class="tp-word" *ngFor="let w of tier.words">
+        <span class="w-fr">{{ w.fr }}</span><span class="w-en">{{ w.en }}</span>
+      </span>
+    </div>
+    <div class="tp-modes">
+      <button type="button" class="tp-mode" *ngFor="let m of tier.modes; trackBy: trackMode"
+        [ngClass]="'state-' + m.state" [disabled]="m.state === 'locked'"
+        (click)="onModeTap(tier, m.modeIndex)" [attr.aria-label]="(m.labelKey | translate) + ', ' + ('tree.unit.' + m.state | translate)">
+        <ion-icon [name]="m.icon" aria-hidden="true"></ion-icon>
+        <span class="tp-mode-label">{{ m.labelKey | translate }}</span>
+        <ion-icon *ngIf="m.state === 'done'" class="tp-mode-tick" name="checkmark" aria-hidden="true"></ion-icon>
+        <ion-icon *ngIf="m.state === 'locked'" class="tp-mode-lock" name="lock-closed" aria-hidden="true"></ion-icon>
+      </button>
+    </div>
+  </div>
+</ng-template>

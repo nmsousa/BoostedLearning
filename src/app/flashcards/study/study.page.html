@@ -44,9 +44,18 @@
     <div class="card-section"
          *ngIf="phase === 'question' || (phase === 'feedback' && feedbackResult === 'almost')">
       <div class="word-display">
+        <!-- Tap the prompt to peek at the answer (what to type) — a help for
+             writing phrases. Only interactive while answering. -->
         <div class="word-row">
-          <h1 class="target-word">{{ promptText }}</h1>
+          <h1 class="target-word" [class.peekable]="phase === 'question'"
+            (click)="peekAnswer()"
+            [attr.role]="phase === 'question' ? 'button' : null"
+            [attr.aria-label]="phase === 'question' ? (('mode.tapToReveal' | translate) + ': ' + promptText) : null">
+            {{ promptText }}
+            <ion-icon *ngIf="phase === 'question'" class="peek-icon" name="eye-outline" aria-hidden="true"></ion-icon>
+          </h1>
         </div>
+        <p class="peek-reveal" *ngIf="peekedAnswer && phase === 'question'">👁 {{ peekedAnswer }}</p>
         <p class="instruction" *ngIf="phase === 'question'">{{ instructionText }}</p>
         <p *ngIf="hintText && phase === 'question'" class="hint-display">
           💡 {{ hintText }}

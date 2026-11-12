@@ -12,7 +12,7 @@ import type { DeckLevel, PracticeMode } from '../../services/flashcard.service';
 import type { LevelProgressEntity } from '../../../persistence/database';
 
 /** Activity types of a chapter, in play order. */
-export type JourneyNodeType = 'flip' | 'quiz' | 'write' | 'match' | 'builder' | 'blanks';
+export type JourneyNodeType = 'flip' | 'quiz' | 'write' | 'match' | 'match-audio' | 'builder' | 'blanks';
 
 /** One node (activity) within a chapter. */
 export interface JourneyNode {
@@ -60,6 +60,7 @@ export const JOURNEY_NODE_DEFS: readonly NodeDef[] = [
   { type: 'quiz',    mode: 'journey-quiz',    route: '/practice/quiz',            icon: 'help', color: 'success' },
   { type: 'write',   mode: 'journey-write',   route: '/practice/journey-play',    icon: 'create-outline',      color: 'secondary' },
   { type: 'match',   mode: 'journey-match',   route: '/practice/match',           icon: 'git-compare-outline', color: 'tertiary' },
+  { type: 'match-audio', mode: 'journey-match-audio', route: '/practice/match',    icon: 'volume-high-outline', color: 'tertiary' },
   { type: 'builder', mode: 'journey-builder', route: '/practice/journey-builder', icon: 'construct-outline',   color: 'warning' },
 ];
 

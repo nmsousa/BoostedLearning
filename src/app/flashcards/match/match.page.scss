@@ -130,6 +130,12 @@
     transform: scale(0.96);
   }
 
+  // Match Audio: left tiles are "listen" buttons — show a big speaker glyph.
+  &.audio-item .audio-icon {
+    font-size: 1.8rem;
+    color: var(--ion-color-primary);
+  }
+
   // Selected - highlighted with the primary colour
   &.selected {
     border-color: var(--ion-color-primary);

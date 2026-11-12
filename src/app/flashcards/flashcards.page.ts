@@ -165,7 +165,7 @@ export class FlashcardsPage implements OnInit {
     // own pages. The journey-* node modes never route here. Partial map + a
     // sensible fallback covers the whole PracticeMode union.
     const labels: Partial<Record<PracticeMode, string>> = {
-      flip: 'Flashcards', write: 'Write', match: 'Match', quiz: 'Quiz',
+      flip: 'Flashcards', write: 'Write', match: 'Match', 'match-audio': 'Match Audio', quiz: 'Quiz',
       journey: 'Journey', builder: 'Builder', blanks: 'Blanks',
     };
     return labels[this.mode] ?? 'Flashcards';
@@ -175,6 +175,7 @@ export class FlashcardsPage implements OnInit {
   get modeIcon(): string {
     const icons: Partial<Record<PracticeMode, string>> = {
       flip: 'albums-outline', write: 'create-outline', match: 'git-compare-outline',
+      'match-audio': 'volume-high-outline',
       quiz: 'help', journey: 'map-outline', builder: 'construct-outline',
       blanks: 'reorder-four-outline',
     };
@@ -184,7 +185,7 @@ export class FlashcardsPage implements OnInit {
   /** Icon colour for the active mode — same accent as the homepage cards. */
   get modeIconColor(): string {
     const colors: Partial<Record<PracticeMode, string>> = {
-      flip: 'primary', write: 'secondary', match: 'tertiary',
+      flip: 'primary', write: 'secondary', match: 'tertiary', 'match-audio': 'tertiary',
       quiz: 'success', journey: 'warning', builder: 'tertiary', blanks: 'danger',
     };
     return colors[this.mode] ?? 'primary';
@@ -261,7 +262,7 @@ export class FlashcardsPage implements OnInit {
   async ngOnInit() {
     // Mode chosen on the home page; defaults to Flashcards (flip).
     const modeParam = this.route.snapshot.queryParamMap.get('mode') as PracticeMode | null;
-    if (modeParam && ['flip', 'write', 'match', 'quiz', 'blanks'].includes(modeParam)) {
+    if (modeParam && ['flip', 'write', 'match', 'match-audio', 'quiz', 'blanks'].includes(modeParam)) {
       this.mode = modeParam;
     }
 
@@ -359,9 +360,9 @@ export class FlashcardsPage implements OnInit {
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  /** The level list currently belongs to the timed (Match) mode. */
+  /** The level list currently belongs to the timed (Match / Match Audio) mode. */
   get isMatchMode(): boolean {
-    return this.mode === 'match';
+    return this.mode === 'match' || this.mode === 'match-audio';
   }
 
   /**
@@ -605,12 +606,17 @@ export class FlashcardsPage implements OnInit {
       flip: '/practice/flip',
       write: '/practice/write',
       match: '/practice/match',
+      'match-audio': '/practice/match',
       quiz: '/practice/quiz',
       blanks: '/practice/blanks',
     };
     const base = routes[this.mode];
     if (!base) return;
-    this.navCtrl.navigateForward([base, deck.id], { queryParams });
+    // Match Audio reuses the Match page; the mode param switches it to audio.
+    const qp = this.mode === 'match-audio'
+      ? { ...(queryParams ?? {}), mode: 'match-audio' }
+      : queryParams;
+    this.navCtrl.navigateForward([base, deck.id], { queryParams: qp });
   }
 
   async confirmDeleteDeck(deck: FlashcardDeck) {

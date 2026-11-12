@@ -303,7 +303,27 @@
   background: var(--tree-ring-fill); border: 0; color: #eceeff; font-size: 20px; cursor: pointer;
   box-shadow: var(--tree-ring-glow);
 }
-.tree-words { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 2px 2px; }
+// Per-level groups (current + earlier levels). Scrolls when there are many.
+.tree-levels { margin-top: 8px; max-height: 42vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.tree-level-group {
+  padding: 6px 0;
+  & + .tree-level-group { border-top: 1px solid var(--tree-glass-line); }
+  &.active .tree-level-head { color: #eef1ff; }
+  &:not(.active) .tree-words { opacity: 0.72; }
+}
+.tree-level-head {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 4px 2px;
+  background: transparent; border: 0; cursor: pointer; text-align: left;
+  color: var(--tree-muted); font-weight: 800; font-size: 0.82rem;
+}
+.tree-level-name { flex: 0 0 auto; }
+.tree-level-done { color: #5ad19b; font-size: 1rem; flex: 0 0 auto; }
+.tree-level-current {
+  margin-left: auto; flex: 0 0 auto; font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; color: #c9cdff; background: var(--tree-ring-fill);
+  padding: 2px 7px; border-radius: 999px;
+}
+.tree-words { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 2px 2px; }
 .tree-word {
   display: inline-flex; flex-direction: column; padding: 5px 9px; border-radius: 10px;
   background: rgba(255, 255, 255, 0.05); border: 1px solid var(--tree-glass-line); min-width: 0;

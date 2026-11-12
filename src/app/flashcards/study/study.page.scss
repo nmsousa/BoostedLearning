@@ -98,6 +98,20 @@
   margin: 0;
   color: var(--ion-color-primary-contrast);
 }
+// Tappable prompt (peek the translation). A faint eye hints it's interactive.
+.target-word.peekable {
+  cursor: pointer;
+  .peek-icon {
+    font-size: 1rem; margin-left: 8px; vertical-align: middle;
+    opacity: 0.5; color: var(--ion-color-primary-contrast);
+  }
+}
+.peek-reveal {
+  margin: 10px 0 0; font-size: 1.15rem; font-weight: 600;
+  color: var(--ion-color-primary-contrast);
+  background: rgba(255, 255, 255, 0.14); border-radius: 10px; padding: 6px 12px;
+  display: inline-block;
+}
 
 .instruction {
   font-size: 0.95rem;

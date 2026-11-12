@@ -29,6 +29,24 @@ describe('tree-curriculum', () => {
     }
   });
 
+  it('gives Core words a usage/grammar note (self-evident yes/no words exempt)', () => {
+    const selfEvident = new Set(['oui', 'non']);
+    for (const ct of CORE_TIERS.filter(c => c.authored)) {
+      for (const w of ct.words) {
+        if (selfEvident.has(w.fr)) continue;
+        expect(w.note && w.note.trim().length > 0, `Core ${ct.tier}: "${w.fr}" has no note`).toBe(true);
+      }
+    }
+  });
+
+  it('gives theme L1 words an emoji (early lessons) for the Learn step', () => {
+    for (const th of THEME_DEFS) {
+      for (const w of th.tiers[0]) {
+        expect(w.icon && w.icon.length > 0, `${th.id} L1: "${w.fr}" has no icon`).toBe(true);
+      }
+    }
+  });
+
   it('keeps Core 1 to the basics needed for first phrases', () => {
     const fr = CORE_TIERS[0].words.map(w => w.fr);
     for (const must of ['je', 'un', 'une', 'le', 'la', 'l’', 'et', 'ou', 'c’est', 'j’ai']) expect(fr).toContain(must);

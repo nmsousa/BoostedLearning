@@ -97,7 +97,7 @@ export class JourneyPlusPage implements OnInit, AfterViewInit, OnDestroy {
   static readonly XP_PER_NODE = 10;
   /** Rough seconds per word for each activity, for the "~N min" estimate. */
   private static readonly SECONDS_PER_WORD: Record<JourneyNodeType, number> = {
-    flip: 5, quiz: 6, write: 12, match: 4, builder: 0, blanks: 8,
+    flip: 5, quiz: 6, write: 12, match: 4, 'match-audio': 4, builder: 0, blanks: 8,
   };
   /** Builder plays a fixed set of ~5 generated phrases. */
   private static readonly BUILDER_SECONDS = 180;

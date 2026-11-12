@@ -319,6 +319,37 @@ export function generatePhrases(
   return generateFrench(tokens, max);
 }
 
+/**
+ * Generate "type the phrase" cards for the Tree Write mode: short phrases the
+ * learner types (e.g. "le médecin" for "the doctor"), drawn from the current
+ * level's words combined with earlier Core/theme words (the `earlier` pool).
+ * Each returned card is shaped like a normal Flashcard — `text` is the target
+ * phrase to type, `translations[0]` the English prompt — so it flows through
+ * the existing Write validator unchanged.
+ *
+ * Only the v2 (authored French) engine produces these; returns [] otherwise.
+ */
+export function generateWritePhraseCards(
+  current: SourceCard[],
+  earlier: SourceCard[],
+  max = 4,
+  seed = 0,
+): SourceCard[] {
+  const tokens = buildTreeTokens(current, earlier);
+  const phrases = generateFrenchV2(tokens, max, seed);
+  const seen = new Set<string>();
+  const out: SourceCard[] = [];
+  for (const p of phrases) {
+    // Skip questions (a typed "?" is awkward) and anything degenerate.
+    if (p.blankCategory === undefined && /\?$/.test(p.target)) continue;
+    const key = p.target.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ text: p.target.replace(/\s*\?$/, ''), translations: [p.en.replace(/\?$/, '').trim()] });
+  }
+  return out;
+}
+
 // French generator (unchanged behaviour) —————————————————————————————————————
 function generateFrench(tokens: BuilderToken[], max: number): GeneratedPhrase[] {
   const by = (c: WordCategory) => tokens.filter(t => t.category === c);

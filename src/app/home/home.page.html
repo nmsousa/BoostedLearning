@@ -74,6 +74,12 @@
           <span class="mode-desc">{{ 'home.mode.match.desc' | translate }}</span>
         </button>
 
+        <button type="button" class="mode-card match" (click)="startMode('match-audio')">
+          <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>
+          <ion-icon name="volume-high-outline"></ion-icon>
+          <span class="mode-name">{{ 'home.mode.matchAudio' | translate }}</span>
+        </button>
+
         <button type="button" class="mode-card quiz" (click)="startMode('quiz')">
           <ion-icon name="help"></ion-icon>
           <span class="mode-name">{{ 'home.mode.quiz' | translate }}</span>
@@ -111,6 +117,14 @@
           <ion-icon name="sparkles-outline"></ion-icon>
           <span class="mode-name">{{ 'home.mode.journeyPP' | translate }}</span>
           <span class="mode-desc">{{ 'home.mode.journeyPP.desc' | translate }}</span>
+        </button>
+
+        <!-- Tree+: same Tree engine, vertical card layout. -->
+        <button type="button" class="mode-card tree" (click)="startTreePlus()">
+          <span class="beta-badge">{{ 'home.mode.betaBadge' | translate }}</span>
+          <ion-icon name="list-outline"></ion-icon>
+          <span class="mode-name">{{ 'home.mode.treePlus' | translate }}</span>
+          <span class="mode-desc">{{ 'home.mode.treePlus.desc' | translate }}</span>
         </button>
 
         <!-- Tree: radial "learning network" map (Core Vocabulary hub + units). -->

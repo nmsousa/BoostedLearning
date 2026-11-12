@@ -63,6 +63,21 @@ interface ThemeNode {
   aria: string;
 }
 
+/** One level's entry in the expanded sheet's word list. */
+interface TierPreview {
+  tier: number;
+  /** Deck level number (for launching / progress lookups). */
+  level: number;
+  /** "Level 3" / "Core 3" label. */
+  label: string;
+  /** This level's OWN words (no Core-mix padding). */
+  words: CoreWord[];
+  /** True for the level the sub-star is currently showing. */
+  active: boolean;
+  /** True once all 5 modes of this level are passed. */
+  done: boolean;
+}
+
 /** A mode node in the expanded sub-star. */
 interface ModeNode {
   modeIndex: number;
@@ -134,6 +149,14 @@ export class TreePage implements OnInit, OnDestroy {
   expandedTitle = '';
   expandedEmoji = '';
   expandedWords: CoreWord[] = [];
+  /** Highest tier the opened node has reached (current + every earlier one). */
+  private expandedMaxTier = 0;
+  /**
+   * The opened node's levels for the sheet: the current level plus every
+   * earlier completed one, each with its own words, so the learner can see
+   * which words belong to which level and replay a past level. Newest first.
+   */
+  tierPreviews: TierPreview[] = [];
   modeNodes: ModeNode[] = [];
   /** Hub centre for the sub-star (so mode nodes orbit the tapped node). */
   expandedCenterX = TreePage.VIEW / 2;
@@ -285,8 +308,9 @@ export class TreePage implements OnInit, OnDestroy {
     });
     this.skillLevels = new Map(order.map(o => [o.skill, o.level]));
 
-    // Register the deck (Core-mixed content for theme tiers).
-    const groups = order.map(o => ({ skill: o.skill, words: this.wordsForSkill(o, true).map(w => ({ fr: w.fr, en: w.en })) }));
+    // Register the deck. Each level holds only its OWN words (no Core-mix) —
+    // reused Core words reappear only inside Builder phrases, not as drills.
+    const groups = order.map(o => ({ skill: o.skill, words: this.wordsForSkill(o).map(w => ({ fr: w.fr, en: w.en })) }));
     this.deckId = this.flashcards.registerTreeDeck(lang, groups, TreePage.DECK_PREFIX);
 
     // Read per-MODE pass state for every level.
@@ -392,17 +416,13 @@ export class TreePage implements OnInit, OnDestroy {
   openCore(): void {
     const tier = this.openTierFor(this.coreDoneLevel, this.coreAvailTier);
     if (tier === 0) return;
-    const ct = CORE_TIERS.find(c => c.tier === tier);
-    const level = this.skillLevels.get(`Core ${tier}`);
-    if (!ct || !level) return;
     this.expandedId = 'core';
     this.expandedTitle = this.t('tree.hubTitle');
     this.expandedEmoji = '📖';
-    this.expandedTier = tier;
     this.expandedCenterX = TreePage.VIEW / 2;
     this.expandedCenterY = TreePage.VIEW / 2;
-    this.expandedWords = ct.authored ? ct.words : [];
-    this.buildModeNodes(level, ct.authored);
+    this.expandedMaxTier = tier;
+    this.showTier(tier);
     this.cdr.detectChanges();
     this.autoPanToExpanded();
   }
@@ -414,13 +434,72 @@ export class TreePage implements OnInit, OnDestroy {
     this.expandedId = th.id;
     this.expandedTitle = node.title;
     this.expandedEmoji = th.emoji;
-    this.expandedTier = tier;
     this.expandedCenterX = node.x;
     this.expandedCenterY = node.y;
-    this.expandedWords = this.wordsForSkill({ kind: 'theme', id: th.id, tier }, true);
-    this.buildModeNodes(this.skillLevels.get(`${th.id}:${tier}`)!, true);
+    this.expandedMaxTier = tier;
+    this.showTier(tier);
     this.cdr.detectChanges();
     this.autoPanToExpanded();
+  }
+
+  /** Is the opened node the Core hub? */
+  private get expandedIsCore(): boolean { return this.expandedId === 'core'; }
+
+  /** The skill name for a tier of the opened node. */
+  private skillFor(tier: number): string {
+    return this.expandedIsCore ? `Core ${tier}` : `${this.expandedId}:${tier}`;
+  }
+
+  /** Whether a Core/theme tier is authored (themes: always; Core: per-tier flag). */
+  private tierAuthored(tier: number): boolean {
+    if (!this.expandedIsCore) return true;
+    return !!CORE_TIERS.find(c => c.tier === tier)?.authored;
+  }
+
+  /** This tier's OWN words (no Core-mix), for the sheet + preview list. */
+  private ownWords(tier: number): CoreWord[] {
+    if (this.expandedIsCore) {
+      const ct = CORE_TIERS.find(c => c.tier === tier);
+      return ct?.authored ? ct.words : [];
+    }
+    return this.wordsForSkill({ kind: 'theme', id: this.expandedId!, tier });
+  }
+
+  /**
+   * Point the sub-star at `tier` of the opened node: set the words, the 5 mode
+   * nodes, and rebuild the per-level preview list (current + earlier levels).
+   * Used both on open (the current tier) and when the user picks an earlier
+   * level to review/replay.
+   */
+  private showTier(tier: number): void {
+    const level = this.skillLevels.get(this.skillFor(tier));
+    if (!level) return;
+    this.expandedTier = tier;
+    this.expandedWords = this.ownWords(tier);
+    this.buildModeNodes(level, this.tierAuthored(tier));
+
+    // One entry per level up to the node's reached tier, newest first.
+    const previews: TierPreview[] = [];
+    for (let t = 1; t <= this.expandedMaxTier; t++) {
+      const lvl = this.skillLevels.get(this.skillFor(t));
+      if (!lvl || !this.tierAuthored(t)) continue;
+      previews.push({
+        tier: t, level: lvl,
+        label: this.expandedIsCore ? this.t('tree.coreLevel', { n: t }) : this.t('tree.levelShort', { n: t }),
+        words: this.ownWords(t),
+        active: t === tier,
+        done: this.tierComplete(lvl),
+      });
+    }
+    this.tierPreviews = previews.reverse();
+  }
+
+  /** Switch the open sub-star to a different (completed or current) level so
+   *  the learner can review its words or replay its modes. */
+  selectTier(tier: number): void {
+    if (!this.expandedId || tier === this.expandedTier || tier > this.expandedMaxTier) return;
+    this.showTier(tier);
+    this.cdr.detectChanges();
   }
 
   /** Build the 5 mode nodes orbiting the expanded centre. Modes unlock in
@@ -488,6 +567,8 @@ export class TreePage implements OnInit, OnDestroy {
   collapse(): void {
     this.expandedId = null;
     this.modeNodes = [];
+    this.tierPreviews = [];
+    this.expandedMaxTier = 0;
     // Smoothly recenter the main tree (undo any auto-pan / manual pan/zoom).
     this.recenter();
     this.cdr.detectChanges();
@@ -642,12 +723,17 @@ export class TreePage implements OnInit, OnDestroy {
     }
   }
 
-  // ── Word mixing ─────────────────────────────────────────────────────────────
-  private static readonly CORE_MIX = 5;
-
+  // ── Level words ─────────────────────────────────────────────────────────────
+  /**
+   * A level's OWN words — the words it teaches, nothing else. Core words are NOT
+   * mixed into theme levels: the single-word drills (Flashcards, Quiz, Match,
+   * Write) should only drill the level's new vocabulary, so the learner never
+   * re-drills "oui/le/une" in every theme. The Builder (and later a phrase
+   * Write) still combines earlier Core words into phrases via its `pool` param
+   * — that's where reused words belong, inside sentences, not as lone cards.
+   */
   private wordsForSkill(
     o: { kind: 'core'; tier: number } | { kind: 'theme'; id: string; tier: number },
-    mix = false,
   ): CoreWord[] {
     if (o.kind === 'core') {
       const ct = CORE_TIERS.find(c => c.tier === o.tier);
@@ -655,25 +741,7 @@ export class TreePage implements OnInit, OnDestroy {
     }
     const th = THEME_DEFS.find(t => t.id === o.id);
     const own = th?.tiers[o.tier - 1] ?? [];
-    if (own.length === 0) return [{ fr: '—', en: '—' }];
-    if (!mix) return own;
-
-    const pool: CoreWord[] = [];
-    const seen = new Set<string>();
-    for (const ct of CORE_TIERS) {
-      if (ct.tier > o.tier || !ct.authored) continue;
-      for (const w of ct.words) if (!seen.has(w.fr)) { seen.add(w.fr); pool.push(w); }
-    }
-    const ownFr = new Set(own.map(w => w.fr));
-    const sample: CoreWord[] = [];
-    if (pool.length) {
-      const step = Math.max(1, Math.floor(pool.length / TreePage.CORE_MIX));
-      for (let i = 0; i < pool.length && sample.length < TreePage.CORE_MIX; i += step) {
-        const w = pool[i];
-        if (!ownFr.has(w.fr)) sample.push(w);
-      }
-    }
-    return [...own, ...sample];
+    return own.length ? own : [{ fr: '—', en: '—' }];
   }
 
   close(): void { this.router.navigate(['/home']); }

@@ -45,6 +45,16 @@ export class ChangelogModalComponent {
       : this.t('settings.whatsNew');
   }
 
+  /** Published date formatted for display (locale date + short time), or ''
+   *  when the entry has no recorded date (older versions). */
+  formatDate(iso?: string): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+      + ' · ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+
   isCurrent(entry: ChangelogEntry): boolean {
     return !!this.currentVersion && entry.version === this.currentVersion;
   }

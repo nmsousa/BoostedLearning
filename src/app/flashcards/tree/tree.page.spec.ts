@@ -35,12 +35,13 @@ function makeProgress(fullyDoneLevels: number[]): Map<string, { bestScore: numbe
 let doneLevels: number[] = [];
 let partial: Map<string, { bestScore: number }> | null = null;
 
-let registered: { lang: string; groups: { skill: string }[]; prefix?: string } | null = null;
+interface TreeGroup { skill: string; words: { fr: string; en: string }[] }
+let registered: { lang: string; groups: TreeGroup[]; prefix?: string } | null = null;
 
 const flashcardMock = {
   initialize: () => Promise.resolve(),
   getAvailableLanguages: () => [{ code: 'fr', name: 'French' }],
-  registerTreeDeck: (lang: string, groups: { skill: string }[], prefix?: string) => {
+  registerTreeDeck: (lang: string, groups: TreeGroup[], prefix?: string) => {
     registered = { lang, groups, prefix };
     return `${prefix ?? 'tree'}-${lang}`;
   },
@@ -155,24 +156,24 @@ describe('TreePage (5 modes per level)', () => {
     const food = component.nodes.find(n => n.id === 'food')!;
     component.openTheme(food);
     expect(component.expandedId).toBe('food');
-    expect(component.modeNodes.length).toBe(5);
+    expect(component.modeNodes.length).toBe(TREE_MODES.length);
     // First mode (flip) is active; the rest are locked until the previous passes.
     expect(component.modeNodes[0].state).toBe('active');
     expect(component.modeNodes[1].state).toBe('locked');
   });
 
   it('unlocks the next mode in sequence once the previous is passed', async () => {
-    // Core L1 done; food L1 flip passed only.
+    // Core L1 done; food L1 FIRST mode passed only → 2nd unlocks, 3rd stays locked.
     const p = makeProgress([1]);
     const foodL1 = themeTier1Level(0);
-    p.set(`journey-flip-${foodL1}`, { bestScore: 100 });
+    p.set(`${TREE_MODES[0].mode}-${foodL1}`, { bestScore: 100 });
     partial = p;
     await component.ngOnInit();
     const food = component.nodes.find(n => n.id === 'food')!;
     component.openTheme(food);
-    expect(component.modeNodes[0].state).toBe('done');   // flip done
-    expect(component.modeNodes[1].state).toBe('active'); // quiz now active
-    expect(component.modeNodes[2].state).toBe('locked'); // write still locked
+    expect(component.modeNodes[0].state).toBe('done');   // first mode done
+    expect(component.modeNodes[1].state).toBe('active'); // second now active
+    expect(component.modeNodes[2].state).toBe('locked'); // third still locked
   });
 
   it('expands the Core sub-star with 5 modes', async () => {
@@ -180,8 +181,64 @@ describe('TreePage (5 modes per level)', () => {
     await component.ngOnInit();
     component.openCore();
     expect(component.expandedId).toBe('core');
-    expect(component.modeNodes.length).toBe(5);
+    expect(component.modeNodes.length).toBe(TREE_MODES.length);
     expect(component.expandedWords.length).toBeGreaterThan(0);
+  });
+
+  it('registers each theme level with ONLY its own words (no Core-mix drills)', async () => {
+    await component.ngOnInit();
+    // Education L1 is a theme group; its registered words must be exactly the
+    // curriculum's Education L1 words — no "je / une / oui" Core padding.
+    const edu = THEME_DEFS.find(t => t.id === 'education')!;
+    const eduL1Skill = `education:1`;
+    const group = registered!.groups.find(g => g.skill === eduL1Skill)!;
+    const registeredFr = group.words.map(w => w.fr).sort();
+    const ownFr = edu.tiers[0].map(w => w.fr).sort();
+    expect(registeredFr).toEqual(ownFr);
+    // Core-only words must not leak into the theme drill set.
+    for (const coreWord of ['je', 'oui', 'et', 'c’est', 'j’ai']) {
+      expect(group.words.some(w => w.fr === coreWord)).toBe(false);
+    }
+  });
+
+  /** Levels to fully complete so theme 0 (food) is open at tier `maxTier`:
+   *  Core 1..maxTier done + 3 distinct themes at each tier 1..maxTier-1. */
+  function openThemeAtTier(maxTier: number): number[] {
+    const levels: number[] = [];
+    for (let t = 1; t <= maxTier; t++) levels.push(t); // Core tiers
+    for (let t = 1; t < maxTier; t++) {
+      for (const ti of [0, 1, 2]) levels.push(themeTier1Level(ti) + (t - 1)); // 3 themes per tier
+    }
+    // Food's own earlier tiers 1..maxTier-1 (already added for theme 0 above).
+    return levels;
+  }
+
+  it('lists the current level plus every earlier one, grouped, newest first', async () => {
+    // Food (theme 0) reaches L3, so opening it lands on L3 with L1+L2 behind.
+    doneLevels = openThemeAtTier(3);
+    await component.ngOnInit();
+    const food = component.nodes.find(n => n.id === 'food')!;
+    component.openTheme(food);
+    expect(component.expandedTier).toBe(3);
+    // One entry per authored tier, newest first, each with its OWN words.
+    expect(component.tierPreviews.map(p => p.tier)).toEqual([3, 2, 1]);
+    expect(component.tierPreviews[0].active).toBe(true);
+    expect(component.tierPreviews[1].active).toBe(false);
+    expect(component.tierPreviews[1].done).toBe(true);
+    expect(component.tierPreviews.every(p => p.words.length > 0)).toBe(true);
+  });
+
+  it('switches the sub-star to an earlier level to review / replay it', async () => {
+    doneLevels = openThemeAtTier(3);
+    await component.ngOnInit();
+    const food = component.nodes.find(n => n.id === 'food')!;
+    component.openTheme(food);
+    const l1Words = component.tierPreviews.find(p => p.tier === 1)!.words.map(w => w.fr);
+    component.selectTier(1);
+    expect(component.expandedTier).toBe(1);
+    // The active tier's words + mode nodes now reflect L1, so replay uses them.
+    expect(component.expandedWords.map(w => w.fr)).toEqual(l1Words);
+    expect(component.tierPreviews.find(p => p.active)!.tier).toBe(1);
   });
 
   it('starts centred and un-zoomed', async () => {
