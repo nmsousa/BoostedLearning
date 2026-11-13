@@ -139,7 +139,7 @@ export interface FlashcardDeck {
 }
 
 /**
- * Bundled deck JSON format (in assets/flashcards/)
+ * Bundled deck JSON format (in assets/decks/)
  */
 interface BundledDeckJson {
   id: string;
@@ -209,8 +209,8 @@ export interface DeckLevel {
  * List of bundled deck files to load on startup
  */
 const BUNDLED_DECKS = [
-  'assets/flashcards/duolingo-dutch.json',
-  'assets/flashcards/french.json',
+  'assets/decks/duolingo-dutch.json',
+  'assets/decks/french.json',
 ];
 
 /** Friendly display names for known language codes (home selector). */
@@ -230,6 +230,13 @@ const LANGUAGE_NAMES: Record<string, string> = {
 export class FlashcardService {
   private decksSignal = signal<FlashcardDeck[]>([]);
   private initialized = false;
+  /**
+   * Bundled offline pronunciation audio, loaded from
+   * assets/audio/<lang>/manifest.json: normalized text → asset path. Lets the
+   * Tree decks play a LOCAL file (works with no internet, no device voice)
+   * instead of the streamed course URL or device TTS. Empty until loaded.
+   */
+  private localAudioManifest = new Map<string, Map<string, string>>();
   /** Shared in-flight init promise so concurrent first-callers (app boot +
    *  the first page) don't each start the heavy load. */
   private initPromise: Promise<void> | null = null;
@@ -262,6 +269,7 @@ export class FlashcardService {
       const [bundledDecks, userDecks] = await Promise.all([
         this.loadBundledDecks(),
         this.loadUserDecks(),
+        this.loadLocalAudioManifests(),
       ]);
 
       await Promise.all([
@@ -320,6 +328,37 @@ export class FlashcardService {
     }
     
     return decks;
+  }
+
+  /**
+   * Load the bundled offline-audio manifests (one per language) so Tree words
+   * can play a local MP3 offline. A missing manifest is fine — the Tree simply
+   * falls back to the streamed course clip / device TTS. Generated on the dev
+   * machine by scripts/gen-audio.mjs.
+   */
+  private async loadLocalAudioManifests(): Promise<void> {
+    const langs = ['fr'];
+    await Promise.all(
+      langs.map(async lang => {
+        try {
+          const json = await firstValueFrom(
+            this.http.get<Record<string, { file: string } | string>>(
+              `assets/audio/${lang}/manifest.json`,
+            ),
+          );
+          if (!json) return;
+          const map = new Map<string, string>();
+          for (const [text, entry] of Object.entries(json)) {
+            // Entry is { file, source, voice? }; tolerate the old string form.
+            const file = typeof entry === 'string' ? entry : entry?.file;
+            if (file) map.set(this.audioKey(text), `assets/audio/${lang}/${file}`);
+          }
+          if (map.size > 0) this.localAudioManifest.set(lang, map);
+        } catch {
+          // No manifest bundled for this language yet — ignore.
+        }
+      }),
+    );
   }
 
   /**
@@ -800,6 +839,10 @@ export class FlashcardService {
     idPrefix = 'tree',
   ): string {
     const deckId = `${idPrefix}-${languageCode}`;
+    // Borrow real recordings from the course deck of the same language: most
+    // Tree words also exist there with an audioUrl, so they play a clip instead
+    // of relying on device TTS (which may have no voice for the language).
+    const audioByText = this.recordingIndexFor(languageCode);
     const cards: Flashcard[] = [];
     groups.forEach((g, gi) => {
       g.words.forEach((w, wi) => {
@@ -808,6 +851,11 @@ export class FlashcardService {
           deckId,
           text: w.fr,
           translations: [w.en],
+          // Prefer the bundled LOCAL clip (offline) → streamed course clip →
+          // (handled later) device TTS.
+          audioUrl:
+            this.localAudioFor(languageCode, w.fr) ??
+            this.lookupRecording(audioByText, w.fr),
           skill: g.skill,
           skillOrder: gi + 1,
           correctCount: 0,
@@ -853,6 +901,60 @@ export class FlashcardService {
   /** True for the synthetic Tree curriculum decks ("tree-<lang>", "tree-v2-<lang>"…). */
   isTreeDeckId(deckId: string | null | undefined): boolean {
     return !!deckId && deckId.startsWith('tree-');
+  }
+
+  /** Normalize a word for recording lookup (NFC, straight apostrophe, lower, single spaces). */
+  private audioKey(s: string): string {
+    return s.normalize('NFC').replace(/[’‘]/g, "'").toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * Build (once) a map of normalized word → audioUrl from the bundled COURSE
+   * deck(s) of a language, so the synthetic Tree deck can reuse real
+   * recordings. Excludes other tree decks. Cached per language.
+   */
+  private recordingIndexCache = new Map<string, Map<string, string>>();
+  private recordingIndexFor(languageCode: string): Map<string, string> {
+    const cached = this.recordingIndexCache.get(languageCode);
+    if (cached && cached.size > 0) return cached;
+    const map = new Map<string, string>();
+    for (const deck of this.decksSignal()) {
+      if (deck.languageCode !== languageCode || this.isTreeDeckId(deck.id)) continue;
+      for (const c of deck.cards) {
+        if (!c.audioUrl) continue;
+        const k = this.audioKey(c.text);
+        if (!map.has(k)) map.set(k, c.audioUrl);
+      }
+    }
+    // Only cache a populated index; if the course deck isn't loaded yet, a
+    // later registration rebuilds it rather than being stuck with an empty map.
+    if (map.size > 0) this.recordingIndexCache.set(languageCode, map);
+    return map;
+  }
+
+  /**
+   * Find a recording for a Tree word: exact match first, then the bare noun
+   * after dropping a leading article (le/la/les/un/une/des/l’), so "le café"
+   * borrows the clip recorded for "café". Returns undefined when none exists
+   * (the word then falls back to device TTS).
+   */
+  private lookupRecording(index: Map<string, string>, fr: string): string | undefined {
+    const k = this.audioKey(fr);
+    const hit = index.get(k);
+    if (hit) return hit;
+    const bare = k.replace(/^(le |la |les |un |une |des |l')/, '').trim();
+    return bare !== k ? index.get(bare) : undefined;
+  }
+
+  /**
+   * The bundled LOCAL audio file for a word, if one was pre-generated. Tried
+   * before the streamed course clip so Tree audio works offline. Exact match
+   * only — the manifest already keys every word/sentence the Tree uses
+   * (including articled forms like "le café"), so no article-stripping here.
+   */
+  private localAudioFor(languageCode: string, fr: string): string | undefined {
+    const map = this.localAudioManifest.get(languageCode);
+    return map?.get(this.audioKey(fr));
   }
 
   /**

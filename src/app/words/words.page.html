@@ -121,7 +121,11 @@
       <!-- Per-word counts and accuracy % are hidden (the dot conveys how well
            the word is known). A tap on the speaker plays the word; a tap
            anywhere else on the row opens the priority sheet. -->
-      <button type="button" class="word-audio" (click)="playWord(w, $event)"
+      <!-- Admin only: a GREEN speaker means this word still uses the borrowed
+           Duolingo recording (not yet re-voiced with our TTS). Normal colour =
+           our generated clip or no local clip. -->
+      <button type="button" class="word-audio" [class.from-duolingo]="isDuolingoAudio(w)"
+        (click)="playWord(w, $event)"
         [attr.aria-label]="'mode.playPronunciation' | translate">
         <ion-icon name="volume-high-outline"></ion-icon>
       </button>

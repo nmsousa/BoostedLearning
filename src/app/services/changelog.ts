@@ -27,6 +27,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.52',
+    date: '2026-11-13T21:50:00Z',
+    notes: [
+      'Tree & Tree+ audio now works fully offline: every word and example sentence has a bundled pronunciation clip, so you can hear them with no internet.',
+    ],
+  },
+  {
     version: '1.3.51',
     date: '2026-11-12T00:30:00Z',
     notes: [

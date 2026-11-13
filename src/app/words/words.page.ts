@@ -71,6 +71,9 @@ export class WordsPage implements OnInit, ViewWillEnter {
 
   async ngOnInit() {
     await this.flashcards.initialize();
+    // Preload the offline-audio manifest so the admin source badge (green =
+    // Duolingo clip) is accurate on first paint.
+    await this.audio.preloadLocalAudio(this.settings.learningLanguage());
     this.initialized = true;
     this.reload();
   }
@@ -288,6 +291,22 @@ export class WordsPage implements OnInit, ViewWillEnter {
   async addWord(): Promise<void> {
     const added = await this.addWordService.promptAddWord(this.settings.learningLanguage());
     if (added) this.reload();
+  }
+
+  /** Admin mode on? Gates the audio-source badge (dev/test only). */
+  get isAdmin(): boolean {
+    return this.settings.adminMode();
+  }
+
+  /**
+   * ADMIN ONLY: true when this word's bundled clip is still a borrowed Duolingo
+   * recording (vs our generated TTS). Drives a green speaker icon so we can see
+   * at a glance which words haven't been re-voiced yet. Returns false for words
+   * with no local clip (course-only words) or when admin mode is off.
+   */
+  isDuolingoAudio(w: StudiedWord): boolean {
+    if (!this.isAdmin) return false;
+    return this.audio.localAudioSource(this.settings.learningLanguage(), w.text) === 'duolingo';
   }
 
   /** Icon shown on a row for its current priority (none for 'normal'). */

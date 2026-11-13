@@ -7,7 +7,7 @@
  *
  * Example:
  *   node scripts/import-duome.mjs "../French words.txt" fr "French" \
- *     src/assets/flashcards/french.json
+ *     src/assets/decks/french.json
  *
  * The parsing logic mirrors src/app/services/duome-parser.ts (kept in sync).
  */

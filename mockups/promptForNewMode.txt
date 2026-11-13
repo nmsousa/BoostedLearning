@@ -1,0 +1,795 @@
+# Kiro Implementation Prompt — Radial Vocabulary Learning Map
+
+## Project Overview
+
+I want to implement a new, fully interactive learning section in our existing language-learning application.
+
+Our application is built using **Angular + Ionic for Android**, and this feature must integrate into the existing application without disrupting any of its current functionality.
+
+The feature is inspired by a radial learning map concept: instead of following a traditional, long, linear learning journey, users explore a central vocabulary hub connected to multiple thematic learning units arranged in a circular layout.
+
+The feature should feel like a polished, modern, gamified language-learning experience similar in quality to Duolingo, but with its own distinctive visual identity.
+
+**Your task is to inspect the existing project, understand its architecture, and implement this feature directly into the current codebase.**
+
+Do not create a separate application, replace existing navigation, or introduce unnecessary dependencies.
+
+---
+
+# 1. Initial Codebase Inspection
+
+Before implementing anything:
+
+1. Inspect the existing Angular and Ionic project structure.
+2. Identify:
+   - Angular version.
+   - Ionic version.
+   - Whether the project uses standalone components or NgModules.
+   - Existing routing and navigation structure.
+   - Existing home screen and navigation tabs.
+   - Existing language-selection and language-learning functionality.
+   - Existing lesson components and vocabulary data structures.
+   - Existing progress-tracking mechanisms.
+   - Existing user profile and language-level information.
+   - Existing styling system, CSS variables, fonts, and themes.
+   - Any existing localization or translation mechanisms.
+3. Identify how existing learning sections are accessed.
+4. Identify how lesson completion and user progress are currently stored.
+5. Reuse existing services, components, data models, and UI conventions wherever possible.
+
+Do not duplicate existing functionality unnecessarily.
+
+If the application already has vocabulary exercises, lesson screens, progress tracking, or reusable components, integrate with them.
+
+Do not introduce a new backend or database solely for this feature.
+
+If the current application has no suitable progress persistence mechanism, implement a lightweight solution consistent with the existing architecture, preferably using an existing storage service.
+
+Do not overwrite or reset existing user progress.
+
+---
+
+# 2. Feature Concept
+
+Create a new learning section called:
+
+**Explore — Vocabulary Network**
+
+The main screen should display a radial learning map.
+
+At the center is a large circular node representing:
+
+**Core Vocabulary**
+
+Around it, arrange thematic learning units in a circular pattern, connected to the center by visible lines.
+
+The overall layout should resemble a colorful, modern, game-inspired learning map.
+
+The central node represents foundational vocabulary shared across all thematic units.
+
+The surrounding nodes represent different learning topics.
+
+Each thematic unit contains its own lessons, exercises, and progression.
+
+The learner should be able to:
+
+- Start learning foundational vocabulary.
+- Explore different thematic units.
+- Open individual units.
+- View their lessons.
+- Start lessons.
+- See completed lessons.
+- Track progress.
+- Return to the overall map.
+- Choose what to learn next without being forced through a strictly linear course.
+
+This feature should be a complete learning experience, not simply a decorative diagram.
+
+---
+
+# 3. Visual Design and Main Layout
+
+## Overall visual direction
+
+Use the following design characteristics:
+
+- Modern, colorful, friendly, gamified educational interface.
+- Soft pastel backgrounds.
+- White or lightly tinted cards.
+- Rounded corners.
+- Subtle shadows.
+- Soft gradients where appropriate.
+- Smooth transitions and animations.
+- Clear visual hierarchy.
+- Minimal visual clutter.
+- Consistent typography.
+- High-quality icons.
+- A polished mobile-first design.
+
+The interface should feel welcoming and playful without looking childish.
+
+Use the existing application's design system if it already has one. Otherwise, establish reusable design tokens for this feature.
+
+Suggested colors:
+
+- Background: very light blue or lavender.
+- Core Vocabulary: blue.
+- Travel: pink/red.
+- Daily Life: orange.
+- Food & Drink: green.
+- Home: cyan.
+- Relationships: purple.
+- Health: teal.
+- Culture: yellow.
+- Education: blue.
+- Nature: green.
+- Science & Technology: lime green.
+- Business: violet.
+
+Use these colors consistently throughout the map.
+
+Avoid excessive gradients, oversized text, and unnecessary decorative elements.
+
+---
+
+# 4. Main Radial Map
+
+The central screen is the most important part of this feature.
+
+Create a circular map with the following structure.
+
+## Central node
+
+Position a large circular node in the exact center of the map.
+
+The node should contain:
+
+- A book or vocabulary icon.
+- Title: Core Vocabulary.
+- Subtitle: Common words for everyday conversations.
+- A progress indicator.
+- A completion percentage.
+- A visual indication of whether the user has started learning.
+
+Example:
+
+Core Vocabulary
+
+Common words for everyday conversations
+
+92% complete
+
+The central node should be visually dominant.
+
+Use a white circular background, blue outline, subtle glow, and a soft shadow.
+
+The node should be interactive.
+
+When tapped, open the Core Vocabulary unit.
+
+The central vocabulary unit should be treated as the foundational unit of the entire map.
+
+However, do not force users to complete it before accessing every other thematic unit.
+
+---
+
+## Surrounding thematic units
+
+Arrange the following units around the central node in a circular layout:
+
+1. Travel
+2. Daily Life
+3. Food & Drink
+4. Home
+5. Relationships
+6. Health
+7. Culture
+8. Education
+9. Nature
+10. Science & Technology
+11. Business
+
+Each unit should be represented by a circular node.
+
+Each node should contain:
+
+- A representative icon.
+- The unit name.
+- An optional language proficiency level.
+- A progress indicator or completion state.
+
+Examples:
+
+Travel — A1
+
+Daily Life — A1–A2
+
+Food & Drink — A1–A2
+
+Home — A1–A2
+
+Relationships — A2–B1
+
+Health — A2–B1
+
+Culture — B1–B2
+
+Education — B1–B2
+
+Nature — A2–B1
+
+Science & Technology — B1–B2
+
+Business — B2
+
+These proficiency labels are illustrative defaults. Use existing course-level information if available.
+
+Each thematic unit should have a distinct but harmonious color.
+
+The nodes should be large enough to comfortably tap on a mobile device.
+
+Do not allow labels to overlap.
+
+---
+
+## Connecting lines
+
+Connect the central Core Vocabulary node to each surrounding thematic unit.
+
+Use subtle, thin lines.
+
+The lines should:
+
+- Be visible against the background.
+- Use a light blue or lavender color.
+- Remain behind the nodes.
+- Have a consistent thickness.
+- Avoid crossing through the text inside nodes.
+
+The connections should visually communicate that the central vocabulary is shared across all units.
+
+The lines should not imply that users must complete every unit in a specific order.
+
+---
+
+## Individual lesson nodes
+
+Each thematic unit should have smaller lesson nodes branching outward from it.
+
+These should be visible around the thematic unit, similar to a small skill tree.
+
+Each lesson node should visually represent its status:
+
+- Not started.
+- Available.
+- In progress.
+- Completed.
+- Locked, if prerequisites are genuinely required.
+
+Use visual indicators such as:
+
+- Empty circles for uncompleted lessons.
+- Green checkmarks for completed lessons.
+- A highlighted node for the current lesson.
+- A subtle glow for the next recommended lesson.
+
+Do not lock lessons simply to create artificial linear progression.
+
+The user should be able to access available lessons in their chosen order.
+
+When the map is displayed at a smaller size, individual lesson nodes can be simplified or hidden until the user opens the corresponding thematic unit.
+
+---
+
+# 5. Mobile Layout and Map Navigation
+
+The primary target is Android mobile devices.
+
+The map must be optimized for touch interaction.
+
+The radial layout should adapt to the available screen size.
+
+## Mobile behavior
+
+On mobile:
+
+- Use the available screen area efficiently.
+- Keep the central node visually centered.
+- Keep thematic units arranged around it.
+- Prevent the map from being clipped unexpectedly.
+- Avoid placing important nodes underneath the system navigation bar.
+- Ensure all interactive elements have comfortable touch targets.
+- Support vertical scrolling where necessary.
+- Support pinch-to-zoom if appropriate.
+- Support dragging or panning around the map if the layout exceeds the viewport.
+
+The map should not become unusable on smaller screens.
+
+If all thematic units cannot comfortably fit around the central node, use a controlled zoomable or pannable map rather than shrinking the nodes to unreadable sizes.
+
+A reasonable default zoom level should show the central node and most surrounding thematic units.
+
+## Desktop and tablet behavior
+
+If the application is opened on a larger screen:
+
+- Center the map within the available content area.
+- Increase the map's available size.
+- Maintain the radial arrangement.
+- Avoid stretching the circular nodes.
+- Keep the layout visually balanced.
+
+## Technical implementation
+
+Prefer an SVG-based connection layer or another solution that allows the lines and nodes to remain aligned.
+
+The connection layer must not intercept touch events intended for the nodes.
+
+The map should resize correctly when the viewport changes.
+
+Avoid hardcoding absolute coordinates that only work for one screen size.
+
+If using SVG, ensure it scales correctly and maintains its aspect ratio.
+
+If using CSS positioning, calculate or derive positions in a maintainable way.
+
+Do not introduce a heavy graph visualization library unless the existing project already uses one or there is a clear technical need.
+
+---
+
+# 6. Unit Interaction
+
+When a user taps a thematic unit, open its dedicated unit view.
+
+This should feel like an expansion of the selected branch.
+
+For example, tapping Travel opens:
+
+## Travel
+
+Learn useful words and phrases for your next trip.
+
+Display:
+
+- Unit icon.
+- Unit name.
+- Description.
+- Total lessons.
+- Completed lessons.
+- Progress percentage.
+- Individual lesson nodes.
+- A clear back button.
+
+Example Travel lesson structure:
+
+Travel
+- Essential Travel Vocabulary
+- Transportation
+- At the Airport
+- Booking a Hotel
+- Asking for Directions
+- Buying Tickets
+- Travel Problems
+- Travel Conversation Practice
+
+Each lesson should be represented by an individual node or card.
+
+The unit should have its own progression system.
+
+Completed lessons should remain visible.
+
+The user should be able to return to the radial map without losing their place.
+
+Use the existing Ionic navigation conventions.
+
+Do not create unnecessary nested navigation stacks.
+
+---
+
+# 7. Core Vocabulary Unit
+
+The Core Vocabulary unit should contain the most common and useful words across the target language.
+
+It should include categories such as:
+
+- Pronouns.
+- Common verbs.
+- Basic nouns.
+- Basic adjectives.
+- Numbers.
+- Questions.
+- Negation.
+- Connectors.
+- Everyday expressions.
+
+Example lessons:
+
+1. Basic Pronouns
+2. Essential Verbs
+3. Common Everyday Words
+4. Questions and Answers
+5. Numbers and Time
+6. Basic Descriptions
+7. Common Expressions
+8. Everyday Conversation
+
+The core vocabulary should be reusable across the entire learning map.
+
+For example, if the learner learns the word "want" in Core Vocabulary, the same word should be recognized as already learned when encountered in Travel or Food & Drink.
+
+However, encountering a word in a new context can still generate additional practice.
+
+Do not create separate, unrelated copies of the same vocabulary item for every unit.
+
+Use a shared vocabulary identifier or equivalent mechanism if the existing application supports it.
+
+---
+
+# 8. Vocabulary and Lesson Data Architecture
+
+Implement this feature using a maintainable and extensible data structure.
+
+Do not hardcode every node directly into the HTML template.
+
+Create appropriate models, interfaces, or types based on the existing project architecture.
+
+A thematic unit should contain information such as:
+
+- Unique identifier.
+- Name.
+- Description.
+- Icon.
+- Theme color.
+- Proficiency level.
+- Position or ordering information.
+- Lessons.
+- Associated vocabulary.
+- Progress information.
+
+A lesson should contain:
+
+- Unique identifier.
+- Parent unit identifier.
+- Name.
+- Description.
+- Lesson type.
+- Vocabulary identifiers.
+- Ordering information.
+- Completion status.
+- Optional prerequisite information.
+
+Vocabulary items should be reusable across multiple units.
+
+Progress should be associated with the appropriate user and target language.
+
+Do not assume that the user is learning only one language.
+
+If the app supports multiple target languages, ensure that the map and its progress are language-specific.
+
+Use the existing language-selection mechanism.
+
+If the application currently has no suitable backend, create a local data structure that can later be replaced with backend data without rewriting the UI.
+
+Use mock data only where necessary for the initial implementation.
+
+Clearly separate sample content from the production learning system.
+
+---
+
+# 9. Lesson Launch and Completion
+
+When a user taps a lesson node:
+
+1. Open the existing lesson experience if one is available.
+2. Pass the correct lesson identifier and language.
+3. Preserve the existing lesson behavior.
+4. Allow the user to complete the lesson.
+5. Update the appropriate progress state.
+6. Return to the map or unit view.
+7. Refresh the relevant node's completion indicator.
+8. Update the unit's progress percentage.
+9. Update the Core Vocabulary progress if applicable.
+
+If the existing application already has a lesson completion event, reuse it.
+
+Do not create a second, independent lesson engine.
+
+If the existing lesson engine cannot support this feature directly, implement a small adapter or integration layer.
+
+Do not mark a lesson as completed merely because it was opened.
+
+Completion should be based on the existing lesson completion rules.
+
+---
+
+# 10. Progress Tracking
+
+Progress must be meaningful and consistent.
+
+The central Core Vocabulary node should display its actual completion percentage.
+
+Each thematic unit should also display its progress.
+
+For example:
+
+Core Vocabulary: 92%
+
+Travel: 35%
+
+Food & Drink: 60%
+
+Home: 0%
+
+Calculate progress from completed lessons or the existing progress model.
+
+Do not use arbitrary percentages.
+
+If a unit contains no lessons, avoid division-by-zero errors.
+
+Completed lessons should remain completed after:
+
+- Navigating away from the map.
+- Closing and reopening the application.
+- Changing the selected unit.
+- Returning to the map.
+
+Use the existing progress persistence mechanism.
+
+If progress is stored locally, make sure it is scoped appropriately to the language and user.
+
+Do not overwrite existing progress records.
+
+---
+
+# 11. Visual States and Animations
+
+Implement the following interaction states:
+
+### Default state
+
+The map is displayed with all available thematic units.
+
+### Selected unit
+
+The selected unit should receive a subtle visual highlight.
+
+### Unit expansion
+
+When a thematic unit is selected, smoothly transition to its detailed lesson view.
+
+### Completed lesson
+
+Display a green checkmark or equivalent completion indicator.
+
+### In-progress lesson
+
+Display a distinct visual indicator.
+
+### Locked lesson
+
+Use a muted appearance and explain the actual prerequisite if one exists.
+
+### Recommended lesson
+
+Use a subtle highlight to indicate the next suggested learning activity.
+
+Animations should be short and smooth.
+
+Suggested transitions:
+
+- Node selection: 150–250 ms.
+- Unit expansion: 250–350 ms.
+- Progress indicator updates: 300–500 ms.
+
+Avoid excessive bouncing, flashing, or continuous animations.
+
+Respect the device's reduced-motion accessibility setting.
+
+---
+
+# 12. Navigation Integration
+
+Integrate the new section into the existing application.
+
+Use the current routing and navigation system.
+
+Do not replace the existing home screen.
+
+Do not remove any existing learning paths or features.
+
+The new section should be accessible through an appropriate existing navigation element or a new entry point consistent with the current app.
+
+If the application uses a bottom navigation bar, consider adding an Explore entry only if it fits the current navigation structure.
+
+The Explore section should have its own dedicated screen.
+
+Users should be able to:
+
+- Open Explore.
+- View the radial map.
+- Open a thematic unit.
+- Start a lesson.
+- Return to the unit.
+- Return to the map.
+- Return to the rest of the application.
+
+Use Ionic navigation conventions and preserve the existing back-button behavior on Android.
+
+---
+
+# 13. Accessibility and Usability
+
+Ensure the interface is usable by a wide range of learners.
+
+Requirements:
+
+- Appropriate text contrast.
+- Accessible labels for icon-only buttons.
+- Screen-reader support.
+- Keyboard accessibility where relevant.
+- Clear focus indicators.
+- Minimum comfortable touch target sizes.
+- Avoid conveying lesson status through color alone.
+- Ensure that text does not become unreadable when zoomed.
+- Support reduced motion.
+- Ensure that the map remains usable without precise gestures.
+
+Each lesson node should have an accessible label containing its name and progress status.
+
+For example:
+
+"Transportation, completed."
+
+Or:
+
+"Booking a Hotel, available."
+
+---
+
+# 14. Performance
+
+The map should remain responsive even when a language contains many units and lessons.
+
+Avoid:
+
+- Excessive Angular change detection.
+- Unnecessary DOM elements.
+- Large numbers of continuously animated nodes.
+- Repeated calculations during rendering.
+- Heavy third-party graph dependencies.
+- Repeated backend requests when navigating between units.
+
+Use the existing Angular performance conventions.
+
+If appropriate for the current Angular version, use:
+
+- Signals.
+- OnPush change detection.
+- TrackBy functions or equivalent tracking mechanisms.
+- Computed state for progress calculations.
+- Lazy loading for detailed unit views.
+
+Do not introduce these mechanisms blindly if the existing architecture uses a different established approach.
+
+---
+
+# 15. Suggested Initial Content
+
+For the initial implementation, populate the map with the following thematic units:
+
+| Unit | Icon | Theme |
+|---|---|---|
+| Core Vocabulary | Book | Blue |
+| Travel | Plane or landmark | Pink |
+| Daily Life | Message bubble | Orange |
+| Food & Drink | Utensils | Green |
+| Home | House | Cyan |
+| Relationships | Heart | Purple |
+| Health | Medical cross | Teal |
+| Culture | Landmark | Yellow |
+| Education | Graduation cap | Blue |
+| Nature | Tree | Green |
+| Science & Technology | Flask | Lime |
+| Business | Briefcase | Violet |
+
+The initial data should be realistic enough to demonstrate the full experience.
+
+Each thematic unit should have at least 5–8 sample lessons.
+
+The Core Vocabulary unit should contain at least 8 sample lessons.
+
+The map should not look empty when first opened.
+
+Use the application's current language where possible.
+
+If the application supports multiple target languages, use the currently selected language.
+
+Do not hardcode English as the permanent language of the interface.
+
+---
+
+# 16. Implementation Constraints
+
+These requirements are important:
+
+- Use Angular and Ionic.
+- Use TypeScript.
+- Reuse existing project architecture.
+- Reuse existing lesson components.
+- Reuse existing progress tracking.
+- Reuse existing navigation.
+- Reuse existing styling conventions.
+- Avoid unnecessary dependencies.
+- Avoid introducing a new backend.
+- Do not remove existing functionality.
+- Do not replace the existing application structure.
+- Do not create a static-only mockup.
+- Do not implement fake lesson completion.
+- Do not introduce artificial prerequisites.
+- Do not overwrite user progress.
+- Do not use arbitrary hardcoded progress percentages.
+- Do not create separate vocabulary records for the same word unnecessarily.
+
+If a requirement cannot be implemented directly because of an existing architectural limitation, explain the limitation and choose the most compatible implementation.
+
+---
+
+# 17. Testing and Verification
+
+After implementing the feature:
+
+1. Run the existing build.
+2. Resolve any TypeScript errors.
+3. Resolve Angular template errors.
+4. Resolve Ionic integration errors.
+5. Verify that the application starts successfully.
+6. Verify that the Explore section is accessible.
+7. Verify that the radial map renders correctly.
+8. Verify that the central Core Vocabulary node is interactive.
+9. Verify that every thematic unit is interactive.
+10. Verify that the unit view opens correctly.
+11. Verify that lesson nodes can launch the existing lesson experience.
+12. Verify that lesson completion updates the appropriate progress.
+13. Verify that progress persists after navigating away.
+14. Verify that the map works on a narrow mobile viewport.
+15. Verify that no existing functionality has been broken.
+
+If automated tests already exist, add suitable tests for the new functionality.
+
+At minimum, test the progress calculation logic and unit/lesson navigation.
+
+---
+
+# 18. Expected Deliverables
+
+Implement the feature directly in the current project.
+
+The result should include:
+
+- A fully interactive radial vocabulary map.
+- A central Core Vocabulary node.
+- Thematic units arranged around the center.
+- Visible connections between the center and the units.
+- Interactive lesson nodes.
+- A dedicated unit view.
+- Integration with the existing lesson engine.
+- Functional progress tracking.
+- Persistent completion state.
+- Responsive mobile and desktop layouts.
+- Smooth transitions.
+- Accessible interactions.
+- Maintainable data structures.
+- Integration with the existing application navigation.
+
+After implementation, provide a concise summary of:
+
+1. What was implemented.
+2. Which files were created or modified.
+3. How the map is structured.
+4. How lesson progress is stored.
+5. How the feature integrates with the existing lesson system.
+6. Any limitations or remaining work.
+
+**Final objective:** Create a polished, fully functional Explore section in our existing Angular/Ionic language-learning application, featuring a central Core Vocabulary hub surrounded by interconnected thematic learning units in a radial layout. The user should feel that they are exploring a living language-learning network rather than progressing through a rigid linear course.
+
+Prioritize a faithful implementation of the visual concept, a clean mobile experience, and integration with the existing application over adding unnecessary features.

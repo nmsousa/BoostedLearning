@@ -274,6 +274,12 @@
     cursor: pointer;
     ion-icon { font-size: 22px; }
     &:active { background: var(--ion-color-step-100, rgba(255, 255, 255, 0.06)); }
+
+    // ADMIN ONLY: green speaker = still using the borrowed Duolingo recording
+    // (not yet re-voiced with our TTS). Temporary dev aid.
+    &.from-duolingo {
+      color: var(--ion-color-success, #2dd36f);
+    }
   }
 
   // Dim words the user has hidden from practice.

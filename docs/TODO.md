@@ -196,6 +196,38 @@ Notes / open questions for when this is picked up:
 - Applies across all existing modes; may need a shared "practice session" flow
   rather than per-mode level logic.
 
+### Quiz Audio — listen and pick from similar-sounding words
+Status: **not implemented** — idea to evaluate.
+
+A new audio exercise, similar in spirit to the shipped **Match Audio** but shaped
+like **Quiz**: play a word's audio (recorded clip, else device TTS) and the user
+picks the correct word/translation from a SMALL set of options — **2–4 max**.
+
+Key twist vs. regular Quiz: the distractors should be **minimal pairs / similar-
+sounding words** (confusable by ear), so the exercise trains listening
+discrimination — e.g. for "dessous" offer "dessus"; "poisson" vs "poison";
+"dessert" vs "désert"; "mer/mère/maire". This is about hearing the difference,
+not reading comprehension.
+
+Notes / open questions when picked up:
+- Where it lives: a new mode on the Home grid like Match Audio, and (optionally)
+  a node in the Tree/Journey maps. New progress namespaces `quiz-audio` /
+  `journey-quiz-audio`. Decide whether it becomes a required Tree activity (like
+  Match Audio) or stays standalone/optional.
+- Likely cheapest build: a variant of the existing **Quiz** page (an `isAudio`
+  flag, like Match got), where the prompt is a play button instead of text and
+  the options are words/translations.
+- The hard part is the DISTRACTOR SELECTION — picking genuinely similar-sounding
+  options. Options to consider:
+  - a small hand-authored "minimal pairs" map for the Core/early words;
+  - a phonetic-similarity heuristic (e.g. compare a rough phonetic key /
+    edit-distance on sounds) over the deck's words;
+  - fall back to the normal Quiz distractor logic when no close pair exists.
+- Keep options to 2–4 so the listening choice stays focused.
+- Reuse `AudioService.playWord` (recorded → TTS fallback), same as Match Audio.
+- Tie-in: pairs nicely with the "Learn" step (hear the word first) and with
+  pronunciation practice.
+
 ### Learn mode for beginners (teach before testing)
 Status: **not implemented** — planned.
 
@@ -290,6 +322,58 @@ Fit with this app (we already have the pieces):
 Open questions when picked up: where to source the word list + definitions +
 examples (e.g. a Magoosh-style ~600-word starter set, or Cambridge IELTS), and
 whether to ship it bundled or via the planned download-on-demand deck loading.
+
+### Speech Recognition mode (say the word / sentence out loud)
+Status: **not implemented** — planned.
+
+A new exercise that practises SPEAKING: show the target word/phrase (or play a
+prompt) and have the learner say it out loud; the app listens via speech
+recognition and scores whether what they said matches the expected answer.
+Trains production and pronunciation, which none of the current modes (Write /
+Flip / Match / Quiz / Blanks / Builder) do.
+
+Notes / open questions when picked up:
+- Where it lives: a new mode on the Home grid (an exercise under
+  `src/app/exercises/`), and optionally a node in the Tree/Journey maps. New
+  progress namespaces `speech` / `journey-speech`.
+- Recognition engine: evaluate the Web Speech API (`SpeechRecognition` /
+  `webkitSpeechRecognition`) for the web build vs. a Capacitor speech-to-text
+  plugin for native (e.g. `@capacitor-community/speech-recognition`). Check the
+  target language is supported by the device recognizer; fall back gracefully
+  when unavailable (hide the mode or offer a "tap when done" no-score variant).
+- Scoring: normalize recognizer output and compare to the expected text with
+  the same tolerance ideas as Write (accents, punctuation, minor typos). Decide
+  how strict pronunciation matching should be — likely lenient at first.
+- Permissions: microphone permission request (Android 13+ / iOS), and a clear
+  "we don't record/store audio" stance; process transcripts only.
+- Pairs naturally with the planned "Learn" step (hear the word first) and the
+  Quiz Audio idea (listening) — together they cover listen + speak.
+
+### Mix mode (one session that rotates Write / Match / Quiz / … )
+Status: **not implemented** — planned.
+
+A new mode called **Mix** that blends the existing exercise types in a single
+session instead of drilling one type. As the learner progresses through the
+session's words, the exercise shape rotates — e.g. one item as Write, the next
+as Match, then Quiz, then Flip/Blanks — so practice stays varied and tests the
+same vocabulary from multiple angles (recognition, recall, production).
+
+Notes / open questions when picked up:
+- Where it lives: a new mode on the Home grid (under `src/app/exercises/`), and
+  optionally a Tree/Journey node. New progress namespaces `mix` /
+  `journey-mix` (decide whether Mix writes to its own namespace or feeds each
+  sub-mode's stats).
+- Likely build: a shared "practice session" orchestrator that picks the next
+  item + a sub-mode and renders the matching exercise, rather than duplicating
+  each mode. This overlaps heavily with the Duolingo-style "no-fail" practice
+  item above — consider building the session runner once and having both Mix
+  and no-fail practice sit on top of it.
+- Which modes to include and how to weight/sequence them (round-robin, random,
+  or adapt to the word's current knowledge — e.g. new words start as Flip/Learn,
+  known words get Quiz/Write). Keep Match's pair-batching in mind (it needs
+  several words at once, unlike the single-item modes).
+- Reuse each existing exercise's rendering/scoring so Mix stays thin and the
+  modes don't drift.
 
 ## In progress / recently decided
 

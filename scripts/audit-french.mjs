@@ -11,7 +11,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const deck = JSON.parse(readFileSync('src/assets/flashcards/french.json', 'utf8'));
+const deck = JSON.parse(readFileSync('src/assets/decks/french.json', 'utf8'));
 const cards = deck.cards;
 
 // Curated FR overrides (mirror of CURATED_TRANSLATIONS.fr in the service).

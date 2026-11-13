@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-const d = JSON.parse(readFileSync('src/assets/flashcards/french.json', 'utf8'));
+const d = JSON.parse(readFileSync('src/assets/decks/french.json', 'utf8'));
 
 const OK = new Set(["he's","she's","it's","that's","there's","here's","what's","who's","let's","i'm","you're","we're","they're","i've","i'd","i'll","can't","won't","don't","doesn't","didn't","isn't","aren't","wasn't","weren't","couldn't","wouldn't","shouldn't","haven't","hasn't","o'clock"]);
 const isJunk=(raw)=>{const s=raw.trim(),low=s.toLowerCase();if(!s)return true;if(low==="'s")return true;if(s.length===1&&low!=='i'&&low!=='a')return true;if(/^[a-z]\.$/i.test(s))return true;if(/['’]s$/i.test(s)&&!OK.has(low.replace('’',"'")))return true;return false;};

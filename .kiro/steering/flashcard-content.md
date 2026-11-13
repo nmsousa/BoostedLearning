@@ -1,11 +1,11 @@
 ---
 inclusion: fileMatch
-fileMatchPattern: 'src/assets/flashcards/*.json'
+fileMatchPattern: 'src/assets/decks/*.json'
 ---
 
 # Flashcard deck content conventions
 
-Rules for flashcard decks (`src/assets/flashcards/*.json`) and the code that
+Rules for flashcard decks (`src/assets/decks/*.json`) and the code that
 presents them. These exist so every language — Dutch today, French/Spanish
 later — gets consistent, high-quality practice without re-discovering the same
 problems. The decks are often imported from external sources (e.g. Duolingo)
@@ -64,7 +64,7 @@ shared methods so a fix benefits every mode and every language at once.
 
 ## When adding a new language (checklist)
 
-1. Add the deck JSON under `src/assets/flashcards/` and register it in
+1. Add the deck JSON under `src/assets/decks/` and register it in
    `BUNDLED_DECKS`.
 2. Spot-check the first few levels for: identical-word pairs (Rule 2 handles
    display, but flag if a whole level is identical), and bad primary

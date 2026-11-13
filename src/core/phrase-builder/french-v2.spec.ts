@@ -4,7 +4,7 @@ import {
   type GeneratedPhrase, type SourceCard,
 } from './phrase-builder';
 import { elides, pluralFr, pluralEn } from './french-v2';
-import { CORE_TIERS, THEME_DEFS, type CoreWord } from '../../app/flashcards/tree/tree-curriculum';
+import { CORE_TIERS, THEME_DEFS, type CoreWord } from '../../app/maps/tree/tree-curriculum';
 
 const src = (w: CoreWord): SourceCard => ({ text: w.fr, translations: [w.en] });
 const core = (upTo: number): CoreWord[] => CORE_TIERS.filter(c => c.tier <= upTo && c.authored).flatMap(c => c.words);

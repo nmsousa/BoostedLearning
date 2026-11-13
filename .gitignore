@@ -75,6 +75,10 @@ test-core-output.txt
 # OTA publish output (built locally, uploaded to GitHub Releases)
 scripts/ota-out/
 
+# Local secrets for build scripts (API keys). Keep .env.example tracked.
+.env
+!.env.example
+
 # Generated at build time (version + build date)
 src/build-info.ts
 # Local preview tooling + headless-browser profiles (never committed)
