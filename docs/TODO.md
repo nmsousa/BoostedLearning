@@ -400,3 +400,12 @@ Default speed in Settings, plus: on a second tap of a word's audio, show a
 Move learning-language decks from bundled to download-on-demand (fetch the deck
 JSON on first selection, cache in IndexedDB) so the app stays small. Host JSONs
 on GitHub.
+
+### Timed exercises: pause the clock on the answer-reveal screen
+Status: **not implemented** — for when timed exercises exist.
+
+Once we add timed exercises, the timer must STOP once an answer is submitted and
+the result is shown (the correct/incorrect reveal with the Continue button), and
+only resume (or stay stopped) after the user presses Continue. Reading the
+answer and the explanation should not eat into the clock — the time should count
+only while the user is actually answering, not while reviewing the result.

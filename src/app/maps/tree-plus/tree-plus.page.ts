@@ -19,7 +19,7 @@ import {
   Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { NavController } from '@ionic/angular';
+import { NavController, AlertController, ToastController } from '@ionic/angular';
 import { FlashcardService } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
@@ -41,6 +41,8 @@ export class TreePlusPage implements OnInit, OnDestroy {
   private i18n = inject(I18nAngularService);
   private cdr = inject(ChangeDetectorRef);
   private navCtrl = inject(NavController);
+  private alertCtrl = inject(AlertController);
+  private toastCtrl = inject(ToastController);
   private backInterceptor = inject(BackInterceptorService);
 
   private engine = new TreeEngine({
@@ -62,6 +64,8 @@ export class TreePlusPage implements OnInit, OnDestroy {
 
   core!: TreeNode;
   themes: TreeNode[] = [];
+  /** Theme cards grouped into rows of two to match the 2-column grid. */
+  themeRows: TreeNode[][] = [];
   /** The next Core tier that will unlock (for the "Next: Core N" strip). */
   nextCoreTier = 0;
   nextCoreUnlocked = false;
@@ -109,6 +113,12 @@ export class TreePlusPage implements OnInit, OnDestroy {
     await this.engine.load();
     this.core = this.engine.coreNode();
     this.themes = this.engine.themeNodes();
+    // Chunk into rows of two so the inline expansion can be placed AFTER a
+    // complete grid row (both cards), never between a row's two columns.
+    this.themeRows = [];
+    for (let i = 0; i < this.themes.length; i += 2) {
+      this.themeRows.push(this.themes.slice(i, i + 2));
+    }
 
     // "Next: Core N" strip — the tier after the Core's current done level.
     this.nextCoreTier = Math.min(this.engine.authoredCoreTiers, this.core.doneLevel + 1);
@@ -223,6 +233,40 @@ export class TreePlusPage implements OnInit, OnDestroy {
     }, TreePlusPage.DOUBLE_TAP_MS);
   }
 
+  /**
+   * ADMIN: wipe all Tree progress after a confirm. Resets the shared
+   * tree-v2-<lang> deck, so BOTH the radial Tree and Tree+ go back to scratch
+   * (they share one deck). Collapses any open node and reloads the map.
+   */
+  async resetProgress(): Promise<void> {
+    if (!this.adminMode) return;
+    const alert = await this.alertCtrl.create({
+      header: this.t('treePlus.resetConfirmTitle'),
+      message: this.t('treePlus.resetConfirmBody'),
+      buttons: [
+        { text: this.t('common.cancel'), role: 'cancel' },
+        {
+          text: this.t('treePlus.resetConfirmYes'),
+          role: 'destructive',
+          handler: () => { void this.doReset(); },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  private async doReset(): Promise<void> {
+    this.collapse();
+    await this.engine.adminResetProgress();
+    await this.load();
+    const toast = await this.toastCtrl.create({
+      message: this.t('treePlus.resetDone'),
+      duration: 2000,
+      position: 'bottom',
+    });
+    await toast.present();
+  }
+
   private async adminComplete(node: TreeNode): Promise<void> {
     await this.engine.adminCompleteNextTier(node);
     await this.load();
@@ -237,6 +281,12 @@ export class TreePlusPage implements OnInit, OnDestroy {
   // ── Misc ─────────────────────────────────────────────────────────────────
   close(): void { this.router.navigate(['/home']); }
   trackNode(_i: number, n: TreeNode): string { return n.id; }
+  /** Stable key for a theme row: the ids of its (up to two) cards. */
+  trackRow(_i: number, row: TreeNode[]): string { return row.map(n => n.id).join('|'); }
+  /** True when the currently expanded theme belongs to this row. */
+  rowHasExpanded(row: TreeNode[]): boolean {
+    return this.expandedId != null && row.some(n => n.id === this.expandedId);
+  }
   trackTier(_i: number, t: TreeTier): number { return t.tier; }
   trackMode(_i: number, m: { id: string }): string { return m.id; }
 

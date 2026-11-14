@@ -118,6 +118,7 @@
       <button type="button" class="slot" *ngFor="let w of stage.chosen; let i = index"
         [disabled]="stage.done"
         [class.dragging]="dragIndex === i"
+        [class.drop-target]="dropIndex === i && dragIndex !== i"
         [style.transform]="dragIndex === i ? dragTransform : null"
         (pointerdown)="onPointerDown(i, $event)"
         (click)="unpick(i)">{{ w }}</button>
@@ -143,7 +144,11 @@
     </div>
 
     <div class="phrase-actions">
-      <!-- No Reset button: tapping a chosen word already removes it. -->
+      <!-- Check: validate the arrangement only when the user is ready (the row
+           must be full). Nothing turns red until this is pressed. -->
+      <ion-button *ngIf="!stage.done" expand="block" [disabled]="!canCheck" (click)="check()">
+        {{ 'builder.check' | translate }}
+      </ion-button>
       <!-- Journey node: advance through the generated phrases; standalone: back to map. -->
       <ion-button *ngIf="stage.done && journeyMode" expand="block" color="success" (click)="journeyNext()">{{ 'mode.continue' | translate }}</ion-button>
       <ion-button *ngIf="stage.done && !journeyMode" expand="block" color="success" (click)="backToMap()">{{ 'builder.done' | translate }}</ion-button>

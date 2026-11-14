@@ -350,6 +350,17 @@ export class TreeEngine {
     }
   }
 
+  /**
+   * Admin: wipe ALL progress for the Tree curriculum deck (tree-v2-<lang>) —
+   * every mode's level/star progress plus the per-card counters/streaks. Note
+   * the radial Tree and Tree+ SHARE this one deck, so this resets both views to
+   * a fresh state. Does nothing outside admin mode.
+   */
+  async adminResetProgress(): Promise<void> {
+    if (!this.adminMode || !this.deckId) return;
+    await this.deps.flashcards.resetDeckProgress(this.deckId);
+  }
+
   private async adminPassTier(level: number): Promise<void> {
     for (const m of TREE_MODES) await this.passLevelMode(level, m.mode);
   }

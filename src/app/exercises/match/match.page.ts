@@ -273,10 +273,17 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     };
   }
 
-  /** Play a listen tile's word (recorded clip, else TTS). Auto-plays on select. */
-  playItem(item: MatchItem): void {
+  /** Per-tile count of normal-speed plays (Match Audio), so re-tapping the
+   *  SAME selected tile a 2nd time plays the slow "turtle" version. Keyed by
+   *  pair id. Reset when the board refills. */
+  private audioPlayCounts = new Map<string, number>();
+
+  /** Play a listen tile's word (recorded clip, else TTS). `slow` plays the
+   *  slow replay. Auto-plays on select; re-tapping the selected tile replays. */
+  playItem(item: MatchItem, slow = false): void {
     if (!item.audioText) return;
-    void this.audio.playWord(item.audioText, item.audioUrl, this.settings.learningLanguage());
+    if (!slow) this.audioPlayCounts.set(item.id, (this.audioPlayCounts.get(item.id) ?? 0) + 1);
+    void this.audio.playWord(item.audioText, item.audioUrl, this.settings.learningLanguage(), slow);
   }
 
   /** Initial board fill: up to VISIBLE_PAIRS pairs from the queue. */
@@ -294,6 +301,7 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     this.initialRows = lefts.length;
     this.selectedLeft = null;
     this.selectedRight = null;
+    this.audioPlayCounts.clear();
   }
 
   /**
@@ -353,10 +361,23 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     if (this.locked || item.matched) return;
 
     if (item.side === 'left') {
-      const deselect = this.selectedLeft?.id === item.id && this.selectedLeft.side === item.side;
-      this.selectedLeft = deselect ? null : item;
-      // Audio mode: hearing the word IS the prompt, so play it on select.
-      if (this.isAudio && !deselect) this.playItem(item);
+      const alreadySelected = this.selectedLeft?.id === item.id && this.selectedLeft.side === item.side;
+      if (this.isAudio) {
+        // Audio mode: tapping the SAME selected tile REPLAYS its audio (slow on
+        // the 2nd+ replay) and keeps it selected — so you can listen again
+        // without losing your selection. It only changes selection when you tap
+        // a DIFFERENT tile (or complete the pair). Hearing the word is the prompt.
+        if (alreadySelected) {
+          const plays = this.audioPlayCounts.get(item.id) ?? 0;
+          this.playItem(item, plays >= 1); // 2nd tap onward → slow replay
+        } else {
+          this.selectedLeft = item;
+          this.playItem(item);
+        }
+      } else {
+        // Non-audio: tapping the selected tile deselects it (toggle).
+        this.selectedLeft = alreadySelected ? null : item;
+      }
     } else {
       this.selectedRight = this.selectedRight === item ? null : item;
     }
@@ -483,6 +504,12 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   private computeScorePercent(total: number, cleanPairs: number): number {
     if (total === 0) return 0;
     const accuracy = cleanPairs / total;
+
+    // Match AUDIO is paced by how long each clip takes to play — you must wait
+    // to hear every word — so the speed-based time factor (tuned for VISUAL
+    // matching) would unfairly tank the score (a flawless run could still get 0
+    // stars). Score audio on accuracy alone.
+    if (this.isAudio) return Math.round(accuracy * 100);
 
     const targetSeconds = total * this.secondsPerPair;
     const elapsed = Math.max(1, this.elapsedSeconds);

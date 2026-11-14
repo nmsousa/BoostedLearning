@@ -32,6 +32,11 @@
     <div *ngIf="adminMode" class="tp-admin-tip">
       <ion-icon name="sparkles-outline" aria-hidden="true"></ion-icon>
       <span>{{ 'tree.adminTip' | translate }}</span>
+      <button type="button" class="tp-admin-reset" (click)="resetProgress()"
+        [attr.aria-label]="'treePlus.resetProgress' | translate">
+        <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
+        <span>{{ 'treePlus.resetProgress' | translate }}</span>
+      </button>
     </div>
 
     <p class="tp-tagline">✨ {{ 'treePlus.tagline' | translate }}</p>
@@ -63,10 +68,13 @@
       <span>{{ 'treePlus.chooseTopic' | translate }}</span>
     </div>
 
-    <!-- Theme grid (two columns) -->
+    <!-- Theme grid (two columns). Cards are grouped into rows of two so an
+         expanded card's panel renders AFTER the whole row (both columns),
+         keeping the sibling card in place instead of pushing it below. -->
     <div class="tp-grid">
-      <ng-container *ngFor="let node of themes; trackBy: trackNode">
-        <button type="button" class="tp-topic" [ngClass]="'state-' + node.state" [class.expanded]="expandedId === node.id"
+      <ng-container *ngFor="let row of themeRows; trackBy: trackRow">
+        <button type="button" class="tp-topic" *ngFor="let node of row; trackBy: trackNode"
+          [ngClass]="'state-' + node.state" [class.expanded]="expandedId === node.id"
           [style.--hue]="node.hue" (click)="toggleNode(node)"
           [attr.aria-expanded]="expandedId === node.id"
           [attr.aria-label]="node.title + ', ' + nodeStatus(node) + ', ' + percentOf(node) + '%'">
@@ -85,8 +93,9 @@
           </span>
         </button>
 
-        <!-- Inline activities for a theme, spanning both columns, right after it -->
-        <div *ngIf="expandedId === node.id" class="tp-expand tp-expand-grid">
+        <!-- One full-width expansion slot per row, emitted only when a card in
+             this row is expanded, so it always starts its own new row. -->
+        <div *ngIf="rowHasExpanded(row)" class="tp-expand tp-expand-grid">
           <ng-container *ngTemplateOutlet="tiersTpl"></ng-container>
         </div>
       </ng-container>

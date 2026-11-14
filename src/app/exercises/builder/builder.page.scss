@@ -164,7 +164,16 @@
     z-index: 5;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
     cursor: grabbing;
+    opacity: 0.92;
     &:active:not(:disabled) { transform: none; } // don't fight the inline transform
+  }
+
+  // The slot the dragged chip will drop into — a clear insertion marker so you
+  // can see where the word lands before releasing.
+  .slot.drop-target {
+    outline: 2px dashed var(--ion-color-primary);
+    outline-offset: 2px;
+    background: color-mix(in srgb, var(--ion-color-primary) 55%, transparent);
   }
 }
 // Always reserves its line so appearing/disappearing doesn't shift the layout

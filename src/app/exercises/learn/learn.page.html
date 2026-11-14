@@ -10,20 +10,25 @@
       <ng-container *ngIf="!levelTitle">{{ 'mode.titleLearn' | translate }}</ng-container>
     </ion-title>
   </ion-toolbar>
-  <ion-progress-bar [value]="progress / 100" color="primary"></ion-progress-bar>
+  <ion-progress-bar *ngIf="phase === 'learning'" [value]="progress / 100" color="primary"></ion-progress-bar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="learn-content">
   <div *ngIf="isLoading" class="mode-loading"><ion-spinner name="crescent"></ion-spinner></div>
 
-  <div *ngIf="!isLoading && card" class="learn-stage">
-    <div class="learn-card">
+  <!-- Teaching: swipe through the cards -->
+  <div *ngIf="!isLoading && phase === 'learning' && card" class="learn-stage">
+    <div class="learn-card" [class.transitioning]="transitioning">
       <span *ngIf="card.icon" class="learn-icon" aria-hidden="true">{{ card.icon }}</span>
 
       <div class="learn-word-row">
         <h1 class="learn-fr">{{ card.fr }}</h1>
         <button type="button" class="learn-audio" (click)="playWord()" [attr.aria-label]="'mode.playPronunciation' | translate">
           <ion-icon name="volume-high-outline"></ion-icon>
+        </button>
+        <button type="button" class="learn-audio slow" *ngIf="showSlow" (click)="playWord(true)"
+          [attr.aria-label]="'mode.playSlower' | translate">
+          <ion-icon name="hourglass-outline"></ion-icon>
         </button>
       </div>
 
@@ -38,15 +43,41 @@
 
     <p class="learn-count">{{ index + 1 }} / {{ cards.length }}</p>
   </div>
+
+  <!-- Recap: all the words taught this session -->
+  <div *ngIf="!isLoading && phase === 'done'" class="learn-recap">
+    <div class="recap-head">
+      <ion-icon name="sparkles" class="recap-spark" aria-hidden="true"></ion-icon>
+      <h1 class="recap-title">{{ 'learn.recapTitle' | translate }}</h1>
+      <p class="recap-sub">{{ 'learn.recapSub' | translate:{ n: cards.length } }}</p>
+    </div>
+    <div class="recap-list">
+      <div class="recap-row" *ngFor="let c of cards">
+        <span class="recap-emoji" *ngIf="c.icon" aria-hidden="true">{{ c.icon }}</span>
+        <div class="recap-text">
+          <span class="recap-fr">{{ c.fr }}</span>
+          <span class="recap-en">{{ c.en }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </ion-content>
 
-<ion-footer *ngIf="!isLoading && card" class="learn-footer">
+<ion-footer *ngIf="!isLoading && phase === 'learning' && card" class="learn-footer">
   <div class="footer-inner">
-    <ion-button fill="clear" color="medium" (click)="prev()" [disabled]="index === 0" class="learn-prev">
+    <ion-button fill="clear" color="medium" (click)="prev()" [disabled]="index === 0 || transitioning" class="learn-prev">
       {{ 'common.back' | translate }}
     </ion-button>
-    <ion-button expand="block" (click)="next()" class="learn-next">
+    <ion-button expand="block" (click)="next()" [disabled]="transitioning" class="learn-next">
       {{ (isLast ? 'mode.done' : 'mode.continue') | translate }}
+    </ion-button>
+  </div>
+</ion-footer>
+
+<ion-footer *ngIf="!isLoading && phase === 'done'" class="learn-footer">
+  <div class="footer-inner">
+    <ion-button expand="block" (click)="finish()" class="learn-next">
+      {{ 'mode.done' | translate }}
     </ion-button>
   </div>
 </ion-footer>

@@ -11,18 +11,25 @@
 
 .learn-card {
   width: 100%; max-width: 460px;
+  // Fixed height so cards with a 0-, 1- or 3-line note don't resize the card
+  // (the note area reserves space; content is vertically centred within it).
+  min-height: 300px;
   background: linear-gradient(180deg, rgba(36, 44, 110, 0.9), rgba(18, 22, 60, 0.95));
   border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 22px;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
-  padding: 28px 22px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 28px 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  // Quick fade/slide while advancing, so a fast double-tap can't skip a card.
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  &.transitioning { opacity: 0; transform: translateY(8px); }
 }
 .learn-icon { font-size: 3.4rem; line-height: 1; }
-.learn-word-row { display: flex; align-items: center; gap: 12px; }
+.learn-word-row { display: flex; align-items: center; gap: 10px; }
 .learn-fr { margin: 0; font-size: 2.2rem; font-weight: 800; color: #eef1ff; }
 .learn-audio {
   flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
   background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.16);
   color: #c9cdff; font-size: 20px; cursor: pointer;
+  &.slow { background: rgba(255, 255, 255, 0.06); }
 }
 .learn-en { margin: 0; font-size: 1.2rem; font-weight: 600; color: #c9cdff; }
 .learn-note {
@@ -40,3 +47,25 @@
 }
 .learn-prev { flex: 0 0 auto; }
 .learn-next { flex: 1 1 auto; --border-radius: 14px; }
+
+// ── Recap / summary screen ───────────────────────────────────────────────────
+.learn-recap {
+  min-height: 100%; display: flex; flex-direction: column; align-items: center;
+  padding: 28px 18px calc(18px + var(--ion-safe-area-bottom, 0px)); gap: 18px;
+}
+.recap-head { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.recap-spark { font-size: 2.6rem; color: #ffd36a; }
+.recap-title { margin: 0; font-size: 1.5rem; font-weight: 800; color: #eef1ff; }
+.recap-sub { margin: 0; color: #c9cdff; font-size: 0.95rem; }
+.recap-list {
+  width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 8px;
+}
+.recap-row {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px; padding: 10px 14px;
+}
+.recap-emoji { font-size: 1.5rem; line-height: 1; flex: 0 0 auto; }
+.recap-text { display: flex; flex-direction: column; gap: 2px; }
+.recap-fr { font-weight: 700; color: #eef1ff; font-size: 1.05rem; }
+.recap-en { color: #9aa0d4; font-size: 0.85rem; }

@@ -27,6 +27,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.53',
+    date: '2026-11-13T22:30:00Z',
+    notes: [
+      'Learn: the first word now plays its audio automatically, cards no longer change height between words, and Continue has a short animation so a double-tap can\'t skip a card.',
+      'Learn: nouns are introduced as the bare word (e.g. "café" not "le café") — the article comes back in Write/Builder. Ends with a recap of everything you learned.',
+      'Learn & Match Audio: tap the audio a second time to hear it slowly.',
+      'Match Audio: scoring no longer penalises the time spent listening (a flawless run now earns full stars), and tapping the selected sound again replays it instead of deselecting.',
+      'Builder: place all the words first, then press Check — no more instant red. Smoother drag-and-drop with a clear drop target.',
+      'Tree+: opening a topic no longer pushes the card next to it out of place.',
+    ],
+  },
+  {
     version: '1.3.52',
     date: '2026-11-13T21:50:00Z',
     notes: [

@@ -451,24 +451,39 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
     // happens only once the phrase is full (below). (The older version rejected
     // out-of-order taps, which made the remove/reset actions pointless and let
     // the user "spam" words until the right ones stuck — confusing feedback.)
+    // Place the word only — NO validation here. The user arranges all the
+    // words freely, then presses "Check" to see if it's right (see check()).
+    // This avoids flashing red the instant the row fills.
     this.clearWrong();
     const chosen = [...this.stage.chosen, token];
     this.bank = this.removeFirst(this.bank, token);
+    this.stage = { ...this.stage, chosen, done: false };
+    this.cdr.detectChanges();
+  }
 
-    const full = chosen.length === this.stage.phrase.tokens.length;
-    const correct = full && this.stage.phrase.tokens.every((t, i) => t === chosen[i]);
+  /** True when every slot is filled — enables the Check button. */
+  get canCheck(): boolean {
+    const stage = this.stage;
+    return stage.kind === 'phrase' && !stage.done &&
+      stage.chosen.length === stage.phrase.tokens.length;
+  }
 
-    this.stage = { ...this.stage, chosen, done: correct };
-
+  /**
+   * Validate the current arrangement (triggered by the Check button). Correct →
+   * mark done, play the phrase. Wrong → red chips + shake + hint until the user
+   * edits (which clears the red via clearWrong in pick/unpick/drag).
+   */
+  check(): void {
+    const stage = this.stage;
+    if (stage.kind !== 'phrase' || stage.done) return;
+    if (stage.chosen.length !== stage.phrase.tokens.length) return;
+    const correct = stage.phrase.tokens.every((t, i) => t === stage.chosen[i]);
     if (correct) {
-      this.completed.add(this.stage.phrase.id);
+      this.stage = { ...stage, done: true };
+      this.completed.add(stage.phrase.id);
       this.saveProgress();
-      void this.audio.playWord(this.stage.phrase.target, undefined, this.langCode);
-    } else if (full) {
-      // Full but wrong order: mark it wrong and KEEP it (red chips + message)
-      // until the user edits — removes/reorders a word (unpick / drop) or Reset.
-      // A short-lived `shaking` flag replays just the shake animation on each
-      // new wrong attempt without clearing the persistent red state.
+      void this.audio.playWord(stage.phrase.target, undefined, this.langCode);
+    } else {
       this.wrongOrder = true;
       this.shaking = true;
       if (this.wrongTimer) clearTimeout(this.wrongTimer);
@@ -502,6 +517,8 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
   // reorder as it crosses another chip's centre.
   /** Index of the chip being dragged, or null. Drives the `.dragging` style. */
   dragIndex: number | null = null;
+  /** Slot index the dragged chip would land in — drives a drop-target marker. */
+  dropIndex: number | null = null;
   /** Live transform applied to the dragged chip so it follows the finger. */
   dragTransform: string | null = null;
   /** True briefly after a drag so the trailing click doesn't also unpick. */
@@ -540,17 +557,20 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
       this.dragActive = true;
     }
     ev.preventDefault();
-    // The chip follows the finger.
+    // The chip follows the finger smoothly (no transition during drag).
     this.dragTransform = `translate(${dx}px, ${dy}px) scale(1.06)`;
 
-    // Reorder when the pointer is over a different chip's centre.
+    // Reorder when the pointer crosses another chip's centre (works in BOTH
+    // directions). Track the landing slot so the template can show a marker.
     const target = this.chipIndexAtPoint(ev.clientX, ev.clientY);
+    this.dropIndex = target;
     if (target !== null && target !== this.dragIndex) {
       const chosen = [...this.stage.chosen];
       const [moved] = chosen.splice(this.dragIndex, 1);
       chosen.splice(target, 0, moved);
       this.stage = { ...this.stage, chosen, done: false };
       this.dragIndex = target;
+      this.dropIndex = target;
       this.dragStartX = ev.clientX; // re-anchor so the transform stays small
       this.dragStartY = ev.clientY;
       this.dragTransform = 'scale(1.06)';
@@ -567,25 +587,17 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
 
     const wasDrag = this.dragActive;
     this.dragIndex = null;
+    this.dropIndex = null;
     this.dragActive = false;
     this.dragTransform = null;
 
     if (!wasDrag || this.stage.kind !== 'phrase') { this.cdr.detectChanges(); return; }
 
-    // A real drag happened: suppress the trailing click (unpick) and validate
-    // the new order.
+    // A real drag happened: suppress the trailing click (unpick). Do NOT
+    // validate here — the user presses Check when they're ready (clearing any
+    // previous red state since the order changed).
     this.justDragged = true;
     this.clearWrong();
-    const chosen = this.stage.chosen;
-    const correct =
-      chosen.length === this.stage.phrase.tokens.length &&
-      this.stage.phrase.tokens.every((t, i) => t === chosen[i]);
-    this.stage = { ...this.stage, done: correct };
-    if (correct) {
-      this.completed.add(this.stage.phrase.id);
-      this.saveProgress();
-      void this.audio.playWord(this.stage.phrase.target, undefined, this.langCode);
-    }
     this.cdr.detectChanges();
   }
 

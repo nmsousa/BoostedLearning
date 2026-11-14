@@ -40,6 +40,14 @@
   padding: 8px 12px; border-radius: 12px; font-size: 0.8rem; color: #ffe9a8;
   background: rgba(255, 196, 0, 0.1); border: 1px solid rgba(255, 196, 0, 0.25);
 }
+.tp-admin-reset {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 10px; font-size: 0.78rem; font-weight: 600;
+  color: #ffb4b4; background: rgba(255, 70, 70, 0.12);
+  border: 1px solid rgba(255, 70, 70, 0.35); cursor: pointer;
+  ion-icon { font-size: 15px; }
+  &:active { background: rgba(255, 70, 70, 0.22); }
+}
 .tp-tagline { margin: 2px 0 14px; color: #c9cdff; font-weight: 600; font-size: 0.9rem; }
 
 // ── Hero Core card ───────────────────────────────────────────────────────────
