@@ -23,12 +23,13 @@
 
       <div class="learn-word-row">
         <h1 class="learn-fr">{{ card.fr }}</h1>
-        <button type="button" class="learn-audio" (click)="playWord()" [attr.aria-label]="'mode.playPronunciation' | translate">
-          <ion-icon name="volume-high-outline"></ion-icon>
-        </button>
-        <button type="button" class="learn-audio slow" *ngIf="showSlow" (click)="playWord(true)"
-          [attr.aria-label]="'mode.playSlower' | translate">
-          <ion-icon name="hourglass-outline"></ion-icon>
+        <!-- One button. First plays = normal (speaker); after the word has been
+             played 3× it becomes the SLOW replay (gauge + real rate). -->
+        <button type="button" class="learn-audio" [class.playing]="playing()" [class.slow]="showSlow"
+          (click)="playWord(showSlow)"
+          [attr.aria-label]="(showSlow ? 'mode.playSlower' : 'mode.playPronunciation') | translate">
+          <app-slow-audio-icon *ngIf="showSlow" [active]="playing()" [rate]="slowRate"></app-slow-audio-icon>
+          <ion-icon *ngIf="!showSlow" name="volume-high" aria-hidden="true"></ion-icon>
         </button>
       </div>
 
@@ -41,7 +42,6 @@
       </div>
     </div>
 
-    <p class="learn-count">{{ index + 1 }} / {{ cards.length }}</p>
   </div>
 
   <!-- Recap: all the words taught this session -->
@@ -53,7 +53,10 @@
     </div>
     <div class="recap-list">
       <div class="recap-row" *ngFor="let c of cards">
-        <span class="recap-emoji" *ngIf="c.icon" aria-hidden="true">{{ c.icon }}</span>
+        <!-- Reserve the fixed emoji box for EVERY row only when at least one
+             word in the set has an icon (keeps the text column aligned). If no
+             word has an icon, drop the box entirely so text is left-aligned. -->
+        <span class="recap-emoji" *ngIf="anyIcon" aria-hidden="true">{{ c.icon || '' }}</span>
         <div class="recap-text">
           <span class="recap-fr">{{ c.fr }}</span>
           <span class="recap-en">{{ c.en }}</span>

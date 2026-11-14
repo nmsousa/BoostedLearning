@@ -40,13 +40,8 @@ const routes: Routes = [
     loadChildren: () => import('../exercises/blanks/blanks.module').then(m => m.BlanksPageModule)
   },
   {
-    // EXPERIMENTAL: Journey map (game-style level map). Its own page.
-    path: 'journey',
-    loadChildren: () => import('../maps/journey/journey.module').then(m => m.JourneyPageModule)
-  },
-  {
-    // EXPERIMENTAL: Journey+ — redesigned map, kept alongside the classic
-    // Journey for comparison. Same journey-* progress.
+    // EXPERIMENTAL: Journey+ — redesigned map. Same journey-* progress.
+    // (The classic "Journey" map was removed; Journey+/++ remain.)
     path: 'journey-plus',
     loadChildren: () => import('../maps/journey-plus/journey-plus.module').then(m => m.JourneyPlusPageModule)
   },
@@ -62,10 +57,21 @@ const routes: Routes = [
     loadChildren: () => import('../maps/tree/tree.module').then(m => m.TreePageModule)
   },
   {
-    // EXPERIMENTAL: Tree+ — the same Tree engine/data in a vertical, card-based
-    // layout (top-to-bottom) instead of the radial star. Shares the Tree deck.
+    // Explore (formerly "Tree+") — the Tree engine/data in a vertical,
+    // card-based layout. Route kept as 'tree-plus' for stability. Shares deck.
     path: 'tree-plus',
     loadChildren: () => import('../maps/tree-plus/tree-plus.module').then(m => m.TreePlusPageModule)
+  },
+  {
+    // Explore+ — a stacked vertical variant of Explore: Core 1, Themes 1,
+    // Core 2, Themes 2, … all laid out top-to-bottom. Shares the Tree deck.
+    path: 'explore-plus',
+    loadChildren: () => import('../maps/explore-plus/explore-plus.module').then(m => m.ExplorePlusPageModule)
+  },
+  {
+    // Mix — a single session mixing several exercise types for a level.
+    path: 'mix/:id',
+    loadChildren: () => import('../exercises/mix/mix.module').then(m => m.MixPageModule)
   },
   {
     // EXPERIMENTAL: a Journey level reuses the Write exercise, scored under

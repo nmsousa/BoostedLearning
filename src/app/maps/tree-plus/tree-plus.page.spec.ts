@@ -24,11 +24,20 @@ function makeProgress(fullyDoneLevels: number[]): Map<string, { bestScore: numbe
   return m;
 }
 
-/** Fully complete so theme 0 reaches tier `maxTier`: Core 1..maxTier + 3 themes per earlier tier. */
+/** Levels for ALL themes that author tier `tier`. Core/Theme N+1 now unlock
+ *  only once EVERY theme's tier N is complete (strict rule). */
+function allThemesAtTier(tier: number): number[] {
+  const levels: number[] = [];
+  THEME_DEFS.forEach((th, i) => { if (tier <= th.tiers.length) levels.push(themeLevelOf(i, tier)); });
+  return levels;
+}
+
+/** Fully complete so theme 0 reaches tier `maxTier`: Core 1..maxTier + ALL
+ *  themes at each earlier tier. */
 function openThemeAtTier(maxTier: number): number[] {
   const levels: number[] = [];
   for (let t = 1; t <= maxTier; t++) levels.push(t);
-  for (let t = 1; t < maxTier; t++) for (const ti of [0, 1, 2]) levels.push(themeTier1Level(ti) + (t - 1));
+  for (let t = 1; t < maxTier; t++) levels.push(...allThemesAtTier(t));
   return levels;
 }
 
@@ -139,11 +148,27 @@ describe('TreePlusPage (vertical Tree)', () => {
     expect(extras.queryParams['pool']).toBe(`1,2,${themeLevelOf(0, 1)}`);
   });
 
-  it('computes a rough percent-learned for a node', async () => {
-    doneLevels = [1, themeTier1Level(0)]; // Core 1 + food L1 fully done
+  it('percent reflects the CURRENT level — 0% when the next level is untouched', async () => {
+    // Core 1 + food L1 fully done. Food has more tiers (L2/L3), so the card now
+    // shows progress toward the NEXT level (L2) — which is untouched → 0%
+    // (not the finished L1's 100%). The displayed "current level" is 2.
+    doneLevels = [1, themeTier1Level(0)];
     await component.ngOnInit();
     const food = component.themes.find(n => n.id === 'food')!;
-    // food availTier 1, all 5 modes done → 100%.
+    expect(component.currentTier(food)).toBe(2);
+    expect(component.percentOf(food)).toBe(0);
+  });
+
+  it('percent is 100% only once the LAST authored tier is complete', async () => {
+    // Open food up to its last tier, THEN complete that last tier too, so
+    // food.doneLevel === maxTier → the node reads 100%.
+    const food0 = THEME_DEFS.find(t => t.id === 'food')!;
+    const lastTier = food0.tiers.length;
+    const foodIdx = THEME_DEFS.findIndex(t => t.id === 'food');
+    doneLevels = [...openThemeAtTier(lastTier), themeLevelOf(foodIdx, lastTier)];
+    await component.ngOnInit();
+    const food = component.themes.find(n => n.id === 'food')!;
+    expect(food.doneLevel).toBe(lastTier);
     expect(component.percentOf(food)).toBe(100);
   });
 });

@@ -166,7 +166,7 @@ export class FlashcardsPage implements OnInit {
     // sensible fallback covers the whole PracticeMode union.
     const labels: Partial<Record<PracticeMode, string>> = {
       flip: 'Flashcards', write: 'Write', match: 'Match', 'match-audio': 'Match Audio', quiz: 'Quiz',
-      journey: 'Journey', builder: 'Builder', blanks: 'Blanks',
+      journey: 'Journey', builder: 'Builder', blanks: 'Blanks', learn: 'Learn', mix: 'Mix',
     };
     return labels[this.mode] ?? 'Flashcards';
   }
@@ -177,7 +177,7 @@ export class FlashcardsPage implements OnInit {
       flip: 'albums-outline', write: 'create-outline', match: 'git-compare-outline',
       'match-audio': 'volume-high-outline',
       quiz: 'help', journey: 'map-outline', builder: 'construct-outline',
-      blanks: 'reorder-four-outline',
+      blanks: 'reorder-four-outline', learn: 'school-outline', mix: 'shuffle-outline',
     };
     return icons[this.mode] ?? 'albums-outline';
   }
@@ -187,6 +187,7 @@ export class FlashcardsPage implements OnInit {
     const colors: Partial<Record<PracticeMode, string>> = {
       flip: 'primary', write: 'secondary', match: 'tertiary', 'match-audio': 'tertiary',
       quiz: 'success', journey: 'warning', builder: 'tertiary', blanks: 'danger',
+      learn: 'primary', mix: 'tertiary',
     };
     return colors[this.mode] ?? 'primary';
   }
@@ -262,7 +263,7 @@ export class FlashcardsPage implements OnInit {
   async ngOnInit() {
     // Mode chosen on the home page; defaults to Flashcards (flip).
     const modeParam = this.route.snapshot.queryParamMap.get('mode') as PracticeMode | null;
-    if (modeParam && ['flip', 'write', 'match', 'match-audio', 'quiz', 'blanks'].includes(modeParam)) {
+    if (modeParam && ['flip', 'write', 'match', 'match-audio', 'quiz', 'blanks', 'learn', 'mix'].includes(modeParam)) {
       this.mode = modeParam;
     }
 
@@ -609,6 +610,8 @@ export class FlashcardsPage implements OnInit {
       'match-audio': '/practice/match',
       quiz: '/practice/quiz',
       blanks: '/practice/blanks',
+      learn: '/practice/learn',
+      mix: '/practice/mix',
     };
     const base = routes[this.mode];
     if (!base) return;

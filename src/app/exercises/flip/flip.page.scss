@@ -372,31 +372,40 @@
 // right of the word (anchored to the word's right edge) so they're near the
 // word without shifting it off-center.
 .word-row {
+  // The WORD stays centred in the card; the audio button is pinned to the
+  // right edge (vertically centred) so it never shifts the word off-centre,
+  // even when the word wraps to two lines ("la pomme", "le restaurant").
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
+  // Reserve room on both sides so a centred long word doesn't slide under the
+  // right-hand button.
+  padding: 0 56px;
+  box-sizing: border-box;
 
   .word-anchor {
-    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .card-word { margin: 0; min-width: 0; overflow-wrap: anywhere; text-align: center; }
+
+  .audio-actions {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
     display: inline-flex;
     align-items: center;
   }
 
-  .card-word { margin: 0; }
-
-  .audio-actions {
-    position: absolute;
-    left: 100%;
-    top: 50%;
-    transform: translateY(-50%);
-    margin-left: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
   .audio-icon {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -407,18 +416,31 @@
     background: rgba(255, 255, 255, 0.18);
     cursor: pointer;
     flex-shrink: 0;
+    color: #fff;
+    font-size: 22px;               // base size for the slow (gauge) icon
 
     ion-icon { font-size: 20px; color: #fff; }
 
     &:active { transform: scale(0.94); }
-  }
 
-  // Slow-replay button: same shape as the main audio icon, slightly subtler.
-  .audio-icon.slow {
-    width: 34px;
-    height: 34px;
-    background: rgba(255, 255, 255, 0.12);
+    // Slow state: same size as the speaker (no shrinking), just a subtler fill.
+    &.slow { background: rgba(255, 255, 255, 0.12); }
 
-    ion-icon { font-size: 17px; }
+    // While a clip plays: a single border highlight + a gentle icon bounce,
+    // matching the Learn play button.
+    &.playing {
+      animation: flip-audio-border 0.9s ease-in-out;
+      ion-icon, app-slow-audio-icon { animation: flip-audio-bounce 0.6s ease-in-out infinite alternate; }
+    }
   }
+}
+@keyframes flip-audio-border {
+  0%   { box-shadow: 0 0 0 0 rgba(106, 92, 255, 0); }
+  50%  { box-shadow: 0 0 0 3px rgba(106, 92, 255, 0.6); }
+  100% { box-shadow: 0 0 0 0 rgba(106, 92, 255, 0); }
+}
+@keyframes flip-audio-bounce { from { transform: scale(0.92); } to { transform: scale(1.08); } }
+:host-context(.reduced-motion) .audio-icon.playing {
+  animation: none;
+  ion-icon, app-slow-audio-icon { animation: none; }
 }

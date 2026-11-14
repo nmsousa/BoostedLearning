@@ -43,8 +43,21 @@
     display: inline-block;
     min-width: 72px;
     border-bottom: 3px solid var(--ion-color-primary);
-    // Nudge the underline down to sit on the text baseline of the words beside it.
-    transform: translateY(-2px);
+    // Sit the underline a touch BELOW the baseline so it reads as a writing
+    // line under the words beside it (was nudged too high before).
+    transform: translateY(4px);
+  }
+
+  // Once answered, the blank is FILLED with the chosen word, coloured by
+  // correctness so the completed sentence is readable before moving on.
+  .blank.filled {
+    min-width: 0;
+    padding: 0 6px;
+    border-bottom-width: 3px;
+    font-weight: 800;
+    transform: none;
+    &.correct { color: var(--ion-color-success); border-bottom-color: var(--ion-color-success); }
+    &.wrong { color: var(--ion-color-danger); border-bottom-color: var(--ion-color-danger); }
   }
 }
 

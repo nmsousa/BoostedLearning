@@ -423,8 +423,14 @@ export const CORE_TIERS: CoreTierDef[] = [
 /** Config: tiers + the distinct-themes-per-tier threshold (brief §6.1). */
 export const TREE_CONFIG = {
   coreTiers: CORE_TIERS.length,
-  /** Distinct theme milestones at tier N needed to unlock Core tier N+1. */
-  themesToAdvance: 3,
+  /**
+   * Distinct theme milestones at tier N needed to unlock Core tier N+1.
+   * Set high so the effective requirement is ALL themes that have tier-N
+   * content (computeProgression clamps to `min(themesToAdvance, available)`):
+   * Core N+1 opens only once EVERY theme's tier N is complete. This keeps the
+   * flow strict — Core 1 → all Themes 1 → Core 2 → all Themes 2 → …
+   */
+  themesToAdvance: 99,
 };
 
 /**

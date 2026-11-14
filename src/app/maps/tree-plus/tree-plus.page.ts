@@ -72,6 +72,9 @@ export class TreePlusPage implements OnInit, OnDestroy {
 
   /** Expanded node id ('core' or a theme id), null = none. */
   expandedId: string | null = null;
+  /** Tier numbers whose word list is currently expanded (words are hidden by
+   *  default; the user toggles them per tier). Cleared when a node collapses. */
+  private openWordTiers = new Set<number>();
   expandedTitle = '';
   expandedEmoji = '';
   /** Tiers of the expanded node (newest first), with words + activities. */
@@ -128,6 +131,67 @@ export class TreePlusPage implements OnInit, OnDestroy {
     this.isLoading = false;
     this.switchingLanguage = false;
     this.cdr.detectChanges();
+
+    // Celebrate finishing a whole level: when the Core's available tier has
+    // advanced past what we last celebrated, Core N + ALL themes N are done —
+    // so "Level N is complete, Level N+1 is now open". Shown once per level.
+    void this.maybeCelebrateLevelUp();
+  }
+
+  /** localStorage key for the highest level we've already celebrated (per lang). */
+  private get levelUpKey(): string { return `boosted-tree-levelup-${this.learningLanguage}`; }
+  /** The Core available-tier seen on the PREVIOUS load this visit (−1 = not yet
+   *  measured). The celebration only fires when this INCREASES while the page
+   *  is open — i.e. the user just finished the level here — never merely
+   *  because the level is already high when the page first opens. */
+  private prevAvailTier = -1;
+
+  private async maybeCelebrateLevelUp(): Promise<void> {
+    const availTier = this.engine.coreNode().availTier;
+
+    // First measurement this visit: record the baseline and DON'T celebrate.
+    // Opening Explore at an already-high level must never pop the modal.
+    if (this.prevAvailTier < 0) { this.prevAvailTier = availTier; return; }
+
+    // Only celebrate a genuine increase that happened while the page was open.
+    if (availTier <= this.prevAvailTier) { this.prevAvailTier = availTier; return; }
+    this.prevAvailTier = availTier;
+
+    // The Core's available tier N means levels 1..N-1 are each fully complete.
+    const completedLevel = availTier - 1;
+    if (completedLevel < 1) return;
+
+    // Never repeat a level we've already celebrated (survives reloads).
+    let lastCelebrated = 0;
+    try { lastCelebrated = Number(localStorage.getItem(this.levelUpKey) ?? 0); } catch { /* ignore */ }
+    if (completedLevel <= lastCelebrated) return;
+    try { localStorage.setItem(this.levelUpKey, String(completedLevel)); } catch { /* ignore */ }
+
+    const nextLevel = completedLevel + 1;
+    const alert = await this.alertCtrl.create({
+      header: this.t('treePlus.levelUpTitle', { n: completedLevel }),
+      message: this.t('treePlus.levelUpBody', { done: completedLevel, next: nextLevel }),
+      buttons: [{ text: this.t('treePlus.levelUpGo'), role: 'confirm' }],
+      cssClass: 'tp-levelup-alert',
+    });
+    await alert.present();
+    await alert.onDidDismiss();
+    // Bring the Core card (now showing the newly-unlocked level) into view at
+    // the top and pulse it so the learner notices they can play it now.
+    this.collapse();
+    await this.scrollToTop();
+    this.pulseCore = true;
+    this.cdr.detectChanges();
+    setTimeout(() => { this.pulseCore = false; this.cdr.detectChanges(); }, 2600);
+  }
+
+  /** True briefly after a level-up to pulse the Core hero card's border. */
+  pulseCore = false;
+
+  /** Smooth-scroll the Explore content back to the top (to the Core card). */
+  private async scrollToTop(): Promise<void> {
+    const content = document.querySelector('app-tree-plus ion-content') as HTMLIonContentElement | null;
+    try { await content?.scrollToTop?.(400); } catch { /* ignore */ }
   }
 
   async selectLanguage(code: string): Promise<void> {
@@ -141,24 +205,68 @@ export class TreePlusPage implements OnInit, OnDestroy {
   }
 
   // ── Progress display ────────────────────────────────────────────────────────
-  /** Rough "% learned" for a node = passed activities / (availTier × 5). */
-  percentOf(node: TreeNode): number {
-    const tiers = node.availTier;
-    if (tiers <= 0) return 0;
-    let passed = 0;
-    for (let t = 1; t <= tiers; t++) {
-      const level = this.engine.levelOf(node.id, t);
-      if (!level) continue;
-      for (const m of this.engine.modesFor(level, node.id, t)) if (m.state === 'done') passed++;
-    }
-    return Math.round((passed / (tiers * this.engine.modes.length)) * 100);
+  /**
+   * The 1-based tier the learner is CURRENTLY working toward for a node.
+   * = doneLevel + 1 (the next tier), capped at the node's authored maxTier, and
+   * never below 1. So a node fully done at tier 1 but whose tier 2 exists reads
+   * "Level 2" (at 0%) even before tier 2 is unlocked — the card shows the next
+   * goal, not "completed". A node done at its LAST tier reads that last tier.
+   */
+  currentTier(node: TreeNode): number {
+    const next = node.doneLevel + 1;
+    return Math.min(Math.max(1, next), Math.max(1, node.maxTier));
   }
 
-  /** Short state label for a node card. */
+  /**
+   * "% learned" for a node, scoped to the tier the learner is CURRENTLY on —
+   * i.e. the passed activities of the open tier over its total activities.
+   *
+   * Earlier this averaged over ALL unlocked tiers, so finishing a tier and
+   * unlocking the next made the bar jump to ~50% (the done tier dragged it up)
+   * even though the new tier was untouched. Scoping to the current tier makes a
+   * freshly-unlocked tier correctly read 0%, climbing to 100% as you complete
+   * its activities, then resetting to 0% when the next tier opens.
+   */
+  percentOf(node: TreeNode): number {
+    if (node.availTier <= 0) return 0;
+    const tier = this.currentTier(node);
+    // If the current-goal tier is BEYOND what's done (e.g. a theme whose tier 2
+    // isn't started/unlocked yet), it reads 0% — not the completed tier's 100%.
+    if (tier > node.doneLevel) {
+      // Unless that tier is actually in progress (some of its modes passed).
+      const lvl = this.engine.levelOf(node.id, tier);
+      const modes = lvl ? this.engine.modesFor(lvl, node.id, tier) : [];
+      if (!modes.length || modes.every(m => m.state !== 'done')) return 0;
+      return Math.round((modes.filter(m => m.state === 'done').length / modes.length) * 100);
+    }
+    // The goal tier is the done tier (node finished its last authored tier) → 100%.
+    return 100;
+  }
+
+  /** True only when a node has finished its LAST authored tier — i.e. there's
+   *  nothing left to do. Drives the green "done" check badge and the
+   *  "completed" label. A node that finished an EARLIER level (with more to
+   *  come) is NOT fully complete — it's working toward the next level. */
+  isFullyComplete(node: TreeNode): boolean {
+    return node.maxTier > 0 && node.doneLevel >= node.maxTier;
+  }
+
+  /** Words list visibility (hidden by default) for a tier. */
+  isWordsOpen(tier: number): boolean { return this.openWordTiers.has(tier); }
+  toggleWords(tier: number): void {
+    if (this.openWordTiers.has(tier)) this.openWordTiers.delete(tier);
+    else this.openWordTiers.add(tier);
+    this.cdr.detectChanges();
+  }
+
+  /** Short state label for a node card. Shows the CURRENT (1-based) level the
+   *  learner is working toward, so a fresh node reads "Level 1" and a node that
+   *  just finished a level reads the NEXT level (not "completed"). Only a node
+   *  that has finished its LAST authored tier reads "completed". */
   nodeStatus(node: TreeNode): string {
     if (node.state === 'locked') return this.t('tree.comingSoon');
-    if (node.state === 'done') return this.t('tree.unit.done');
-    return this.t('tree.levelShort', { n: node.doneLevel });
+    if (this.isFullyComplete(node)) return this.t('tree.unit.done');
+    return this.t('tree.levelShort', { n: this.currentTier(node) });
   }
 
   // ── Expand / collapse (inline) ────────────────────────────────────────────
@@ -188,6 +296,7 @@ export class TreePlusPage implements OnInit, OnDestroy {
   collapse(): void {
     this.expandedId = null;
     this.expandedTiers = [];
+    this.openWordTiers.clear();
     this.cdr.detectChanges();
   }
 
@@ -201,6 +310,15 @@ export class TreePlusPage implements OnInit, OnDestroy {
   }
 
   // ── Launch ─────────────────────────────────────────────────────────────────
+  /** Launch a MIX session (several activity types) for a tier's level — a
+   *  "play a bit of everything" shortcut, not a completion node. Returns here. */
+  launchMix(tier: TreeTier): void {
+    if (!this.engine.deckId) return;
+    this.navCtrl.navigateForward(['/practice/mix', this.engine.deckId], {
+      queryParams: { level: tier.level, from: JOURNEY_TREE_PLUS_FROM },
+    });
+  }
+
   onModeTap(tier: TreeTier, modeIndex: number): void {
     const m = tier.modes[modeIndex];
     if (m.state === 'locked') return;
@@ -257,6 +375,8 @@ export class TreePlusPage implements OnInit, OnDestroy {
 
   private async doReset(): Promise<void> {
     this.collapse();
+    try { localStorage.removeItem(this.levelUpKey); } catch { /* ignore */ }
+    this.prevAvailTier = -1;   // re-baseline so the reset doesn't trigger a celebration
     await this.engine.adminResetProgress();
     await this.load();
     const toast = await this.toastCtrl.create({

@@ -464,8 +464,9 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
   /** True when every slot is filled — enables the Check button. */
   get canCheck(): boolean {
     const stage = this.stage;
-    return stage.kind === 'phrase' && !stage.done &&
-      stage.chosen.length === stage.phrase.tokens.length;
+    // Enabled as soon as at least one block is placed (the user may check an
+    // incomplete attempt — it just won't be correct until every slot is right).
+    return stage.kind === 'phrase' && !stage.done && stage.chosen.length > 0;
   }
 
   /**
@@ -475,9 +476,12 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
    */
   check(): void {
     const stage = this.stage;
-    if (stage.kind !== 'phrase' || stage.done) return;
-    if (stage.chosen.length !== stage.phrase.tokens.length) return;
-    const correct = stage.phrase.tokens.every((t, i) => t === stage.chosen[i]);
+    if (stage.kind !== 'phrase' || stage.done || stage.chosen.length === 0) return;
+    // Correct only when the full phrase is present AND in the right order; an
+    // incomplete attempt counts as wrong (shows the red/shake nudge).
+    const correct =
+      stage.chosen.length === stage.phrase.tokens.length &&
+      stage.phrase.tokens.every((t, i) => t === stage.chosen[i]);
     if (correct) {
       this.stage = { ...stage, done: true };
       this.completed.add(stage.phrase.id);

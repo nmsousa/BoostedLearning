@@ -1,0 +1,37 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="close()" [attr.aria-label]="'mode.close' | translate">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      <ng-container *ngIf="levelTitle">{{ levelTitle }}</ng-container>
+      <ng-container *ngIf="!levelTitle">{{ 'mix.title' | translate }}</ng-container>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="mix-content">
+  <!-- Between activities: show progress + a Continue button. The user launches
+       each step themselves (no auto-advance), so activities never stack. -->
+  <div *ngIf="!isLoading && phase === 'intro'" class="mix-stage">
+    <div class="mix-dots" *ngIf="stepDots.length">
+      <span class="mix-dot" *ngFor="let d of stepDots" [ngClass]="'is-' + d.state">
+        <ion-icon [name]="d.icon" aria-hidden="true"></ion-icon>
+      </span>
+    </div>
+    <p class="mix-step-label">{{ 'mix.stepOf' | translate:{ n: nextStepNumber, total: totalSteps } }}</p>
+    <ion-button expand="block" class="mix-continue" (click)="playNext()">
+      {{ 'mode.continue' | translate }}
+    </ion-button>
+  </div>
+
+  <!-- Recap when every activity is done. -->
+  <div *ngIf="phase === 'done'" class="mix-done">
+    <ion-icon name="sparkles" class="mix-done-icon" aria-hidden="true"></ion-icon>
+    <h1 class="mix-done-title">{{ 'mix.doneTitle' | translate }}</h1>
+    <p class="mix-done-sub">{{ 'mix.doneSub' | translate:{ n: totalSteps } }}</p>
+    <ion-button expand="block" (click)="finish()" class="mix-done-btn">{{ 'mode.done' | translate }}</ion-button>
+  </div>
+</ion-content>

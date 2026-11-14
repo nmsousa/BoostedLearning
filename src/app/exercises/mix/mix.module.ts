@@ -1,22 +1,18 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-
+import { RouterModule } from '@angular/router';
 import { IonicModule } from '@ionic/angular/lazy';
 
-import { JourneyPageRoutingModule } from './journey-routing.module';
 import { SharedModule } from '../../shared/shared.module';
-
-import { JourneyPage } from './journey.page';
+import { MixPage } from './mix.page';
 
 @NgModule({
   imports: [
     CommonModule,
-    FormsModule,
     IonicModule,
-    JourneyPageRoutingModule,
     SharedModule,
+    RouterModule.forChild([{ path: '', component: MixPage }]),
   ],
-  declarations: [JourneyPage],
+  declarations: [MixPage],
 })
-export class JourneyPageModule {}
+export class MixPageModule {}

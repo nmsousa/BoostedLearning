@@ -16,8 +16,10 @@ export const JOURNEY_PLUS_FROM = 'journey-plus';
 export const JOURNEY_PLUS_PLUS_FROM = 'journey-plus-plus';
 /** `from` value passed by the Tree map (radial star). */
 export const JOURNEY_TREE_FROM = 'tree';
-/** `from` value passed by the Tree+ map (vertical list). */
+/** `from` value passed by the Tree+ / "Explore" map (vertical list). */
 export const JOURNEY_TREE_PLUS_FROM = 'tree-plus';
+/** `from` value passed by the "Explore+" stacked map. */
+export const JOURNEY_EXPLORE_PLUS_FROM = 'explore-plus';
 
 /** Return route for a Journey node exercise. */
 export function journeyBackUrl(query: ParamMap): string {
@@ -26,7 +28,13 @@ export function journeyBackUrl(query: ParamMap): string {
     case JOURNEY_PLUS_PLUS_FROM: return '/practice/journey-plus-plus';
     case JOURNEY_TREE_FROM: return '/practice/tree';
     case JOURNEY_TREE_PLUS_FROM: return '/practice/tree-plus';
-    default: return '/practice/journey';
+    case JOURNEY_EXPLORE_PLUS_FROM: return '/practice/explore-plus';
+    // Mix orchestrator: it passes `mixReturn=/practice/mix/<deckId>` so each
+    // sub-exercise returns to the Mix page, which then advances to the next.
+    case 'mix': return query.get('mixReturn') ?? '/practice';
+    // The classic Journey map was removed; send any stale/unknown `from`
+    // (and the old 'journey' value) to the practice home instead of a dead route.
+    default: return '/practice';
   }
 }
 

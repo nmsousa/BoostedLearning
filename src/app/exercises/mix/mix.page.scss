@@ -1,0 +1,25 @@
+.mix-content { --background: linear-gradient(180deg, #1a1346, #0b0a24); }
+
+.mix-stage {
+  min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; padding: 24px; text-align: center;
+}
+.mix-dots { display: flex; gap: 10px; }
+.mix-dot {
+  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #9aa0d4; font-size: 16px;
+  &.is-done { color: #2dd36f; border-color: rgba(45, 211, 111, 0.4); }
+  &.is-current { color: #eef1ff; border-color: var(--ion-color-primary); background: rgba(80, 90, 230, 0.2); }
+}
+.mix-step-label { color: #c9cdff; font-size: 1rem; font-weight: 600; margin: 0; }
+.mix-continue { width: 100%; max-width: 360px; --border-radius: 14px; }
+
+.mix-done {
+  min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 28px; text-align: center;
+}
+.mix-done-icon { font-size: 3rem; color: #ffd36a; }
+.mix-done-title { margin: 0; font-size: 1.6rem; font-weight: 800; color: #eef1ff; }
+.mix-done-sub { margin: 0 0 10px; color: #c9cdff; }
+.mix-done-btn { width: 100%; max-width: 360px; --border-radius: 14px; }

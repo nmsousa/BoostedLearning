@@ -409,3 +409,20 @@ the result is shown (the correct/incorrect reveal with the Continue button), and
 only resume (or stay stopped) after the user presses Continue. Reading the
 answer and the explanation should not eat into the clock — the time should count
 only while the user is actually answering, not while reviewing the result.
+
+### Rename the Tree+ / tree-plus files to "Explore" (once the name is final)
+Status: **not implemented** — pending the final product name.
+
+The mode formerly called "Tree+" is now shown to users as **Explore** (and its
+stacked variant as **Explore+**), but the code still lives under the old names:
+- `src/app/maps/tree-plus/` (page, module, scss, spec) and the `TreePlusPage`
+  class, the `/practice/tree-plus` route, the `tree-plus` `from` tag, and the
+  `treePlus.*` i18n keys.
+- The shared engine is still `src/app/maps/tree/tree-engine.ts` and the deck
+  prefix `tree-v2`.
+
+When the final name is decided, rename these to match (files, class, route,
+`from` tag, i18n keys). ⚠️ The deck prefix `tree-v2-<lang>` is a STORAGE key —
+renaming it is a data migration (would orphan existing progress), so keep it or
+migrate explicitly. Route/`from` changes must be updated together in
+`flashcards-routing.module.ts` and `journey-back.ts`.

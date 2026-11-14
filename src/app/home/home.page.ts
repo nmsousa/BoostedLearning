@@ -100,10 +100,34 @@ export class HomePage implements OnInit {
 
   /** Languages the Blanks sentence generator has vocabulary for. */
   private static readonly BLANKS_LANGS = new Set(['fr', 'nl']);
+  /** Languages that have an authored Tree curriculum (Explore / Explore+ /
+   *  radial Tree). Only French today. */
+  private static readonly TREE_LANGS = new Set(['fr']);
 
   /** Whether the Blanks mode card should show for the current language. */
   get blanksAvailable(): boolean {
     return HomePage.BLANKS_LANGS.has(this.learningLanguage);
+  }
+
+  /** Whether the Tree-based modes (Explore, Explore+, radial Tree) have content
+   *  for the current learning language. */
+  get treeAvailable(): boolean {
+    return HomePage.TREE_LANGS.has(this.learningLanguage);
+  }
+
+  /** Dev/admin tools on? Drives the "Not available" badge for unavailable modes
+   *  (hidden entirely for non-admins). See docs/REVAMP-JOURNEY-INSTRUCTIONS.MD. */
+  get isAdmin(): boolean {
+    return this.settings.adminMode();
+  }
+
+  /**
+   * Whether a mode card should be RENDERED at all. A mode that isn't available
+   * for the current language is hidden for normal users, but kept visible for
+   * admins (with a "Not available" badge) so they can still open/inspect it.
+   */
+  showModeCard(available: boolean): boolean {
+    return available || this.isAdmin;
   }
 
   get currentLanguage(): { code: string; name: string; flagUrl: string } {
@@ -304,7 +328,7 @@ export class HomePage implements OnInit {
    * Open the deck/level list for a chosen practice mode. The flashcards page
    * reads the mode and launches each level directly in that mode.
    */
-  startMode(mode: 'flip' | 'write' | 'match' | 'match-audio' | 'quiz' | 'blanks'): void {
+  startMode(mode: 'flip' | 'write' | 'match' | 'match-audio' | 'quiz' | 'blanks' | 'learn' | 'mix'): void {
     this.router.navigate(['/practice'], { queryParams: { mode } });
   }
 
@@ -322,16 +346,18 @@ export class HomePage implements OnInit {
     this.router.navigate(['/practice/journey-plus-plus']);
   }
 
-  startJourney(): void {
-    this.router.navigate(['/practice/journey']);
-  }
-
   startTree(): void {
     this.router.navigate(['/practice/tree']);
   }
 
+  /** Explore (formerly Tree+) — the vertical curriculum map. */
   startTreePlus(): void {
     this.router.navigate(['/practice/tree-plus']);
+  }
+
+  /** Explore+ — the stacked Core/Themes vertical list. */
+  startExplorePlus(): void {
+    this.router.navigate(['/practice/explore-plus']);
   }
 
   startBuilder(): void {

@@ -7,10 +7,9 @@
  * one is authored). The learner swipes through the cards and taps Done, which
  * marks the Learn node passed (no scoring — it's a teaching step).
  *
- * Nouns are AUTHORED with their article ("le café") so Write/Builder can teach
- * gender, but the Learn step shows the BARE word ("café", like Duolingo's first
- * lessons) — the article is reintroduced in the typing/building modes. The
- * borrowed recordings are the bare noun too, so audio matches the display.
+ * Words are shown EXACTLY as authored ("le thé"), matching the bundled audio
+ * clip and every other mode (Flashcards/Write). Audio must always match the
+ * displayed text, so no article stripping here.
  *
  * It reads the level's words from the synthetic Tree deck and enriches each
  * with its note/emoji from the curriculum (looked up by French text). Launched
@@ -33,10 +32,8 @@ import { journeyBackUrl } from '../../maps/journey/journey-back';
 import { lookupCoreWord } from '../../maps/tree/tree-curriculum';
 
 interface LearnCard {
-  /** Display + audio form shown in Learn: the BARE word (article stripped). */
+  /** The word exactly as authored ("le thé") — matches the audio clip. */
   fr: string;
-  /** The full authored form ("le café") — kept for reference / later modes. */
-  frFull: string;
   en: string;
   audioUrl: string | null;
   /** Grammar/usage note (Core words). */
@@ -69,6 +66,10 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   deck: FlashcardDeck | null = null;
   private levelNumber = 0;
   private backUrl = '/practice';
+  /** True when opened as a Tree/Journey node (has ?from=…): completing then
+   *  marks the journey-learn node passed. When opened standalone from the home
+   *  Learn mode list, it's pure practice and records no node progress. */
+  private isJourneyNode = false;
 
   isLoading = true;
   /** 'learning' = swiping cards; 'done' = recap/summary screen. */
@@ -87,23 +88,23 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
    *  (same "turtle" rule as the Flashcard modes). Keyed by card index. */
   private playCounts = new Map<number, number>();
 
+  /** The live "is a clip playing" signal, read in the template so the play
+   *  button's waveform pulses while sound is playing. */
+  readonly playing = this.audio.playing;
+  /** Real slow-replay rate, shown on the slow (gauge) icon. */
+  readonly slowRate = this.audio.slowRate;
+
   t(key: string, params?: Record<string, string | number>): string { return this.i18n.t(key, params); }
 
   ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
   ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); }
   ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); }
 
-  /** Strip a leading French article so Learn shows the bare word ("le café" →
-   *  "café", "l'école" → "école"). Mirrors the audio lookup's article rule. */
-  private stripArticle(fr: string): string {
-    const m = /^(le |la |les |un |une |des |l['’])\s*/i.exec(fr);
-    return m ? fr.slice(m[0].length).trim() : fr;
-  }
-
   async ngOnInit(): Promise<void> {
     await this.flashcards.initialize();
     const deckId = this.route.snapshot.paramMap.get('id');
     this.levelNumber = Number(this.route.snapshot.queryParamMap.get('level') ?? 0);
+    this.isJourneyNode = !!this.route.snapshot.queryParamMap.get('from');
     this.backUrl = journeyBackUrl(this.route.snapshot.queryParamMap);
 
     if (!deckId) { this.router.navigate([this.backUrl]); return; }
@@ -119,8 +120,10 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
       .map(c => {
         const meta = lookupCoreWord(c.text);
         return {
-          fr: this.stripArticle(c.text),
-          frFull: c.text,
+          // Show the FULL authored form ("le thé") — it matches both the audio
+          // clip and the other modes (Flashcards/Write). Consistency of text
+          // and audio is required.
+          fr: c.text,
           en: this.flashcards.bestTranslation(c),
           audioUrl: c.audioUrl ?? null,
           note: meta?.note,
@@ -135,25 +138,34 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     }
     this.isLoading = false;
     this.cdr.detectChanges();
-    // Auto-play the FIRST card's audio (previously only cards 2..n played, so
-    // the first word sounded silent). A small delay lets the view settle.
-    setTimeout(() => this.playWord(), 180);
+    // Auto-play the FIRST card's audio (always normal speed, not counted).
+    setTimeout(() => this.playWord(false, true), 180);
   }
+
+  /** True when at least one card in the set has an emoji — drives whether the
+   *  recap reserves a fixed emoji column (aligned) or omits it (left-aligned). */
+  get anyIcon(): boolean { return this.cards.some(c => !!c.icon); }
 
   get card(): LearnCard | null { return this.cards[this.index] ?? null; }
   get progress(): number { return this.cards.length ? (this.index / this.cards.length) * 100 : 0; }
   get isLast(): boolean { return this.index >= this.cards.length - 1; }
 
-  /** True once this card has been played at normal speed twice — reveals the
-   *  slow-replay button for that card (same rule as Flashcards). */
+  /** True once the user has MANUALLY tapped the audio button twice for this
+   *  card — then the button switches to the slow replay. Auto-plays (on card
+   *  arrival) do NOT count, so navigating back/forth never flips it to slow. */
   get showSlow(): boolean {
     return (this.playCounts.get(this.index) ?? 0) >= 2;
   }
 
-  async playWord(slow = false): Promise<void> {
+  /**
+   * Play the current word. `slow` = the slow replay. `auto` = triggered by
+   * navigation/card-open (always normal speed, and NOT counted toward the
+   * "reveal slow" threshold — only real user taps count).
+   */
+  async playWord(slow = false, auto = false): Promise<void> {
     const c = this.card;
     if (!c) return;
-    if (!slow) {
+    if (!slow && !auto) {
       this.playCounts.set(this.index, (this.playCounts.get(this.index) ?? 0) + 1);
       this.cdr.detectChanges();
     }
@@ -187,16 +199,18 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
       this.index = newIndex;
       this.transitioning = false;
       this.cdr.detectChanges();
-      if (play) this.playWord();
+      if (play) this.playWord(false, true);   // auto-play: normal speed, not counted
     }, LearnPage.TRANSITION_MS);
   }
 
   /** Finish from the recap screen: mark the node passed and return to the map. */
   async finish(): Promise<void> { await this.complete(); }
 
-  /** Mark the Learn node passed (no score) and return to the map. */
+  /** Mark the Learn node passed (no score) and return. Only records node
+   *  progress when launched as a Tree/Journey node; standalone Learn (home
+   *  mode list) is pure practice and leaves progress untouched. */
   private async complete(): Promise<void> {
-    if (this.deck && this.levelNumber > 0) {
+    if (this.isJourneyNode && this.deck && this.levelNumber > 0) {
       try { await this.flashcards.saveRoundProgress(this.deck.id, 'journey-learn', this.levelNumber, 100); }
       catch { /* best-effort */ }
     }

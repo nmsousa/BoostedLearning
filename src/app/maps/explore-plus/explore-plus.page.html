@@ -1,0 +1,61 @@
+<ion-header class="ep-header ion-no-border">
+  <ion-toolbar>
+    <div class="ep-head">
+      <button type="button" class="ep-back" (click)="expandedKey ? collapse() : close()"
+        [attr.aria-label]="'journeyPlus.back' | translate">
+        <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
+      </button>
+      <h1 class="ep-title">{{ 'explorePlus.title' | translate }}</h1>
+      <span class="ep-head-spacer" aria-hidden="true"></span>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ep-content" [scrollY]="true">
+  <div *ngIf="isLoading" class="ep-loading"><ion-spinner name="crescent"></ion-spinner></div>
+
+  <div *ngIf="!isLoading" class="ep-body">
+    <p class="ep-tagline">✨ {{ 'explorePlus.tagline' | translate }}</p>
+
+    <div class="ep-block" *ngFor="let block of blocks; trackBy: trackBlock">
+      <div class="ep-block-head">{{ 'tree.levelShort' | translate:{ n: block.tier } }}</div>
+
+      <ng-container *ngFor="let row of block.rows; trackBy: trackRow">
+        <button type="button" class="ep-row" [class.core]="row.kind === 'core'"
+          [class.locked]="row.locked" [class.done]="row.done" [class.expanded]="isExpanded(row)"
+          [style.--hue]="row.hue" [disabled]="row.locked" (click)="toggleRow(row)"
+          [attr.aria-expanded]="isExpanded(row)">
+          <span class="ep-emoji" aria-hidden="true">
+            <ng-container *ngIf="row.kind === 'core'">📖</ng-container>
+            <ng-container *ngIf="row.kind !== 'core'">{{ row.emoji }}</ng-container>
+          </span>
+          <span class="ep-name">{{ row.title }}</span>
+          <ion-icon *ngIf="row.done" name="checkmark-circle" class="ep-badge done" aria-hidden="true"></ion-icon>
+          <ion-icon *ngIf="row.locked" name="lock-closed" class="ep-badge lock" aria-hidden="true"></ion-icon>
+          <ion-icon *ngIf="!row.locked" class="ep-caret"
+            [name]="isExpanded(row) ? 'chevron-up' : 'chevron-forward'" aria-hidden="true"></ion-icon>
+        </button>
+
+        <!-- Inline activities for the expanded row. -->
+        <div *ngIf="isExpanded(row) && expandedTier" class="ep-expand">
+          <div class="ep-words" *ngIf="expandedTier.words.length">
+            <span class="ep-word" *ngFor="let w of expandedTier.words">
+              <span class="w-fr">{{ w.fr }}</span><span class="w-en">{{ w.en }}</span>
+            </span>
+          </div>
+          <div class="ep-modes">
+            <button type="button" class="ep-mode" *ngFor="let m of expandedTier.modes; trackBy: trackMode"
+              [ngClass]="'state-' + m.state" [disabled]="m.state === 'locked'"
+              (click)="onModeTap(m.modeIndex)"
+              [attr.aria-label]="(m.labelKey | translate) + ', ' + ('tree.unit.' + m.state | translate)">
+              <ion-icon [name]="m.icon" aria-hidden="true"></ion-icon>
+              <span class="ep-mode-label">{{ m.labelKey | translate }}</span>
+              <ion-icon *ngIf="m.state === 'done'" class="ep-mode-tick" name="checkmark" aria-hidden="true"></ion-icon>
+              <ion-icon *ngIf="m.state === 'locked'" class="ep-mode-lock" name="lock-closed" aria-hidden="true"></ion-icon>
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</ion-content>

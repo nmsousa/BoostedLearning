@@ -38,6 +38,9 @@ export type PracticeMode =
   | 'match-audio' | 'journey-match-audio'
   // Learn (intro: meaning + grammar/emoji) — a Tree node, first in a level.
   | 'journey-learn'
+  // Standalone Learn (teach a level's words) and Mix (several activity types in
+  // one session), both launched from the home mode list / Explore.
+  | 'learn' | 'mix'
   | 'flip' | 'write' | 'match' | 'quiz' | 'journey' | 'builder' | 'blanks'
   | 'journey-flip' | 'journey-quiz' | 'journey-match' | 'journey-write' | 'journey-builder' | 'journey-blanks';
 
@@ -2134,7 +2137,10 @@ export class FlashcardService {
       const prevUnlocks = prevRounds !== undefined
         ? prevRounds >= this.ROUNDS_PER_LEVEL
         : (previousProgress?.bestScore ?? 0) >= this.UNLOCK_SCORE;
-      const isUnlocked = mode === 'flip' || levelNumber === 1 || prevUnlocks;
+      // Free-practice modes (Flashcards, Learn, Mix) are fully open — no
+      // round-gating — so the learner can jump into any level.
+      const freePractice = mode === 'flip' || mode === 'learn' || mode === 'mix';
+      const isUnlocked = freePractice || levelNumber === 1 || prevUnlocks;
       
       levels.push({
         levelNumber,

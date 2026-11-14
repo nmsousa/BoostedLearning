@@ -23,13 +23,47 @@
   &.transitioning { opacity: 0; transform: translateY(8px); }
 }
 .learn-icon { font-size: 3.4rem; line-height: 1; }
-.learn-word-row { display: flex; align-items: center; gap: 10px; }
-.learn-fr { margin: 0; font-size: 2.2rem; font-weight: 800; color: #eef1ff; }
+// The word stays visually CENTERED in the card; the audio buttons sit to its
+// right without pulling it off-centre (they're pushed out by an equal-width
+// spacer on the left). Mirrors the Flashcard layout.
+// Word + audio button, centred together on one row. The word may wrap; the
+// button stays vertically centred to the whole word block and never pushes
+// off the card (it keeps its size, the word yields space).
+.learn-word-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  width: 100%; padding: 0 8px; box-sizing: border-box;
+}
+.learn-fr {
+  margin: 0; font-size: 2.2rem; font-weight: 800; color: #eef1ff; text-align: center;
+  min-width: 0; overflow-wrap: anywhere;
+}
 .learn-audio {
-  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  position: relative;
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
   background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #c9cdff; font-size: 20px; cursor: pointer;
+  color: #c9cdff; cursor: pointer;
+  font-size: 22px;                       // base size for the slow (gauge) icon
+  ion-icon { font-size: 20px; }          // the speaker icon fits the circle
   &.slow { background: rgba(255, 255, 255, 0.06); }
+
+  // While a clip plays: the border sweeps ONCE from the default colour to blue
+  // and back (a single, calm highlight — not a repeating blink), and the icon
+  // gently bounces so the button clearly "comes alive".
+  &.playing {
+    animation: learn-audio-border 0.9s ease-in-out;
+    ion-icon { animation: learn-audio-bounce 0.6s ease-in-out infinite alternate; }
+  }
+}
+@keyframes learn-audio-border {
+  0%   { border-color: rgba(255, 255, 255, 0.16); }
+  50%  { border-color: var(--ion-color-primary, #6a5cff); }
+  100% { border-color: rgba(255, 255, 255, 0.16); }
+}
+@keyframes learn-audio-bounce { from { transform: scale(0.9); } to { transform: scale(1.1); } }
+:host-context(.reduced-motion) .learn-audio.playing {
+  animation: none;
+  ion-icon { animation: none; }
 }
 .learn-en { margin: 0; font-size: 1.2rem; font-weight: 600; color: #c9cdff; }
 .learn-note {
@@ -65,7 +99,13 @@
   background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px; padding: 10px 14px;
 }
-.recap-emoji { font-size: 1.5rem; line-height: 1; flex: 0 0 auto; }
+// Fixed-size, centred emoji box so differing glyph widths never shift the
+// text column — every row's word starts at the same x.
+.recap-emoji {
+  flex: 0 0 auto; width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; line-height: 1;
+}
 .recap-text { display: flex; flex-direction: column; gap: 2px; }
 .recap-fr { font-weight: 700; color: #eef1ff; font-size: 1.05rem; }
 .recap-en { color: #9aa0d4; font-size: 0.85rem; }

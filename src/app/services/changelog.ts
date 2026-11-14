@@ -27,6 +27,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.54',
+    date: '2026-11-14T18:50:00Z',
+    notes: [
+      'New home layout: the Tree is now "Explore" (your main vocabulary map), plus a stacked "Explore+" view and a "Mix" session that plays a bit of every activity.',
+      'Mix: play a mix of activities for a level, one at a time with a Continue step between each.',
+      'Explore: finish all of a level (Core + every topic) to unlock the next — a "Level complete!" message appears, the Core pulses, and everything moves up to the new level (earlier levels stay replayable).',
+      'Explore: activity buttons are bigger and evenly sized; the level\'s words are tucked behind a "Show words" toggle.',
+      'Learn: the word now matches its audio exactly (e.g. "le thé"), the audio button animates while playing, and navigating back/forward no longer triggers the slow version.',
+      'Match Audio: no timer (listen at your pace), fairer scoring, and tap the sound again to replay.',
+      'Blanks: the word you pick now fills the blank so you can read the full sentence before moving on.',
+      'Audio: a one-time reminder to turn your volume on, and a clearer slow-replay (0.6×) button.',
+      'Modes that have no content for your language are hidden (Explore is French-only for now).',
+    ],
+  },
+  {
     version: '1.3.53',
     date: '2026-11-13T22:30:00Z',
     notes: [

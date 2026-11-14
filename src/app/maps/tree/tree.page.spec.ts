@@ -23,6 +23,15 @@ function themeTier1Level(themeIndex: number): number {
   return themeLevelOf(themeIndex, 1);
 }
 
+/** Levels for ALL themes that author tier `tier` (every theme's tier-N level).
+ *  Core N+1 now unlocks only when EVERY available theme's tier N is complete
+ *  (TREE_CONFIG.themesToAdvance is high → clamps to "all"). */
+function allThemesAtTier(tier: number): number[] {
+  const levels: number[] = [];
+  THEME_DEFS.forEach((th, i) => { if (tier <= th.tiers.length) levels.push(themeLevelOf(i, tier)); });
+  return levels;
+}
+
 /** Build a progress map where the given levels are FULLY complete (all modes). */
 function makeProgress(fullyDoneLevels: number[]): Map<string, { bestScore: number }> {
   const m = new Map<string, { bestScore: number }>();
@@ -91,8 +100,9 @@ describe('TreePage (5 modes per level)', () => {
   });
 
   it('passes the Builder a pool of Core 1..T + the theme\'s earlier tiers', async () => {
-    // Core L1 + L2 done, food L1 done → food L2 is open.
-    doneLevels = [1, 2, themeTier1Level(0), themeTier1Level(1), themeTier1Level(2)];
+    // Core L1 + L2 done + ALL themes L1 done (so Core 2 legitimately unlocks and
+    // theme tier 2 opens) → food L2 is open.
+    doneLevels = [1, 2, ...allThemesAtTier(1)];
     await component.ngOnInit();
     const nav = TestBed.inject(NavController);
     const spy = vi.spyOn(nav, 'navigateForward').mockResolvedValue(true);
@@ -143,8 +153,15 @@ describe('TreePage (5 modes per level)', () => {
     expect(food.doneLevel).toBe(1);
   });
 
-  it('3 distinct themes at L1 (all modes) unlock Core L2', async () => {
+  it('ALL themes at L1 unlock Core L2 (a subset does NOT)', async () => {
+    // A few themes done but not all → Core L2 stays locked.
     doneLevels = [1, themeTier1Level(0), themeTier1Level(1), themeTier1Level(2)];
+    await component.ngOnInit();
+    fixture.detectChanges();
+    expect(component.coreAvailTier).toBe(1);
+
+    // Every theme's L1 done → Core L2 unlocks.
+    doneLevels = [1, ...allThemesAtTier(1)];
     await component.ngOnInit();
     fixture.detectChanges();
     expect(component.coreAvailTier).toBe(2);
@@ -202,14 +219,12 @@ describe('TreePage (5 modes per level)', () => {
   });
 
   /** Levels to fully complete so theme 0 (food) is open at tier `maxTier`:
-   *  Core 1..maxTier done + 3 distinct themes at each tier 1..maxTier-1. */
+   *  Core 1..maxTier done + ALL themes at each tier 1..maxTier-1 (the new rule
+   *  requires every theme's tier N before Core N+1 / Theme N+1 unlock). */
   function openThemeAtTier(maxTier: number): number[] {
     const levels: number[] = [];
     for (let t = 1; t <= maxTier; t++) levels.push(t); // Core tiers
-    for (let t = 1; t < maxTier; t++) {
-      for (const ti of [0, 1, 2]) levels.push(themeTier1Level(ti) + (t - 1)); // 3 themes per tier
-    }
-    // Food's own earlier tiers 1..maxTier-1 (already added for theme 0 above).
+    for (let t = 1; t < maxTier; t++) levels.push(...allThemesAtTier(t)); // ALL themes per tier
     return levels;
   }
 

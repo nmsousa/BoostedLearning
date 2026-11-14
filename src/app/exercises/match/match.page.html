@@ -30,7 +30,8 @@
     <!-- Top bar: timer + combo (hidden in reduced-distraction) -->
     <div class="match-top">
       <div class="match-stats gamification">
-        <div class="stat time">
+        <!-- Match Audio is untimed (listen at your own pace) — no clock. -->
+        <div class="stat time" *ngIf="!isAudio">
           <ion-icon name="time-outline"></ion-icon>
           <span>{{ formattedTime }}</span>
         </div>
@@ -58,7 +59,15 @@
           (click)="select(item)"
           [attr.aria-label]="isAudio ? ('mode.playPronunciation' | translate) : item.label">
           <ng-container *ngIf="!isAudio">{{ item.label }}</ng-container>
-          <ion-icon *ngIf="isAudio" name="volume-high" class="audio-icon" aria-hidden="true"></ion-icon>
+          <!-- Audio tile: speaker icon for the first plays; once the word has
+               been played twice it SWITCHES to the slow (gauge + real rate)
+               icon, and tapping the tile then replays slowly. -->
+          <ng-container *ngIf="isAudio">
+            <app-slow-audio-icon *ngIf="showSlowFor(item)" class="audio-icon slow-glyph"
+              [active]="isSelected(item) && playing()" [rate]="slowRate"></app-slow-audio-icon>
+            <ion-icon *ngIf="!showSlowFor(item)" class="audio-icon"
+              name="volume-high" aria-hidden="true"></ion-icon>
+          </ng-container>
         </button>
       </div>
 
@@ -95,7 +104,7 @@
     </p>
 
     <div class="complete-metrics gamification">
-      <div class="metric">
+      <div class="metric" *ngIf="!isAudio">
         <ion-icon name="time-outline"></ion-icon>
         <span class="metric-value">{{ formattedTime }}</span>
         <span class="metric-label">{{ 'mode.time' | translate }}</span>
@@ -110,7 +119,7 @@
         <span class="metric-value">{{ bestComboSaved }}</span>
         <span class="metric-label">{{ 'mode.bestCombo' | translate }}</span>
       </div>
-      <div class="metric" *ngIf="bestTimeFormatted">
+      <div class="metric" *ngIf="!isAudio && bestTimeFormatted">
         <ion-icon name="trophy-outline"></ion-icon>
         <span class="metric-value">{{ bestTimeFormatted }}</span>
         <span class="metric-label">{{ 'mode.bestTime' | translate }}</span>

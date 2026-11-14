@@ -45,11 +45,15 @@
             <span class="word-anchor">
               <h1 class="card-word">{{ frontText }}</h1>
               <span class="audio-actions">
-                <button type="button" class="audio-icon" (click)="playWord($event)" [attr.aria-label]="'mode.playPronunciation' | translate">
-                  <ion-icon name="volume-high-outline"></ion-icon>
-                </button>
-                <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord($event, true)" [attr.aria-label]="'mode.playSlower' | translate">
-                  <ion-icon name="hourglass-outline"></ion-icon>
+                <!-- One button: speaker for the first plays; after the word has
+                     been played twice it SWITCHES to the slow icon (gauge + real
+                     rate) and tapping replays slowly. Avoids a 2nd button
+                     overflowing the card. -->
+                <button type="button" class="audio-icon" [class.slow]="showSlowButton" [class.playing]="playing()"
+                  (click)="playWord($event, showSlowButton)"
+                  [attr.aria-label]="(showSlowButton ? 'mode.playSlower' : 'mode.playPronunciation') | translate">
+                  <app-slow-audio-icon *ngIf="showSlowButton" [active]="playing()" [rate]="slowRate"></app-slow-audio-icon>
+                  <ion-icon *ngIf="!showSlowButton" name="volume-high-outline"></ion-icon>
                 </button>
               </span>
             </span>

@@ -320,3 +320,12 @@ ion-header ion-progress-bar {
   // A faint track so the empty bar is visible even at value 0.
   --background: rgba(var(--ion-color-primary-rgb, 0, 180, 219), 0.22);
 }
+
+// Exercise progress bars (the thin line under the mode header) were easy to
+// miss. Make every header progress bar thicker and rounded so the user can
+// clearly see how far they are. Applies to all modes that put an
+// <ion-progress-bar> inside the page header (Learn, Quiz, Match, Blanks, …).
+ion-header ion-progress-bar {
+  height: 8px;
+  --progress-background: var(--ion-color-primary);
+}

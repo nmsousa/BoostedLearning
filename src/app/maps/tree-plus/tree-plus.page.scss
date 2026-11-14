@@ -33,7 +33,7 @@
   color: var(--tp-text);
 }
 .tp-loading { display: grid; place-items: center; min-height: 60vh; }
-.tp-body { padding: 4px 12px calc(24px + var(--ion-safe-area-bottom, 0px)); }
+.tp-body { padding: 4px 12px calc(64px + var(--ion-safe-area-bottom, 0px)); }
 
 .tp-admin-tip {
   display: flex; align-items: center; gap: 8px; margin: 2px 0 10px;
@@ -45,7 +45,7 @@
   padding: 5px 10px; border-radius: 10px; font-size: 0.78rem; font-weight: 600;
   color: #ffb4b4; background: rgba(255, 70, 70, 0.12);
   border: 1px solid rgba(255, 70, 70, 0.35); cursor: pointer;
-  ion-icon { font-size: 15px; }
+  ion-icon { font-size: 18px; }
   &:active { background: rgba(255, 70, 70, 0.22); }
 }
 .tp-tagline { margin: 2px 0 14px; color: #c9cdff; font-weight: 600; font-size: 0.9rem; }
@@ -57,7 +57,16 @@
   background: linear-gradient(135deg, #5b3fb8, #7a4fd0);
   border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: var(--tp-shadow);
   &.done { background: linear-gradient(135deg, #2f8f66, #3fae7e); }
+
+  // After a level-up: pulse the border/glow a few times so the learner notices
+  // the Core is now the next thing to play.
+  &.pulse { animation: tp-core-pulse 0.85s ease-in-out 3; }
 }
+@keyframes tp-core-pulse {
+  0%, 100% { box-shadow: var(--tp-shadow), 0 0 0 0 rgba(255, 220, 120, 0); border-color: rgba(255, 255, 255, 0.18); }
+  50%      { box-shadow: var(--tp-shadow), 0 0 0 5px rgba(255, 220, 120, 0.55); border-color: #ffdc78; }
+}
+:host-context(.reduced-motion) .tp-core.pulse { animation: none; }
 .tp-core-icon {
   flex: 0 0 auto; width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center;
   background: rgba(255, 255, 255, 0.16); font-size: 26px;
@@ -165,19 +174,41 @@
   .w-fr { font-size: 0.8rem; font-weight: 700; color: var(--tp-text); }
   .w-en { font-size: 0.66rem; color: var(--tp-muted); }
 }
-.tp-modes { display: flex; flex-wrap: wrap; gap: 8px; }
+// Two even columns so every activity button is the same size regardless of how
+// many there are — and a bit bigger than before.
+.tp-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .tp-mode {
-  flex: 1 1 auto; min-width: 88px; display: flex; align-items: center; gap: 6px; justify-content: center;
-  padding: 9px 10px; border-radius: 12px; cursor: pointer; position: relative;
+  display: flex; align-items: center; gap: 8px; justify-content: center;
+  padding: 13px 12px; border-radius: 12px; cursor: pointer; position: relative;
   background: rgba(255, 255, 255, 0.06); border: 1px solid var(--tp-glass-line); color: var(--tp-text);
-  font-size: 0.78rem; font-weight: 600;
-  ion-icon { font-size: 16px; }
+  font-size: 0.86rem; font-weight: 600; min-width: 0;
+  ion-icon { font-size: 18px; }
   &.state-active { border-color: #4fd1e0; box-shadow: 0 0 0 1px rgba(79, 209, 224, 0.4); }
   &.state-done { color: var(--tp-green); }
   &.state-locked { opacity: 0.45; cursor: default; }
 }
+.tp-mode-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tp-mode-tick { color: var(--tp-green); }
 .tp-mode-lock { color: var(--tp-muted); font-size: 13px; }
+
+// Mix launcher: always FULL WIDTH on its own row, with a distinct accent so it
+// reads as a "play a bit of everything" option (not a required activity).
+.tp-mix-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; margin-top: 8px; padding: 13px 12px; border-radius: 12px; cursor: pointer;
+  background: rgba(130, 90, 230, 0.22); border: 1px dashed rgba(170, 140, 255, 0.5);
+  color: #dcd2ff; font-size: 0.9rem; font-weight: 700;
+  ion-icon { font-size: 18px; }
+}
+
+// Words toggle (words hidden by default).
+.tp-words-toggle {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+  padding: 6px 10px; border-radius: 10px; cursor: pointer;
+  background: transparent; border: 1px solid var(--tp-glass-line);
+  color: var(--tp-muted); font-size: 0.78rem; font-weight: 600;
+  ion-icon { font-size: 15px; }
+}
 
 // ── Next Core strip ──────────────────────────────────────────────────────────
 .tp-next {

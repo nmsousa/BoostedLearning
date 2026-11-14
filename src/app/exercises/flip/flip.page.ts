@@ -254,6 +254,10 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
     return this.playCount >= 2;
   }
 
+  /** Live "is a clip playing" signal + the real slow rate, for the audio icon. */
+  readonly playing = this.audio.playing;
+  readonly slowRate = this.audio.slowRate;
+
   /** Play the current word: recorded clip if available, else device TTS. */
   async playWord(event: Event, slow = false) {
     event.stopPropagation();

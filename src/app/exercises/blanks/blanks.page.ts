@@ -114,6 +114,10 @@ export class BlanksPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLea
   earnedStars = 0;
   isNewBest = false;
   private answered = false;
+  /** The word the user picked for the current blank (fills the blank once
+   *  chosen), and whether it was correct. Reset for each question. */
+  chosenLabel = '';
+  chosenCorrect = false;
 
   /** Open the header menu (report / admin complete). */
   async openMenu(): Promise<void> {
@@ -343,19 +347,27 @@ export class BlanksPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLea
     if (!q) return;
     for (const o of q.options) o.revealed = true;
 
+    // Fill the blank with the chosen word so the full sentence is readable.
+    this.chosenLabel = option.label;
+    this.chosenCorrect = option.correct;
+
     if (option.correct) this.correctCount++;
     else this.mistakes++;
 
     this.cdr.detectChanges();
+    // Hold a touch longer so the user can read the completed sentence (longer
+    // still on a wrong pick, where the correct option is also highlighted).
     setTimeout(() => {
       this.currentIndex++;
       this.answered = false;
+      this.chosenLabel = '';
+      this.chosenCorrect = false;
       if (this.currentIndex >= this.questions.length) {
         void this.completeSession();
       } else {
         this.cdr.detectChanges();
       }
-    }, option.correct ? 700 : 1200);
+    }, option.correct ? 1100 : 1700);
   }
 
   private async completeSession(): Promise<void> {
