@@ -5,33 +5,120 @@
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>
-      <ng-container *ngIf="levelTitle">{{ levelTitle }}</ng-container>
-      <ng-container *ngIf="!levelTitle">{{ 'mix.title' | translate }}</ng-container>
-    </ion-title>
+    <ion-title>{{ 'mix.title' | translate }}</ion-title>
   </ion-toolbar>
+  <ion-progress-bar *ngIf="phase === 'play'" [value]="progress / 100" color="primary"></ion-progress-bar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="mix-content">
-  <!-- Between activities: show progress + a Continue button. The user launches
-       each step themselves (no auto-advance), so activities never stack. -->
-  <div *ngIf="!isLoading && phase === 'intro'" class="mix-stage">
-    <div class="mix-dots" *ngIf="stepDots.length">
-      <span class="mix-dot" *ngFor="let d of stepDots" [ngClass]="'is-' + d.state">
-        <ion-icon [name]="d.icon" aria-hidden="true"></ion-icon>
-      </span>
-    </div>
-    <p class="mix-step-label">{{ 'mix.stepOf' | translate:{ n: nextStepNumber, total: totalSteps } }}</p>
-    <ion-button expand="block" class="mix-continue" (click)="playNext()">
-      {{ 'mode.continue' | translate }}
-    </ion-button>
+  <div *ngIf="isLoading" class="mode-loading"><ion-spinner name="crescent"></ion-spinner></div>
+
+  <!-- ONE question at a time, by type. -->
+  <div *ngIf="!isLoading && phase === 'play' && item" class="mix-play">
+
+    <!-- QUIZ / AUDIO: pick the translation -->
+    <ng-container *ngIf="item.kind === 'quiz' || item.kind === 'audio'">
+      <p class="mix-hint">{{ 'mode.whichTranslation' | translate }}</p>
+      <!-- Audio item: the big speaker IS the prompt (centred). Quiz item: the
+           word on its own line with the speaker on its OWN line below, so a
+           long word never wraps around the icon. -->
+      <div class="mix-prompt">
+        <button *ngIf="item.kind === 'audio'" type="button" class="mix-audio-big" [class.playing]="playing()" (click)="playPrompt()"
+          [attr.aria-label]="'mode.playPronunciation' | translate">
+          <ion-icon name="volume-high" aria-hidden="true"></ion-icon>
+        </button>
+        <ng-container *ngIf="item.kind === 'quiz'">
+          <h1 class="mix-word">{{ item.prompt }}</h1>
+          <button type="button" class="mix-audio" [class.playing]="playing()" (click)="playPrompt()"
+            [attr.aria-label]="'mode.playPronunciation' | translate">
+            <ion-icon name="volume-high-outline" aria-hidden="true"></ion-icon>
+          </button>
+        </ng-container>
+      </div>
+      <div class="mix-options">
+        <button *ngFor="let o of choices" type="button" class="mix-option"
+          [class.correct]="answered && o.correct"
+          [class.wrong]="answered && chosenLabel === o.label && !o.correct"
+          [disabled]="answered" (click)="chooseOption(o)">{{ o.label }}</button>
+      </div>
+    </ng-container>
+
+    <!-- BLANK: pick the missing word -->
+    <ng-container *ngIf="item.kind === 'blank'">
+      <p class="mix-hint">{{ 'mode.chooseMissingWord' | translate }}</p>
+      <div class="mix-sentence">
+        <span *ngIf="item.before" class="part">{{ item.before }}</span>
+        <span *ngIf="!chosenLabel" class="blank"></span>
+        <span *ngIf="chosenLabel" class="blank filled"
+          [class.correct]="chosenLabel === item.answer" [class.wrong]="chosenLabel !== item.answer">{{ chosenLabel }}</span>
+        <span *ngIf="item.after" class="part">{{ item.after }}</span>
+      </div>
+      <p class="mix-gloss">{{ item.gloss }}</p>
+      <div class="mix-options">
+        <button *ngFor="let o of choices" type="button" class="mix-option"
+          [class.correct]="answered && o.correct"
+          [class.wrong]="answered && chosenLabel === o.label && !o.correct"
+          [disabled]="answered" (click)="chooseOption(o)">{{ o.label }}</button>
+      </div>
+    </ng-container>
+
+    <!-- MATCH: link each word to its translation (mini-board) -->
+    <ng-container *ngIf="matchItem as m">
+      <p class="mix-hint">{{ 'mode.tapWordThenTranslation' | translate }}</p>
+      <div class="mix-match" [class.shake]="matchWrong">
+        <div class="mix-col">
+          <button *ngFor="let p of m.pairs" type="button" class="mix-tile"
+            [class.selected]="matchLeftSel === p.id" [class.matched]="matchDone.has(p.id)"
+            [disabled]="matchDone.has(p.id)" (click)="selectMatch('left', p.id)">{{ p.fr }}</button>
+        </div>
+        <div class="mix-col">
+          <button *ngFor="let p of matchRights" type="button" class="mix-tile"
+            [class.selected]="matchRightSel === p.id" [class.matched]="matchDone.has(p.id)"
+            [disabled]="matchDone.has(p.id)" (click)="selectMatch('right', p.id)">{{ p.en }}</button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- BUILDER: arrange the chips -->
+    <ng-container *ngIf="builderItem as b">
+      <p class="mix-hint">{{ 'builder.title' | translate }}</p>
+      <p class="mix-gloss">{{ b.gloss }}</p>
+      <div class="mix-slots" [class.wrong]="builderResult === 'wrong'" [class.correct]="builderResult === 'correct'">
+        <button *ngFor="let w of builderChosen; let i = index" type="button" class="slot"
+          [disabled]="answered" (click)="builderUnpick(i)">{{ w }}</button>
+        <span *ngIf="!answered && builderBank.length" class="slot empty"></span>
+      </div>
+      <div class="mix-bank" *ngIf="!answered">
+        <button *ngFor="let w of builderBank" type="button" class="bank-word" (click)="builderPick(w)">{{ w }}</button>
+      </div>
+      <ion-button *ngIf="!answered" expand="block" class="mix-check" [disabled]="!builderCanCheck" (click)="builderCheck()">
+        {{ 'builder.check' | translate }}
+      </ion-button>
+    </ng-container>
+
+    <!-- WRITE: type the translation -->
+    <ng-container *ngIf="writeItem as w">
+      <p class="mix-hint">{{ 'mode.typeYourAnswer' | translate }}</p>
+      <p class="mix-gloss big">{{ w.gloss }}</p>
+      <input class="mix-write-input" [(ngModel)]="writeValue" [disabled]="answered"
+        autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"
+        (keyup.enter)="writeCheck()" [placeholder]="'mode.typeYourAnswer' | translate" />
+      <p *ngIf="writeResult === 'correct'" class="mix-write-result correct">✓ {{ w.target }}</p>
+      <p *ngIf="writeResult === 'wrong'" class="mix-write-result wrong">{{ w.target }}</p>
+      <ion-button *ngIf="!answered" expand="block" class="mix-check" [disabled]="!writeValue.trim()" (click)="writeCheck()">
+        {{ 'builder.check' | translate }}
+      </ion-button>
+    </ng-container>
   </div>
 
-  <!-- Recap when every activity is done. -->
+  <!-- Recap -->
   <div *ngIf="phase === 'done'" class="mix-done">
-    <ion-icon name="sparkles" class="mix-done-icon" aria-hidden="true"></ion-icon>
+    <div class="stars-display gamification">
+      <ion-icon *ngFor="let s of [1,2,3]" [name]="s <= earnedStars ? 'star' : 'star-outline'"
+        class="star" [class.filled]="s <= earnedStars"></ion-icon>
+    </div>
     <h1 class="mix-done-title">{{ 'mix.doneTitle' | translate }}</h1>
-    <p class="mix-done-sub">{{ 'mix.doneSub' | translate:{ n: totalSteps } }}</p>
+    <p class="mix-done-sub">{{ 'mix.doneScore' | translate:{ n: correctCount, total: total } }}</p>
     <ion-button expand="block" (click)="finish()" class="mix-done-btn">{{ 'mode.done' | translate }}</ion-button>
   </div>
 </ion-content>

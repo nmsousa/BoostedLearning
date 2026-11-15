@@ -106,7 +106,17 @@
   position: relative;
   &.state-locked { opacity: 0.6; }
   &.expanded { outline: 2px solid hsl(var(--hue, 265), 80%, 68%); }
+
+  // After finishing a Core level: pulse the first topic's border/glow a few
+  // times (same calm gold highlight as the Core hero) so the learner notices
+  // the topics just opened at the new level and knows where to go next.
+  &.pulse { animation: tp-topic-pulse 0.85s ease-in-out 3; }
 }
+@keyframes tp-topic-pulse {
+  0%, 100% { box-shadow: var(--tp-shadow), 0 0 0 0 rgba(255, 220, 120, 0); border-color: var(--tp-glass-line); }
+  50%      { box-shadow: var(--tp-shadow), 0 0 0 5px rgba(255, 220, 120, 0.55); border-color: #ffdc78; }
+}
+:host-context(.reduced-motion) .tp-topic.pulse { animation: none; }
 .tp-topic-emoji {
   position: relative; flex: 0 0 auto;
   width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
@@ -167,39 +177,37 @@
 .tp-tier-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .tp-tier-name { font-weight: 800; font-size: 0.84rem; color: var(--tp-text); }
 .tp-tier-done { color: var(--tp-green); font-size: 1rem; }
-.tp-words { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+// Clear gap ABOVE the chips so the "Hide words" toggle (which sits directly
+// above this list) isn't cramped against the first row of words.
+.tp-words { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 8px; }
 .tp-word {
   display: inline-flex; flex-direction: column; padding: 4px 8px; border-radius: 9px;
   background: rgba(255, 255, 255, 0.05); border: 1px solid var(--tp-glass-line);
   .w-fr { font-size: 0.8rem; font-weight: 700; color: var(--tp-text); }
   .w-en { font-size: 0.66rem; color: var(--tp-muted); }
 }
-// Two even columns so every activity button is the same size regardless of how
-// many there are — and a bit bigger than before.
-.tp-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+// Two even columns, generously sized and well spaced.
+.tp-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .tp-mode {
   display: flex; align-items: center; gap: 8px; justify-content: center;
-  padding: 13px 12px; border-radius: 12px; cursor: pointer; position: relative;
+  padding: 16px 10px; border-radius: 14px; cursor: pointer; position: relative;
   background: rgba(255, 255, 255, 0.06); border: 1px solid var(--tp-glass-line); color: var(--tp-text);
-  font-size: 0.86rem; font-weight: 600; min-width: 0;
-  ion-icon { font-size: 18px; }
+  font-size: 0.88rem; font-weight: 600; min-width: 0;
+  ion-icon { font-size: 19px; flex: 0 0 auto; }
   &.state-active { border-color: #4fd1e0; box-shadow: 0 0 0 1px rgba(79, 209, 224, 0.4); }
   &.state-done { color: var(--tp-green); }
   &.state-locked { opacity: 0.45; cursor: default; }
+  // Mix node: the capstone activity. It's the LAST of an odd number of modes,
+  // so span both columns to read as a deliberate full-width card (not an
+  // orphaned half-tile), with its distinct purple accent.
+  &.is-mix {
+    grid-column: 1 / -1;
+    background: rgba(130, 90, 230, 0.22); border-color: rgba(170, 140, 255, 0.5);
+  }
 }
-.tp-mode-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-mode-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .tp-mode-tick { color: var(--tp-green); }
 .tp-mode-lock { color: var(--tp-muted); font-size: 13px; }
-
-// Mix launcher: always FULL WIDTH on its own row, with a distinct accent so it
-// reads as a "play a bit of everything" option (not a required activity).
-.tp-mix-btn {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; margin-top: 8px; padding: 13px 12px; border-radius: 12px; cursor: pointer;
-  background: rgba(130, 90, 230, 0.22); border: 1px dashed rgba(170, 140, 255, 0.5);
-  color: #dcd2ff; font-size: 0.9rem; font-weight: 700;
-  ion-icon { font-size: 18px; }
-}
 
 // Words toggle (words hidden by default).
 .tp-words-toggle {

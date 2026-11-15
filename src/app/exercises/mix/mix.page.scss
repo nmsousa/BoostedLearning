@@ -1,25 +1,110 @@
 .mix-content { --background: linear-gradient(180deg, #1a1346, #0b0a24); }
+.mode-loading { display: grid; place-items: center; min-height: 60vh; }
 
-.mix-stage {
-  min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px; padding: 24px; text-align: center;
+.mix-play {
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 20px 18px calc(24px + var(--ion-safe-area-bottom, 0px));
+  min-height: 100%;
 }
-.mix-dots { display: flex; gap: 10px; }
-.mix-dot {
-  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
-  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #9aa0d4; font-size: 16px;
-  &.is-done { color: #2dd36f; border-color: rgba(45, 211, 111, 0.4); }
-  &.is-current { color: #eef1ff; border-color: var(--ion-color-primary); background: rgba(80, 90, 230, 0.2); }
-}
-.mix-step-label { color: #c9cdff; font-size: 1rem; font-weight: 600; margin: 0; }
-.mix-continue { width: 100%; max-width: 360px; --border-radius: 14px; }
+.mix-hint { margin: 0; text-align: center; color: #9aa0d4; font-size: 0.9rem; font-weight: 600; }
+.mix-gloss { margin: 0; text-align: center; color: #c9cdff; font-size: 1rem; &.big { font-size: 1.3rem; font-weight: 700; } }
 
-.mix-done {
-  min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 12px; padding: 28px; text-align: center;
+// Quiz / audio prompt. Column so the quiz word and its speaker stack (speaker
+// on its own line below the word, matching the Learn/Flashcards/Quiz cards).
+.mix-prompt { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; margin: 14px 0; }
+.mix-word { margin: 0; font-size: 2rem; font-weight: 800; color: #eef1ff; }
+.mix-audio, .mix-audio-big {
+  display: grid; place-items: center; border-radius: 50%; cursor: pointer;
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); color: #c9cdff;
 }
-.mix-done-icon { font-size: 3rem; color: #ffd36a; }
+.mix-audio { width: 40px; height: 40px; ion-icon { font-size: 20px; } }
+.mix-audio-big { width: 84px; height: 84px; ion-icon { font-size: 40px; } }
+
+// While a clip plays: the border sweeps ONCE to the primary colour and back,
+// and the icon gently bounces — the same "comes alive" feedback as Learn.
+.mix-audio.playing, .mix-audio-big.playing {
+  color: #eef1ff;
+  animation: mix-audio-border 0.9s ease-in-out;
+  ion-icon { animation: mix-audio-bounce 0.6s ease-in-out infinite alternate; }
+}
+@keyframes mix-audio-border {
+  0%   { border-color: rgba(255, 255, 255, 0.18); }
+  50%  { border-color: var(--ion-color-primary); }
+  100% { border-color: rgba(255, 255, 255, 0.18); }
+}
+@keyframes mix-audio-bounce { from { transform: scale(0.9); } to { transform: scale(1.1); } }
+:host-context(.reduced-motion) .mix-audio.playing,
+:host-context(.reduced-motion) .mix-audio-big.playing {
+  animation: none;
+  ion-icon { animation: none; }
+}
+
+// Multiple-choice options (quiz / audio / blank)
+.mix-options { display: flex; flex-direction: column; gap: 10px; }
+.mix-option {
+  padding: 15px 16px; border-radius: 14px; font-size: 1rem; font-weight: 600; cursor: pointer; text-align: center;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #eef1ff;
+  &.correct { background: rgba(45,211,111,0.22); border-color: #2dd36f; color: #baf5d0; }
+  &.wrong { background: rgba(235,68,90,0.22); border-color: #eb445a; color: #ffc4cc; }
+  &:disabled { cursor: default; }
+}
+
+// Blank sentence
+.mix-sentence {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 6px 8px;
+  font-size: 1.4rem; font-weight: 700; color: #eef1ff; text-align: center; margin: 10px 0 2px;
+  .blank { display: inline-block; min-width: 68px; border-bottom: 3px solid var(--ion-color-primary); transform: translateY(4px); }
+  .blank.filled { min-width: 0; padding: 0 6px; border-bottom-width: 3px; transform: none;
+    &.correct { color: #2dd36f; border-bottom-color: #2dd36f; }
+    &.wrong { color: #eb445a; border-bottom-color: #eb445a; } }
+}
+
+// Match mini-board
+.mix-match { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px;
+  &.shake { animation: mix-shake 0.4s ease; } }
+.mix-col { display: flex; flex-direction: column; gap: 10px; }
+.mix-tile {
+  padding: 15px 10px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #eef1ff;
+  &.selected { border-color: #4fd1e0; box-shadow: 0 0 0 1px rgba(79,209,224,0.4); }
+  &.matched { opacity: 0.35; }
+}
+@keyframes mix-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+// Builder
+.mix-slots {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 48px;
+  padding: 8px; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.14);
+  &.correct { border-color: #2dd36f; } &.wrong { border-color: #eb445a; animation: mix-shake 0.4s ease; }
+}
+.mix-slots .slot {
+  min-height: 40px; padding: 8px 14px; border-radius: 12px; font-size: 1rem; font-weight: 700;
+  background: var(--ion-color-primary); color: #fff; border: none; cursor: pointer;
+  &.empty { background: transparent; border: 2px dashed var(--ion-color-step-250, #33465c); min-width: 44px; }
+}
+.mix-bank { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.bank-word {
+  padding: 10px 16px; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); color: #eef1ff;
+}
+
+// Write
+.mix-write-input {
+  width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 14px; font-size: 1.1rem;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16); color: #eef1ff; outline: none;
+  &:focus { border-color: var(--ion-color-primary); }
+}
+.mix-write-result { text-align: center; font-weight: 700; margin: 4px 0 0;
+  &.correct { color: #2dd36f; } &.wrong { color: #eb445a; } }
+
+.mix-check { --border-radius: 14px; margin-top: 4px; }
+
+// Recap
+.mix-done { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 28px; text-align: center; }
+.mix-done .stars-display { display: flex; gap: 8px; }
+.mix-done .star { font-size: 2.4rem; color: #556; &.filled { color: #ffd36a; } }
 .mix-done-title { margin: 0; font-size: 1.6rem; font-weight: 800; color: #eef1ff; }
 .mix-done-sub { margin: 0 0 10px; color: #c9cdff; }
 .mix-done-btn { width: 100%; max-width: 360px; --border-radius: 14px; }
+
+:host-context(.reduced-motion) .mix-match.shake, :host-context(.reduced-motion) .mix-slots.wrong { animation: none; }

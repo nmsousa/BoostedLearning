@@ -21,17 +21,20 @@
     <div class="learn-card" [class.transitioning]="transitioning">
       <span *ngIf="card.icon" class="learn-icon" aria-hidden="true">{{ card.icon }}</span>
 
+      <!-- The word gets the FULL card width on its own line (long words like
+           "la musique" no longer wrap awkwardly around a side button), with the
+           audio button on its own line just below — always centred. -->
       <div class="learn-word-row">
         <h1 class="learn-fr">{{ card.fr }}</h1>
-        <!-- One button. First plays = normal (speaker); after the word has been
-             played 3× it becomes the SLOW replay (gauge + real rate). -->
-        <button type="button" class="learn-audio" [class.playing]="playing()" [class.slow]="showSlow"
-          (click)="playWord(showSlow)"
-          [attr.aria-label]="(showSlow ? 'mode.playSlower' : 'mode.playPronunciation') | translate">
-          <app-slow-audio-icon *ngIf="showSlow" [active]="playing()" [rate]="slowRate"></app-slow-audio-icon>
-          <ion-icon *ngIf="!showSlow" name="volume-high" aria-hidden="true"></ion-icon>
-        </button>
       </div>
+      <!-- One button. First plays = normal (speaker); after the word has been
+           played 3× it becomes the SLOW replay (gauge + real rate). -->
+      <button type="button" class="learn-audio" [class.playing]="playing()" [class.slow]="showSlow"
+        (click)="playWord()"
+        [attr.aria-label]="(showSlow ? 'mode.playSlower' : 'mode.playPronunciation') | translate">
+        <app-slow-audio-icon *ngIf="showSlow" [active]="playing()" [rate]="slowRate"></app-slow-audio-icon>
+        <ion-icon *ngIf="!showSlow" name="volume-high" aria-hidden="true"></ion-icon>
+      </button>
 
       <p class="learn-en">{{ card.en }}</p>
 

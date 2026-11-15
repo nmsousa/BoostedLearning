@@ -109,12 +109,12 @@
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
 }
 
-// Front = Dutch, uses the primary (teal) gradient
+// Front = Dutch. Deep blue/purple gradient matching the Learn card (the
+// preferred look), rather than the teal primary.
 .flip-card-front {
-  background: linear-gradient(145deg,
-    var(--ion-color-primary),
-    var(--ion-color-primary-shade));
-  color: var(--ion-color-primary-contrast);
+  background: linear-gradient(180deg, rgba(36, 44, 110, 0.96), rgba(18, 22, 60, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #eef1ff;
 }
 
 // Back = English. Uses a deeper blue than the teal front (it's the same word,
@@ -367,73 +367,39 @@
   font-weight: 600;
 }
 
-// Word + a single audio icon on the card face.
-// The word stays centered on the card; the audio buttons sit just to the
-// right of the word (anchored to the word's right edge) so they're near the
-// word without shifting it off-center.
-.word-row {
-  // The WORD stays centred in the card; the audio button is pinned to the
-  // right edge (vertically centred) so it never shifts the word off-centre,
-  // even when the word wraps to two lines ("la pomme", "le restaurant").
+// The audio button sits on its OWN centred line below the word (the card face
+// is a centred flex column), so a long word never wraps around it — matching
+// the Learn card.
+.audio-icon {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  // Reserve room on both sides so a centred long word doesn't slide under the
-  // right-hand button.
-  padding: 0 56px;
-  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 22px;               // base size for the slow (gauge) icon
 
-  .word-anchor {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    width: 100%;
-  }
+  ion-icon { font-size: 20px; color: #fff; }
 
-  .card-word { margin: 0; min-width: 0; overflow-wrap: anywhere; text-align: center; }
+  &:active { transform: scale(0.94); }
 
-  .audio-actions {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: inline-flex;
-    align-items: center;
-  }
+  // Slow state: same size as the speaker (no shrinking), just a subtler fill.
+  &.slow { background: rgba(255, 255, 255, 0.12); }
 
-  .audio-icon {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border: none;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.18);
-    cursor: pointer;
-    flex-shrink: 0;
-    color: #fff;
-    font-size: 22px;               // base size for the slow (gauge) icon
-
-    ion-icon { font-size: 20px; color: #fff; }
-
-    &:active { transform: scale(0.94); }
-
-    // Slow state: same size as the speaker (no shrinking), just a subtler fill.
-    &.slow { background: rgba(255, 255, 255, 0.12); }
-
-    // While a clip plays: a single border highlight + a gentle icon bounce,
-    // matching the Learn play button.
-    &.playing {
-      animation: flip-audio-border 0.9s ease-in-out;
-      ion-icon, app-slow-audio-icon { animation: flip-audio-bounce 0.6s ease-in-out infinite alternate; }
-    }
+  // While a clip plays: a single border highlight + a gentle icon bounce,
+  // matching the Learn play button.
+  &.playing {
+    animation: flip-audio-border 0.9s ease-in-out;
+    ion-icon, app-slow-audio-icon { animation: flip-audio-bounce 0.6s ease-in-out infinite alternate; }
   }
 }
+.card-word { min-width: 0; overflow-wrap: anywhere; width: 100%; }
 @keyframes flip-audio-border {
   0%   { box-shadow: 0 0 0 0 rgba(106, 92, 255, 0); }
   50%  { box-shadow: 0 0 0 3px rgba(106, 92, 255, 0.6); }

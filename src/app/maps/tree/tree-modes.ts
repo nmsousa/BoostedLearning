@@ -13,7 +13,7 @@ import type { PracticeMode } from '../../services/flashcard.service';
 
 export interface TreeModeDef {
   /** Stable id / order key. */
-  id: 'learn' | 'flip' | 'quiz' | 'write' | 'match' | 'match-audio' | 'builder';
+  id: 'learn' | 'flip' | 'quiz' | 'write' | 'match' | 'match-audio' | 'builder' | 'builder-plus' | 'mix';
   /** Progress namespace (independent per mode). */
   mode: PracticeMode;
   /** Exercise route the node launches. */
@@ -33,4 +33,8 @@ export const TREE_MODES: readonly TreeModeDef[] = [
   { id: 'match',   mode: 'journey-match',   route: '/practice/match',           icon: 'git-compare-outline', labelKey: 'journey.node.match' },
   { id: 'match-audio', mode: 'journey-match-audio', route: '/practice/match',    icon: 'volume-high-outline', labelKey: 'journey.node.matchAudio' },
   { id: 'builder', mode: 'journey-builder', route: '/practice/journey-builder', icon: 'construct-outline',   labelKey: 'journey.node.builder' },
+  { id: 'builder-plus', mode: 'journey-builder-plus', route: '/practice/journey-builder-plus', icon: 'construct', labelKey: 'journey.node.builderPlus' },
+  // Mix is the LAST node: a mixed session of the level's activities. It counts
+  // toward tier completion like the others and is double-tap-completable (admin).
+  { id: 'mix',     mode: 'journey-mix',     route: '/practice/mix',             icon: 'shuffle-outline',     labelKey: 'home.mode.mix' },
 ];

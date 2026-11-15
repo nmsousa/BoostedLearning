@@ -69,26 +69,59 @@ export function distinctThemesCompletedAtTier(
 export function computeProgression(input: ProgressionInput): ProgressionState {
   const { config, completed, themeIds, themeHasTier } = input;
 
+  // The highest theme tier that ANY theme has content for. Once the learner is
+  // gating past this, "finish the matching theme tier" means "finish each
+  // theme's LAST authored tier" — themes can't follow Core beyond their content.
+  let maxThemeTier = 0;
+  for (let tier = 1; tier <= config.coreTiers; tier++) {
+    if (themeIds.some(id => themeHasTier(id, tier))) maxThemeTier = tier;
+  }
+
+  // How many themes have completed their LAST authored tier (their final
+  // milestone). Used to decide whether Core may run on alone once it has passed
+  // the tiers themes can offer: enough themes (per `themesToAdvance`, clamped to
+  // how many themes exist) must be fully done first.
+  const themesAtMax = maxThemeTier === 0 ? 0 : themeIds.filter(id => {
+    let last = 0;
+    for (let tier = 1; tier <= maxThemeTier; tier++) if (themeHasTier(id, tier)) last = tier;
+    return last > 0 && completed.has(themeMilestoneId(id, last));
+  }).length;
+  const themesWithContent = maxThemeTier === 0 ? 0 : themeIds.filter(id => {
+    for (let tier = 1; tier <= maxThemeTier; tier++) if (themeHasTier(id, tier)) return true;
+    return false;
+  }).length;
+  const allThemesMaxed = themesAtMax >= Math.min(config.themesToAdvance, themesWithContent);
+
   // Core L1 is always unlocked. Walk tiers upward while the gate is satisfied.
   let unlockedCoreTier = 1;
   for (let n = 1; n < config.coreTiers; n++) {
     const coreNdone = completed.has(coreMilestoneId(n));
     if (!coreNdone) break;
 
-    // How many themes even have tier-n content? When NONE do (the Core runs
-    // ahead of the authored theme tiers), the Core continues on its own —
-    // requiring a theme milestone that can't exist would dead-end the tree.
     const available = themeIds.filter(id => themeHasTier(id, n)).length;
-    const needed = available === 0 ? 0 : Math.min(config.themesToAdvance, available);
-    const done = distinctThemesCompletedAtTier(themeIds, n, completed);
-    if (done < needed) break;
+    if (available > 0) {
+      // Normal case: themes have tier-n content. Core n+1 needs the distinct
+      // theme-tier-n milestones (clamped to how many themes actually have it).
+      const needed = Math.min(config.themesToAdvance, available);
+      const done = distinctThemesCompletedAtTier(themeIds, n, completed);
+      if (done < needed) break;
+    } else {
+      // Core has passed the last tier themes can offer (no theme has tier-n
+      // content). Before it runs ahead ALONE, every theme must have finished
+      // its last authored tier — otherwise the learner could grind Core
+      // forever and never touch topics (the bug: themes maxed at tier 3 but
+      // Core climbed to 7). Once topics are fully done, Core continues solo.
+      if (!allThemesMaxed) break;
+    }
 
     unlockedCoreTier = n + 1;
   }
 
   // Theme tiers: a theme's tier t is available only once Core tier t is
   // COMPLETED (brief §6.1: "Completing Core L(n) unlocks Theme L(n)") and the
-  // theme has content at tier t. Available tier = the highest such t.
+  // theme has content at tier t. So at the very start — before Core 1 is done —
+  // every theme is locked; finishing Core N opens each theme's Level N.
+  // Available tier = the highest such t.
   const unlockedThemeTier: Record<string, number> = {};
   for (const id of themeIds) {
     let t = 0;

@@ -66,9 +66,7 @@ export class TreePlusPage implements OnInit, OnDestroy {
   themes: TreeNode[] = [];
   /** Theme cards grouped into rows of two to match the 2-column grid. */
   themeRows: TreeNode[][] = [];
-  /** The next Core tier that will unlock (for the "Next: Core N" strip). */
-  nextCoreTier = 0;
-  nextCoreUnlocked = false;
+
 
   /** Expanded node id ('core' or a theme id), null = none. */
   expandedId: string | null = null;
@@ -123,10 +121,6 @@ export class TreePlusPage implements OnInit, OnDestroy {
       this.themeRows.push(this.themes.slice(i, i + 2));
     }
 
-    // "Next: Core N" strip — the tier after the Core's current done level.
-    this.nextCoreTier = Math.min(this.engine.authoredCoreTiers, this.core.doneLevel + 1);
-    this.nextCoreUnlocked = this.core.availTier > this.core.doneLevel;
-
     if (this.expandedId) this.refreshExpanded();
     this.isLoading = false;
     this.switchingLanguage = false;
@@ -138,25 +132,95 @@ export class TreePlusPage implements OnInit, OnDestroy {
     void this.maybeCelebrateLevelUp();
   }
 
-  /** localStorage key for the highest level we've already celebrated (per lang). */
+  /** localStorage key for the highest Core available-tier we've already
+   *  celebrated (per lang) — the "all topics done → next Core unlocked" event. */
   private get levelUpKey(): string { return `boosted-tree-levelup-${this.learningLanguage}`; }
+  /** localStorage key for the highest Core DONE level we've already celebrated
+   *  (per lang) — the "finished Core N → its topics are now the thing to do". */
+  private get coreDoneKey(): string { return `boosted-tree-coredone-${this.learningLanguage}`; }
   /** The Core available-tier seen on the PREVIOUS load this visit (−1 = not yet
-   *  measured). The celebration only fires when this INCREASES while the page
-   *  is open — i.e. the user just finished the level here — never merely
+   *  measured). A celebration fires only when a baseline INCREASES while the
+   *  page is open — i.e. the user just finished something here — never merely
    *  because the level is already high when the page first opens. */
   private prevAvailTier = -1;
+  /** Same idea for the Core's fully-completed level (drives the "go to the
+   *  newly-unlocked topics" focus). */
+  private prevCoreDone = -1;
+  /** Each topic's done-level seen on the PREVIOUS load this visit (null = not
+   *  yet measured). Lets us spot when ONE topic just got finished so we can
+   *  point the learner at the next topic to tackle. */
+  private prevTopicDone: Map<string, number> | null = null;
 
   private async maybeCelebrateLevelUp(): Promise<void> {
-    const availTier = this.engine.coreNode().availTier;
+    const core = this.engine.coreNode();
+    const availTier = core.availTier;
+    const coreDone = core.doneLevel;
 
-    // First measurement this visit: record the baseline and DON'T celebrate.
-    // Opening Explore at an already-high level must never pop the modal.
-    if (this.prevAvailTier < 0) { this.prevAvailTier = availTier; return; }
+    // Snapshot each topic's done-level, and note which one just advanced.
+    const topicDone = new Map(this.themes.map(n => [n.id, n.doneLevel]));
+    let finishedTopicId: string | null = null;
+    if (this.prevTopicDone) {
+      for (const n of this.themes) {
+        if (n.doneLevel > (this.prevTopicDone.get(n.id) ?? 0)) { finishedTopicId = n.id; break; }
+      }
+    }
 
-    // Only celebrate a genuine increase that happened while the page was open.
-    if (availTier <= this.prevAvailTier) { this.prevAvailTier = availTier; return; }
+    // Establish baselines on the FIRST measurement this visit without firing —
+    // opening Explore at an already-high level must never pop a celebration.
+    const firstMeasure = this.prevAvailTier < 0 || this.prevCoreDone < 0 || !this.prevTopicDone;
+    const availGrew = this.prevAvailTier >= 0 && availTier > this.prevAvailTier;
+    const coreDoneGrew = this.prevCoreDone >= 0 && coreDone > this.prevCoreDone;
     this.prevAvailTier = availTier;
+    this.prevCoreDone = coreDone;
+    this.prevTopicDone = topicDone;
+    if (firstMeasure) return;
 
+    // Priority 1: all topics at level N done → Core N+1 just unlocked. Focus
+    // the Core card (the next thing to play). This is the bigger milestone, so
+    // it wins if both happened in the same step.
+    if (availGrew) { await this.celebrateCoreUnlocked(availTier); return; }
+
+    // Priority 2: finished Core level N → every topic's level N is now the
+    // place to grind. Focus (scroll + pulse) the FIRST topic so the learner
+    // sees where to go next.
+    if (coreDoneGrew) { await this.celebrateTopicsUnlocked(coreDone); return; }
+
+    // Priority 3 (quiet): finished a SINGLE topic's tier → point at the next
+    // topic that still needs work, so the learner knows where to continue. No
+    // modal for this smaller milestone — just a scroll + pulse.
+    if (finishedTopicId) this.focusNextTopic(finishedTopicId);
+  }
+
+  /** After finishing one topic, scroll to and pulse the NEXT topic that still
+   *  has work to do this round (scanning after the finished one, wrapping
+   *  around). Does nothing if every topic is complete (a level-up celebration
+   *  will have handled that case instead). */
+  private focusNextTopic(finishedId: string): void {
+    const n = this.themes.length;
+    if (n === 0) return;
+    const start = this.themes.findIndex(t => t.id === finishedId);
+    // Walk the topics after the finished one (wrapping) for the first that
+    // still has work available RIGHT NOW — unlocked and not at 100% of its
+    // current tier. (A topic that's done for this round but whose next tier is
+    // gated on a later Core level is skipped; there's nothing to do there yet.)
+    let next: TreeNode | null = null;
+    for (let step = 1; step <= n; step++) {
+      const cand = this.themes[(start + step) % n];
+      if (cand.state !== 'locked' && this.percentOf(cand) < 100) { next = cand; break; }
+    }
+    if (!next) return;      // nothing left to do this round → no nudge needed
+    const target = next.id;
+    void (async () => {
+      this.collapse();
+      await this.scrollToTopic(target);
+      this.pulseTopicId = target;
+      this.cdr.detectChanges();
+      setTimeout(() => { this.pulseTopicId = null; this.cdr.detectChanges(); }, 2600);
+    })();
+  }
+
+  /** "All topics done → next Core unlocked": announce + focus the Core card. */
+  private async celebrateCoreUnlocked(availTier: number): Promise<void> {
     // The Core's available tier N means levels 1..N-1 are each fully complete.
     const completedLevel = availTier - 1;
     if (completedLevel < 1) return;
@@ -185,13 +249,54 @@ export class TreePlusPage implements OnInit, OnDestroy {
     setTimeout(() => { this.pulseCore = false; this.cdr.detectChanges(); }, 2600);
   }
 
+  /** "Finished Core N → its topics are now the thing to do": announce + scroll
+   *  to and pulse the FIRST topic (now open at the new level). */
+  private async celebrateTopicsUnlocked(coreDone: number): Promise<void> {
+    if (coreDone < 1) return;
+
+    // Once per completed Core level (survives reloads).
+    let lastCelebrated = 0;
+    try { lastCelebrated = Number(localStorage.getItem(this.coreDoneKey) ?? 0); } catch { /* ignore */ }
+    if (coreDone <= lastCelebrated) return;
+    try { localStorage.setItem(this.coreDoneKey, String(coreDone)); } catch { /* ignore */ }
+
+    const firstTopic = this.themes[0];
+    if (!firstTopic) return;
+
+    const alert = await this.alertCtrl.create({
+      header: this.t('treePlus.coreDoneTitle', { n: coreDone }),
+      message: this.t('treePlus.coreDoneBody', { n: coreDone }),
+      buttons: [{ text: this.t('treePlus.levelUpGo'), role: 'confirm' }],
+      cssClass: 'tp-levelup-alert',
+    });
+    await alert.present();
+    await alert.onDidDismiss();
+    // Scroll the first topic into view and pulse it so the learner sees where
+    // to continue (the topics just opened at the level they finished in Core).
+    this.collapse();
+    await this.scrollToTopic(firstTopic.id);
+    this.pulseTopicId = firstTopic.id;
+    this.cdr.detectChanges();
+    setTimeout(() => { this.pulseTopicId = null; this.cdr.detectChanges(); }, 2600);
+  }
+
   /** True briefly after a level-up to pulse the Core hero card's border. */
   pulseCore = false;
+  /** Id of the topic to pulse briefly after finishing a Core level (null = none). */
+  pulseTopicId: string | null = null;
 
   /** Smooth-scroll the Explore content back to the top (to the Core card). */
   private async scrollToTop(): Promise<void> {
     const content = document.querySelector('app-tree-plus ion-content') as HTMLIonContentElement | null;
     try { await content?.scrollToTop?.(400); } catch { /* ignore */ }
+  }
+
+  /** Smooth-scroll a specific topic card into view (centred). */
+  private async scrollToTopic(topicId: string): Promise<void> {
+    // Let the view settle (collapse + change detection) before measuring.
+    await new Promise(r => setTimeout(r, 60));
+    const el = document.querySelector(`app-tree-plus .tp-topic[data-topic-id="${topicId}"]`);
+    try { el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch { /* ignore */ }
   }
 
   async selectLanguage(code: string): Promise<void> {
@@ -212,35 +317,33 @@ export class TreePlusPage implements OnInit, OnDestroy {
    * "Level 2" (at 0%) even before tier 2 is unlocked — the card shows the next
    * goal, not "completed". A node done at its LAST tier reads that last tier.
    */
+  /**
+   * The tier the card currently REPRESENTS: the lowest AVAILABLE tier that
+   * isn't fully complete; or, if every available tier is complete, the highest
+   * available tier (shown at 100% until the next one opens/level-up resets).
+   *
+   * Crucially it does NOT jump to doneLevel+1 the instant a tier completes — so
+   * finishing the last activity reads "100%", not "0% of the next tier". When
+   * the next tier actually unlocks (availTier grows), the card moves to it at 0%.
+   */
   currentTier(node: TreeNode): number {
-    const next = node.doneLevel + 1;
-    return Math.min(Math.max(1, next), Math.max(1, node.maxTier));
+    const avail = Math.max(1, node.availTier);
+    for (let t = 1; t <= avail; t++) {
+      const lvl = this.engine.levelOf(node.id, t);
+      const modes = lvl ? this.engine.modesFor(lvl, node.id, t) : [];
+      if (modes.length && modes.some(m => m.state !== 'done')) return t;  // first incomplete
+    }
+    return avail;   // all available tiers complete → the highest one (100%)
   }
 
-  /**
-   * "% learned" for a node, scoped to the tier the learner is CURRENTLY on —
-   * i.e. the passed activities of the open tier over its total activities.
-   *
-   * Earlier this averaged over ALL unlocked tiers, so finishing a tier and
-   * unlocking the next made the bar jump to ~50% (the done tier dragged it up)
-   * even though the new tier was untouched. Scoping to the current tier makes a
-   * freshly-unlocked tier correctly read 0%, climbing to 100% as you complete
-   * its activities, then resetting to 0% when the next tier opens.
-   */
+  /** "% learned" = passed activities of the current tier over its total. */
   percentOf(node: TreeNode): number {
     if (node.availTier <= 0) return 0;
     const tier = this.currentTier(node);
-    // If the current-goal tier is BEYOND what's done (e.g. a theme whose tier 2
-    // isn't started/unlocked yet), it reads 0% — not the completed tier's 100%.
-    if (tier > node.doneLevel) {
-      // Unless that tier is actually in progress (some of its modes passed).
-      const lvl = this.engine.levelOf(node.id, tier);
-      const modes = lvl ? this.engine.modesFor(lvl, node.id, tier) : [];
-      if (!modes.length || modes.every(m => m.state !== 'done')) return 0;
-      return Math.round((modes.filter(m => m.state === 'done').length / modes.length) * 100);
-    }
-    // The goal tier is the done tier (node finished its last authored tier) → 100%.
-    return 100;
+    const lvl = this.engine.levelOf(node.id, tier);
+    const modes = lvl ? this.engine.modesFor(lvl, node.id, tier) : [];
+    if (!modes.length) return 0;
+    return Math.round((modes.filter(m => m.state === 'done').length / modes.length) * 100);
   }
 
   /** True only when a node has finished its LAST authored tier — i.e. there's
@@ -310,15 +413,6 @@ export class TreePlusPage implements OnInit, OnDestroy {
   }
 
   // ── Launch ─────────────────────────────────────────────────────────────────
-  /** Launch a MIX session (several activity types) for a tier's level — a
-   *  "play a bit of everything" shortcut, not a completion node. Returns here. */
-  launchMix(tier: TreeTier): void {
-    if (!this.engine.deckId) return;
-    this.navCtrl.navigateForward(['/practice/mix', this.engine.deckId], {
-      queryParams: { level: tier.level, from: JOURNEY_TREE_PLUS_FROM },
-    });
-  }
-
   onModeTap(tier: TreeTier, modeIndex: number): void {
     const m = tier.modes[modeIndex];
     if (m.state === 'locked') return;
@@ -376,7 +470,10 @@ export class TreePlusPage implements OnInit, OnDestroy {
   private async doReset(): Promise<void> {
     this.collapse();
     try { localStorage.removeItem(this.levelUpKey); } catch { /* ignore */ }
+    try { localStorage.removeItem(this.coreDoneKey); } catch { /* ignore */ }
     this.prevAvailTier = -1;   // re-baseline so the reset doesn't trigger a celebration
+    this.prevCoreDone = -1;
+    this.prevTopicDone = null;
     await this.engine.adminResetProgress();
     await this.load();
     const toast = await this.toastCtrl.create({

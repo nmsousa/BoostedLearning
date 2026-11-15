@@ -42,12 +42,15 @@ export type PracticeMode =
   // one session), both launched from the home mode list / Explore.
   | 'learn' | 'mix'
   | 'flip' | 'write' | 'match' | 'quiz' | 'journey' | 'builder' | 'blanks'
-  | 'journey-flip' | 'journey-quiz' | 'journey-match' | 'journey-write' | 'journey-builder' | 'journey-blanks';
+  | 'journey-flip' | 'journey-quiz' | 'journey-match' | 'journey-write' | 'journey-builder' | 'journey-blanks'
+  // Builder+ (self-checking, correct-order Builder): an Explore/Tree node.
+  | 'journey-builder-plus'
+  | 'journey-mix';
 
 /** The Journey chapter node modes, in play order (French chapters add Blanks).
  *  'journey-match-audio' is a single-pass node too (used by the Tree). */
 export const JOURNEY_NODE_MODES: PracticeMode[] =
-  ['journey-learn', 'journey-flip', 'journey-quiz', 'journey-write', 'journey-match', 'journey-match-audio', 'journey-builder', 'journey-blanks'];
+  ['journey-learn', 'journey-flip', 'journey-quiz', 'journey-write', 'journey-match', 'journey-match-audio', 'journey-builder', 'journey-builder-plus', 'journey-blanks', 'journey-mix'];
 
 /** True for any Journey single-pass node mode. */
 export function isJourneyNodeMode(mode: PracticeMode): boolean {
@@ -1165,21 +1168,34 @@ export class FlashcardService {
   async resetDeckProgress(deckId: string): Promise<void> {
     const deck = this.getDeck(deckId);
     if (!deck) return;
-    
+
+    // Clear the LEVEL progress FIRST — tier completion (and the Tree/Explore
+    // level display) is computed only from these rows, so doing this up front
+    // means a single reset immediately shows Level 1. (Previously this ran
+    // AFTER a slow, thousands-strong per-card write loop, so the map still
+    // showed the old level until several presses had drained that loop.)
+    await this.db.levelProgress.where('deckId').equals(deckId).delete();
+
+    // Reset the in-memory card counters…
     for (const card of deck.cards) {
       card.correctCount = 0;
       card.incorrectCount = 0;
+      card.mediumCount = 0;
       card.lastSeen = null;
       card.nextReview = null;
       card.streak = 0;
-      
-      await this.saveCardProgress(card);
     }
-    
-    // Also reset level progress
-    await this.db.levelProgress.where('deckId').equals(deckId).delete();
-    
-    // Trigger signal update
+    // …and persist them in ONE bulk write instead of one awaited put per card
+    // (the old per-card loop made reset slow enough to appear to "not work").
+    const rows = await this.db.flashcards.where('deckId').equals(deckId).toArray();
+    for (const r of rows) {
+      r.correctCount = 0; r.incorrectCount = 0; r.mediumCount = 0;
+      r.lastSeen = null; r.nextReview = null; r.streak = 0;
+      r.fsrs = undefined;
+    }
+    if (rows.length) await this.db.flashcards.bulkPut(rows);
+
+    this.invalidateDedupe(deckId);
     this.decksSignal.update(decks => [...decks]);
   }
 

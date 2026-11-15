@@ -142,16 +142,21 @@
       <ion-icon name="checkmark-circle" color="success"></ion-icon>
       <span class="phrase-progress" *ngIf="journeyMode">{{ journeyPosition }}</span>
     </div>
-
-    <div class="phrase-actions">
-      <!-- Check: validate the arrangement only when the user is ready (the row
-           must be full). Nothing turns red until this is pressed. -->
-      <ion-button *ngIf="!stage.done" expand="block" [disabled]="!canCheck" (click)="check()">
-        {{ 'builder.check' | translate }}
-      </ion-button>
-      <!-- Journey node: advance through the generated phrases; standalone: back to map. -->
-      <ion-button *ngIf="stage.done && journeyMode" expand="block" color="success" (click)="journeyNext()">{{ 'mode.continue' | translate }}</ion-button>
-      <ion-button *ngIf="stage.done && !journeyMode" expand="block" color="success" (click)="backToMap()">{{ 'builder.done' | translate }}</ion-button>
-    </div>
   </div>
 </ion-content>
+
+<!-- Action bar: pinned to the bottom (like the Write mode) so the Check /
+     Continue button sits at a CONSTANT position and never jumps as the content
+     height above it changes (empty slots vs. full phrase vs. result). -->
+<ion-footer *ngIf="stage.kind === 'phrase'" class="builder-footer">
+  <div class="footer-inner">
+    <!-- Check: validate the arrangement only when the user is ready (the row
+         must be full). Nothing turns red until this is pressed. -->
+    <ion-button *ngIf="!stage.done" expand="block" [disabled]="!canCheck" (click)="check()">
+      {{ 'builder.check' | translate }}
+    </ion-button>
+    <!-- Journey node: advance through the generated phrases; standalone: back to map. -->
+    <ion-button *ngIf="stage.done && journeyMode" expand="block" color="success" (click)="journeyNext()">{{ 'mode.continue' | translate }}</ion-button>
+    <ion-button *ngIf="stage.done && !journeyMode" expand="block" color="success" (click)="backToMap()">{{ 'builder.done' | translate }}</ion-button>
+  </div>
+</ion-footer>

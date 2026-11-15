@@ -29,13 +29,15 @@
 // Word + audio button, centred together on one row. The word may wrap; the
 // button stays vertically centred to the whole word block and never pushes
 // off the card (it keeps its size, the word yields space).
+// The word occupies the full card width on its own line (centred); the audio
+// button sits on its own line below, so a long word never wraps around it.
 .learn-word-row {
-  display: flex; align-items: center; justify-content: center; gap: 12px;
+  display: flex; align-items: center; justify-content: center;
   width: 100%; padding: 0 8px; box-sizing: border-box;
 }
 .learn-fr {
   margin: 0; font-size: 2.2rem; font-weight: 800; color: #eef1ff; text-align: center;
-  min-width: 0; overflow-wrap: anywhere;
+  width: 100%; overflow-wrap: break-word;
 }
 .learn-audio {
   position: relative;

@@ -27,6 +27,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.55',
+    date: '2026-11-15T03:20:00Z',
+    notes: [
+      'New activity: Builder+ — a self-checking phrase builder. Tap the words in the correct order (no Check button); a wrong word blinks red, and a single dashed line shows what\'s left. Available on its own and inside each Explore level.',
+      'Audio now matches the text everywhere: words shown with their article (e.g. "le café", "l\'eau") are pronounced in full instead of just the bare noun.',
+      'Explore: topics unlock the right way — a topic\'s Level N opens only after you finish Core Level N, and the Core can no longer race ahead of the topics.',
+      'Explore: finishing a Core level now points you to the first topic to do next, and finishing a topic highlights the next one.',
+      'Flashcards & Quiz: refreshed card look, with the sound button on its own line so long words stay readable; the sound icon gently animates while playing.',
+      'Learn: Back now replays the audio, and the slow-replay icon no longer gets ahead of the sound.',
+      'Mix: the matching exercise no longer lines the two columns up in the same order, and the quiz word plays its audio automatically.',
+      'Every topic now shows a matching emoji at Levels 2 and 3, like Level 1 did.',
+      'Settings: the typing-direction option moved under a clearer "Write mode" heading, with tidier spacing.',
+    ],
+  },
+  {
     version: '1.3.54',
     date: '2026-11-14T18:50:00Z',
     notes: [

@@ -134,6 +134,13 @@
           <span class="mode-desc">{{ 'home.mode.builder.desc' | translate }}</span>
         </button>
 
+        <button type="button" class="mode-card builder" (click)="startBuilderPlus()">
+          <ion-icon name="construct"></ion-icon>
+          <span class="new-badge">{{ 'home.mode.newBadge' | translate }}</span>
+          <span class="mode-name">{{ 'home.mode.builderPlus' | translate }}</span>
+          <span class="mode-desc">{{ 'home.mode.builderPlus.desc' | translate }}</span>
+        </button>
+
         <!-- Blanks: fill-in-the-blank. French + Dutch only. -->
         <button type="button" class="mode-card blanks" *ngIf="blanksAvailable" (click)="startBlanks()">
           <ion-icon name="reorder-four-outline"></ion-icon>

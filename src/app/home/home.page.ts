@@ -364,6 +364,11 @@ export class HomePage implements OnInit {
     this.router.navigate(['/practice/builder']);
   }
 
+  /** Builder+ — the self-checking Builder variant (correct order only). */
+  startBuilderPlus(): void {
+    this.router.navigate(['/practice/builder-plus']);
+  }
+
   t(key: string, params?: Record<string, string | number>): string {
     return this.i18n.t(key, params);
   }

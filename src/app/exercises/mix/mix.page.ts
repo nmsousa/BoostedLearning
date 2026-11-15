@@ -1,30 +1,31 @@
 /**
- * Mix Page — orchestrates a single session that mixes several activity types
- * for one level: Quiz → Match → Match Audio → Blanks → Builder → one Write.
+ * Mix Page — an INTERLEAVED single-question session: one quiz, one match, one
+ * builder, one blank, … woven together and all rendered/graded inline on this
+ * one page (no sub-exercise navigation, so nothing can cascade/stack).
  *
- * It owns no exercise UI of its own: it sequences the existing exercise pages.
- * Each sub-exercise is launched with `from=mix` + `mixReturn=/practice/mix/<id>`
- * so it returns here; we then advance to the next step. When every step is
- * done, a short recap is shown.
- *
- * Progress for each activity is recorded under its normal journey-* namespace,
- * so playing Mix also advances the Explore/Tree activities for that level.
+ * Counts toward Explore tier completion via the 'journey-mix' node when
+ * launched for a real level. Scored by first-try accuracy into stars.
  *
  * @module app/exercises/mix
  */
 import {
-  Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy,
+  Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NavController, ViewWillEnter } from '@ionic/angular';
-import { FlashcardService, FlashcardDeck } from '../../services/flashcard.service';
+import { NavController, ViewWillEnter, ViewWillLeave } from '@ionic/angular';
+import { FlashcardService, FlashcardDeck, Flashcard } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
+import { AudioService } from '../../services/audio.service';
+import { BackInterceptorService } from '../../services/back-interceptor.service';
+import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../../maps/journey/journey-back';
-import { MixSessionService, type MixStep } from './mix-session.service';
-
-/** Languages with the sentence generator (Blanks is meaningful). */
-const BLANKS_LANGS = new Set(['fr', 'nl']);
+import { gradeAnswer } from '../../../core/answer-validator/typo-grader';
+import type { SourceCard } from '../../../core/phrase-builder/phrase-builder';
+import {
+  MixSessionService, type MixItem, type MixChoice,
+  type MixMatchItem, type MixBuilderItem,
+} from './mix-session.service';
 
 @Component({
   selector: 'app-mix',
@@ -33,40 +34,59 @@ const BLANKS_LANGS = new Set(['fr', 'nl']);
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MixPage implements OnInit, ViewWillEnter {
+export class MixPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private navCtrl = inject(NavController);
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
+  private audio = inject(AudioService);
+  private backInterceptor = inject(BackInterceptorService);
+  private exitConfirm = inject(ExitConfirmService);
   private mix = inject(MixSessionService);
   private cdr = inject(ChangeDetectorRef);
 
   private deck: FlashcardDeck | null = null;
   private level = 0;
-  /** Where to return when the Mix session ends: the map that launched it
-   *  (Explore/Tree via ?from=…), else the Mix level list. */
   private backUrl = '/practice?mode=mix';
-  /** True after the first ionViewWillEnter: subsequent entries are returns from
-   *  a step we launched, so we advance the session pointer. */
-  private started = false;
 
   isLoading = true;
-  /** 'intro' = a "ready / next activity" screen with a Continue button the user
-   *  taps to launch the next step (no auto-cascade); 'done' = final recap. */
-  phase: 'intro' | 'done' = 'intro';
-  /** Step dots for the header progress (icon + done/current/upcoming). */
-  stepDots: { icon: string; state: 'done' | 'current' | 'upcoming' }[] = [];
-  totalSteps = 0;
-  levelTitle = '';
-  /** 1-based number of the step the Continue button will launch. */
-  get nextStepNumber(): number {
-    const s = this.mix.current();
-    return s ? Math.min(s.index + 1, s.steps.length) : 1;
-  }
+  phase: 'play' | 'done' = 'play';
+  item: MixItem | null = null;
+  index = 0;
+  total = 0;
+  correctCount = 0;
+  earnedStars = 0;
 
-  t(key: string, params?: Record<string, string | number>): string { return this.i18n.t(key, params); }
+  // Per-item answer state.
+  answered = false;            // locked after answering (choice/builder/write)
+  readonly playing = this.audio.playing;
+  readonly slowRate = this.audio.slowRate;
+
+  // Match sub-state.
+  matchLeftSel: string | null = null;        // selected pair id on the left
+  matchRightSel: string | null = null;       // selected pair id on the right
+  matchDone = new Set<string>();              // solved pair ids
+  matchWrong = false;
+
+  // Builder sub-state.
+  builderChosen: string[] = [];
+  builderBank: string[] = [];
+  builderResult: 'none' | 'correct' | 'wrong' = 'none';
+
+  // Write sub-state.
+  writeValue = '';
+  writeResult: 'none' | 'correct' | 'wrong' = 'none';
+
+  private readonly onHardwareBack: () => Promise<boolean> =
+    () => this.exitConfirm.request(this.index > 0 && this.phase === 'play', () => this.leave());
+
+  t(key: string, p?: Record<string, string | number>): string { return this.i18n.t(key, p); }
+
+  ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
+  ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
+  ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
 
   async ngOnInit(): Promise<void> {
     await this.flashcards.initialize();
@@ -75,89 +95,218 @@ export class MixPage implements OnInit, ViewWillEnter {
     if (!deckId) { this.router.navigate(['/practice']); return; }
     this.deck = this.flashcards.getDeck(deckId);
     if (!this.deck) { this.router.navigate(['/practice']); return; }
-    this.levelTitle = this.flashcards.getLevelCards(deckId, this.level)[0]?.skill ?? '';
-    // If launched from a map (Explore/Tree), return there; else the Mix list.
     const from = this.route.snapshot.queryParamMap.get('from');
     this.backUrl = from ? journeyBackUrl(this.route.snapshot.queryParamMap) : '/practice?mode=mix';
 
-    // Fresh session for this deck+level. ionViewWillEnter drives the sequence.
-    this.mix.start(deckId, this.level, BLANKS_LANGS.has(this.deck.languageCode));
+    // Source cards for the session.
+    const cards: Flashcard[] = this.level > 0
+      ? this.flashcards.getLevelCards(deckId, this.level)
+      : this.flashcards.getFlashcardQueue(deckId, 20);
+    const toSrc = (c: Flashcard): SourceCard => ({ text: c.text, translations: c.translations });
+    const current = cards.map(toSrc);
+    const earlier: SourceCard[] = [];
+    for (let n = 1; n < this.level; n++) {
+      for (const c of this.flashcards.getLevelCards(deckId, n)) earlier.push(toSrc(c));
+    }
+
+    const session = this.mix.start(
+      deckId, this.level, cards, current, earlier,
+      (c) => this.flashcards.bestTranslation(c),
+    );
+    this.total = session.items.length;
+    this.loadCurrent();
     this.isLoading = false;
-    this.refreshDots();
-  }
-
-  /**
-   * Each time Mix becomes the foreground view we ADVANCE the session pointer
-   * past the step just played (except the very first entry), then show the
-   * intro screen for the next step. Launching is NOT automatic — the user taps
-   * Continue — so there is no push/pop cascade regardless of how a sub-exercise
-   * finishes. `started` marks that the first step pointer is already current.
-   */
-  async ionViewWillEnter(): Promise<void> {
-    if (this.isLoading || this.phase === 'done') return;
-
-    if (!this.started) {
-      this.started = true;             // first entry: step 0 is already current
-    } else {
-      this.mix.advance();              // returning from a step → move to next
-    }
-    this.refreshDots();
-
-    if (!this.mix.currentStep()) { this.finishSession(); return; }
-    // Show the intro/continue screen; the user launches the step themselves.
-    this.phase = 'intro';
     this.cdr.detectChanges();
   }
 
-  /** User tapped Continue → launch the current step's exercise. */
-  playNext(): void {
-    const step = this.mix.currentStep();
-    if (!step || !this.deck) return;
-    const queryParams: Record<string, string | number> = {
-      level: this.level,
-      mode: step.mode,
-      from: 'mix',
-      // Where the sub-exercise returns (journeyBackUrl reads this for from=mix).
-      mixReturn: `/practice/mix/${this.deck.id}?level=${this.level}`,
-    };
-    // Builder needs the earlier-levels pool for phrase generation, like the Tree.
-    if (step.mode === 'journey-builder') {
-      queryParams['pool'] = this.poolLevels().join(',');
-    }
-    this.navCtrl.navigateForward([step.route, this.deck.id], { queryParams });
-  }
-
-  /** Earlier level numbers for the Builder pool (1..level-1). */
-  private poolLevels(): number[] {
-    return Array.from({ length: Math.max(0, this.level - 1) }, (_v, i) => i + 1);
-  }
-
-  private refreshDots(): void {
+  /** Load the current item + reset per-item state; auto-play audio items. */
+  private loadCurrent(): void {
     const s = this.mix.current();
-    if (!s) { this.stepDots = []; this.totalSteps = 0; return; }
-    this.totalSteps = s.steps.length;
-    this.stepDots = s.steps.map((step, i) => ({
-      icon: step.icon,
-      state: i < s.index ? 'done' : i === s.index ? 'current' : 'upcoming',
-    }));
+    this.item = this.mix.currentItem();
+    this.index = s?.index ?? 0;
+    this.answered = false;
+    this.matchLeftSel = this.matchRightSel = null;
+    this.matchDone = new Set();
+    this.matchWrong = false;
+    this.matchMistake = false;
+    this.matchRightsCache = this.item?.kind === 'match'
+      ? this.shuffleRights((this.item as MixMatchItem).pairs)
+      : [];
+    this.builderResult = 'none';
+    this.builderChosen = [];
+    this.builderBank = this.item && this.item.kind === 'builder' ? [...(this.item as MixBuilderItem).bank] : [];
+    this.writeValue = '';
+    this.writeResult = 'none';
+    this.cdr.detectChanges();
+    // Auto-play the pronunciation for items that show/anchor on a spoken word:
+    // the Audio item (where sound IS the prompt) and the Quiz item (French word
+    // + speaker) both speak on arrival, matching the other modes. Blank/builder/
+    // write stay silent until the user taps (their prompt is a sentence/English).
+    if (this.item?.kind === 'audio' || this.item?.kind === 'quiz') {
+      setTimeout(() => this.playPrompt(), 180);
+    }
+  }
+
+  // ── Audio ────────────────────────────────────────────────────────────────────
+  playPrompt(slow = false): void {
+    if (!this.item) return;
+    let text = ''; let url: string | null = null;
+    if (this.item.kind === 'quiz' || this.item.kind === 'audio') { text = this.item.prompt; url = this.item.audioUrl; }
+    else if (this.item.kind === 'blank') text = this.item.full;
+    else if (this.item.kind === 'builder' || this.item.kind === 'write') text = this.item.target;
+    if (text) void this.audio.playWord(text, url, this.settings.learningLanguage(), slow);
+  }
+
+  // ── Quiz / audio / blank (multiple choice) ─────────────────────────────────────
+  get choices(): MixChoice[] {
+    if (!this.item) return [];
+    if (this.item.kind === 'quiz' || this.item.kind === 'audio' || this.item.kind === 'blank') return this.item.choices;
+    return [];
+  }
+  chosenLabel: string | null = null;
+  chooseOption(opt: MixChoice): void {
+    if (this.answered) return;
+    this.answered = true;
+    this.chosenLabel = opt.label;
+    if (opt.correct) { this.mix.recordCorrect(); this.correctCount++; }
+    this.cdr.detectChanges();
+    this.autoNext(opt.correct);
+  }
+
+  // ── Match (mini-board) ─────────────────────────────────────────────────────────
+  get matchItem(): MixMatchItem | null { return this.item?.kind === 'match' ? this.item : null; }
+  /** The right (English) column, SHUFFLED once per item so it doesn't line up
+   *  row-for-row with the left (French) column — otherwise matching is trivial
+   *  (just tap the word straight across). Cached in `matchRightsCache` so OnPush
+   *  re-renders (e.g. when a pair is solved) don't reshuffle it. */
+  private matchRightsCache: { id: string; en: string }[] = [];
+  get matchRights(): { id: string; en: string }[] { return this.matchRightsCache; }
+  private matchMistake = false;
+  /** Shuffle the English column so it never lines up row-for-row with the
+   *  French column. For a small board a random shuffle can land back on the
+   *  original order, so reshuffle until it differs (unless every pair is
+   *  identical, which can't happen here). */
+  private shuffleRights(pairs: { id: string; en: string }[]): { id: string; en: string }[] {
+    const rights = pairs.map(p => ({ id: p.id, en: p.en }));
+    if (rights.length < 2) return rights;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      for (let i = rights.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rights[i], rights[j]] = [rights[j], rights[i]];
+      }
+      // Accept the shuffle only if at least one position differs from the
+      // left column order (pairs[i].id), so it's not a trivial straight match.
+      if (rights.some((r, i) => r.id !== pairs[i].id)) break;
+    }
+    return rights;
+  }
+  selectMatch(side: 'left' | 'right', id: string): void {
+    if (this.matchDone.has(id)) return;
+    if (side === 'left') this.matchLeftSel = this.matchLeftSel === id ? null : id;
+    else this.matchRightSel = this.matchRightSel === id ? null : id;
+    if (this.matchLeftSel && this.matchRightSel) {
+      if (this.matchLeftSel === this.matchRightSel) {
+        this.matchDone.add(this.matchLeftSel);
+        this.matchLeftSel = this.matchRightSel = null;
+        if (this.matchItem && this.matchDone.size === this.matchItem.pairs.length) {
+          // Board solved: correct only if there were no wrong attempts.
+          this.answered = true;
+          if (!this.matchMistake) { this.mix.recordCorrect(); this.correctCount++; }
+          this.cdr.detectChanges();
+          this.autoNext(!this.matchMistake);
+          return;
+        }
+      } else {
+        this.matchMistake = true;
+        this.matchWrong = true;
+        const l = this.matchLeftSel, r = this.matchRightSel;
+        setTimeout(() => {
+          this.matchWrong = false;
+          if (this.matchLeftSel === l) this.matchLeftSel = null;
+          if (this.matchRightSel === r) this.matchRightSel = null;
+          this.cdr.detectChanges();
+        }, 550);
+      }
+    }
     this.cdr.detectChanges();
   }
 
-  private finishSession(): void {
+  // ── Builder (arrange chips) ──────────────────────────────────────────────────────
+  get builderItem(): MixBuilderItem | null { return this.item?.kind === 'builder' ? this.item : null; }
+  builderPick(token: string): void {
+    if (this.answered) return;
+    this.builderResult = 'none';
+    this.builderChosen = [...this.builderChosen, token];
+    const i = this.builderBank.indexOf(token);
+    if (i >= 0) this.builderBank = [...this.builderBank.slice(0, i), ...this.builderBank.slice(i + 1)];
+    this.cdr.detectChanges();
+  }
+  builderUnpick(i: number): void {
+    if (this.answered) return;
+    const removed = this.builderChosen[i];
+    this.builderChosen = this.builderChosen.filter((_, k) => k !== i);
+    this.builderBank = [...this.builderBank, removed];
+    this.builderResult = 'none';
+    this.cdr.detectChanges();
+  }
+  get builderCanCheck(): boolean { return !this.answered && this.builderChosen.length > 0; }
+  builderCheck(): void {
+    const b = this.builderItem;
+    if (!b || this.answered) return;
+    const correct = this.builderChosen.length === b.tokens.length
+      && b.tokens.every((tk, k) => tk === this.builderChosen[k]);
+    if (correct) {
+      this.answered = true;
+      this.builderResult = 'correct';
+      this.mix.recordCorrect(); this.correctCount++;
+      this.cdr.detectChanges();
+      this.autoNext(true);
+    } else {
+      this.builderResult = 'wrong';
+      this.cdr.detectChanges();
+      setTimeout(() => { if (this.builderResult === 'wrong') { this.builderResult = 'none'; this.cdr.detectChanges(); } }, 600);
+    }
+  }
+
+  // ── Write (type the answer) ────────────────────────────────────────────────────
+  get writeItem() { return this.item?.kind === 'write' ? this.item : null; }
+  writeCheck(): void {
+    const w = this.writeItem;
+    if (!w || this.answered || !this.writeValue.trim()) return;
+    const grade = gradeAnswer(this.writeValue, w.accepted).grade;
+    const ok = grade !== 'wrong';
+    this.answered = true;
+    this.writeResult = ok ? 'correct' : 'wrong';
+    if (ok) { this.mix.recordCorrect(); this.correctCount++; }
+    this.cdr.detectChanges();
+    this.autoNext(ok);
+  }
+
+  // ── Flow ───────────────────────────────────────────────────────────────────────
+  /** After an item is answered, pause to show the result, then advance. */
+  private autoNext(correct: boolean): void {
+    setTimeout(() => {
+      this.mix.advance();
+      if (!this.mix.currentItem()) { void this.finishSession(); return; }
+      this.loadCurrent();
+    }, correct ? 750 : 1300);
+  }
+
+  get progress(): number { return this.total ? (this.index / this.total) * 100 : 0; }
+
+  private async finishSession(): Promise<void> {
     this.phase = 'done';
-    this.refreshDots();
+    const pct = this.total > 0 ? Math.round((this.correctCount / this.total) * 100) : 0;
+    this.earnedStars = this.flashcards.calculateStars(pct);
+    if (this.deck && this.level > 0) {
+      try { await this.flashcards.saveRoundProgress(this.deck.id, 'journey-mix', this.level, pct); }
+      catch { /* best-effort */ }
+    }
     this.mix.clear();
     this.cdr.detectChanges();
   }
 
-  /** Done → back to wherever Mix was launched from (map or the Mix list). */
-  finish(): void {
-    this.mix.clear();
-    this.navCtrl.navigateBack(this.backUrl);
-  }
-
-  close(): void {
-    this.mix.clear();
-    this.navCtrl.navigateBack(this.backUrl);
-  }
+  finish(): void { this.leave(); }
+  close(): void { void this.exitConfirm.request(this.index > 0 && this.phase === 'play', () => this.leave()); }
+  private leave(): void { this.mix.clear(); this.navCtrl.navigateBack(this.backUrl); }
 }

@@ -768,31 +768,38 @@
   },
   "l'accident": {
     "file": "l-accident-0c01340b.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'acteur": {
     "file": "l-acteur-2577cfd9.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'addition": {
     "file": "l-addition-7d115ffe.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'ami": {
     "file": "l-ami-425b4cf8.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'amie": {
     "file": "l-amie-8a2f38be.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'animal": {
     "file": "l-animal-9a316130.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'appartement": {
     "file": "l-appartement-44c0b36a.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'application": {
     "file": "l-application-94a561ae.mp3",
@@ -801,79 +808,98 @@
   },
   "l'arbre": {
     "file": "l-arbre-44ab5bb3.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'argent": {
     "file": "l-argent-2bb9f797.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'art": {
     "file": "l-art-7aa94d56.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'artiste": {
     "file": "l-artiste-c9ac166f.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'ascenseur": {
     "file": "l-ascenseur-cdc5e4eb.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'aéroport": {
     "file": "l-aéroport-dfaa077a.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'eau": {
     "file": "l-eau-2bbbbb73.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'emploi": {
     "file": "l-emploi-b3251e5f.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'enfant": {
     "file": "l-enfant-192db4ec.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'entreprise": {
     "file": "l-entreprise-8bb5cf41.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'entretien": {
     "file": "l-entretien-a34e3bc4.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'examen": {
     "file": "l-examen-b66fcba5.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'exposition": {
     "file": "l-exposition-0deedd09.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'expérience": {
     "file": "l-expérience-d43e68e2.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'horaire": {
     "file": "l-horaire-65ba60a6.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'hôpital": {
     "file": "l-hôpital-8a839f53.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'hôtel": {
     "file": "l-hôtel-30667f11.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'immeuble": {
     "file": "l-immeuble-b6233765.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'infirmier": {
     "file": "l-infirmier-63978e4e.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'intelligence artificielle": {
     "file": "l-intelligence-artificielle-7b4462a7.mp3",
@@ -882,59 +908,73 @@
   },
   "l'invitation": {
     "file": "l-invitation-08f94d2f.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'objectif": {
     "file": "l-objectif-7fdb73bc.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'oiseau": {
     "file": "l-oiseau-4dba66e9.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'orage": {
     "file": "l-orage-3dab9593.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'ordinateur": {
     "file": "l-ordinateur-e24b6368.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'ordonnance": {
     "file": "l-ordonnance-865fb737.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'université": {
     "file": "l-université-3ab99607.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'école": {
     "file": "l-école-3fe632e8.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'écran": {
     "file": "l-écran-ff3099aa.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'élève": {
     "file": "l-élève-ee1f8ad8.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'étage": {
     "file": "l-étage-991cbe47.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "l'étudiant": {
     "file": "l-étudiant-ee9480ec.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la batterie": {
     "file": "la-batterie-e669b661.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la bibliothèque": {
     "file": "la-bibliothèque-1e93bfb0.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la blessure": {
     "file": "la-blessure-0a143369.mp3",
@@ -943,63 +983,78 @@
   },
   "la caisse": {
     "file": "la-caisse-6fb5aef6.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la carrière": {
     "file": "la-carrière-74fa0a0e.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la carte": {
     "file": "la-carte-fdb2a19b.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la chaise": {
     "file": "la-chaise-8f0cf5b0.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la chambre": {
     "file": "la-chambre-20dc28ea.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la chanson": {
     "file": "la-chanson-e9459d0d.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la chaussure": {
     "file": "la-chaussure-26bf4d21.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la chemise": {
     "file": "la-chemise-aa438356.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la clé": {
     "file": "la-clé-4274967d.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la commande": {
     "file": "la-commande-800f72e7.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la couleur": {
     "file": "la-couleur-cfb41c81.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la critique": {
     "file": "la-critique-93a19839.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la cuisine": {
     "file": "la-cuisine-b007bd91.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la dent": {
     "file": "la-dent-11f93495.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la douane": {
     "file": "la-douane-0db31e4e.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la douleur": {
     "file": "la-douleur-cab21b20.mp3",
@@ -1008,31 +1063,38 @@
   },
   "la famille": {
     "file": "la-famille-de2c328f.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la fenêtre": {
     "file": "la-fenêtre-32c4ab4d.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la fille": {
     "file": "la-fille-04cf0e2b.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la fièvre": {
     "file": "la-fièvre-c0b4cefa.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la fleur": {
     "file": "la-fleur-d0e08bc2.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la forêt": {
     "file": "la-forêt-938b9f4d.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la frontière": {
     "file": "la-frontière-113a10f8.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la fête": {
     "file": "la-fête-3cd69169.mp3",
@@ -1040,31 +1102,38 @@
   },
   "la gare": {
     "file": "la-gare-dc67611a.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la gorge": {
     "file": "la-gorge-9c5962fb.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la leçon": {
     "file": "la-leçon-057f1634.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la maison": {
     "file": "la-maison-76b8f794.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la matière": {
     "file": "la-matière-7019899b.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la mer": {
     "file": "la-mer-4b22f7c2.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la mise à jour": {
     "file": "la-mise-à-jour-d4eb81a9.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la monnaie": {
     "file": "la-monnaie-ccc00208.mp3",
@@ -1072,31 +1141,38 @@
   },
   "la montagne": {
     "file": "la-montagne-ac681cdf.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la musique": {
     "file": "la-musique-a028e2e3.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la mère": {
     "file": "la-mère-79772fc5.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la nature": {
     "file": "la-nature-a0e6f958.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la neige": {
     "file": "la-neige-db9b0a2e.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la note": {
     "file": "la-note-76f0e486.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la panne": {
     "file": "la-panne-a3a8756e.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la petite amie": {
     "file": "la-petite-amie-e5b5437b.mp3",
@@ -1105,23 +1181,28 @@
   },
   "la pharmacie": {
     "file": "la-pharmacie-67fb63ca.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la plage": {
     "file": "la-plage-41ea9b3f.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la pluie": {
     "file": "la-pluie-0f6aedbc.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la pomme": {
     "file": "la-pomme-b9831b53.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la porte": {
     "file": "la-porte-757a4fdc.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la promotion": {
     "file": "la-promotion-432e442e.mp3",
@@ -1130,27 +1211,33 @@
   },
   "la question": {
     "file": "la-question-f1a8797c.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la recette": {
     "file": "la-recette-47fe04e3.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la rentrée": {
     "file": "la-rentrée-62bd590b.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la rivière": {
     "file": "la-rivière-3088eae4.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la robe": {
     "file": "la-robe-b0581891.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la route": {
     "file": "la-route-405ae9af.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la réduction": {
     "file": "la-réduction-98094107.mp3",
@@ -1159,19 +1246,23 @@
   },
   "la réunion": {
     "file": "la-réunion-b72dbd4b.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la saison": {
     "file": "la-saison-8e5c5330.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la salle de bain": {
     "file": "la-salle-de-bain-8f4c1583.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la santé": {
     "file": "la-santé-34062e97.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la science": {
     "file": "la-science-31f2e6e8.mp3",
@@ -1180,35 +1271,43 @@
   },
   "la scène": {
     "file": "la-scène-ea8a827d.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la souris": {
     "file": "la-souris-f76aecb2.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la sœur": {
     "file": "la-sœur-52f13faa.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la table": {
     "file": "la-table-ad92e292.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la taille": {
     "file": "la-taille-e8a8b577.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la technologie": {
     "file": "la-technologie-7bab141e.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la température": {
     "file": "la-température-d2770c15.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la tâche": {
     "file": "la-tâche-580cb165.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la tête": {
     "file": "la-tête-918d731d.mp3",
@@ -1216,15 +1315,18 @@
   },
   "la valise": {
     "file": "la-valise-d4f659a6.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la viande": {
     "file": "la-viande-025aee41.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la vitrine": {
     "file": "la-vitrine-b0270f86.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "la": {
     "file": "la-3efd4c0f.mp3",
@@ -1232,135 +1334,168 @@
   },
   "le bagage": {
     "file": "le-bagage-1fc4d859.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le billet": {
     "file": "le-billet-3310c17a.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le bureau": {
     "file": "le-bureau-d0375cf7.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le café": {
     "file": "le-café-6112677e.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le cahier": {
     "file": "le-cahier-34c291b9.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le chat": {
     "file": "le-chat-281b6d7d.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le chien": {
     "file": "le-chien-bae779aa.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le chômage": {
     "file": "le-chômage-84b5cb56.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le clavier": {
     "file": "le-clavier-5035bdb9.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le client": {
     "file": "le-client-b5f14fc1.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le climat": {
     "file": "le-climat-661aa927.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le collègue": {
     "file": "le-collègue-9f2d682f.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le concert": {
     "file": "le-concert-fe941f24.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le contrat": {
     "file": "le-contrat-062a2770.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le couple": {
     "file": "le-couple-00e1b5d3.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le courriel": {
     "file": "le-courriel-ef73cd0e.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le cours": {
     "file": "le-cours-10189eb7.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le dessert": {
     "file": "le-dessert-eddcdf23.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le devoir": {
     "file": "le-devoir-1c0ceaa7.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le diplôme": {
     "file": "le-diplôme-67f0cddb.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le dos": {
     "file": "le-dos-9e84c772.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le déchet": {
     "file": "le-déchet-a792cd83.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le déjeuner": {
     "file": "le-déjeuner-177c6d56.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le dîner": {
     "file": "le-dîner-0c912584.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le festival": {
     "file": "le-festival-593f8138.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le fichier": {
     "file": "le-fichier-9b035e8c.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le film": {
     "file": "le-film-6dd3336f.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le fils": {
     "file": "le-fils-e0cb0009.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le fromage": {
     "file": "le-fromage-aebf4085.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le frère": {
     "file": "le-frère-6d906674.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le jardin": {
     "file": "le-jardin-6d7ec221.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le lac": {
     "file": "le-lac-2a407fc7.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le lit": {
     "file": "le-lit-19b6fd18.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le livre est sur la table.": {
     "file": "le-livre-est-sur-la-table-9564f6c8.mp3",
@@ -1369,11 +1504,13 @@
   },
   "le livre": {
     "file": "le-livre-b07c1a25.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le logiciel": {
     "file": "le-logiciel-ed8d71f6.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le loyer": {
     "file": "le-loyer-0477b030.mp3",
@@ -1382,35 +1519,43 @@
   },
   "le légume": {
     "file": "le-légume-7b97eb6c.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le magasin": {
     "file": "le-magasin-e34a0b46.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le manteau": {
     "file": "le-manteau-81b4e241.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le marché": {
     "file": "le-marché-9d24afee.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le mariage": {
     "file": "le-mariage-17d92ee2.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le menu": {
     "file": "le-menu-adea7b09.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le message": {
     "file": "le-message-64c988bc.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le meuble": {
     "file": "le-meuble-fb05d3cd.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le mot de passe": {
     "file": "le-mot-de-passe-63ac61ae.mp3",
@@ -1419,15 +1564,18 @@
   },
   "le musée": {
     "file": "le-musée-6adf7547.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le médecin": {
     "file": "le-médecin-f89c4cce.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le médicament": {
     "file": "le-médicament-cdfd189c.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le ménage": {
     "file": "le-ménage-7b73451d.mp3",
@@ -1435,27 +1583,33 @@
   },
   "le métier": {
     "file": "le-métier-c312cbe4.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le nuage": {
     "file": "le-nuage-d5808050.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le pain": {
     "file": "le-pain-ddc880e8.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le pantalon": {
     "file": "le-pantalon-88db48e3.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le passeport": {
     "file": "le-passeport-1e0f72d6.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le patron": {
     "file": "le-patron-dcd71f41.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le petit ami": {
     "file": "le-petit-ami-7656b4b9.mp3",
@@ -1469,35 +1623,43 @@
   },
   "le plan": {
     "file": "le-plan-d611be79.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le poisson": {
     "file": "le-poisson-6e2aae30.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le prix": {
     "file": "le-prix-8008914b.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le professeur": {
     "file": "le-professeur-e9b8388b.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le projet": {
     "file": "le-projet-c6da0e28.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le propriétaire": {
     "file": "le-propriétaire-1e897835.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le public": {
     "file": "le-public-9695454b.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le père": {
     "file": "le-père-c535266c.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le quai": {
     "file": "le-quai-ebdc3c67.mp3",
@@ -1506,19 +1668,23 @@
   },
   "le quartier": {
     "file": "le-quartier-0c38e930.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le rendez-vous": {
     "file": "le-rendez-vous-977ccab3.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le repas": {
     "file": "le-repas-badc88b6.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le restaurant": {
     "file": "le-restaurant-f807f33e.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le retard": {
     "file": "le-retard-79c7a2e9.mp3",
@@ -1527,39 +1693,48 @@
   },
   "le reçu": {
     "file": "le-reçu-49e22a76.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le rhume": {
     "file": "le-rhume-af39f9f2.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le robot": {
     "file": "le-robot-4145c7a7.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le roman": {
     "file": "le-roman-b59de5d3.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le réseau": {
     "file": "le-réseau-179fb92b.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le résultat": {
     "file": "le-résultat-99f7f31e.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le salaire": {
     "file": "le-salaire-11bb2b98.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le salon": {
     "file": "le-salon-91e76043.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le sel": {
     "file": "le-sel-c30b6ac5.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le soleil": {
     "file": "le-soleil-cce7ddda.mp3",
@@ -1568,35 +1743,43 @@
   },
   "le souvenir": {
     "file": "le-souvenir-9337f211.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le spectacle": {
     "file": "le-spectacle-c78ac2fd.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le stage": {
     "file": "le-stage-0ff7240c.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le stylo": {
     "file": "le-stylo-01a0a85c.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le sucre": {
     "file": "le-sucre-97b738fa.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le symptôme": {
     "file": "le-symptôme-739e5623.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le séjour": {
     "file": "le-séjour-6005b97d.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le tableau": {
     "file": "le-tableau-4e8956f9.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le temps": {
     "file": "le-temps-8f2eb5ca.mp3",
@@ -1608,39 +1791,48 @@
   },
   "le théâtre": {
     "file": "le-théâtre-d4fd2ea4.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le train": {
     "file": "le-train-463bc91a.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le travail": {
     "file": "le-travail-bea1a5ff.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le téléphone": {
     "file": "le-téléphone-743e4952.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le vent": {
     "file": "le-vent-dddde748.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le ventre": {
     "file": "le-ventre-36c2da2c.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le voisin": {
     "file": "le-voisin-907643f1.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le vol": {
     "file": "le-vol-b883c88e.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le voyage": {
     "file": "le-voyage-d4d58acb.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "le": {
     "file": "le-593b743b.mp3",
@@ -1658,7 +1850,8 @@
   },
   "les vacances": {
     "file": "les-vacances-c2decc4d.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "les vêtements": {
     "file": "les-vêtements-2c517956.mp3",
@@ -2170,7 +2363,8 @@
   },
   "une tendance": {
     "file": "une-tendance-0b5ad385.mp3",
-    "source": "duolingo"
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A"
   },
   "une": {
     "file": "une-e3bae98d.mp3",

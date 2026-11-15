@@ -83,12 +83,20 @@ export class SettingsPage {
    * downloading. If one exists, `updateAvailable` lights up the "new version"
    * badge; the user taps "Check for updates" to download it.
    */
-  async ionViewWillEnter(): Promise<void> {
+  ionViewWillEnter(): void {
+    // Check for a newer version in the BACKGROUND — do NOT await it. The OTA
+    // check hits the network, and awaiting it here held the page open for
+    // ~0.5–1s before it appeared. Fire-and-forget: the page renders instantly
+    // and the "new version" badge lights up later if a check succeeds.
+    void this.refreshUpdateBadge();
+  }
+
+  private async refreshUpdateBadge(): Promise<void> {
     try {
       const s = await this.appUpdate.getUpdateStatus();
       // Only light the badge on a SUCCESSFUL check that found a newer bundle.
-      // A failed check (s.ok === false) leaves the badge off silently here —
-      // the error is surfaced when the user taps "Check for updates".
+      // A failed check (s.ok === false) leaves the badge off silently — the
+      // error is surfaced when the user taps "Check for updates".
       if (s.ok && s.available && s.url && s.version) {
         this.pendingUpdate = { version: s.version, url: s.url, checksum: s.checksum };
         this.updateAvailable = true;

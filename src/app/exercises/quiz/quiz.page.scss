@@ -42,13 +42,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin: 0 0 24px;
-
-  .word-anchor {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-  }
+  margin: 0 0 12px;
 }
 
 .quiz-prompt {
@@ -56,18 +50,17 @@
   font-size: 2rem;
   font-weight: 700;
   color: var(--ion-text-color);
+  overflow-wrap: anywhere;
 }
 
-// Audio buttons sit just right of the prompt; the prompt stays centered.
-.audio-actions {
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: 12px;
+// Audio button(s) on their OWN centred line below the word (not beside it), so
+// a long word never wraps around them.
+.quiz-audio-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  margin: 0 0 24px;
 }
 
 .audio-icon {

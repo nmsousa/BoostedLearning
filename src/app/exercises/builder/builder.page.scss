@@ -111,14 +111,15 @@
 .group-next { width: 100%; max-width: 420px; min-height: 52px; font-weight: 700; }
 
 // ── Phrase building ─────────────────────────────────────────────────────────
-// Centre the whole phrase area in the available space (it used to hug the top).
 // TOP-aligned (not centred): the prompt + slots above the dashed line have
 // fixed heights, so the line sits at a CONSTANT position in every state. The
-// content below the line (hint, word bank, or result + button) varies freely
-// without moving the line — centring the whole block made the line jump.
+// content below the line (hint, word bank, or result) varies freely without
+// moving the line — centring the whole block made the line jump. The Check /
+// Continue button now lives in the <ion-footer> (pinned to the bottom, like
+// the Write mode) so it no longer rides up and down with the content height.
 .builder-phrase {
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  gap: 18px; min-height: 60vh; padding: 72px 8px 24px;
+  gap: 18px; min-height: 100%; box-sizing: border-box; padding: 56px 8px 24px;
 }
 .phrase-target { font-size: 1.2rem; font-weight: 700; color: var(--ion-text-color); text-align: center; }
 
@@ -215,4 +216,18 @@
   .result-nl { font-size: 1.4rem; font-weight: 800; }
   .result-en { color: var(--ion-color-medium); }
 }
-.phrase-actions { width: 100%; max-width: 420px; }
+// ── Footer action bar ───────────────────────────────────────────────────────
+// Ionic keeps <ion-footer> pinned below <ion-content>; the Check / Continue
+// button sits here so it stays at a CONSTANT bottom position across all phrase
+// states (same pattern as the Write mode's footer).
+.builder-footer {
+  background: var(--ion-background-color);
+  &::before { display: none; } // drop Ionic's default top shadow line
+
+  .footer-inner {
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 8px 12px calc(8px + var(--ion-safe-area-bottom, 0px));
+    box-sizing: border-box;
+  }
+}

@@ -122,6 +122,8 @@ describe('TreePage (5 modes per level)', () => {
     fixture.detectChanges();
     expect(component.coreAvailTier).toBe(1);
     expect(component.coreDoneLevel).toBe(0);
+    // Strict rule: themes open only once the matching Core tier is COMPLETED,
+    // so before Core L1 is done every theme node is locked.
     expect(component.nodes.every(n => n.state === 'locked')).toBe(true);
   });
 

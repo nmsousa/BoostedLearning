@@ -93,6 +93,8 @@ describe('TreePlusPage (vertical Tree)', () => {
     await component.ngOnInit();
     expect(component.core.state).toBe('active');
     expect(component.core.doneLevel).toBe(0);
+    // Strict rule: themes open only once the matching Core tier is COMPLETED,
+    // so before Core L1 is done every theme is locked.
     expect(component.themes.every(n => n.state === 'locked')).toBe(true);
   });
 
@@ -103,10 +105,10 @@ describe('TreePlusPage (vertical Tree)', () => {
     expect(component.themes.every(n => n.availTier >= 1)).toBe(true);
   });
 
-  it('shows a "next Core" tier that advances with progress', async () => {
-    doneLevels = [1];
+  it('Core reads Level 1 at the start (not Level 0)', async () => {
+    doneLevels = [];
     await component.ngOnInit();
-    expect(component.nextCoreTier).toBe(2);
+    expect(component.currentTier(component.core)).toBe(1);
   });
 
   it('expands a node inline into its tiers + 5 activities (newest first)', async () => {
@@ -148,15 +150,15 @@ describe('TreePlusPage (vertical Tree)', () => {
     expect(extras.queryParams['pool']).toBe(`1,2,${themeLevelOf(0, 1)}`);
   });
 
-  it('percent reflects the CURRENT level — 0% when the next level is untouched', async () => {
-    // Core 1 + food L1 fully done. Food has more tiers (L2/L3), so the card now
-    // shows progress toward the NEXT level (L2) — which is untouched → 0%
-    // (not the finished L1's 100%). The displayed "current level" is 2.
+  it('a completed tier stays at 100% until the NEXT tier unlocks', async () => {
+    // Core 1 + food L1 fully done, but food L2 isn't unlocked yet (Core 2 not
+    // done). The card must read its completed tier at 100% — NOT jump to the
+    // next (still-locked) tier at 0%. It only moves on once L2 actually opens.
     doneLevels = [1, themeTier1Level(0)];
     await component.ngOnInit();
     const food = component.themes.find(n => n.id === 'food')!;
-    expect(component.currentTier(food)).toBe(2);
-    expect(component.percentOf(food)).toBe(0);
+    expect(component.currentTier(food)).toBe(1);
+    expect(component.percentOf(food)).toBe(100);
   });
 
   it('percent is 100% only once the LAST authored tier is complete', async () => {

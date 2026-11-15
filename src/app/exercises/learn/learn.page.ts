@@ -139,7 +139,7 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     this.isLoading = false;
     this.cdr.detectChanges();
     // Auto-play the FIRST card's audio (always normal speed, not counted).
-    setTimeout(() => this.playWord(false, true), 180);
+    setTimeout(() => this.playWord(true), 180);
   }
 
   /** True when at least one card in the set has an emoji — drives whether the
@@ -151,24 +151,35 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   get isLast(): boolean { return this.index >= this.cards.length - 1; }
 
   /** True once the user has MANUALLY tapped the audio button twice for this
-   *  card — then the button switches to the slow replay. Auto-plays (on card
-   *  arrival) do NOT count, so navigating back/forth never flips it to slow. */
+   *  card — then the button shows the slow (gauge) icon AND the next tap plays
+   *  the slow replay. Auto-plays (card arrival, Back/Continue) do NOT count, so
+   *  navigating back/forth never flips it to slow on its own. The icon and the
+   *  slow playback share this single threshold, so the icon never gets "ahead"
+   *  of the sound (what caused the earlier off-by-one: gauge shown but still
+   *  playing fast for one extra tap). */
   get showSlow(): boolean {
-    return (this.playCounts.get(this.index) ?? 0) >= 2;
+    return (this.playCounts.get(this.index) ?? 0) >= 3;
   }
 
   /**
-   * Play the current word. `slow` = the slow replay. `auto` = triggered by
-   * navigation/card-open (always normal speed, and NOT counted toward the
-   * "reveal slow" threshold — only real user taps count).
+   * Play the current word. `auto` = triggered by navigation/card-open or a
+   * Back/Continue move (always NORMAL speed, and NOT counted toward the slow
+   * threshold — only real taps on the audio button count). A manual tap plays
+   * slow once this card has already had 2 counted (fast) plays; the icon flips
+   * on the same threshold so what you see is what you hear.
    */
-  async playWord(slow = false, auto = false): Promise<void> {
+  async playWord(auto = false): Promise<void> {
     const c = this.card;
     if (!c) return;
-    if (!slow && !auto) {
+    // Count this tap FIRST, then decide fast vs slow from the new count — the
+    // exact same value `showSlow` reads for the icon. So the instant the gauge
+    // appears (2 taps done) THIS tap already plays slow: icon and sound flip
+    // together, with no "gauge shown but still fast" tap in between.
+    if (!auto) {
       this.playCounts.set(this.index, (this.playCounts.get(this.index) ?? 0) + 1);
       this.cdr.detectChanges();
     }
+    const slow = !auto && this.showSlow;
     const res = await this.audio.playWord(c.fr, c.audioUrl, this.settings.learningLanguage(), slow);
     // When there's no recording AND no device voice, tell the user why (so a
     // silent tap isn't mistaken for a bug).
@@ -180,7 +191,10 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
 
   prev(): void {
     if (this.transitioning || this.index === 0) return;
-    this.animateTo(this.index - 1);
+    // Back replays the card's audio too (same as Continue): landing on a card
+    // always speaks it. It's an AUTO play, so it never counts toward the slow
+    // threshold — tapping Back/Continue repeatedly won't flip to the slow clip.
+    this.animateTo(this.index - 1, true);
   }
 
   async next(): Promise<void> {
@@ -199,7 +213,7 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
       this.index = newIndex;
       this.transitioning = false;
       this.cdr.detectChanges();
-      if (play) this.playWord(false, true);   // auto-play: normal speed, not counted
+      if (play) this.playWord(true);   // auto-play: normal speed, not counted
     }, LearnPage.TRANSITION_MS);
   }
 

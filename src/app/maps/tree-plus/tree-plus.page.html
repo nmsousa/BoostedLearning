@@ -75,6 +75,7 @@
       <ng-container *ngFor="let row of themeRows; trackBy: trackRow">
         <button type="button" class="tp-topic" *ngFor="let node of row; trackBy: trackNode"
           [ngClass]="'state-' + node.state" [class.expanded]="expandedId === node.id"
+          [class.pulse]="pulseTopicId === node.id" [attr.data-topic-id]="node.id"
           [style.--hue]="node.hue" (click)="toggleNode(node)"
           [attr.aria-expanded]="expandedId === node.id"
           [attr.aria-label]="node.title + ', ' + nodeStatus(node) + ', ' + percentOf(node) + '%'">
@@ -101,14 +102,6 @@
       </ng-container>
     </div>
 
-    <!-- Next Core strip -->
-    <div class="tp-next" [class.locked]="!nextCoreUnlocked">
-      <ion-icon [name]="nextCoreUnlocked ? 'arrow-forward-circle' : 'lock-closed'" aria-hidden="true"></ion-icon>
-      <div class="tp-next-text">
-        <span class="tp-next-title">{{ 'treePlus.nextCore' | translate:{ n: nextCoreTier } }}</span>
-        <span class="tp-next-sub">{{ 'treePlus.nextCoreSub' | translate }}</span>
-      </div>
-    </div>
   </div>
 </ion-content>
 
@@ -120,10 +113,10 @@
       <ion-icon *ngIf="tier.done" name="checkmark-circle" class="tp-tier-done" aria-hidden="true"></ion-icon>
     </div>
 
-    <!-- Activities grid (bigger buttons). Mix spans the full row beneath them. -->
+    <!-- Activities grid (bigger, more-spaced buttons). Mix is the last node. -->
     <div class="tp-modes">
       <button type="button" class="tp-mode" *ngFor="let m of tier.modes; trackBy: trackMode"
-        [ngClass]="'state-' + m.state" [disabled]="m.state === 'locked'"
+        [ngClass]="'state-' + m.state" [class.is-mix]="m.id === 'mix'" [disabled]="m.state === 'locked'"
         (click)="onModeTap(tier, m.modeIndex)" [attr.aria-label]="(m.labelKey | translate) + ', ' + ('tree.unit.' + m.state | translate)">
         <ion-icon [name]="m.icon" aria-hidden="true"></ion-icon>
         <span class="tp-mode-label">{{ m.labelKey | translate }}</span>
@@ -131,15 +124,6 @@
         <ion-icon *ngIf="m.state === 'locked'" class="tp-mode-lock" name="lock-closed" aria-hidden="true"></ion-icon>
       </button>
     </div>
-
-    <!-- Mix: a "play a bit of everything" launcher, always full-width on its
-         own row (not part of the wrapping activity grid, so its size is
-         consistent across tiers). Not a completion node. -->
-    <button type="button" class="tp-mix-btn" (click)="launchMix(tier)"
-      [attr.aria-label]="('home.mode.mix' | translate)">
-      <ion-icon name="shuffle-outline" aria-hidden="true"></ion-icon>
-      <span>{{ 'home.mode.mix' | translate }}</span>
-    </button>
 
     <!-- Words for this level, hidden by default behind a toggle. -->
     <button *ngIf="tier.words.length" type="button" class="tp-words-toggle"

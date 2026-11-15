@@ -1,0 +1,137 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button *ngIf="journeyMode || stage.kind === 'map'" (click)="close()"
+        [attr.aria-label]="'mode.close' | translate">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+      <ion-button *ngIf="!journeyMode && stage.kind !== 'map'" (click)="backToMap()"
+        [attr.aria-label]="'common.back' | translate">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      <span class="mode-title">
+        <ion-icon name="construct" color="tertiary" class="mode-title-icon" aria-hidden="true"></ion-icon>
+        <span class="mode-title-text">{{ 'builderPlus.title' | translate }}</span>
+      </span>
+    </ion-title>
+    <ion-buttons slot="end">
+      <button type="button" class="lang-trigger" id="builder-plus-lang-trigger"
+        aria-label="Change learning language">
+        <img class="flag" [src]="currentLanguage.flagUrl" [alt]="currentLanguage.name" />
+        <ion-icon name="chevron-down" class="lang-caret"></ion-icon>
+      </button>
+      <ion-popover trigger="builder-plus-lang-trigger" [dismissOnSelect]="true" side="bottom" alignment="end">
+        <ng-template>
+          <ion-list class="lang-list">
+            <ion-item *ngFor="let lang of availableLanguages" button detail="false" lines="none"
+              [class.active]="lang.code === learningLanguage" (click)="selectLanguage(lang.code)">
+              <img class="flag" slot="start" [src]="lang.flagUrl" [alt]="lang.name" />
+              <ion-label>{{ lang.name }}</ion-label>
+              <ion-icon *ngIf="lang.code === learningLanguage" name="checkmark" slot="end" color="primary"></ion-icon>
+            </ion-item>
+          </ion-list>
+        </ng-template>
+      </ion-popover>
+      <ion-button (click)="openMenu()" [attr.aria-label]="'practice.menu' | translate">
+        <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="builder-content">
+  <div *ngIf="isLoading" class="mode-loading"><ion-spinner name="crescent"></ion-spinner></div>
+
+  <!-- Empty state only for the STANDALONE builder. -->
+  <div *ngIf="!isLoading && !data && !journeyMode" class="builder-empty">
+    <ion-icon name="construct-outline"></ion-icon>
+    <p>{{ 'builder.unavailable' | translate }}</p>
+  </div>
+
+  <!-- MAP: grammar groups + phrase nodes -->
+  <div *ngIf="!isLoading && data && stage.kind === 'map'" class="builder-map">
+    <p class="builder-intro">{{ 'builderPlus.intro' | translate }}</p>
+
+    <h4 class="builder-section">{{ 'builder.groups' | translate }}</h4>
+    <div class="group-grid">
+      <button type="button" class="group-node" *ngFor="let g of groups"
+        [class.done]="isDone(g.id)" (click)="openGroup(g)">
+        <span class="group-name">{{ g.name }}</span>
+        <span class="group-count">{{ g.words.length }}</span>
+        <ion-icon *ngIf="isDone(g.id)" name="checkmark-circle" class="group-check"></ion-icon>
+      </button>
+    </div>
+
+    <h4 class="builder-section">{{ 'builder.phrases' | translate }}</h4>
+    <div class="phrase-list">
+      <button type="button" class="phrase-node" *ngFor="let p of phrases"
+        [class.done]="isDone(p.id)" [class.locked]="!isPhraseUnlocked(p)"
+        [disabled]="!isPhraseUnlocked(p)" (click)="openPhrase(p)">
+        <ion-icon *ngIf="!isPhraseUnlocked(p)" name="lock-closed" class="phrase-lock"></ion-icon>
+        <ion-icon *ngIf="isDone(p.id)" name="checkmark-circle" class="phrase-check"></ion-icon>
+        <span class="phrase-en">{{ isPhraseUnlocked(p) ? p.en : ('builder.phraseLocked' | translate) }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- GROUP: flip through the group's words -->
+  <div *ngIf="stage.kind === 'group' && groupWord" class="builder-group">
+    <span class="group-progress">{{ stage.index + 1 }} / {{ stage.group.words.length }}</span>
+    <div class="word-card">
+      <span class="word-nl">
+        <span class="word-article" *ngIf="groupWord.article">{{ groupWord.article }} </span>{{ groupWord.text }}
+      </span>
+      <button type="button" class="word-audio" (click)="playWord(groupWord.text)" aria-label="Play">
+        <ion-icon name="volume-high-outline"></ion-icon>
+      </button>
+      <span class="word-en">{{ groupWord.translations.join(', ') }}</span>
+    </div>
+    <ion-button expand="block" class="group-next" (click)="nextWord()">
+      {{ (stage.index === stage.group.words.length - 1 ? 'builder.finishGroup' : 'builder.nextWord') | translate }}
+    </ion-button>
+  </div>
+
+  <!-- PHRASE: self-checking — tap/drag words in the CORRECT ORDER only -->
+  <div *ngIf="stage.kind === 'phrase'" class="builder-phrase">
+    <span class="phrase-target">{{ stage.phrase.en }}</span>
+
+    <!-- Placed words + ONE continuous dashed underline for all the words still
+         to come (not per-word segments). Correct order only, no reordering. -->
+    <div class="phrase-slots">
+      <span class="slot filled" *ngFor="let w of stage.chosen">{{ w }}</span>
+      <!-- Single underline that grows/shrinks with how many words remain; the
+           active colour signals it's the live target. -->
+      <span class="slot-line" *ngIf="remainingSlots > 0"
+        [style.width.px]="remainingLineWidth"></span>
+    </div>
+
+    <!-- Hint: only while the phrase isn't finished. -->
+    <span class="phrase-hint" [class.is-hidden]="stage.done">
+      {{ 'builderPlus.tapInOrder' | translate }}
+    </span>
+
+    <!-- Word bank. Tap the next correct word to place it; a wrong tap blinks
+         red (rejectedWord) and is refused. -->
+    <div class="phrase-bank" *ngIf="!stage.done">
+      <button type="button" class="bank-word"
+        *ngFor="let w of bank"
+        [class.rejected]="rejectedWord === w"
+        (click)="pick(w)">{{ w }}</button>
+    </div>
+
+    <!-- Success: just a check — the built phrase is shown in the chips above. -->
+    <div class="phrase-result" *ngIf="stage.done">
+      <ion-icon name="checkmark-circle" color="success"></ion-icon>
+    </div>
+  </div>
+</ion-content>
+
+<!-- Footer: only a Continue/Done once the phrase is complete (no Check). -->
+<ion-footer *ngIf="stage.kind === 'phrase' && stage.done" class="builder-footer">
+  <div class="footer-inner">
+    <ion-button *ngIf="journeyMode" expand="block" color="success" (click)="journeyNext()">{{ 'mode.continue' | translate }}</ion-button>
+    <ion-button *ngIf="!journeyMode" expand="block" color="success" (click)="backToMap()">{{ 'builder.done' | translate }}</ion-button>
+  </div>
+</ion-footer>

@@ -22,7 +22,8 @@ describe('tree-progression', () => {
   it('Core L1 is the only initial unlock; themes locked until Core L1 is done', () => {
     const s = computeProgression(input([]));
     expect(s.unlockedCoreTier).toBe(1);
-    // Themes are NOT available until Core L1 is completed.
+    // Strict rule: a theme's tier opens only once the matching Core tier is
+    // COMPLETED. Before Core L1 is done, every theme stays locked (tier 0).
     for (const id of THEMES) expect(s.unlockedThemeTier[id]).toBe(0);
   });
 
@@ -32,7 +33,7 @@ describe('tree-progression', () => {
     for (const id of THEMES) expect(s.unlockedThemeTier[id]).toBe(1);
   });
 
-  it('3 distinct Theme L1 milestones + Core L1 unlock Core L2', () => {
+  it('3 distinct Theme L1 milestones + Core L1 unlock Core L2 (theme L2 still gated on Core L2)', () => {
     const s = computeProgression(input([
       coreMilestoneId(1),
       themeMilestoneId('food', 1),
@@ -40,7 +41,8 @@ describe('tree-progression', () => {
       themeMilestoneId('health', 1),
     ]));
     expect(s.unlockedCoreTier).toBe(2);
-    // Core L2 is unlocked but NOT yet completed, so themes stay at tier 1.
+    // Core L2 is unlocked but NOT completed, so theme tier 2 stays closed —
+    // themes follow COMPLETED Core tiers, not merely unlocked ones.
     expect(s.unlockedThemeTier['food']).toBe(1);
   });
 
@@ -140,5 +142,58 @@ describe('tree-progression', () => {
     const set = new Set([themeMilestoneId('food', 1), themeMilestoneId('travel', 1)]);
     expect(distinctThemesCompletedAtTier(THEMES, 1, set)).toBe(2);
     expect(distinctThemesCompletedAtTier(THEMES, 2, set)).toBe(0);
+  });
+
+  it('Core cannot grind ahead when topics are untouched (themes have fewer tiers than Core)', () => {
+    // Regression: themes max out at tier 3 but Core has many more tiers. With
+    // the old "no tier-n theme content → no gate" escape, completing Core tiers
+    // let it climb forever (Core 7 while topics sat at 0). Now the theme gate
+    // holds: Core 1 done but NO topic tier-1 milestone → Core stays at 1.
+    const themeHasTier = (_id: string, tier: number) => tier <= 3;
+    const completed = [coreMilestoneId(1), coreMilestoneId(2), coreMilestoneId(3), coreMilestoneId(4)];
+    const s = computeProgression(input(completed, { config: { coreTiers: 14, themesToAdvance: 99 }, themeHasTier }));
+    expect(s.unlockedCoreTier).toBe(1);
+  });
+
+  it('with all-themes gating (themesToAdvance=99), Core waits for EVERY theme each tier', () => {
+    const themeHasTier = (_id: string, tier: number) => tier <= 3;
+    const cfg = { coreTiers: 14, themesToAdvance: 99 };
+    // Core 1 done + 4 of 5 themes at tier 1 → still short one theme → stuck at 1.
+    let s = computeProgression(input([
+      coreMilestoneId(1),
+      ...THEMES.slice(0, 4).map(id => themeMilestoneId(id, 1)),
+    ], { config: cfg, themeHasTier }));
+    expect(s.unlockedCoreTier).toBe(1);
+
+    // All 5 themes at tier 1 → Core 2 opens. Theme tier 2 stays gated on Core
+    // L2 being COMPLETED, so every theme is still at tier 1 for now.
+    s = computeProgression(input([
+      coreMilestoneId(1),
+      ...THEMES.map(id => themeMilestoneId(id, 1)),
+    ], { config: cfg, themeHasTier }));
+    expect(s.unlockedCoreTier).toBe(2);
+    for (const id of THEMES) expect(s.unlockedThemeTier[id]).toBe(1);
+  });
+
+  it('Core continues alone ONLY after every theme finishes its last tier', () => {
+    const themeHasTier = (_id: string, tier: number) => tier <= 3;
+    const cfg = { coreTiers: 14, themesToAdvance: 99 };
+    const base = [
+      coreMilestoneId(1), ...THEMES.map(id => themeMilestoneId(id, 1)),
+      coreMilestoneId(2), ...THEMES.map(id => themeMilestoneId(id, 2)),
+      coreMilestoneId(3),
+    ];
+    // Core 3 done but NOT all themes at their last tier (3) → Core 4 blocked.
+    let s = computeProgression(input([
+      ...base, ...THEMES.slice(0, 3).map(id => themeMilestoneId(id, 3)),
+    ], { config: cfg, themeHasTier }));
+    expect(s.unlockedCoreTier).toBe(3);
+
+    // Every theme done at tier 3 (their last) → Core may now run on alone.
+    s = computeProgression(input([
+      ...base, ...THEMES.map(id => themeMilestoneId(id, 3)),
+      coreMilestoneId(4), coreMilestoneId(5),
+    ], { config: cfg, themeHasTier }));
+    expect(s.unlockedCoreTier).toBe(6);
   });
 });

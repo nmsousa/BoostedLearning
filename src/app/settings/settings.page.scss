@@ -43,7 +43,31 @@ ion-item {
   p {
     font-size: 0.875rem;
     color: var(--ion-color-medium);
+    // Trim the browser's default <p> margins so a subtitle doesn't add a tall
+    // gap below the row (the toggle rows looked much taller than the dropdown
+    // rows because of this). A small top margin keeps title↔subtitle spacing.
+    margin: 2px 0 0;
   }
+}
+
+// Compact rows with a control beside the label (toggles + dropdowns): keep the
+// subtitle to ONE line and ellipsize, so a long string can't truncate mid-word
+// or wrap to a tall block that unbalances the row. The full-width descriptive
+// rows (Vocabulary / About) are intentionally left free to wrap.
+ion-item ion-toggle::part(label) p,
+ion-item:has(ion-select) ion-label p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// The toggle rows stack their title + subtitle INSIDE the <ion-toggle> (so the
+// whole row is tappable). Its label part carried extra block spacing that made
+// those rows noticeably taller than the dropdown rows. Pin the label tight and
+// vertically centred so a toggle row matches a dropdown row's height.
+ion-item ion-toggle::part(label) {
+  margin-top: 6px;
+  margin-bottom: 6px;
 }
 
 ion-select {

@@ -121,12 +121,18 @@ function loadRecordingIndex() {
   return index;
 }
 
-/** A recording for a word: exact, then article-stripped (le café → café). */
+/**
+ * A recording for a word — EXACT match only.
+ *
+ * We deliberately do NOT strip the article here. The Tree shows the full
+ * authored form ("le café", "l'eau"), and the audio MUST say the same thing.
+ * The old article-stripping fallback (le café → café) borrowed the bare-noun
+ * course clip, so "le café" played as just "café" — a text/audio mismatch.
+ * When there's no exact articled recording, we fall through to TTS instead,
+ * which pronounces the full "le café" correctly.
+ */
 function findRecording(index, text) {
-  const k = norm(text);
-  if (index.has(k)) return index.get(k);
-  const bare = k.replace(/^(le |la |les |un |une |des |l')/, '').trim();
-  return bare !== k ? index.get(bare) : undefined;
+  return index.get(norm(text));
 }
 
 // ── Audio sources ────────────────────────────────────────────────────────────

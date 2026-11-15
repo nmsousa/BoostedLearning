@@ -30,19 +30,19 @@
   <div *ngIf="!isLoading && phase === 'play'" class="quiz-container">
     <p class="quiz-hint">{{ 'mode.whichTranslation' | translate }}</p>
 
-    <!-- Word + a single audio icon (recorded, with TTS fallback) -->
+    <!-- Word on its own line, with the audio button(s) on their OWN centred
+         line below (matching the Learn/Flashcards card) so a long word never
+         wraps around a side button. -->
     <div class="quiz-prompt-row">
-      <span class="word-anchor">
-        <span class="quiz-prompt">{{ prompt }}</span>
-        <span class="audio-actions">
-          <button type="button" class="audio-icon" (click)="playWord()" [attr.aria-label]="'mode.playPronunciation' | translate">
-            <ion-icon name="volume-high-outline"></ion-icon>
-          </button>
-          <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="'mode.playSlower' | translate">
-            <ion-icon name="hourglass-outline"></ion-icon>
-          </button>
-        </span>
-      </span>
+      <span class="quiz-prompt">{{ prompt }}</span>
+    </div>
+    <div class="quiz-audio-row">
+      <button type="button" class="audio-icon" (click)="playWord()" [attr.aria-label]="'mode.playPronunciation' | translate">
+        <ion-icon name="volume-high-outline"></ion-icon>
+      </button>
+      <button type="button" class="audio-icon slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="'mode.playSlower' | translate">
+        <ion-icon name="hourglass-outline"></ion-icon>
+      </button>
     </div>
 
     <div class="quiz-options">

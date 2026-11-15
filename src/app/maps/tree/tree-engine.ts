@@ -209,6 +209,8 @@ export class TreeEngine {
     return this.skillLevels.get(nodeId === 'core' ? `Core ${tier}` : `${nodeId}:${tier}`);
   }
 
+
+
   /** The tier a node opens to: first not-done available tier, else highest. */
   openTierFor(doneLevel: number, availTier: number): number {
     if (availTier === 0) return 0;
@@ -298,7 +300,8 @@ export class TreeEngine {
     if (!level) return;
     const def = TREE_MODES[modeIndex];
     const queryParams: Record<string, string | number> = { level, mode: def.mode, from: this.deps.from };
-    if (def.id === 'builder') {
+    // Builder, Builder+ and Mix (whose recipe includes a builder step) need the pool.
+    if (def.id === 'builder' || def.id === 'builder-plus' || def.id === 'mix') {
       const pool = this.builderPoolLevels(nodeId, tier);
       if (pool.length) queryParams['pool'] = pool.join(',');
     }

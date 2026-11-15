@@ -90,10 +90,23 @@ const routes: Routes = [
     loadChildren: () => import('../exercises/builder/builder.module').then(m => m.BuilderPageModule)
   },
   {
+    // EXPERIMENTAL: Builder+ — self-checking Builder (correct order only,
+    // dashed underline slots, no Check button; wrong taps blink red).
+    path: 'builder-plus',
+    loadChildren: () => import('../exercises/builder-plus/builder-plus.module').then(m => m.BuilderPlusPageModule)
+  },
+  {
     // Journey BUILDER node: the Builder page in journey-phrase mode, scored
     // under 'journey-builder' (via ?mode=journey-builder&level=N).
     path: 'journey-builder/:id',
     loadChildren: () => import('../exercises/builder/builder.module').then(m => m.BuilderPageModule)
+  },
+  {
+    // Journey BUILDER+ node: the self-checking Builder page in journey-phrase
+    // mode (via ?mode=journey-builder-plus&level=N). Shares 'journey-builder'
+    // progress-saving is NOT reused — it saves its own node below.
+    path: 'journey-builder-plus/:id',
+    loadChildren: () => import('../exercises/builder-plus/builder-plus.module').then(m => m.BuilderPlusPageModule)
   }
 ];
 

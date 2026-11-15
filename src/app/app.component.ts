@@ -7,8 +7,6 @@ import { SettingsService } from './services/settings.service';
 import { AppUpdateService } from './services/app-update.service';
 import { FlashcardService } from './services/flashcard.service';
 import { BackInterceptorService } from './services/back-interceptor.service';
-import { AudioService } from './services/audio.service';
-import { I18nAngularService } from './services/i18n.service';
 
 @Component({
   selector: 'app-root',
@@ -24,14 +22,9 @@ export class AppComponent {
   private flashcards = inject(FlashcardService);
   private backInterceptor = inject(BackInterceptorService);
   private router = inject(Router);
-  private audio = inject(AudioService);
-  private i18n = inject(I18nAngularService);
-
   constructor() {
     // Mark the current OTA bundle as healthy and enable live updates.
     void this.appUpdate.init();
-
-    this.showVolumeHintOnFirstPlay();
 
     // Start loading decks NOW (app boot), so the heavy one-time DB/JSON work
     // overlaps the splash/startup instead of stalling the first mode the user
@@ -42,34 +35,6 @@ export class AppComponent {
     this.registerIcons();
     this.registerHardwareBackButton();
     this.syncStatusBarWithTheme();
-  }
-
-  /**
-   * On the FIRST audio play of the session, show a one-time advisory toast
-   * reminding the user to turn their volume on — browsers can't read the real
-   * system volume/mute, so this is a nudge, not detection.
-   *
-   * We create the <ion-toast> element directly (not ToastController) for the
-   * same reason the back-button/overlay code queries the DOM: injecting Ionic
-   * controllers into this ROOT component forces Ionic's Angular providers to
-   * initialize too early under @ionic/angular/lazy and breaks component modes.
-   */
-  private showVolumeHintOnFirstPlay(): void {
-    let shown = false;
-    effect(() => {
-      if (!this.audio.firstPlay() || shown) return;
-      shown = true;
-      try {
-        const toast = document.createElement('ion-toast') as HTMLIonToastElement;
-        toast.message = this.i18n.t('audio.volumeHint');
-        toast.duration = 4000;
-        toast.position = 'top';
-        toast.icon = 'volume-high-outline';
-        document.body.appendChild(toast);
-        void toast.present();
-        void toast.onDidDismiss().then(() => toast.remove());
-      } catch { /* non-fatal: it's only a hint */ }
-    });
   }
 
   /**
