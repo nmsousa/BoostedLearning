@@ -386,8 +386,11 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
           this.playItem(item);
         }
       } else {
-        // Non-audio: tapping the selected tile deselects it (toggle).
+        // Non-audio: tapping the selected tile deselects it (toggle). Either
+        // way, hearing the word on tap reinforces the pronunciation while you
+        // match (play on select, not on deselect).
         this.selectedLeft = alreadySelected ? null : item;
+        if (this.selectedLeft) this.playItem(item);
       }
     } else {
       this.selectedRight = this.selectedRight === item ? null : item;

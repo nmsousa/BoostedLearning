@@ -159,39 +159,158 @@ Chirp3-HD). Note: Chirp3-HD is the most natural but swallows very short isolated
 words (le/un/je) — which is why the app defaults to **Neural2-A**. Delete the
 `_samples` folder once you've chosen.
 
-## Releases (OTA updates)
+## Releasing a new version (OTA update)
 
 The app ships OTA **web-layer** updates to installed testers via
-`@capgo/capacitor-updater` in self-hosted mode: bundles are attached to this
-repo's GitHub Releases, and a Cloudflare Worker serves the update check. Native
-changes (new plugin, native config, Capacitor bump) still need a new APK.
+`@capgo/capacitor-updater` in self-hosted mode: a web bundle is attached to this
+repo's GitHub Releases, and the installed app downloads it on next launch when
+the published version is newer than what it has. Native changes (a new plugin,
+native config, or a Capacitor bump) still need a fresh APK — see
+[Building for Android](#building-for-android). Everything else (Angular/Ionic
+code, styles, assets, curriculum, audio) ships OTA.
 
-One command builds, packages, and publishes, from the `boosted-learning/` folder:
+> This is the full manual procedure. It replaces nothing you need to remember —
+> follow it top to bottom. All commands run from the `boosted-learning/` folder
+> in **PowerShell** on Windows.
 
-```powershell
-./scripts/publish-ota.ps1 -Version 1.3.52 -Notes "What changed"
-```
-
-- Use a version **higher** than the last published one (semver).
-- The prebuild hook syncs the Android `versionName`/`versionCode` from
-  `package.json`, so bump `version` there to match.
-- `-NoPublish` builds and packages into `scripts/ota-out/` without creating the
-  release — inspect before shipping.
-
-Verify the published manifest resolves:
+### One-time setup (first release only)
 
 ```powershell
-curl.exe -s "https://boostionary-feedback.nmsousa.workers.dev/ota?current=1.3.51"
+winget install --id GitHub.cli   # the GitHub CLI (gh)
+gh auth login                    # GitHub.com -> HTTPS -> browser, as the repo owner
 ```
 
-One-time publishing setup:
+Confirm you're authenticated before releasing:
 
 ```powershell
-winget install --id GitHub.cli
-gh auth login   # GitHub.com -> HTTPS -> browser
+gh auth status
 ```
 
-Full details and the test loop are in [docs/OTA-UPDATES.md](./docs/OTA-UPDATES.md).
+### Step 1 — Pick the new version number
+
+Use a semantic version **strictly higher** than the last published one (the
+publish script refuses to overwrite an existing release tag). To see what's
+currently live:
+
+```powershell
+curl.exe -sL "https://github.com/nmsousa/BoostedLearning/releases/latest/download/updates.json"
+```
+
+The `version` field in that JSON is the current OTA version. Bump the patch
+number for a normal release (e.g. `1.3.55` -> `1.3.56`).
+
+### Step 2 — Bump the version in `package.json`
+
+Edit `package.json` and set `"version"` to your new number:
+
+```jsonc
+{
+  "version": "1.3.56"   // <- change this line
+}
+```
+
+That single edit is enough for Android too: the `prebuild` hook
+(`scripts/gen-build-info.mjs`) runs on every build and automatically syncs the
+Android `versionName` and `versionCode` in `android/app/build.gradle` from
+`package.json` (e.g. `1.3.56` -> `versionName "1.3.56"`, `versionCode 10356`).
+**Do not** edit `build.gradle` by hand.
+
+### Step 3 — Add the in-app changelog entry
+
+Edit `src/app/services/changelog.ts` and add a new entry at the **top** of the
+`CHANGELOG` array (newest first). Match the `version` to `package.json`, set
+`date` to the current UTC time, and write short, user-facing bullet points:
+
+```ts
+export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.3.56',
+    date: '2026-11-15T20:00:00Z',   // ISO 8601 UTC
+    notes: [
+      'Short, user-facing description of what changed.',
+      'One bullet per noticeable change.',
+    ],
+  },
+  // ...older entries stay below
+];
+```
+
+This drives the "What's new in x.y.z" dialog shown once after the update applies
+(and the Settings -> About -> "What's new" history). Keep these notes in sync
+with the GitHub Release notes you pass in Step 6.
+
+### Step 4 — Verify locally before shipping
+
+```powershell
+npm test          # expect "Tests NNN passed"; exit code 1 is a harmless warning
+npm run build     # must finish with "Application bundle generation complete"
+```
+
+The SCSS "exceeded maximum budget" warnings are pre-existing and harmless. Only
+real `error TS...` / build failures should stop you.
+
+### Step 5 — (Optional) Dry-run the package
+
+Build and package the bundle **without** publishing, to inspect it first:
+
+```powershell
+./scripts/publish-ota.ps1 -Version 1.3.56 -NoPublish
+```
+
+This writes `scripts/ota-out/bundle-1.3.56.zip` and `scripts/ota-out/updates.json`
+but creates no GitHub Release.
+
+### Step 6 — Commit, push, and publish
+
+Commit the version + changelog (and all the feature work this release covers):
+
+```powershell
+git add -A
+git commit -m "Release 1.3.56: <one-line summary>"
+git push
+```
+
+> `.env` is git-ignored (it holds the real `GOOGLE_TTS_API_KEY`) and will not be
+> committed — that's expected and correct.
+
+Then build, package, and publish the OTA release in one command:
+
+```powershell
+./scripts/publish-ota.ps1 -Version 1.3.56 -Notes "What changed in this release"
+```
+
+The script runs four steps: builds the web bundle, zips it with the Capgo CLI,
+writes `updates.json`, and creates a GitHub Release tagged `v1.3.56` with both
+files attached. It refuses to run if the tag already exists or if `gh` isn't
+authenticated.
+
+> `gh` sometimes prints progress to stderr and may report a non-zero exit even
+> when the release landed. The script double-checks that the release exists with
+> both assets and only fails if they're genuinely missing — trust its final
+> "Published release ..." message.
+
+### Step 7 — Verify the published release
+
+```powershell
+curl.exe -sL "https://github.com/nmsousa/BoostedLearning/releases/latest/download/updates.json"
+```
+
+The returned `version` should now be your new one. Installed testers get the
+update automatically on their next launch.
+
+Full background and the OTA test loop are in
+[docs/OTA-UPDATES.md](./docs/OTA-UPDATES.md).
+
+### Quick checklist
+
+1. Pick a version higher than the live one.
+2. Bump `version` in `package.json`.
+3. Add a top entry in `src/app/services/changelog.ts` (same version + date).
+4. `npm test` and `npm run build` pass.
+5. (Optional) `./scripts/publish-ota.ps1 -Version X.Y.Z -NoPublish` to inspect.
+6. `git add -A; git commit; git push`.
+7. `./scripts/publish-ota.ps1 -Version X.Y.Z -Notes "..."`.
+8. Verify `updates.json` shows the new version.
 
 ## Issues & bugs
 

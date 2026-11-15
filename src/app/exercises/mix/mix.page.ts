@@ -62,7 +62,16 @@ export class MixPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave 
   // Per-item answer state.
   answered = false;            // locked after answering (choice/builder/write)
   readonly playing = this.audio.playing;
+  readonly slowPlaying = this.audio.playingSlow;
   readonly slowRate = this.audio.slowRate;
+  readonly slowMs = this.audio.slowDurationMs;
+  readonly playKind = this.audio.playKind;
+  readonly playProgress = this.audio.playProgress;
+  /** Bumped on every slow tap so the ring animation restarts from scratch. */
+  slowTick = 0;
+
+  /** Slow button tap: restart the ring sweep and play the slow prompt. */
+  playSlow(): void { this.slowTick++; this.playPrompt(true); }
 
   // Match sub-state.
   matchLeftSel: string | null = null;        // selected pair id on the left

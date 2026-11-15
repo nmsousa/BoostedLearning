@@ -64,7 +64,7 @@
                icon, and tapping the tile then replays slowly. -->
           <ng-container *ngIf="isAudio">
             <app-slow-audio-icon *ngIf="showSlowFor(item)" class="audio-icon slow-glyph"
-              [active]="isSelected(item) && playing()" [rate]="slowRate"></app-slow-audio-icon>
+              [inline]="true" [active]="isSelected(item) && playing()" [rate]="slowRate"></app-slow-audio-icon>
             <ion-icon *ngIf="!showSlowFor(item)" class="audio-icon"
               name="volume-high" aria-hidden="true"></ion-icon>
           </ng-container>

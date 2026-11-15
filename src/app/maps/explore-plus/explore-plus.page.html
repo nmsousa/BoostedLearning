@@ -1,11 +1,11 @@
 <ion-header class="ep-header ion-no-border">
   <ion-toolbar>
     <div class="ep-head">
-      <button type="button" class="ep-back" (click)="expandedKey ? collapse() : close()"
+      <button type="button" class="ep-back" (click)="view === 'detail' ? backToList() : close()"
         [attr.aria-label]="'journeyPlus.back' | translate">
         <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
       </button>
-      <h1 class="ep-title">{{ 'explorePlus.title' | translate }}</h1>
+      <h1 class="ep-title">{{ view === 'detail' && detail ? detail.title : ('explorePlus.title' | translate) }}</h1>
       <span class="ep-head-spacer" aria-hidden="true"></span>
     </div>
   </ion-toolbar>
@@ -14,48 +14,112 @@
 <ion-content class="ep-content" [scrollY]="true">
   <div *ngIf="isLoading" class="ep-loading"><ion-spinner name="crescent"></ion-spinner></div>
 
-  <div *ngIf="!isLoading" class="ep-body">
+  <!-- ─────────────── LIST VIEW ─────────────── -->
+  <div *ngIf="!isLoading && view === 'list'" class="ep-body">
+    <div *ngIf="adminMode" class="ep-admin-tip">
+      <ion-icon name="sparkles-outline" aria-hidden="true"></ion-icon>
+      <span>{{ 'tree.adminTip' | translate }}</span>
+      <button type="button" class="ep-admin-reset" (click)="resetProgress()"
+        [attr.aria-label]="'treePlus.resetProgress' | translate">
+        <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
+        <span>{{ 'treePlus.resetProgress' | translate }}</span>
+      </button>
+    </div>
+
     <p class="ep-tagline">✨ {{ 'explorePlus.tagline' | translate }}</p>
 
     <div class="ep-block" *ngFor="let block of blocks; trackBy: trackBlock">
       <div class="ep-block-head">{{ 'tree.levelShort' | translate:{ n: block.tier } }}</div>
 
-      <ng-container *ngFor="let row of block.rows; trackBy: trackRow">
-        <button type="button" class="ep-row" [class.core]="row.kind === 'core'"
-          [class.locked]="row.locked" [class.done]="row.done" [class.expanded]="isExpanded(row)"
-          [style.--hue]="row.hue" [disabled]="row.locked" (click)="toggleRow(row)"
-          [attr.aria-expanded]="isExpanded(row)">
-          <span class="ep-emoji" aria-hidden="true">
-            <ng-container *ngIf="row.kind === 'core'">📖</ng-container>
-            <ng-container *ngIf="row.kind !== 'core'">{{ row.emoji }}</ng-container>
+      <button type="button" class="ep-row" *ngFor="let row of block.rows; trackBy: trackRow"
+        [class.core]="row.kind === 'core'"
+        [class.locked]="row.locked" [class.done]="row.done"
+        [class.pulse]="pulseRowKey === rowKey(row)"
+        [attr.data-row-key]="rowKey(row)"
+        [style.--hue]="row.hue" [disabled]="row.locked" (click)="toggleRow(row)">
+        <span class="ep-emoji" aria-hidden="true">
+          <ng-container *ngIf="row.kind === 'core'">📖</ng-container>
+          <ng-container *ngIf="row.kind !== 'core'">{{ row.emoji }}</ng-container>
+        </span>
+        <span class="ep-main">
+          <span class="ep-name-row">
+            <span class="ep-name">{{ row.title }}</span>
+            <ion-icon *ngIf="row.done" name="checkmark-circle" class="ep-badge done" aria-hidden="true"></ion-icon>
+            <ion-icon *ngIf="row.locked" name="lock-closed" class="ep-badge lock" aria-hidden="true"></ion-icon>
           </span>
-          <span class="ep-name">{{ row.title }}</span>
-          <ion-icon *ngIf="row.done" name="checkmark-circle" class="ep-badge done" aria-hidden="true"></ion-icon>
-          <ion-icon *ngIf="row.locked" name="lock-closed" class="ep-badge lock" aria-hidden="true"></ion-icon>
-          <ion-icon *ngIf="!row.locked" class="ep-caret"
-            [name]="isExpanded(row) ? 'chevron-up' : 'chevron-forward'" aria-hidden="true"></ion-icon>
-        </button>
-
-        <!-- Inline activities for the expanded row. -->
-        <div *ngIf="isExpanded(row) && expandedTier" class="ep-expand">
-          <div class="ep-words" *ngIf="expandedTier.words.length">
-            <span class="ep-word" *ngFor="let w of expandedTier.words">
-              <span class="w-fr">{{ w.fr }}</span><span class="w-en">{{ w.en }}</span>
-            </span>
-          </div>
-          <div class="ep-modes">
-            <button type="button" class="ep-mode" *ngFor="let m of expandedTier.modes; trackBy: trackMode"
-              [ngClass]="'state-' + m.state" [disabled]="m.state === 'locked'"
-              (click)="onModeTap(m.modeIndex)"
-              [attr.aria-label]="(m.labelKey | translate) + ', ' + ('tree.unit.' + m.state | translate)">
-              <ion-icon [name]="m.icon" aria-hidden="true"></ion-icon>
-              <span class="ep-mode-label">{{ m.labelKey | translate }}</span>
-              <ion-icon *ngIf="m.state === 'done'" class="ep-mode-tick" name="checkmark" aria-hidden="true"></ion-icon>
-              <ion-icon *ngIf="m.state === 'locked'" class="ep-mode-lock" name="lock-closed" aria-hidden="true"></ion-icon>
-            </button>
-          </div>
-        </div>
-      </ng-container>
+          <span class="ep-progress" *ngIf="!row.locked">
+            <span class="ep-progress-track"><span class="ep-progress-fill" [style.width.%]="row.percent"></span></span>
+            <span class="ep-progress-pct">{{ row.percent }}%</span>
+          </span>
+        </span>
+        <ion-icon *ngIf="!row.locked" class="ep-caret" name="chevron-forward" aria-hidden="true"></ion-icon>
+      </button>
     </div>
   </div>
+
+  <!-- ─────────────── DETAIL VIEW ─────────────── -->
+  <div *ngIf="!isLoading && view === 'detail' && detail" class="ep-detail" [style.--hue]="detail.hue">
+    <div class="ep-detail-hero" [class.core]="detail.kind === 'core'" [class.done]="detailComplete">
+      <span class="ep-detail-emoji" aria-hidden="true">
+        <ng-container *ngIf="detail.kind === 'core'">📖</ng-container>
+        <ng-container *ngIf="detail.kind !== 'core'">{{ detail.emoji }}</ng-container>
+      </span>
+      <div class="ep-detail-text">
+        <span class="ep-detail-title">{{ detail.title }}</span>
+        <span class="ep-detail-sub">{{ 'tree.levelShort' | translate:{ n: detail.tier } }}</span>
+      </div>
+      <ion-icon *ngIf="detailComplete" name="checkmark-circle" class="ep-detail-check" aria-hidden="true"></ion-icon>
+    </div>
+
+    <!-- The words this level teaches — hidden behind a toggle (like Explore)
+         so the activities stay the focus; tap to peek at them. -->
+    <ng-container *ngIf="detail.tierDef.words.length">
+      <button type="button" class="ep-words-toggle" [class.open]="wordsOpen"
+        (click)="toggleWords()" [attr.aria-expanded]="wordsOpen">
+        <ion-icon name="list-outline" aria-hidden="true"></ion-icon>
+        <span>{{ (wordsOpen ? 'explorePlus.hideWords' : 'explorePlus.showWords') | translate }}</span>
+        <ion-icon class="ep-words-caret" [name]="wordsOpen ? 'chevron-up' : 'chevron-down'" aria-hidden="true"></ion-icon>
+      </button>
+      <div class="ep-words" *ngIf="wordsOpen">
+        <span class="ep-word" *ngFor="let w of detail.tierDef.words">
+          <span class="w-fr">{{ w.fr }}</span><span class="w-en">{{ w.en }}</span>
+        </span>
+      </div>
+    </ng-container>
+
+    <!-- Required activities, in order, with their status. -->
+    <div class="ep-mode-list">
+      <button type="button" class="ep-mode-item" *ngFor="let m of detail.tierDef.modes; trackBy: trackMode"
+        [ngClass]="'state-' + m.state" [disabled]="m.state === 'locked'"
+        (click)="onModeTap(m)"
+        [attr.aria-label]="(m.labelKey | translate) + ', ' + ('tree.unit.' + m.state | translate)">
+        <span class="ep-mode-ic"><ion-icon [name]="m.icon" aria-hidden="true"></ion-icon></span>
+        <span class="ep-mode-label">{{ m.labelKey | translate }}</span>
+        <ion-icon *ngIf="m.state === 'done'" class="ep-mode-tick" name="checkmark-circle" aria-hidden="true"></ion-icon>
+        <ion-icon *ngIf="m.state === 'active'" class="ep-mode-go" name="chevron-forward" aria-hidden="true"></ion-icon>
+        <ion-icon *ngIf="m.state === 'locked'" class="ep-mode-lock" name="lock-closed" aria-hidden="true"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Optional review: Flashcards. Not a required mode — doesn't gate the
+         level. Offered as a quick flip-through of this tier's words. -->
+    <button type="button" class="ep-review" (click)="reviewDetail()">
+      <ion-icon name="albums-outline" aria-hidden="true"></ion-icon>
+      <span>{{ 'explorePlus.reviewFlashcards' | translate }}</span>
+    </button>
+  </div>
 </ion-content>
+
+<!-- Pinned Continue (detail view): plays the next activity, like Journey++. -->
+<ion-footer *ngIf="!isLoading && view === 'detail' && detail" class="ep-footer">
+  <div class="ep-footer-inner">
+    <ion-button *ngIf="nextMode" expand="block" class="ep-cta" (click)="continueDetail()">
+      {{ 'journeyPlus.continue' | translate }}
+      <ion-icon name="chevron-forward" slot="end" aria-hidden="true"></ion-icon>
+    </ion-button>
+    <ion-button *ngIf="!nextMode" expand="block" color="success" class="ep-cta" (click)="backToList()">
+      {{ 'explorePlus.levelDone' | translate }}
+      <ion-icon name="checkmark" slot="end" aria-hidden="true"></ion-icon>
+    </ion-button>
+  </div>
+</ion-footer>

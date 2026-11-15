@@ -135,6 +135,44 @@ function findRecording(index, text) {
   return index.get(norm(text));
 }
 
+/**
+ * Estimate an MP3's duration in milliseconds, parsing frame headers (no deps).
+ * Walks MPEG Layer III audio frames summing per-frame durations (handles CBR
+ * and VBR). Skips an ID3v2 tag if present. Returns 0 if it can't parse.
+ */
+function mp3DurationMs(buf) {
+  let i = 0;
+  if (buf.length > 10 && buf[0] === 0x49 && buf[1] === 0x44 && buf[2] === 0x33) {
+    const size = ((buf[6] & 0x7f) << 21) | ((buf[7] & 0x7f) << 14) | ((buf[8] & 0x7f) << 7) | (buf[9] & 0x7f);
+    i = 10 + size;
+  }
+  const V1L3 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
+  const V2L3 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0];
+  const V1R = [44100, 48000, 32000, 0];
+  const V2R = [22050, 24000, 16000, 0];
+  const V25R = [11025, 12000, 8000, 0];
+  let totalSec = 0;
+  while (i + 4 <= buf.length) {
+    if (buf[i] !== 0xff || (buf[i + 1] & 0xe0) !== 0xe0) { i++; continue; }
+    const verBits = (buf[i + 1] >> 3) & 0x03;
+    const layerBits = (buf[i + 1] >> 1) & 0x03;
+    if (layerBits !== 0x01) { i++; continue; }
+    const brIndex = (buf[i + 2] >> 4) & 0x0f;
+    const srIndex = (buf[i + 2] >> 2) & 0x03;
+    const padding = (buf[i + 2] >> 1) & 0x01;
+    const isV1 = verBits === 3;
+    const bitrate = (isV1 ? V1L3 : V2L3)[brIndex] * 1000;
+    const sampleRate = (verBits === 3 ? V1R : verBits === 2 ? V2R : V25R)[srIndex];
+    if (!bitrate || !sampleRate) { i++; continue; }
+    const samplesPerFrame = isV1 ? 1152 : 576;
+    const frameLen = Math.floor((samplesPerFrame / 8 * bitrate) / sampleRate) + padding;
+    if (frameLen <= 0) { i++; continue; }
+    totalSec += samplesPerFrame / sampleRate;
+    i += frameLen;
+  }
+  return Math.round(totalSec * 1000);
+}
+
 // ── Audio sources ────────────────────────────────────────────────────────────
 
 async function download(url) {
@@ -248,6 +286,26 @@ async function main() {
     // Be gentle with both endpoints.
     await new Promise(r => setTimeout(r, 120));
   }
+
+  // Backfill clip durations (ms) into the manifest so the app can run the
+  // slow-replay ring for exactly the clip's length (no jumpy timeupdate). We
+  // (re)measure any entry whose file exists; cheap and idempotent.
+  let durMeasured = 0;
+  for (const [key, entry] of Object.entries(manifest)) {
+    const file = typeof entry === 'string' ? entry : entry.file;
+    if (!file) continue;
+    const p = path.join(OUT_DIR, file);
+    if (!fs.existsSync(p)) continue;
+    try {
+      const ms = mp3DurationMs(fs.readFileSync(p));
+      if (ms > 0) {
+        if (typeof entry === 'string') manifest[key] = { file, source: 'unknown', durMs: ms };
+        else entry.durMs = ms;
+        durMeasured++;
+      }
+    } catch { /* ignore unreadable clip */ }
+  }
+  console.log(`Durations measured: ${durMeasured}`);
 
   if (!DRY_RUN) {
     const sorted = Object.fromEntries(Object.entries(manifest).sort());

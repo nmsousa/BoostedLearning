@@ -28,7 +28,7 @@ import { JOURNEY_PASS_SCORE } from '../journey/journey-model';
 import {
   CORE_TIERS, THEME_DEFS, TREE_CONFIG, TREE_LAYOUT, coreLevelOf, themeLevelOf, type CoreWord,
 } from './tree-curriculum';
-import { TREE_MODES, type TreeModeDef } from './tree-modes';
+import { TREE_MODES, FLASHCARDS_REVIEW_MODE, type TreeModeDef } from './tree-modes';
 import {
   computeProgression, coreMilestoneId, themeMilestoneId, type ProgressionState,
 } from './tree-progression';
@@ -306,6 +306,20 @@ export class TreeEngine {
       if (pool.length) queryParams['pool'] = pool.join(',');
     }
     void this.deps.nav.navigateForward([def.route, this.deckId], { queryParams });
+  }
+
+  /**
+   * Launch the OPTIONAL Flashcards review for a node's tier. It saves progress
+   * under 'journey-flip' but is NOT required for level completion — it's just a
+   * review pass over the tier's words.
+   */
+  launchReview(nodeId: string, tier: number): void {
+    if (!this.deckId) return;
+    const level = this.levelOf(nodeId, tier);
+    if (!level) return;
+    void this.deps.nav.navigateForward([FLASHCARDS_REVIEW_MODE.route, this.deckId], {
+      queryParams: { level, mode: FLASHCARDS_REVIEW_MODE.mode, from: this.deps.from },
+    });
   }
 
   /**

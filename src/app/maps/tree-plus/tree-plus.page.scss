@@ -33,7 +33,9 @@
   color: var(--tp-text);
 }
 .tp-loading { display: grid; place-items: center; min-height: 60vh; }
-.tp-body { padding: 4px 12px calc(64px + var(--ion-safe-area-bottom, 0px)); }
+// Generous bottom padding so the LAST topic card (and its expanded panel) can
+// always scroll fully into view above the device's bottom edge / nav bar.
+.tp-body { padding: 4px 12px calc(120px + var(--ion-safe-area-bottom, 0px)); }
 
 .tp-admin-tip {
   display: flex; align-items: center; gap: 8px; margin: 2px 0 10px;

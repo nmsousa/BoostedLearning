@@ -52,13 +52,34 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
   private backInterceptor = inject(BackInterceptorService);
   private exitConfirm = inject(ExitConfirmService);
 
+  /** Live "is a clip playing" signal + the real slow rate, for the audio icons. */
+  readonly playing = this.audio.playing;
+  readonly slowPlaying = this.audio.playingSlow;
+  readonly slowRate = this.audio.slowRate;
+  readonly slowMs = this.audio.slowDurationMs;
+  readonly playKind = this.audio.playKind;
+  readonly playProgress = this.audio.playProgress;
+  /** Bumped on every slow tap so the ring animation restarts from scratch. */
+  slowTick = 0;
+
+  /** Slow button tap: restart the ring sweep and play the slow clip. */
+  playSlow(): void { this.slowTick++; void this.playWord(true); }
+
   /** Hardware/gesture back: if there's progress to lose, show the confirm (and
    *  claim the press so the page isn't popped behind it); otherwise leave. */
   private readonly onHardwareBack: () => Promise<boolean> =
     () => this.exitConfirm.request(this.hasProgress, () => this.leave());
 
   ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
-  ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
+  async ionViewWillEnter(): Promise<void> {
+    this.backInterceptor.register(this.onHardwareBack);
+    // Ionic caches + REUSES page instances in the nav stack, so ngOnInit runs
+    // only once. Re-run setup on every entry for a reused instance (e.g. the
+    // Quiz was opened once via a direct F5 — before its Tree deck existed — and
+    // is now re-entered from Explore). Without this the spinner stays stuck on
+    // the earlier aborted load.
+    if (this.didSetup) await this.setup();
+  }
   ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
 
   /** True when there is quiz progress worth confirming before leaving. */
@@ -148,7 +169,27 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
 
   private answered = false;
 
-  async ngOnInit() {
+  private didSetup = false;
+
+  async ngOnInit() { await this.setup(); }
+
+  /** (Re)initialise the quiz session. Safe to call on every view-enter so a
+   *  REUSED (cached) page instance re-reads the route + deck instead of being
+   *  stuck on a previous, possibly aborted, load. */
+  private async setup() {
+    this.didSetup = true;
+    // Reset per-session state so a reused instance starts clean.
+    this.isLoading = true;
+    this.phase = 'play';
+    this.mode = 'quiz';
+    this.singlePass = false;
+    this.currentIndex = 0;
+    this.correctCount = 0;
+    this.mistakes = 0;
+    this.roundInterstitial = false;
+    this.cards = [];
+    this.cdr.detectChanges();
+
     await this.flashcardService.initialize();
 
     const deckId = this.route.snapshot.paramMap.get('id');
@@ -292,6 +333,12 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
       revealed: false,
       chosen: false,
     }));
+
+    // Auto-play the prompt word when the question appears (normal speed), so
+    // the learner hears it immediately — like Learn / Flashcards.
+    if (this.settings.autoPlayAudio()) {
+      setTimeout(() => void this.playWord(), 200);
+    }
   }
 
   /** Number of words in a translation label. */

@@ -19,7 +19,24 @@
 
 .ep-content { --background: linear-gradient(180deg, #1a1346, #0b0a24); }
 .ep-loading { display: grid; place-items: center; min-height: 60vh; }
-.ep-body { padding: 8px 14px calc(18px + var(--ion-safe-area-bottom, 0px)); }
+.ep-body { padding: 8px 14px calc(120px + var(--ion-safe-area-bottom, 0px)); }
+
+// Admin tip + reset (mirrors Explore's).
+.ep-admin-tip {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 2px 0 12px; padding: 10px 12px; border-radius: 12px;
+  background: rgba(255, 196, 0, 0.1); border: 1px solid rgba(255, 196, 0, 0.25);
+  color: #ffe9a8; font-size: 0.78rem;
+  ion-icon { font-size: 16px; flex: 0 0 auto; }
+  span { flex: 1 1 auto; min-width: 0; }
+}
+.ep-admin-reset {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  padding: 6px 10px; border-radius: 10px; cursor: pointer;
+  background: rgba(235, 68, 90, 0.18); border: 1px solid rgba(235, 68, 90, 0.5);
+  color: #ffb3bd; font-size: 0.74rem; font-weight: 700;
+  ion-icon { font-size: 14px; }
+}
 .ep-tagline { margin: 2px 0 14px; color: #c9cdff; font-weight: 600; font-size: 0.9rem; text-align: center; }
 
 .ep-block { margin-bottom: 18px; }
@@ -32,22 +49,80 @@
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
   padding: 14px; border-radius: 16px; margin-bottom: 8px; cursor: pointer; color: var(--ep-text);
   background: var(--ep-glass); border: 1px solid var(--ep-glass-line);
+  // Core row: the richer purple gradient from Explore's hero card. It's the
+  // tier's "spine", so it's taller and bolder than the topic rows, with a
+  // bright purple left-edge accent so it stays unmistakably a CORE at a glance.
   &.core {
-    background: linear-gradient(135deg, #5b3fb8, #7a4fd0);
-    border-color: rgba(255, 255, 255, 0.18);
+    background: linear-gradient(145deg, #6a4fd0, #4a2fa0);
+    border-color: rgba(255, 255, 255, 0.2);
+    padding: 18px 16px;                 // bigger than the 14px topic rows
+    border-left: 4px solid #b9a6ff;     // purple spine accent
+  }
+  // Completed TOPIC rows read as "done" with a green-tinted background.
+  &.done {
+    background: linear-gradient(135deg, rgba(47, 211, 111, 0.22), rgba(32, 150, 90, 0.16));
+    border-color: rgba(47, 211, 111, 0.45);
+  }
+  // A COMPLETED CORE keeps its purple identity (so it never gets mistaken for a
+  // finished topic): a purple→green gradient plus the purple spine accent, with
+  // a green border to still read as done. The purple wins the eye; the green is
+  // just the "done" confirmation.
+  &.core.done {
+    background: linear-gradient(145deg, #5a46b8, #2f8f66);
+    border-color: rgba(120, 240, 180, 0.6);
+    border-left: 4px solid #b9a6ff;     // keep the purple spine when done
   }
   &.locked { opacity: 0.55; cursor: default; }
   &.expanded { border-color: hsla(var(--hue, 265), 80%, 70%, 0.6); }
+
+  // After finishing a mode / returning from the detail, OR on first open, the
+  // current row pulses (gold ring + border) so the learner sees where to
+  // continue — same cue as Explore. A bright gold border is layered on top of
+  // the expanding glow so it reads clearly as "this is next".
+  &.pulse {
+    animation: ep-row-pulse 0.9s ease-in-out 3;
+    border-color: #ffdc78;
+  }
 }
+@keyframes ep-row-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 220, 120, 0);   border-color: rgba(255, 220, 120, 0.35); }
+  50%      { box-shadow: 0 0 0 5px rgba(255, 220, 120, 0.6); border-color: #ffdc78; }
+}
+:host-context(.reduced-motion) .ep-row.pulse { animation: none; border-color: #ffdc78; }
+
 .ep-emoji {
   flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
   font-size: 22px; background: hsla(var(--hue, 265), 70%, 55%, 0.28);
   border: 1px solid hsla(var(--hue, 265), 80%, 70%, 0.5);
 }
-.ep-row.core .ep-emoji { background: rgba(255, 255, 255, 0.18); border-color: rgba(255, 255, 255, 0.3); }
-.ep-name { flex: 1 1 auto; font-weight: 700; font-size: 1rem; min-width: 0; }
+// The Core's glyph is a CIRCLE (a distinct "medallion" shape), slightly larger
+// than the topics' rounded-square tiles, so Core vs Topic reads at a glance —
+// even when the Core is complete.
+.ep-row.core .ep-emoji {
+  width: 48px; height: 48px; border-radius: 50%; font-size: 24px;
+  background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.45);
+}
+
+// Main column: name row on top, progress bar below (so every row shows %).
+.ep-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.ep-name-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ep-name { flex: 1 1 auto; font-weight: 700; font-size: 1rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ep-badge { flex: 0 0 auto; font-size: 20px; &.done { color: var(--ep-green); } &.lock { color: var(--ep-muted); font-size: 16px; } }
 .ep-caret { flex: 0 0 auto; font-size: 18px; color: var(--ep-muted); }
+
+.ep-progress { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ep-progress-track {
+  display: block; flex: 1 1 auto; height: 6px; border-radius: 999px; min-width: 0;
+  background: rgba(255, 255, 255, 0.14); overflow: hidden;
+}
+.ep-progress-fill {
+  display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--ep-green), #4fd1e0); transition: width 0.3s ease;
+}
+.ep-progress-pct { flex: 0 0 auto; min-width: 2.6em; text-align: right; font-size: 0.72rem; font-weight: 800; color: #c9cdff; }
+// On the solid Core/done rows the muted percent text needs to be brighter.
+.ep-row.core .ep-progress-track, .ep-row.done .ep-progress-track { background: rgba(255, 255, 255, 0.22); }
+.ep-row.core .ep-progress-pct, .ep-row.done .ep-progress-pct { color: #ffffff; }
 
 .ep-expand {
   margin: 0 0 10px; padding: 12px; border-radius: 14px;
@@ -56,7 +131,19 @@
 }
 @keyframes ep-slide { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
-.ep-words { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+// "Show / Hide words" toggle in the detail view (collapsed by default).
+.ep-words-toggle {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 10px 12px; margin-bottom: 10px; border-radius: 12px; cursor: pointer;
+  background: var(--ep-glass); border: 1px solid var(--ep-glass-line);
+  color: var(--ep-text); font-size: 0.85rem; font-weight: 600;
+  > ion-icon:first-child { flex: 0 0 auto; font-size: 17px; color: var(--ep-muted); }
+  span { flex: 1 1 auto; text-align: left; }
+  .ep-words-caret { flex: 0 0 auto; font-size: 16px; color: var(--ep-muted); }
+  &.open { border-color: hsla(265, 70%, 70%, 0.4); }
+}
+.ep-words { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; animation: ep-slide 0.2s ease; }
+:host-context(.reduced-motion) .ep-words { animation: none; }
 .ep-word {
   display: inline-flex; flex-direction: column; gap: 1px; padding: 5px 9px; border-radius: 10px;
   background: rgba(255, 255, 255, 0.06);
@@ -77,3 +164,56 @@
 }
 
 :host-context(.reduced-motion) .ep-expand { animation: none; }
+
+// ─────────────── DETAIL VIEW ───────────────
+.ep-detail { padding: 8px 14px calc(120px + var(--ion-safe-area-bottom, 0px)); animation: ep-slide 0.2s ease; }
+:host-context(.reduced-motion) .ep-detail { animation: none; }
+
+.ep-detail-hero {
+  display: flex; align-items: center; gap: 14px; padding: 18px 16px; border-radius: 18px; margin-bottom: 14px;
+  background: linear-gradient(145deg, #6a4fd0, #4a2fa0); border: 1px solid rgba(255, 255, 255, 0.2);
+  &.done { background: linear-gradient(145deg, #2f8f66, #1f6e4e); border-color: rgba(120, 240, 180, 0.5); }
+}
+.ep-detail-emoji {
+  flex: 0 0 auto; width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center;
+  font-size: 28px; background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.ep-detail-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ep-detail-title { font-size: 1.3rem; font-weight: 800; color: #fff; }
+.ep-detail-sub { font-size: 0.8rem; color: rgba(255, 255, 255, 0.8); font-weight: 600; }
+.ep-detail-check { flex: 0 0 auto; font-size: 26px; color: #d6ffe8; }
+
+.ep-mode-list { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.ep-mode-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 14px; border-radius: 14px; cursor: pointer; color: var(--ep-text);
+  background: var(--ep-glass); border: 1px solid var(--ep-glass-line); font-weight: 600;
+  .ep-mode-ic { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+    background: rgba(255, 255, 255, 0.08); ion-icon { font-size: 19px; } }
+  .ep-mode-label { flex: 1 1 auto; min-width: 0; font-size: 0.95rem; }
+  .ep-mode-tick { flex: 0 0 auto; font-size: 22px; color: var(--ep-green); }
+  .ep-mode-go { flex: 0 0 auto; font-size: 20px; color: #8ea2ff; }
+  .ep-mode-lock { flex: 0 0 auto; font-size: 16px; color: var(--ep-muted); }
+  &.state-done { border-color: rgba(45, 211, 111, 0.4); .ep-mode-ic { color: var(--ep-green); } }
+  &.state-active { border-color: #6a5cff; box-shadow: 0 0 0 1px rgba(106, 92, 255, 0.4); }
+  &.state-locked { opacity: 0.45; cursor: default; }
+}
+
+.ep-review {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  padding: 12px; border-radius: 14px; cursor: pointer; margin-top: 4px;
+  background: transparent; border: 1px dashed var(--ep-glass-line); color: var(--ep-muted);
+  font-size: 0.9rem; font-weight: 600;
+  ion-icon { font-size: 18px; }
+}
+
+// Pinned Continue footer (detail view), mirroring Journey++.
+.ep-footer {
+  background: transparent;
+  &::before { display: none; }
+  .ep-footer-inner {
+    max-width: 480px; margin: 0 auto;
+    padding: 8px 14px calc(10px + var(--ion-safe-area-bottom, 0px));
+  }
+  .ep-cta { --border-radius: 14px; font-weight: 700; min-height: 52px; }
+}

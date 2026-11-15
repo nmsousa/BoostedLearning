@@ -329,3 +329,20 @@ ion-header ion-progress-bar {
   height: 8px;
   --progress-background: var(--ion-color-primary);
 }
+
+/* ---------------------------------------------------------------------------
+ * Slow-audio button
+ * ---------------------------------------------------------------------------
+ * The sweeping progress ring is drawn INSIDE app-slow-audio-icon as an SVG
+ * circle (stroke-dashoffset), which physically cannot overshoot 360°. This
+ * class only suppresses any per-mode "playing" glow/border (the old blue
+ * circle) on a slow button so it doesn't stack with the ring.
+ */
+/* The slow button must be a positioning context so the icon component's ring
+   (position:absolute; inset:0) is exactly the button's circle. */
+.slow-audio-ring { position: relative; }
+.slow-audio-ring.playing {
+  animation: none !important;
+  box-shadow: none !important;
+  > ion-icon { animation: none !important; }
+}

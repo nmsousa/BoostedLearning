@@ -59,6 +59,17 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
   private audio = inject(AudioService);
   private toast = inject(ToastController);
   private cdr = inject(ChangeDetectorRef);
+  /** Real slow-replay rate for the snail icon label + slow-ring signal. */
+  readonly slowRate = this.audio.slowRate;
+  readonly slowPlaying = this.audio.playingSlow;
+  readonly slowMs = this.audio.slowDurationMs;
+  readonly playKind = this.audio.playKind;
+  readonly playProgress = this.audio.playProgress;
+  /** Bumped on every slow tap so the ring animation restarts from scratch. */
+  slowTick = 0;
+
+  /** Slow button tap: restart the ring sweep and play the slow clip. */
+  playSlow(): void { this.slowTick++; void this.playWord(true); }
   private addWordService = inject(AddWordService);
   private backInterceptor = inject(BackInterceptorService);
 
@@ -154,10 +165,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
   hintText = '';
   usedHint = false;      // Track if any hint was used for this card
   revealedViaHint = false; // true when the answer was fully revealed via hints
-  /** The translation shown when the learner taps the prompt to peek (empty =
-   *  hidden). A deliberate help for writing phrases; counts as using a hint. */
-  peekedAnswer = '';
-  
+
   // Number of unique cards in this session (after de-duplicating prompts).
   totalUnique = 0;
   // IDs of unique cards the learner has answered correctly at least once.
@@ -840,20 +848,6 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
     this.cdr.detectChanges();
   }
 
-  /**
-   * Tapping the prompt word(s) toggles a peek at the answer (what to type), to
-   * help the learner write it — useful once Write asks for phrases. It reveals
-   * the full target, so it counts as having used a hint (fair scoring), the
-   * same as fully revealing via the bulb. Tap again to hide.
-   */
-  peekAnswer(): void {
-    if (this.phase !== 'question') return;
-    if (this.peekedAnswer) { this.peekedAnswer = ''; this.cdr.detectChanges(); return; }
-    this.peekedAnswer = this.hintAnswer;
-    this.usedHint = true;
-    this.cdr.detectChanges();
-  }
-
   tryAgain(): void {
     this.isRetryAttempt = true;
     this.userAnswer = '';
@@ -884,7 +878,6 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
     this.hintText = '';
     this.usedHint = false;
     this.revealedViaHint = false;
-    this.peekedAnswer = '';
     this.playCount = 0;
 
     // The session ends only when every unique card has been answered

@@ -74,6 +74,12 @@ const routes: Routes = [
     loadChildren: () => import('../exercises/mix/mix.module').then(m => m.MixPageModule)
   },
   {
+    // Practice launcher: pick a word source (saved list / mistakes / all) + a
+    // mode, then play a transient practice deck. Reached from the home card.
+    path: 'custom',
+    loadChildren: () => import('../practice/practice.module').then(m => m.PracticePageModule)
+  },
+  {
     // EXPERIMENTAL: a Journey level reuses the Write exercise, scored under
     // the 'journey' mode (via ?mode=journey).
     path: 'journey-play/:id',

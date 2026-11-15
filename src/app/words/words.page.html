@@ -5,12 +5,14 @@
     </ion-buttons>
     <ion-title>{{ 'words.title' | translate }}</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="addWord()" [attr.aria-label]="'mode.addWord' | translate">
+      <!-- Toggle multi-select: pick words to save into a practice list. -->
+      <ion-button (click)="toggleSelectMode()" [attr.aria-label]="'words.select' | translate">
+        <ion-icon slot="icon-only" [name]="selectMode ? 'close-outline' : 'checkbox-outline'"></ion-icon>
+      </ion-button>
+      <ion-button *ngIf="!selectMode" (click)="addWord()" [attr.aria-label]="'mode.addWord' | translate">
         <ion-icon slot="icon-only" name="add-circle-outline"></ion-icon>
       </ion-button>
-      <!-- Only one menu action (report), so expose it directly as a flag button
-           instead of a ⋮ menu. -->
-      <ion-button (click)="reportProblem()" [attr.aria-label]="'feedback.report' | translate">
+      <ion-button *ngIf="!selectMode" (click)="reportProblem()" [attr.aria-label]="'feedback.report' | translate">
         <ion-icon slot="icon-only" name="flag-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -97,6 +99,13 @@
     <p>{{ 'words.noResults' | translate }}</p>
   </div>
 
+  <!-- Select-mode banner: explains the pick → save-as-list flow (shown while
+       selecting, especially when opened from the Practice page). -->
+  <div *ngIf="selectMode" class="select-banner">
+    <ion-icon name="checkbox-outline" aria-hidden="true"></ion-icon>
+    <span>{{ 'words.selectBanner' | translate }}</span>
+  </div>
+
   <!-- Word list. Plain flex rows (NOT ion-item): ion-item's shadow DOM was
        inflating every row to ~144px no matter the custom-property overrides.
        A div row with an explicit height is fully under our control. -->
@@ -107,9 +116,19 @@
     <div class="word-row" *ngFor="let w of words; trackBy: trackByWord"
       role="button" tabindex="0"
       [class.hidden-word]="w.priority === 'hide'"
-      (click)="openPriority(w)" (keydown.enter)="openPriority(w)" (keydown.space)="openPriority(w)">
-      <span class="word-dot" [class.learning]="w.level === 'learning'"
-        [class.familiar]="w.level === 'familiar'" [class.known]="w.level === 'known'"></span>
+      [class.selected]="selectMode && isSelected(w)"
+      (click)="onRowTap(w)" (keydown.enter)="onRowTap(w)" (keydown.space)="onRowTap(w)">
+      <!-- Multi-select checkbox (only while selecting). -->
+      <ion-icon *ngIf="selectMode" class="word-check"
+        [name]="isSelected(w) ? 'checkmark-circle' : 'ellipse-outline'"
+        [class.on]="isSelected(w)" aria-hidden="true"></ion-icon>
+      <!-- 3-dot mastery: the last 3 results, OLDEST→NEWEST (rightmost = most
+           recent). Gray = not enough plays, green = correct, red = wrong. The
+           ring colour reflects the overall mastery bucket. -->
+      <span *ngIf="!selectMode" class="word-dots" [attr.data-mastery]="w.mastery"
+        [attr.aria-label]="'words.mastery.' + w.mastery | translate">
+        <span class="dot" *ngFor="let d of dotsFor(w)" [ngClass]="d"></span>
+      </span>
       <div class="word-text">
         <span class="word-target">
           {{ w.text }}
@@ -124,16 +143,27 @@
       <!-- Admin only: a GREEN speaker means this word still uses the borrowed
            Duolingo recording (not yet re-voiced with our TTS). Normal colour =
            our generated clip or no local clip. -->
-      <button type="button" class="word-audio" [class.from-duolingo]="isDuolingoAudio(w)"
+      <!-- SLOW (snail) first, then NORMAL — both always shown. -->
+      <button type="button" class="word-audio slow slow-audio-ring" *ngIf="!selectMode" (click)="playWord(w, $event, true)"
+        [attr.aria-label]="'mode.playSlower' | translate">
+        <app-slow-audio-icon [active]="false" [rate]="slowRate"></app-slow-audio-icon>
+      </button>
+      <button type="button" class="word-audio" *ngIf="!selectMode" [class.from-duolingo]="isDuolingoAudio(w)"
         (click)="playWord(w, $event)"
         [attr.aria-label]="'mode.playPronunciation' | translate">
         <ion-icon name="volume-high-outline"></ion-icon>
       </button>
-      <!-- Slower replay appears once the word has been played twice. -->
-      <button type="button" class="word-audio slow" *ngIf="showSlow(w)" (click)="playWord(w, $event, true)"
-        [attr.aria-label]="'mode.playSlower' | translate">
-        <ion-icon name="hourglass-outline"></ion-icon>
-      </button>
     </div>
   </div>
 </ion-content>
+
+<!-- Selection action bar: save the chosen words into a practice list. -->
+<ion-footer *ngIf="selectMode" class="words-select-footer">
+  <div class="wsf-inner">
+    <span class="wsf-count">{{ 'words.selectedCount' | translate:{ n: selectedCount } }}</span>
+    <ion-button class="wsf-save" [disabled]="selectedCount === 0" (click)="saveSelectionToList()">
+      <ion-icon name="bookmark-outline" slot="start" aria-hidden="true"></ion-icon>
+      {{ 'words.saveToList' | translate }}
+    </ion-button>
+  </div>
+</ion-footer>

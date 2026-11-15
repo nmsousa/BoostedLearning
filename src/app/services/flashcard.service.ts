@@ -77,6 +77,13 @@ export interface Flashcard {
   streak: number;
 
   /**
+   * The last up-to-3 graded results for this word, OLDEST→NEWEST. Each is
+   * 'correct' or 'incorrect'. Drives the "Your words" 3-dot mastery display
+   * (gray = fewer than 3 plays). Capped at 3 (oldest dropped). Persisted.
+   */
+  recentResults?: WordResult[];
+
+  /**
    * true = manually added by the user. Not part of the shipped app data,
    * so it only exists in this device's storage and is lost on reinstall /
    * device change unless exported. Drives the "custom" badge and export.
@@ -110,6 +117,39 @@ export interface Flashcard {
 /** Per-word user priority override for practice queues. */
 export type WordPriority = 'boost' | 'normal' | 'hide';
 
+/** A single graded attempt outcome, for the last-3-results mastery display. */
+export type WordResult = 'correct' | 'incorrect';
+
+/**
+ * Mastery derived from the last 3 results (replaces the old accuracy %):
+ *  - 'known'  : 3 correct;
+ *  - 'green'  : only correct + gray (not-yet-3) with no wrong — doing well;
+ *  - 'yellow' : exactly 1 wrong among the last 3 (e.g. 1 red + 2 green);
+ *  - 'red'    : 2+ wrong among the last 3 — struggling;
+ *  - 'none'   : no attempts yet.
+ */
+export type WordMastery = 'known' | 'green' | 'yellow' | 'red' | 'none';
+
+/**
+ * Derive the 3-dot mastery bucket from a word's recent results (oldest→newest).
+ * Rules (per the product spec):
+ *   3 green            → known
+ *   only green + gray  → green   (1–2 correct, rest not-yet-played, no red)
+ *   exactly 1 red      → yellow
+ *   2+ red             → red
+ *   nothing yet        → none
+ */
+export function masteryFromResults(results: readonly WordResult[] | undefined): WordMastery {
+  const last3 = (results ?? []).slice(-3);
+  if (last3.length === 0) return 'none';
+  const wrong = last3.filter(r => r === 'incorrect').length;
+  const right = last3.filter(r => r === 'correct').length;
+  if (wrong >= 2) return 'red';
+  if (wrong === 1) return 'yellow';
+  // No wrong: all correct-or-gray. 3 correct = known, otherwise green.
+  return right >= 3 ? 'known' : 'green';
+}
+
 /** A practiced word row for the "Your words" screen. */
 export interface StudiedWord {
   text: string;
@@ -125,6 +165,10 @@ export interface StudiedWord {
   missRate: number;
   level: KnowledgeLevel;
   priority: WordPriority;
+  /** The last up-to-3 results (oldest→newest) for the 3-dot display. */
+  recent: WordResult[];
+  /** Mastery bucket derived from `recent` (replaces the old accuracy %). */
+  mastery: WordMastery;
   /** Recorded pronunciation clip, when the source card has one. The Words page
    *  prefers this over TTS so playback matches the Flashcard modes. */
   audioUrl?: string;
@@ -435,6 +479,7 @@ export class FlashcardService {
           card.lastSeen = savedProgress.lastSeen;
           card.nextReview = savedProgress.nextReview;
           card.streak = savedProgress.streak;
+          card.recentResults = savedProgress.recentResults;
           card.fsrs = savedProgress.fsrs;
           card.priority = savedProgress.priority;
         }
@@ -464,6 +509,7 @@ export class FlashcardService {
       lastSeen: card.lastSeen,
       nextReview: card.nextReview,
       streak: card.streak,
+      recentResults: card.recentResults,
       updatedAt: new Date().toISOString(),
       isCustom: card.isCustom ?? existing?.isCustom,
       createdAt: existing?.createdAt,
@@ -894,6 +940,7 @@ export class FlashcardService {
         if (p) {
           c.correctCount = p.correctCount; c.incorrectCount = p.incorrectCount;
           c.mediumCount = p.mediumCount; c.streak = p.streak; c.lastSeen = p.lastSeen;
+          c.recentResults = p.recentResults;
         }
       }
       this.decksSignal.update(list => list.map(d => (d.id === deckId ? deck : d)));
@@ -907,6 +954,75 @@ export class FlashcardService {
   /** True for the synthetic Tree curriculum decks ("tree-<lang>", "tree-v2-<lang>"…). */
   isTreeDeckId(deckId: string | null | undefined): boolean {
     return !!deckId && deckId.startsWith('tree-');
+  }
+
+  /** True for a transient custom-practice deck (built from a word selection). */
+  isPracticeDeckId(deckId: string | null | undefined): boolean {
+    return !!deckId && deckId.startsWith('practice-');
+  }
+
+  /**
+   * Build a TRANSIENT single-skill deck from a set of word surface forms, for
+   * the custom "Practice" feature. Each word is resolved against the language's
+   * existing cards (by text) to carry its real translations + audio, so Quiz/
+   * Write/Match/Mix work exactly as elsewhere. The deck lives in memory only
+   * (never persisted) and all its words sit in level 1. Returns the deck id, or
+   * null if no words resolved.
+   */
+  registerPracticeDeck(languageCode: string, words: string[]): string | null {
+    const wanted = [...new Set(words.map(w => w.trim()).filter(Boolean))];
+    if (!wanted.length) return null;
+
+    // Index the language's REAL cards by normalized text (skip transient decks).
+    const byText = new Map<string, Flashcard>();
+    for (const deck of this.decksSignal()) {
+      if (deck.languageCode !== languageCode) continue;
+      if (this.isPracticeDeckId(deck.id)) continue;
+      for (const c of deck.cards) {
+        const k = this.audioKey(c.text);
+        if (!byText.has(k)) byText.set(k, c);
+      }
+    }
+
+    const deckId = `practice-${languageCode}`;
+    const cards: Flashcard[] = [];
+    wanted.forEach((text, i) => {
+      const src = byText.get(this.audioKey(text));
+      if (!src) return; // can't build a card without translations
+      cards.push({
+        id: `${deckId}-${i}`,
+        deckId,
+        text,
+        translations: src.translations,
+        audioUrl: src.audioUrl ?? this.localAudioFor(languageCode, text),
+        acceptedForms: src.acceptedForms ?? [text],
+        skill: 'Practice',
+        skillOrder: 1,
+        correctCount: 0,
+        incorrectCount: 0,
+        lastSeen: null,
+        nextReview: null,
+        streak: 0,
+      } as Flashcard);
+    });
+    if (!cards.length) return null;
+
+    const deck: FlashcardDeck = {
+      id: deckId,
+      name: 'Practice',
+      languageCode,
+      description: 'Custom practice set',
+      isBundled: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      cards,
+    };
+    this.decksSignal.update(list => {
+      const without = list.filter(d => d.id !== deckId);
+      return [...without, deck];
+    });
+    this.invalidateDedupe(deckId);
+    return deckId;
   }
 
   /** Normalize a word for recording lookup (NFC, straight apostrophe, lower, single spaces). */
@@ -1049,6 +1165,12 @@ export class FlashcardService {
     return scored.slice(0, maxCards).map(s => s.card);
   }
 
+  /** Append a graded result to a card's rolling last-3 history (oldest→newest). */
+  private pushRecentResult(card: Flashcard, result: WordResult): void {
+    const next = [...(card.recentResults ?? []), result];
+    card.recentResults = next.slice(-3);
+  }
+
   /**
    * Record a card attempt result
    */
@@ -1070,6 +1192,7 @@ export class FlashcardService {
     // Update card
     card.correctCount += correct ? 1 : 0;
     card.incorrectCount += correct ? 0 : 1;
+    this.pushRecentResult(card, correct ? 'correct' : 'incorrect');
     card.lastSeen = now.toISOString();
     card.nextReview = nextReview.toISOString();
     card.streak = newStreak;
@@ -1184,6 +1307,7 @@ export class FlashcardService {
       card.lastSeen = null;
       card.nextReview = null;
       card.streak = 0;
+      card.recentResults = undefined;
     }
     // …and persist them in ONE bulk write instead of one awaited put per card
     // (the old per-card loop made reset slow enough to appear to "not work").
@@ -1191,7 +1315,7 @@ export class FlashcardService {
     for (const r of rows) {
       r.correctCount = 0; r.incorrectCount = 0; r.mediumCount = 0;
       r.lastSeen = null; r.nextReview = null; r.streak = 0;
-      r.fsrs = undefined;
+      r.fsrs = undefined; r.recentResults = undefined;
     }
     if (rows.length) await this.db.flashcards.bulkPut(rows);
 
@@ -1228,6 +1352,7 @@ export class FlashcardService {
           card.streak = 0;
           card.fsrs = undefined;
           card.priority = undefined;
+          card.recentResults = undefined;
           await this.saveCardProgress(card);
           // saveCardProgress preserves the old fsrs/priority when the in-memory
           // value is undefined, so clear those stored fields explicitly.
@@ -1400,10 +1525,12 @@ export class FlashcardService {
       card.incorrectCount = 0;   // latest rating is "know it" → clear red
       card.mediumCount = 0;
       card.streak += 1;
+      this.pushRecentResult(card, 'correct');
     } else if (rating === 'hard') {
       card.incorrectCount += 1;
       card.correctCount = 0;     // latest rating is "don't know" → clear green
       card.streak = 0;
+      this.pushRecentResult(card, 'incorrect');
     } else {
       // 'medium' = so-so: track separately; doesn't extend or reset the streak.
       card.mediumCount = (card.mediumCount ?? 0) + 1;
@@ -1834,6 +1961,7 @@ export class FlashcardService {
         const missRate = seen > 0 ? incorrect / seen : 0;
         // Same bucket rule as the home breakdown (streak + accuracy).
         const level = this.levelForCard(card);
+        const recent = (card.recentResults ?? []).slice(-3);
 
         rows.push({
           text: card.text,
@@ -1845,6 +1973,8 @@ export class FlashcardService {
           accuracy: seen > 0 ? correct / seen : 0,
           missRate,
           level,
+          recent,
+          mastery: masteryFromResults(recent),
           priority: card.priority ?? 'normal',
           audioUrl: card.audioUrl,
         });

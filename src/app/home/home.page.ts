@@ -364,6 +364,11 @@ export class HomePage implements OnInit {
     this.router.navigate(['/practice/builder']);
   }
 
+  /** Practice launcher — pick a word list / mistakes / all + a mode. */
+  startPractice(): void {
+    this.router.navigate(['/practice/custom']);
+  }
+
   /** Builder+ — the self-checking Builder variant (correct order only). */
   startBuilderPlus(): void {
     this.router.navigate(['/practice/builder-plus']);

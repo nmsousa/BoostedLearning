@@ -79,12 +79,11 @@
   &:active { transform: scale(0.94); }
 }
 
-.audio-icon.slow {
-  width: 34px;
-  height: 34px;
-
-  ion-icon { font-size: 17px; }
-}
+/* Slow (snail) button is the SAME size as the normal one (was shrunk to 34px
+   from the old hourglass days). The font-size sets the snail glyph size (it's
+   sized in em), matched to the Learn card's 22px so the snail reads the same
+   across modes. */
+.audio-icon.slow { width: 40px; height: 40px; font-size: 22px; }
 
 .quiz-options {
   display: flex;

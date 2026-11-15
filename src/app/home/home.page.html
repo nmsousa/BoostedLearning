@@ -90,6 +90,14 @@
           <span class="mode-desc">{{ 'home.mode.learn.desc' | translate }}</span>
         </button>
 
+        <!-- Practice: drill a saved list, your mistakes, or all words. NEW. -->
+        <button type="button" class="mode-card practice" (click)="startPractice()">
+          <span class="new-badge">{{ 'home.mode.newBadge' | translate }}</span>
+          <ion-icon name="barbell-outline"></ion-icon>
+          <span class="mode-name">{{ 'home.mode.practice' | translate }}</span>
+          <span class="mode-desc">{{ 'home.mode.practice.desc' | translate }}</span>
+        </button>
+
         <!-- Mix: a session mixing several activity types. NEW. -->
         <button type="button" class="mode-card mix" (click)="startMode('mix')">
           <span class="new-badge">{{ 'home.mode.newBadge' | translate }}</span>

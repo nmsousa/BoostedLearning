@@ -84,13 +84,20 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   /** Minimum gap between advances (ms) — matches the CSS transition. */
   private static readonly TRANSITION_MS = 160;
 
-  /** Per-card normal-speed play count, so a 2nd tap plays the slow version
-   *  (same "turtle" rule as the Flashcard modes). Keyed by card index. */
-  private playCounts = new Map<number, number>();
-
   /** The live "is a clip playing" signal, read in the template so the play
    *  button's waveform pulses while sound is playing. */
   readonly playing = this.audio.playing;
+  /** True only while a SLOW clip sounds — drives the snail's sweeping ring. */
+  readonly slowPlaying = this.audio.playingSlow;
+  /** Which clip kind is playing ('normal' | 'slow' | null) — each button shows
+   *  its own ring only for its own playback. */
+  readonly playKind = this.audio.playKind;
+  /** Live 0→1 playback progress, driving both rings so they end with the sound. */
+  readonly playProgress = this.audio.playProgress;
+  /** Real slow-clip duration (ms) so the ring lasts as long as the sound. */
+  readonly slowMs = this.audio.slowDurationMs;
+  /** Bumped on every slow tap so the ring animation restarts from scratch. */
+  slowTick = 0;
   /** Real slow-replay rate, shown on the slow (gauge) icon. */
   readonly slowRate = this.audio.slowRate;
 
@@ -138,8 +145,8 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     }
     this.isLoading = false;
     this.cdr.detectChanges();
-    // Auto-play the FIRST card's audio (always normal speed, not counted).
-    setTimeout(() => this.playWord(true), 180);
+    // Auto-play the FIRST card's audio (normal speed).
+    setTimeout(() => this.playWord(false, true), 180);
   }
 
   /** True when at least one card in the set has an emoji — drives whether the
@@ -157,29 +164,18 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
    *  slow playback share this single threshold, so the icon never gets "ahead"
    *  of the sound (what caused the earlier off-by-one: gauge shown but still
    *  playing fast for one extra tap). */
-  get showSlow(): boolean {
-    return (this.playCounts.get(this.index) ?? 0) >= 3;
-  }
-
   /**
-   * Play the current word. `auto` = triggered by navigation/card-open or a
-   * Back/Continue move (always NORMAL speed, and NOT counted toward the slow
-   * threshold — only real taps on the audio button count). A manual tap plays
-   * slow once this card has already had 2 counted (fast) plays; the icon flips
-   * on the same threshold so what you see is what you hear.
+   * Play the current word. `slow` = the slow (snail) replay; `auto` = triggered
+   * by navigation/card-open or a Back/Continue move (always normal speed). Both
+   * audio buttons are always shown (slow first, then normal), so there's no
+   * play-count threshold any more.
    */
-  async playWord(auto = false): Promise<void> {
+  /** Slow button tap: restart the ring sweep and play the slow clip. */
+  playSlow(): void { this.slowTick++; void this.playWord(true); }
+
+  async playWord(slow = false, auto = false): Promise<void> {
     const c = this.card;
     if (!c) return;
-    // Count this tap FIRST, then decide fast vs slow from the new count — the
-    // exact same value `showSlow` reads for the icon. So the instant the gauge
-    // appears (2 taps done) THIS tap already plays slow: icon and sound flip
-    // together, with no "gauge shown but still fast" tap in between.
-    if (!auto) {
-      this.playCounts.set(this.index, (this.playCounts.get(this.index) ?? 0) + 1);
-      this.cdr.detectChanges();
-    }
-    const slow = !auto && this.showSlow;
     const res = await this.audio.playWord(c.fr, c.audioUrl, this.settings.learningLanguage(), slow);
     // When there's no recording AND no device voice, tell the user why (so a
     // silent tap isn't mistaken for a bug).
@@ -213,7 +209,7 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
       this.index = newIndex;
       this.transitioning = false;
       this.cdr.detectChanges();
-      if (play) this.playWord(true);   // auto-play: normal speed, not counted
+      if (play) this.playWord(false, true);   // auto-play: normal speed
     }, LearnPage.TRANSITION_MS);
   }
 

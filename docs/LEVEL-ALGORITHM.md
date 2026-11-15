@@ -353,27 +353,45 @@ them before.
 
 ## 10. Word knowledge colour (Your words / home breakdown)
 
-Each studied word shows a coloured dot — red / yellow / green — for how well
-the learner knows it. It is computed purely from the word's **lifetime
-accuracy** (`correct / timesSeen`) by `levelForCard`:
+Each studied word shows **three mini dots** — the word's **last 3 graded
+results**, OLDEST→NEWEST (the rightmost dot is the most recent). This **replaces
+the old lifetime-accuracy percentage** for the "Your words" display.
 
-| Colour | Bucket | Rule |
-|--------|--------|------|
-| 🟢 green  | known    | accuracy **> 70%** |
-| 🟡 yellow | familiar | **50% ≤ accuracy ≤ 70%** |
-| 🔴 red    | learning | accuracy **< 50%** (missed more than half), or never answered |
+Each dot:
+- ⚪ **gray** — not enough plays yet (fewer than 3 recorded results fill from
+  the right, so the empty slots sit on the left);
+- 🟢 **green** — that attempt was correct;
+- 🔴 **red** — that attempt was wrong.
+
+Every graded attempt in any mode appends to a rolling, 3-long history
+(`Flashcard.recentResults`, oldest→newest, capped at 3), written by
+`recordAttempt` (Quiz/Write/Match/Blanks/Builder…) and by the Flashcards flip
+self-rating (`easy` → correct, `hard` → wrong; `medium`/so-so records nothing).
+It is persisted in IndexedDB (`FlashcardEntity.recentResults`) and restored on
+load, and cleared by a progress reset.
+
+The overall **mastery bucket** is derived from those 3 dots by
+`masteryFromResults`:
+
+| Mastery | Rule (over the last ≤3 results) |
+|---------|---------------------------------|
+| 🟢🟢🟢 **known**  | 3 correct |
+| 🟢 **green**       | only correct + gray (1–2 correct, rest not-yet-played), **no** wrong |
+| 🟡 **yellow**      | **exactly 1** wrong (e.g. 1 red + 2 green) |
+| 🔴 **red**         | **2 or more** wrong |
+| — **none**         | no attempts yet |
 
 Notes:
-- This is accuracy-only and language-agnostic (no streak requirement). It
-  replaced an earlier streak-based rule that could mark a word "known" after a
-  few lucky answers despite a poor overall record.
-- The **Your words** list shows only the dot — the per-word correct/incorrect/
-  so-so counts and the accuracy % are hidden to keep the list clean.
-- The list refreshes every time the page is shown, so a word's colour updates
-  right after a session (no app restart needed).
-- Flashcards' per-level pie ring uses a SEPARATE two-way rule
-  (`flipKnowledgeBucket`, §6b) based on the latest flip self-rating, not this
-  accuracy rule.
+- This is a **recency** model (the last 3 attempts), not a lifetime average, so
+  a word recovers as soon as recent answers are correct and degrades quickly
+  after repeated misses — matching how "do I still know this?" actually feels.
+- The **Your words** list shows the three dots only — the per-word
+  correct/incorrect/so-so counts and the old accuracy % stay hidden.
+- The list refreshes every time the page is shown, so the dots update right
+  after a session (no app restart needed).
+- Flashcards' per-level pie ring still uses its SEPARATE two-way rule
+  (`flipKnowledgeBucket`, §6b) based on the latest flip self-rating; that is
+  independent from these per-word dots.
 
 ---
 

@@ -17,6 +17,7 @@
   display: grid; place-items: center; border-radius: 50%; cursor: pointer;
   background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); color: #c9cdff;
 }
+.mix-audio-row { display: inline-flex; align-items: center; justify-content: center; gap: 12px; }
 .mix-audio { width: 40px; height: 40px; ion-icon { font-size: 20px; } }
 .mix-audio-big { width: 84px; height: 84px; ion-icon { font-size: 40px; } }
 

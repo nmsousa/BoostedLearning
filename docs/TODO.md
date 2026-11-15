@@ -426,3 +426,36 @@ When the final name is decided, rename these to match (files, class, route,
 renaming it is a data migration (would orphan existing progress), so keep it or
 migrate explicitly. Route/`from` changes must be updated together in
 `flashcards-routing.module.ts` and `journey-back.ts`.
+
+### Audio stories (TTS-narrated short stories + comprehension questions)
+Status: **not implemented** — idea to evaluate.
+
+Add short, level-appropriate **audio stories** the learner can listen to, with
+**comprehension questions** afterwards. Trains listening + context, beyond
+single words/phrases.
+
+Generation / content:
+- Generate the narration with **TTS** — reuse the existing pipeline
+  (`scripts/gen-audio.mjs` → Google Cloud TTS). Pick the **most natural voice
+  tier available** for the language (e.g. Google's WaveNet / Neural2 / Studio /
+  "Chirp 3 HD" where supported) rather than the basic voice, since a whole
+  story needs to sound pleasant over 30–90s, not just one word. Evaluate the
+  voices per language and choose the best natural one; may differ from the
+  Neural2-A used for single words.
+- Author a handful of **short stories per level/CEFR band**, reusing the
+  vocabulary the learner already knows (ties into Core/theme curriculum and the
+  "Learn → grammar/phrases" plan). Store text + generated MP3 (bundled like the
+  word clips, with a manifest) so they play offline.
+
+In-app experience:
+- A "Stories" mode (Home grid and/or a Tree/Journey node): play the story
+  audio (with a transcript toggle, slow-replay snail, and the sweeping ring),
+  then ask **comprehension questions** about it (reuse the Quiz/Blanks shapes:
+  multiple-choice "what happened", fill-in-the-blank from the story, etc.).
+- Score the questions like the other modes; new progress namespace `story` /
+  `journey-story`.
+
+Open questions when picked up: how long/how many stories, how to pick which
+words to build a story around, whether questions are hand-authored per story or
+generated, and where stories sit in the progression (optional vs. a required
+node).

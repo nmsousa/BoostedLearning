@@ -29,10 +29,18 @@
         </button>
         <ng-container *ngIf="item.kind === 'quiz'">
           <h1 class="mix-word">{{ item.prompt }}</h1>
-          <button type="button" class="mix-audio" [class.playing]="playing()" (click)="playPrompt()"
-            [attr.aria-label]="'mode.playPronunciation' | translate">
-            <ion-icon name="volume-high-outline" aria-hidden="true"></ion-icon>
-          </button>
+          <!-- SLOW (snail) first, then NORMAL — both always shown. -->
+          <span class="mix-audio-row">
+            <button type="button" class="mix-audio slow slow-audio-ring" [class.playing]="slowPlaying()" (click)="playSlow()"
+              [attr.aria-label]="'mode.playSlower' | translate">
+              <app-slow-audio-icon [active]="playKind() === 'slow'" [rate]="slowRate" [progress]="playProgress()"></app-slow-audio-icon>
+            </button>
+            <button type="button" class="mix-audio slow-audio-ring" [class.playing]="playing() && !slowPlaying()" (click)="playPrompt()"
+              [attr.aria-label]="'mode.playPronunciation' | translate">
+              <ion-icon name="volume-high-outline" aria-hidden="true"></ion-icon>
+              <app-slow-audio-icon glyph="none" [active]="playKind() === 'normal'" [progress]="playProgress()"></app-slow-audio-icon>
+            </button>
+          </span>
         </ng-container>
       </div>
       <div class="mix-options">

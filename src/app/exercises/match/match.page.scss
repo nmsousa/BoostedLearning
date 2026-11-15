@@ -108,6 +108,7 @@
 }
 
 .match-item {
+  position: relative;      // contain any absolutely-positioned child glyph
   width: 100%;
   // Taller tiles so they're easier to read and tap.
   min-height: 92px;

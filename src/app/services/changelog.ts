@@ -27,6 +27,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.56',
+    date: '2026-11-15T20:35:00Z',
+    notes: [
+      'Slow-replay button: a new snail icon with a ring that fills smoothly and finishes exactly when the audio ends — at any speed. The normal-speed button now shows the same filling ring.',
+      'Match: tap a word on the left to hear it spoken while you match.',
+      'Match Audio: fixed the slow icon drifting off its card when tapped repeatedly.',
+      'Write: removed the tap-to-peek eye (the hint bulb covers it), and the prompt card now uses the same look as the Flashcards for a consistent feel across modes.',
+      'Explore+: the level\'s words are tucked behind a "Show words" toggle, so activities stay the focus.',
+      'Explore+: the Core now stands out clearly from topics — a bigger purple row with a round medallion — and keeps its purple identity even once completed.',
+      'Builder: the dashed "drop here" box only shows on an empty row, so it no longer looks like it\'s waiting for another word after your last pick.',
+      'Quiz: the slow (snail) button is now the same size as elsewhere.',
+    ],
+  },
+  {
     version: '1.3.55',
     date: '2026-11-15T03:20:00Z',
     notes: [

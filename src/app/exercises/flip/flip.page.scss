@@ -370,6 +370,7 @@
 // The audio button sits on its OWN centred line below the word (the card face
 // is a centred flex column), so a long word never wraps around it — matching
 // the Learn card.
+.audio-row { display: inline-flex; align-items: center; justify-content: center; gap: 12px; }
 .audio-icon {
   position: relative;
   display: inline-flex;

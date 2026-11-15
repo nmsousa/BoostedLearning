@@ -13,13 +13,14 @@
  */
 
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
-import { Router } from '@angular/router';
-import { ActionSheetController, ViewWillEnter } from '@ionic/angular';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ActionSheetController, AlertController, ToastController, ViewWillEnter } from '@ionic/angular';
 import { FlashcardService, StudiedWord, WordPriority } from '../services/flashcard.service';
 import { SettingsService } from '../services/settings.service';
 import { I18nAngularService } from '../services/i18n.service';
 import { AddWordService } from '../services/add-word.service';
 import { AudioService } from '../services/audio.service';
+import { PracticeListService } from '../services/practice-list.service';
 import { KnowledgeLevel } from '../../core/knowledge-level';
 
 type Filter = 'all' | KnowledgeLevel;
@@ -34,13 +35,25 @@ type SortKey = 'needsPractice' | 'mostSeen' | 'leastSeen' | 'accuracyHigh' | 'ac
 })
 export class WordsPage implements OnInit, ViewWillEnter {
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
   private i18n = inject(I18nAngularService);
   private cdr = inject(ChangeDetectorRef);
   private actionSheet = inject(ActionSheetController);
+  private alertCtrl = inject(AlertController);
+  private toastCtrl = inject(ToastController);
   private addWordService = inject(AddWordService);
   private audio = inject(AudioService);
+  private practiceLists = inject(PracticeListService);
+
+  /** Real slow-replay rate for the snail icon label. */
+  readonly slowRate = this.audio.slowRate;
+
+  /** Multi-select mode: pick words to save into a practice list. */
+  selectMode = false;
+  /** Selected word texts (by surface form). */
+  private selected = new Set<string>();
 
   allWords: StudiedWord[] = [];
   /** True until the first load finishes, so we show a skeleton (not the empty
@@ -69,6 +82,10 @@ export class WordsPage implements OnInit, ViewWillEnter {
   /** True once the service is ready, so ionViewWillEnter can safely reload. */
   private initialized = false;
 
+  /** True when opened from the Practice page to build a list (shows the
+   *  "pick words then save" banner and offers Practice right after saving). */
+  cameFromPractice = false;
+
   async ngOnInit() {
     await this.flashcards.initialize();
     // Preload the offline-audio manifest so the admin source badge (green =
@@ -76,6 +93,12 @@ export class WordsPage implements OnInit, ViewWillEnter {
     await this.audio.preloadLocalAudio(this.settings.learningLanguage());
     this.initialized = true;
     this.reload();
+
+    // Deep-link from Practice: open straight into multi-select so the learner
+    // can build a list, with a banner explaining what to do.
+    const q = this.route.snapshot.queryParamMap;
+    if (q.get('select') === '1') this.selectMode = true;
+    this.cameFromPractice = q.get('from') === 'practice';
   }
 
   /**
@@ -314,6 +337,82 @@ export class WordsPage implements OnInit, ViewWillEnter {
     if (w.priority === 'boost') return 'arrow-up-circle';
     if (w.priority === 'hide') return 'eye-off';
     return null;
+  }
+
+  // ── Multi-select → save to a practice list ─────────────────────────────────
+  get selectedCount(): number { return this.selected.size; }
+  isSelected(w: StudiedWord): boolean { return this.selected.has(w.text); }
+
+  toggleSelectMode(): void {
+    this.selectMode = !this.selectMode;
+    if (!this.selectMode) this.selected.clear();
+    this.cdr.detectChanges();
+  }
+
+  /** Row tap: toggle selection while selecting, else open the priority sheet. */
+  onRowTap(w: StudiedWord): void {
+    if (this.selectMode) {
+      if (this.selected.has(w.text)) this.selected.delete(w.text);
+      else this.selected.add(w.text);
+      this.cdr.detectChanges();
+      return;
+    }
+    this.openPriority(w);
+  }
+
+  /** Prompt for a list name and save the current selection (per language). */
+  async saveSelectionToList(): Promise<void> {
+    if (this.selected.size === 0) return;
+    const words = [...this.selected];
+    const alert = await this.alertCtrl.create({
+      header: this.t('words.saveToList'),
+      inputs: [{ name: 'name', type: 'text', placeholder: this.t('words.listNamePlaceholder') }],
+      buttons: [
+        { text: this.t('common.cancel'), role: 'cancel' },
+        {
+          text: this.t('words.save'),
+          handler: (data: { name?: string }) => { void this.doSaveList(data?.name ?? '', words); },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  private async doSaveList(name: string, words: string[]): Promise<void> {
+    await this.practiceLists.init();
+    const list = await this.practiceLists.createList(this.settings.learningLanguage(), name, words);
+    this.selectMode = false;
+    this.selected.clear();
+    this.cdr.detectChanges();
+
+    // If we arrived from Practice, go straight back there (the new list is now
+    // available to pick). Otherwise show a toast with a "Practice" shortcut so
+    // the connection between the two is obvious.
+    if (this.cameFromPractice) {
+      this.router.navigate(['/practice/custom']);
+      return;
+    }
+    const toast = await this.toastCtrl.create({
+      message: this.t('words.savedToList', { name: list.name, n: words.length }),
+      duration: 3200, position: 'bottom',
+      buttons: [{ text: this.t('words.practiceNow'), handler: () => { this.router.navigate(['/practice/custom']); } }],
+    });
+    await toast.present();
+  }
+
+  /**
+   * The 3 mastery dots for a word, left→right = oldest→newest. Fewer than 3
+   * recorded results pad with GRAY slots on the LEFT, so the most recent result
+   * is always the rightmost dot. Returns CSS class names.
+   */
+  dotsFor(w: StudiedWord): string[] {
+    const recent = w.recent ?? [];
+    const slots: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const r = recent[recent.length - 3 + i]; // right-aligned into the 3 slots
+      slots.push(r === 'correct' ? 'green' : r === 'incorrect' ? 'red' : 'gray');
+    }
+    return slots;
   }
 
   t(key: string, params?: Record<string, string | number>): string {

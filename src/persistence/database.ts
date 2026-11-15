@@ -47,6 +47,9 @@ export interface FlashcardEntity {
   lastSeen: string | null;
   nextReview: string | null;
   streak: number;
+  /** Last up-to-3 graded results (oldest→newest): 'correct' | 'incorrect'.
+   *  Drives the Words page 3-dot mastery display. Optional / not indexed. */
+  recentResults?: ('correct' | 'incorrect')[];
   updatedAt: string;
   /**
    * true = manually added by the user (not part of the shipped app data).
@@ -74,6 +77,20 @@ export interface FlashcardDeckEntity {
   id: string;
   name: string;
   languageCode: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * A user-created practice list: a named, per-language set of words the learner
+ * saved from "Your words" to drill later (via the home "Practice" card).
+ */
+export interface PracticeListEntity {
+  id: string;             // uuid-ish
+  languageCode: string;   // the learning language this list belongs to
+  name: string;
+  /** The words in the list (target-language surface forms, as shown). */
+  words: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -137,6 +154,8 @@ export class BoostedLearningDatabase extends Dexie {
   flashcardDecks!: Table<FlashcardDeckEntity, string>;
   flashcards!: Table<FlashcardEntity, string>;
   levelProgress!: Table<LevelProgressEntity, string>;
+  /** User-created practice lists (per language). */
+  practiceLists!: Table<PracticeListEntity, string>;
 
   constructor() {
     super('BoostedLearningDB');
@@ -274,6 +293,28 @@ export class BoostedLearningDatabase extends Dexie {
     }).upgrade(async tx => {
       // Drop legacy records that predate per-mode tracking.
       await tx.table('levelProgress').clear();
+    });
+
+    // Version 7: user-created practice lists (per language). Additive — no
+    // changes to existing tables, existing data is untouched.
+    this.version(7).stores({
+      languages: 'id, code, isValidationAsset',
+      modules: 'id, languageId, order',
+      lessons: 'id, moduleId, order',
+      learningItems: 'id, languageId, lessonId, contentState, kind',
+      vocabulary: 'id, learningItemId',
+      grammarInfo: 'id, learningItemId, partOfSpeech',
+      examples: 'id, learningItemId, contentState',
+      exercises: 'id, learningItemId, type, contentState',
+      reviewStates: 'id, learningItemId, repeatedlyForgotten',
+      attempts: 'id, learningItemId, exerciseId, sessionId, timestamp, skillDimension',
+      sessions: 'id, startedAt, endedAt',
+      achievements: 'id, code, earnedAt',
+      learnerProfile: 'id',
+      flashcardDecks: 'id, name, languageCode',
+      flashcards: 'id, deckId, text, nextReview, isCustom',
+      levelProgress: 'id, deckId, mode, levelNumber, bestStars',
+      practiceLists: 'id, languageCode, name',
     });
   }
 }

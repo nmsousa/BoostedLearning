@@ -256,7 +256,16 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
 
   /** Live "is a clip playing" signal + the real slow rate, for the audio icon. */
   readonly playing = this.audio.playing;
+  readonly slowPlaying = this.audio.playingSlow;
   readonly slowRate = this.audio.slowRate;
+  readonly slowMs = this.audio.slowDurationMs;
+  readonly playKind = this.audio.playKind;
+  readonly playProgress = this.audio.playProgress;
+  /** Bumped on every slow tap so the ring animation restarts from scratch. */
+  slowTick = 0;
+
+  /** Slow button tap: restart the ring sweep and play the slow clip. */
+  playSlow(event: Event): void { this.slowTick++; void this.playWord(event, true); }
 
   /** Play the current word: recorded clip if available, else device TTS. */
   async playWord(event: Event, slow = false) {

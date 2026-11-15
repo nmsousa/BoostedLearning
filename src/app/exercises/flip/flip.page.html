@@ -45,15 +45,18 @@
                button on its OWN line below (centred) — matching the Learn card,
                so a long word never wraps around a side button. -->
           <h1 class="card-word">{{ frontText }}</h1>
-          <!-- One button: speaker for the first plays; after the word has been
-               played twice it SWITCHES to the slow icon (gauge + real rate) and
-               tapping replays slowly. -->
-          <button type="button" class="audio-icon" [class.slow]="showSlowButton" [class.playing]="playing()"
-            (click)="playWord($event, showSlowButton)"
-            [attr.aria-label]="(showSlowButton ? 'mode.playSlower' : 'mode.playPronunciation') | translate">
-            <app-slow-audio-icon *ngIf="showSlowButton" [active]="playing()" [rate]="slowRate"></app-slow-audio-icon>
-            <ion-icon *ngIf="!showSlowButton" name="volume-high-outline"></ion-icon>
-          </button>
+          <!-- Two audio buttons, SLOW (snail) first then NORMAL — both always shown. -->
+          <span class="audio-row">
+            <button type="button" class="audio-icon slow slow-audio-ring" [class.playing]="slowPlaying()"
+              (click)="playSlow($event)" [attr.aria-label]="'mode.playSlower' | translate">
+              <app-slow-audio-icon [active]="playKind() === 'slow'" [rate]="slowRate" [progress]="playProgress()"></app-slow-audio-icon>
+            </button>
+            <button type="button" class="audio-icon slow-audio-ring" [class.playing]="playing() && !slowPlaying()"
+              (click)="playWord($event, false)" [attr.aria-label]="'mode.playPronunciation' | translate">
+              <ion-icon name="volume-high-outline"></ion-icon>
+              <app-slow-audio-icon glyph="none" [active]="playKind() === 'normal'" [progress]="playProgress()"></app-slow-audio-icon>
+            </button>
+          </span>
           <span class="tap-hint">
             <ion-icon name="sync-outline"></ion-icon>
             {{ 'mode.tapToFlip' | translate }}

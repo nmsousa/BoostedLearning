@@ -1,0 +1,70 @@
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="close()" [attr.aria-label]="'mode.close' | translate">
+        <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ 'practice.title' | translate }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="pr-content">
+  <div *ngIf="isLoading" class="pr-loading"><ion-spinner name="crescent"></ion-spinner></div>
+
+  <div *ngIf="!isLoading" class="pr-body">
+    <!-- SOURCE -->
+    <div class="pr-section-row">
+      <h2 class="pr-section">{{ 'practice.chooseWords' | translate }}</h2>
+      <!-- The bridge to Your Words: this is where lists are built. -->
+      <button type="button" class="pr-newlist" (click)="createListFromWords()">
+        <ion-icon name="add" aria-hidden="true"></ion-icon>
+        <span>{{ 'practice.newList' | translate }}</span>
+      </button>
+    </div>
+    <div class="pr-sources">
+      <button type="button" class="pr-source" *ngFor="let s of sources; trackBy: trackSource"
+        [class.selected]="isSourceSelected(s)" (click)="selectSource(s)">
+        <ion-icon class="pr-source-ic"
+          [name]="s.kind === 'list' ? 'bookmark-outline' : s.kind === 'mistakes' ? 'alert-circle-outline' : 'albums-outline'"
+          aria-hidden="true"></ion-icon>
+        <span class="pr-source-text">
+          <span class="pr-source-name">{{ sourceLabel(s) }}</span>
+          <span class="pr-source-count">{{ 'practice.wordCount' | translate:{ n: s.count } }}</span>
+        </span>
+        <ion-icon *ngIf="isSourceSelected(s)" class="pr-source-check" name="checkmark-circle" aria-hidden="true"></ion-icon>
+        <button *ngIf="s.kind === 'list'" type="button" class="pr-source-del" (click)="deleteList(s, $event)"
+          [attr.aria-label]="'practice.deleteListYes' | translate">
+          <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
+        </button>
+      </button>
+    </div>
+    <!-- When no custom list exists yet, explain where lists come from. -->
+    <button *ngIf="!hasLists" type="button" class="pr-hint-card" (click)="createListFromWords()">
+      <ion-icon name="bulb-outline" aria-hidden="true"></ion-icon>
+      <span>{{ 'practice.listsHint' | translate }}</span>
+      <ion-icon name="chevron-forward" class="pr-hint-go" aria-hidden="true"></ion-icon>
+    </button>
+
+    <!-- MODE -->
+    <h2 class="pr-section">{{ 'practice.chooseMode' | translate }}</h2>
+    <p class="pr-hint">{{ 'practice.modeHint' | translate }}</p>
+    <div class="pr-modes">
+      <button type="button" class="pr-mode" *ngFor="let m of modes; trackBy: trackMode"
+        [class.selected]="selectedModeId === m.id" (click)="selectMode(m.id)">
+        <ion-icon [name]="m.icon" aria-hidden="true"></ion-icon>
+        <span>{{ m.labelKey | translate }}</span>
+      </button>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer class="pr-footer">
+  <div class="pr-footer-inner">
+    <ion-button expand="block" class="pr-cta" [disabled]="!selectedSource || selectedSource.count === 0"
+      (click)="start()">
+      {{ 'practice.start' | translate }}
+      <ion-icon name="play" slot="end" aria-hidden="true"></ion-icon>
+    </ion-button>
+  </div>
+</ion-footer>

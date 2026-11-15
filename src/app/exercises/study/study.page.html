@@ -44,18 +44,11 @@
     <div class="card-section"
          *ngIf="phase === 'question' || (phase === 'feedback' && feedbackResult === 'almost')">
       <div class="word-display">
-        <!-- Tap the prompt to peek at the answer (what to type) — a help for
-             writing phrases. Only interactive while answering. -->
+        <!-- The prompt word(s) to translate. The bulb hint button below offers
+             help; there's no tap-to-peek on the prompt itself. -->
         <div class="word-row">
-          <h1 class="target-word" [class.peekable]="phase === 'question'"
-            (click)="peekAnswer()"
-            [attr.role]="phase === 'question' ? 'button' : null"
-            [attr.aria-label]="phase === 'question' ? (('mode.tapToReveal' | translate) + ': ' + promptText) : null">
-            {{ promptText }}
-            <ion-icon *ngIf="phase === 'question'" class="peek-icon" name="eye-outline" aria-hidden="true"></ion-icon>
-          </h1>
+          <h1 class="target-word">{{ promptText }}</h1>
         </div>
-        <p class="peek-reveal" *ngIf="peekedAnswer && phase === 'question'">👁 {{ peekedAnswer }}</p>
         <p class="instruction" *ngIf="phase === 'question'">{{ instructionText }}</p>
         <p *ngIf="hintText && phase === 'question'" class="hint-display">
           💡 {{ hintText }}
@@ -113,11 +106,13 @@
         <span class="lang-name">{{ targetLangName }}</span>
         <span class="lang-word target">
           {{ targetWord }}
-          <button type="button" class="pair-audio" (click)="playWord()" [attr.aria-label]="'mode.playPronunciation' | translate">
-            <ion-icon name="volume-high-outline"></ion-icon>
+          <!-- SLOW (snail) first, then NORMAL — both always shown. -->
+          <button type="button" class="pair-audio slow slow-audio-ring" [class.playing]="slowPlaying()" (click)="playSlow()" [attr.aria-label]="'mode.playSlower' | translate">
+            <app-slow-audio-icon [active]="playKind() === 'slow'" [rate]="slowRate" [progress]="playProgress()"></app-slow-audio-icon>
           </button>
-          <button type="button" class="pair-audio slow" *ngIf="showSlowButton" (click)="playWord(true)" [attr.aria-label]="'mode.playSlower' | translate">
-            <ion-icon name="hourglass-outline"></ion-icon>
+          <button type="button" class="pair-audio slow-audio-ring" (click)="playWord()" [attr.aria-label]="'mode.playPronunciation' | translate">
+            <ion-icon name="volume-high-outline"></ion-icon>
+            <app-slow-audio-icon glyph="none" [active]="playKind() === 'normal'" [progress]="playProgress()"></app-slow-audio-icon>
           </button>
         </span>
       </div>
