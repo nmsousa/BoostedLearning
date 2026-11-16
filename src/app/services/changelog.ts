@@ -27,6 +27,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.59',
+    date: '2026-11-16T19:46:02Z',
+    notes: [
+      'Explore and Explore+ now share one level page: tap a Core or topic to see its words, the Learn step and the 7 games. Play Learn, then any 5 of the 7 games, in any order, to complete the level. The other games are optional.',
+      'Explore: a Continue button at the bottom plays the next activity for you, whether it is the Core or a topic.',
+      'Explore: the next thing to do keeps a steady gold border and a "Start lesson" button; finished ones show a check and fade back so you can focus on what is left.',
+      'Explore: the level-complete message no longer repeats itself.',
+      'Slow replay: a new snail icon whose sound waves animate while the slow audio plays.',
+      'Match: the slow-replay snail is gone from Match and Match Audio (single words do not need it).',
+      'Builder+: you now get a recap of the phrases you built when you finish, instead of it closing straight away.',
+      'Builder+: the word bank no longer moves while you build (used words stay in place, greyed out), the answer area has one line per row of the bank, and nothing jumps as you place a word.',
+      'Builder+: a correct phrase shows the check with the word "Correct", and tapping one of two identical wrong words only blinks the one you tapped.',
+    ],
+  },
+  {
     version: '1.3.58',
     date: '2026-11-16T17:18:00Z',
     notes: [

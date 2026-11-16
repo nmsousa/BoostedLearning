@@ -181,8 +181,8 @@ describe('TreePage (5 modes per level)', () => {
     expect(component.modeNodes[1].state).toBe('locked');
   });
 
-  it('unlocks the next mode in sequence once the previous is passed', async () => {
-    // Core L1 done; food L1 FIRST mode passed only → 2nd unlocks, 3rd stays locked.
+  it('opens ALL the games (any order) once Learn is passed', async () => {
+    // Core L1 done; food L1: only Learn (the first mode) passed.
     const p = makeProgress([1]);
     const foodL1 = themeTier1Level(0);
     p.set(`${TREE_MODES[0].mode}-${foodL1}`, { bestScore: 100 });
@@ -190,11 +190,18 @@ describe('TreePage (5 modes per level)', () => {
     await component.ngOnInit();
     const food = component.nodes.find(n => n.id === 'food')!;
     component.openTheme(food);
-    expect(component.modeNodes[0].state).toBe('done');   // first mode done
-    expect(component.modeNodes[1].state).toBe('active'); // second now active
-    expect(component.modeNodes[2].state).toBe('locked'); // third still locked
+    expect(component.modeNodes[0].state).toBe('done');   // Learn done
+    // Every game is open at once (5 of 7 are needed, in any order).
+    expect(component.modeNodes.slice(1).every(m => m.state === 'active')).toBe(true);
   });
-
+  it('keeps the games locked until Learn is passed', async () => {
+    partial = makeProgress([1]);   // Core L1 done, but nothing in food L1 yet
+    await component.ngOnInit();
+    const food = component.nodes.find(n => n.id === 'food')!;
+    component.openTheme(food);
+    expect(component.modeNodes[0].state).toBe('active');   // Learn playable
+    expect(component.modeNodes.slice(1).every(m => m.state === 'locked')).toBe(true);
+  });
   it('expands the Core sub-star with 5 modes', async () => {
     doneLevels = [];
     await component.ngOnInit();

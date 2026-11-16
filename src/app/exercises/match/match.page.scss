@@ -136,8 +136,6 @@
     font-size: 1.8rem;
     color: var(--ion-color-primary);
   }
-  // The slow (gauge) glyph swaps in for the speaker; keep it the same colour.
-  &.audio-item .audio-icon.slow-glyph { color: var(--ion-color-primary); }
 
   // Selected - highlighted with the primary colour
   &.selected {

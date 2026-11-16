@@ -1,11 +1,12 @@
 /**
- * SlowAudioIcon — the "slow replay" glyph (option G3): a small speed gauge with
- * the REAL playback rate shown beneath it (e.g. "0.6×"). The rate is passed in
- * so it always reflects what the audio actually does — and when we later add a
- * proper SSML-based slow version, just feed its rate here.
+ * SlowAudioIcon — the "slow replay" glyph: an outline snail with two sound
+ * waves (src/assets/icon/snail-slow-audio.svg, inlined so it inherits colour).
+ * At rest the waves are drawn still; when `active` is true (a slow clip is
+ * playing) the waves are re-created and expand in (outer first, then inner),
+ * and a progress ring fills around the button, ending exactly with the audio.
  *
- * Mirrors the play button's "alive" animation: when `active` is true (a slow
- * clip is playing) the gauge needle sweeps and the glyph gently bounces.
+ * Also used with glyph="none" to draw just the ring around the NORMAL-speed
+ * button's own speaker icon.
  *
  * Standalone so any page module can import it directly.
  *
@@ -21,19 +22,30 @@ import { CommonModule } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <span class="sa" aria-hidden="true">
-      <!-- Ionicons-style outline snail (src/assets/icon/snail-ionic-style.svg),
-           inlined so it inherits currentColor. The snail alone means "slow";
-           the ring (below) sweeps while a clip plays. For the NORMAL-speed
-           button we want ONLY the ring (glyph="none") drawn around the button's
-           own volume icon, so the snail is omitted there. -->
+      <!-- Snail with sound waves (the approved animated design). The snail group
+           is scaled/offset to leave room for the waves on the right. For the
+           NORMAL-speed button we want ONLY the ring (glyph="none") drawn around
+           the button's own speaker icon, so the glyph is omitted there. -->
       <svg *ngIf="glyph === 'snail'" viewBox="0 0 24 24" class="sa-svg" fill="none" stroke="currentColor"
-        [attr.stroke-width]="strokeWidth" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="9.5" cy="12.5" r="6.5"/>
-        <path d="M12 12.5c0-1.45-1.1-2.6-2.5-2.6S7 11.05 7 12.5s1.1 2.6 2.5 2.6 2.5-1.15 2.5-2.6"/>
-        <path d="M3 18.5h12.2c3.2 0 5.8-2.6 5.8-5.8V9"/>
-        <path d="M18.8 8.7 18 5.8M21.4 8.4 22.2 5.5"/>
-        <circle cx="18" cy="5.5" r=".7" fill="currentColor" stroke="none"/>
-        <circle cx="22.3" cy="5.2" r=".7" fill="currentColor" stroke="none"/>
+        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <g transform="translate(0.3 3.4) scale(0.68)" stroke-width="2.3">
+          <circle cx="9.5" cy="12.5" r="6.5"/>
+          <path d="M12 12.5c0-1.45-1.1-2.6-2.5-2.6S7 11.05 7 12.5s1.1 2.6 2.5 2.6 2.5-1.15 2.5-2.6"/>
+          <path d="M3 18.5h12.2c3.2 0 5.8-2.6 5.8-5.8V9"/>
+          <path d="M18.8 8.7 18 5.8M21.4 8.4 22.2 5.5"/>
+          <circle cx="18" cy="5.5" r=".7" fill="currentColor" stroke="none"/>
+          <circle cx="22.3" cy="5.2" r=".7" fill="currentColor" stroke="none"/>
+        </g>
+        <!-- At rest: the waves, still. -->
+        <ng-container *ngIf="!(active && !inline)">
+          <path d="M19.1 7.3 C22.2 9.5 22.2 14.5 19.1 16.7"/>
+          <path d="M17.5 9.3 C19.1 10.5 19.1 13.5 17.5 14.7"/>
+        </ng-container>
+        <!-- Playing: freshly created each time, so they expand in again. -->
+        <ng-container *ngIf="active && !inline">
+          <g class="sound-wave wave-outer"><path d="M19.1 7.3 C22.2 9.5 22.2 14.5 19.1 16.7"/></g>
+          <g class="sound-wave wave-inner"><path d="M17.5 9.3 C19.1 10.5 19.1 13.5 17.5 14.7"/></g>
+        </ng-container>
       </svg>
 
       <!-- Progress ring: a single SVG arc that sweeps CLOCKWISE from empty to a
@@ -69,9 +81,29 @@ import { CommonModule } from '@angular/common';
        speaker icon). With tone="inherit" it uses the parent button's own colour
        (currentColor) instead, so a mode can keep both its audio icons the same
        muted tone (e.g. Learn's whitish-grey). */
-    .sa-svg { width: 1.25em; height: 1.25em; display: block; overflow: visible; grid-area: 1 / 1;
+    .sa-svg { width: 1.6em; height: 1.6em; display: block; overflow: visible; grid-area: 1 / 1;
       color: var(--ion-color-primary, #38bdf8); }
     :host(.tone-inherit) .sa-svg { color: currentColor; }
+
+    /* Sound waves expanding in from the snail's mouth (outer first, then the
+       inner one 250ms later), as in the approved animated SVG. */
+    .sound-wave {
+      opacity: 0;
+      transform-box: view-box;
+      transform-origin: 16.6px 12px;
+      animation: sa-wave-appear 650ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+    .wave-outer { animation-delay: 0ms; }
+    .wave-inner { animation-delay: 250ms; }
+    @keyframes sa-wave-appear {
+      0%   { opacity: 0; transform: scale(0.05); }
+      75%  { opacity: 1; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sound-wave { animation: none; opacity: 1; transform: none; }
+    }
+    :host-context(.reduced-motion) .sound-wave { animation: none; opacity: 1; transform: none; }
 
     /* The ring sits at the button's EDGE (inset:-1px makes the SVG ~2px larger
        than the button, like the old 2.1em look), concentric with it. Anchoring
@@ -120,8 +152,6 @@ export class SlowAudioIconComponent {
   /** Live playback progress 0→1 from the audio element. Drives the arc's fill
    *  DIRECTLY, so the ring ends exactly with the sound at any rate. */
   @Input() progress = 0;
-  /** Snail glyph stroke width. 1.5 reads cleanly between too-thin and heavy. */
-  @Input() strokeWidth = 1.5;
   /** Which centre glyph to draw: 'snail' (the slow-replay button) or 'none'
    *  (the NORMAL-speed button, where only the progress ring is wanted around
    *  the button's own volume icon). */

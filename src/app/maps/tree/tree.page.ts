@@ -39,7 +39,7 @@ import { JOURNEY_PASS_SCORE } from '../journey/journey-model';
 import {
   CORE_TIERS, THEME_DEFS, TREE_CONFIG, TREE_LAYOUT, coreLevelOf, themeLevelOf, type CoreWord,
 } from './tree-curriculum';
-import { TREE_MODES } from './tree-modes';
+import { TREE_MODES, tierProgress, modeStates } from './tree-modes';
 import {
   computeProgression, coreMilestoneId, themeMilestoneId, type ProgressionState,
 } from './tree-progression';
@@ -362,10 +362,10 @@ export class TreePage implements OnInit, OnDestroy {
   }
 
   // ── Completion helpers ──────────────────────────────────────────────────────
-  /** True when all 5 modes of a deck level are passed. */
+  /** True when a level is complete: Learn done + at least 5 of the 7 games. */
   private tierComplete(level: number | undefined): boolean {
     if (!level) return false;
-    return TREE_MODES.every(m => this.passedModes.has(`${level}:${m.mode}`));
+    return tierProgress(m => this.passedModes.has(`${level}:${m.mode}`)).complete;
   }
 
   /** Highest fully-completed tier of a Core/theme skill group (0 = none). */
@@ -502,19 +502,18 @@ export class TreePage implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  /** Build the 5 mode nodes orbiting the expanded centre. Modes unlock in
-   *  sequence: mode i is active once mode i-1 is passed (mode 0 always active
-   *  when the tier is available). */
+  /** Build the mode nodes orbiting the expanded centre. Learn is always
+   *  playable; the games open once Learn is done, in any order (5 of 7 to
+   *  complete the level). */
   private buildModeNodes(level: number, authored: boolean): void {
     const cx = this.expandedCenterX, cy = this.expandedCenterY;
     const r = TreePage.SUBSTAR_RADIUS;
+    const states = modeStates(mm => this.passedModes.has(`${level}:${mm.mode}`), authored);
     this.modeNodes = TREE_MODES.map((m, i) => {
       const angle = (360 / TREE_MODES.length) * i - 90;
       const rad = (angle * Math.PI) / 180;
       const x = cx + r * Math.cos(rad), y = cy + r * Math.sin(rad);
-      const passed = this.passedModes.has(`${level}:${m.mode}`);
-      const prevPassed = i === 0 ? true : this.passedModes.has(`${level}:${TREE_MODES[i - 1].mode}`);
-      const state: NodeState = !authored ? 'locked' : passed ? 'done' : prevPassed ? 'active' : 'locked';
+      const state: NodeState = states[i];
       return {
         modeIndex: i, id: m.id, label: this.t(m.labelKey), icon: m.icon, mode: m.mode, state, x, y,
         aria: `${this.t(m.labelKey)}, ${this.t(`tree.unit.${state}`)}`,

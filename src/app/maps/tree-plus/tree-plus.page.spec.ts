@@ -42,6 +42,8 @@ function openThemeAtTier(maxTier: number): number[] {
 }
 
 let doneLevels: number[] = [];
+/** Extra individually-passed modes, as "<mode>-<level>" keys (partial progress). */
+let extraPassed: string[] = [];
 interface TreeGroup { skill: string; words: { fr: string; en: string }[] }
 let registered: { lang: string; groups: TreeGroup[]; prefix?: string } | null = null;
 
@@ -53,7 +55,11 @@ const flashcardMock = {
     return `${prefix ?? 'tree'}-${lang}`;
   },
   getLevelCards: () => [],
-  getDeckLevelProgressMap: () => Promise.resolve(makeProgress(doneLevels)),
+  getDeckLevelProgressMap: () => {
+    const m = makeProgress(doneLevels);
+    for (const key of extraPassed) m.set(key, { bestScore: 100 });
+    return Promise.resolve(m);
+  },
 };
 
 const settingsMock = {
@@ -69,6 +75,7 @@ describe('TreePlusPage (vertical Tree)', () => {
 
   beforeEach(async () => {
     doneLevels = [];
+    extraPassed = [];
     registered = null;
     await TestBed.configureTestingModule({
       imports: [TreePlusPageModule, RouterModule.forRoot([])],
@@ -111,43 +118,77 @@ describe('TreePlusPage (vertical Tree)', () => {
     expect(component.currentTier(component.core)).toBe(1);
   });
 
-  it('expands a node inline into its tiers + 5 activities (newest first)', async () => {
+  it('opens the shared level page for a node (its current level)', async () => {
     doneLevels = openThemeAtTier(3);
-    await component.ngOnInit();
-    const food = component.themes.find(n => n.id === 'food')!;
-    component.toggleNode(food);
-    expect(component.expandedId).toBe('food');
-    expect(component.expandedTiers.map(t => t.tier)).toEqual([3, 2, 1]);
-    expect(component.expandedTiers[0].modes.length).toBe(TREE_MODES.length);
-    // Earlier tiers are complete.
-    expect(component.expandedTiers.find(t => t.tier === 1)!.done).toBe(true);
-  });
-
-  it('toggling the same node closes it', async () => {
-    doneLevels = [1];
-    await component.ngOnInit();
-    const food = component.themes.find(n => n.id === 'food')!;
-    component.toggleNode(food);
-    expect(component.expandedId).toBe('food');
-    component.toggleNode(food);
-    expect(component.expandedId).toBeNull();
-  });
-
-  it('launches a mode with the deck, level and Builder pool', async () => {
-    doneLevels = openThemeAtTier(2);
     await component.ngOnInit();
     const nav = TestBed.inject(NavController);
     const spy = vi.spyOn(nav, 'navigateForward').mockResolvedValue(true);
     const food = component.themes.find(n => n.id === 'food')!;
     component.toggleNode(food);
-    const tier2 = component.expandedTiers.find(t => t.tier === 2)!;
-    const builderIdx = tier2.modes.findIndex(m => m.id === 'builder');
-    // Builder is locked until the earlier 4 modes pass; force a launch directly.
-    component.onModeTap({ ...tier2, modes: tier2.modes.map(m => ({ ...m, state: 'active' })) }, builderIdx);
+    expect(spy).toHaveBeenCalledWith(['/practice/tier', 'food', 3], { queryParams: { origin: 'tree-plus' } });
+  });
+
+  it('does not open a locked node', async () => {
+    doneLevels = [];
+    await component.ngOnInit();
+    const nav = TestBed.inject(NavController);
+    const spy = vi.spyOn(nav, 'navigateForward').mockResolvedValue(true);
+    component.toggleNode(component.themes[0]);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('the Core is the next thing to do at the start, with Continue playing Learn', async () => {
+    doneLevels = [];
+    await component.ngOnInit();
+    expect(component.nextTargetId).toBe('core');
+    expect(component.isNext(component.core)).toBe(true);
+    const nav = TestBed.inject(NavController);
+    const spy = vi.spyOn(nav, 'navigateForward').mockResolvedValue(true);
+    component.continueNext();
     const [route, extras] = spy.mock.calls[0] as [string[], { queryParams: Record<string, string | number> }];
-    expect(route).toEqual(['/practice/journey-builder', 'tree-v2-fr']);
-    expect(extras.queryParams['level']).toBe(themeLevelOf(0, 2));
-    expect(extras.queryParams['pool']).toBe(`1,2,${themeLevelOf(0, 1)}`);
+    expect(route).toEqual(['/practice/learn', 'tree-v2-fr']);
+    expect(extras.queryParams['level']).toBe(1);
+    expect(extras.queryParams['from']).toBe('tree-plus');
+  });
+
+  it('once the Core level is complete, the next target and Continue move to the first topic', async () => {
+    doneLevels = [1];
+    await component.ngOnInit();
+    expect(component.isTierDone(component.core)).toBe(true);
+    expect(component.nextTargetId).toBe('food');
+    const nav = TestBed.inject(NavController);
+    const spy = vi.spyOn(nav, 'navigateForward').mockResolvedValue(true);
+    component.continueNext();
+    const [route, extras] = spy.mock.calls[0] as [string[], { queryParams: Record<string, string | number> }];
+    expect(route).toEqual(['/practice/learn', 'tree-v2-fr']);
+    expect(extras.queryParams['level']).toBe(themeLevelOf(0, 1));
+  });
+
+  it('Continue picks a game (not Learn) once Learn is done', async () => {
+    // Core L1: Learn passed, no games yet → the next activity is the first game.
+    extraPassed = ['journey-learn-1'];
+    await component.ngOnInit();
+    const nav = TestBed.inject(NavController);
+    const spy = vi.spyOn(nav, 'navigateForward').mockResolvedValue(true);
+    component.continueNext();
+    const [route] = spy.mock.calls[0] as [string[]];
+    expect(route[0]).toBe('/practice/quiz');
+  });
+
+  it('progress follows the rule: Learn + 3 games of 5 = 4 of 6 steps = 67%', async () => {
+    extraPassed = ['journey-learn-1', 'journey-quiz-1', 'journey-write-1', 'journey-match-1'];
+    await component.ngOnInit();
+    expect(component.percentOf(component.core)).toBe(67);
+    expect(component.isTierDone(component.core)).toBe(false);
+  });
+
+  it('Learn + any 5 games completes the level (even skipping some games)', async () => {
+    // Skips Match + Match Audio; plays quiz, write, builder, builder+, mix.
+    extraPassed = ['journey-learn-1', 'journey-quiz-1', 'journey-write-1', 'journey-builder-1', 'journey-builder-plus-1', 'journey-mix-1'];
+    await component.ngOnInit();
+    expect(component.percentOf(component.core)).toBe(100);
+    expect(component.isTierDone(component.core)).toBe(true);
+    expect(component.core.doneLevel).toBe(1);
   });
 
   it('a completed tier stays at 100% until the NEXT tier unlocks', async () => {

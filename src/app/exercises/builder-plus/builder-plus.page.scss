@@ -91,32 +91,33 @@
 }
 .phrase-target { font-size: 1.2rem; font-weight: 700; color: var(--ion-text-color); text-align: center; }
 
-// The answer line: placed chips + dashed UNDERLINE slots for the words to come.
-// No surrounding box — each pending word is just a dashed underline.
-.phrase-slots {
-  display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: flex-end;
-  width: 100%; padding: 12px 10px; min-height: 76px; box-sizing: border-box;
-  border-radius: 12px;
-
-  // A placed word: solid chip.
-  .slot {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-height: 40px; padding: 8px 16px; font-size: 1.05rem; font-weight: 700; line-height: 1;
-    &.filled {
-      border-radius: 12px; background: var(--ion-color-primary); color: #fff;
-      animation: bp-pop 0.18s ease;
-    }
-  }
-
-  // ONE continuous dashed underline for all the words still to place (not a
-  // row of separate per-word segments). It shrinks as words get filled in. The
-  // primary colour signals it's the live target for the next word.
-  .slot-line {
-    align-self: flex-end;
-    height: 40px;
-    border-bottom: 2px dashed var(--ion-color-primary);
-    transition: width 0.2s ease;
-  }
+// Answer area: a FIXED number of dashed lines (one per row the word bank wraps
+// to), so its height never changes while building — nothing below it moves. The
+// placed-word chips are overlaid on top of the lines, wrapping the same way.
+$bp-line-h: 46px;
+$bp-line-gap: 12px;
+.phrase-answer {
+  // No vertical padding: the reserved height must equal the lines' height
+  // exactly, or a full set of chips would make the area grow and push the bank.
+  position: relative; width: 100%; box-sizing: border-box; padding: 0 10px;
+  // Reserve height for --rows lines up front.
+  min-height: calc(var(--rows, 1) * #{$bp-line-h} + (var(--rows, 1) - 1) * #{$bp-line-gap});
+}
+// The dashed guide lines, stacked.
+.answer-lines {
+  position: absolute; inset: 0 10px;
+  display: flex; flex-direction: column; gap: $bp-line-gap;
+}
+.answer-line { height: $bp-line-h; border-bottom: 2px dashed var(--ion-color-primary); opacity: 0.6; }
+// The placed chips, laid over the lines.
+.answer-chips {
+  position: relative; display: flex; flex-wrap: wrap; gap: 10px;
+  align-content: flex-start; row-gap: $bp-line-gap; min-height: $bp-line-h;
+}
+.answer-chips .slot {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: $bp-line-h; padding: 0 16px; font-size: 1.05rem; font-weight: 700; line-height: 1;
+  &.filled { border-radius: 12px; background: var(--ion-color-primary); color: #fff; animation: bp-pop 0.18s ease; }
 }
 @keyframes bp-pop { from { transform: scale(0.8); opacity: 0.4; } to { transform: scale(1); opacity: 1; } }
 
@@ -129,11 +130,19 @@
 // ── Word bank ──────────────────────────────────────────────────────────────────
 .phrase-bank { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .bank-word {
-  padding: 10px 16px; border-radius: 12px; font-size: 1.05rem; font-weight: 700;
+  // Same height as the answer chips, so rows line up with the answer lines.
+  display: inline-flex; align-items: center; height: 46px; box-sizing: border-box;
+  padding: 0 16px; border-radius: 12px; font-size: 1.05rem; font-weight: 700;
   background: var(--ion-color-step-150, #24405f); color: var(--ion-text-color);
   border: 2px solid transparent; cursor: pointer;
   transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
   &:active { transform: scale(0.95); }
+
+  // Already placed: stays in its spot but greyed out and inert, so the bank
+  // keeps its size and layout (the word has simply moved up to the answer).
+  &.used {
+    opacity: 0.3; filter: grayscale(1); pointer-events: none; cursor: default;
+  }
 
   // Wrong pick: blink red a couple of times, then settle back (via the timer).
   &.rejected {
@@ -152,8 +161,32 @@
 
 .phrase-result {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
+  color: var(--ion-color-success);
   ion-icon { font-size: 44px; }
+  // The word "Correct", styled like the badge in Write mode.
+  .phrase-correct {
+    font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  }
 }
+
+// ── Recap (journey node): the phrases just built, like the Learn recap ─────────
+.builder-recap {
+  min-height: 100%; display: flex; flex-direction: column; align-items: center;
+  padding: 28px 2px calc(18px + var(--ion-safe-area-bottom, 0px)); gap: 18px;
+}
+.recap-head { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.recap-spark { font-size: 2.6rem; color: #ffd36a; }
+.recap-title { margin: 0; font-size: 1.5rem; font-weight: 800; }
+.recap-sub { margin: 0; color: var(--ion-color-medium); font-size: 0.95rem; }
+.recap-list { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 8px; }
+.recap-row {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px; padding: 10px 14px;
+}
+.recap-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.recap-fr { font-weight: 700; font-size: 1.05rem; overflow-wrap: anywhere; }
+.recap-en { color: var(--ion-color-medium); font-size: 0.85rem; }
 
 // ── Footer action bar (only the Continue/Done once complete) ───────────────────
 .builder-footer {

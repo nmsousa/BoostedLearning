@@ -22,6 +22,7 @@
 
 import {
   Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy,
+  ElementRef, HostListener, ViewChild,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -44,10 +45,17 @@ interface BuilderGroup { id: string; category: string; name: string; order: numb
 interface BuilderPhrase { id: string; unlockAfter: string[]; target: string; en: string; tokens: string[]; }
 interface BuilderData { id: string; name: string; languageCode: string; groups: BuilderGroup[]; phrases: BuilderPhrase[]; }
 
+/** One tile in the word bank. Each tile has its own id so duplicate words are
+ *  independent (tapping one never affects its twin), and a tile that has been
+ *  placed stays in the bank — greyed out — so the bank never reflows. */
+export interface BankWord { id: number; word: string; used: boolean; }
+
 type Stage =
   | { kind: 'map' }
   | { kind: 'group'; group: BuilderGroup; index: number }
-  | { kind: 'phrase'; phrase: BuilderPhrase; chosen: string[]; done: boolean };
+  | { kind: 'phrase'; phrase: BuilderPhrase; chosen: string[]; done: boolean }
+  /** Journey only: the end-of-node recap of the phrases just built. */
+  | { kind: 'recap' };
 
 @Component({
   selector: 'app-builder-plus',
@@ -165,11 +173,25 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
 
   private completed = new Set<string>();
 
-  /** The word bank to pick from (correct tokens + distractors, shuffled). */
-  bank: string[] = [];
+  /** The word bank to pick from (correct tokens + distractors, shuffled). A
+   *  placed word is flagged used (greyed) rather than removed. */
+  bank: BankWord[] = [];
 
-  /** The bank word currently flashing red (rejected wrong pick), or null. */
-  rejectedWord: string | null = null;
+  /** The bank tile (by id) currently flashing red after a wrong pick, or null. */
+  rejectedId: number | null = null;
+
+  /** How many dashed answer lines to draw = how many rows the word bank wraps
+   *  to. Measured from the real layout so the answer area is as tall as it will
+   *  ever need and nothing below it moves while you build. */
+  lineRows = 1;
+  get lineIndexes(): number[] { return Array.from({ length: this.lineRows }, (_v, i) => i); }
+
+  @ViewChild('bankEl') private bankEl?: ElementRef<HTMLElement>;
+
+  /** The phrases just built in a journey node, shown on the recap page. */
+  recapPhrases: { target: string; en: string }[] = [];
+
+  trackBank = (_i: number, b: BankWord): number => b.id;
   private rejectTimer: ReturnType<typeof setTimeout> | null = null;
 
   t(key: string, params?: Record<string, string | number>): string { return this.i18n.t(key, params); }
@@ -255,11 +277,36 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
       id: `journey-${this.journeyIndex}`, unlockAfter: [],
       target: p.target, en: p.en, tokens: p.tokens,
     };
-    this.clearReject();
-    this.bank = this.buildBank(phrase.tokens, p.distractors ?? this.journeyWordPool);
-    this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
-    this.cdr.detectChanges();
+    this.showPhrase(phrase, this.buildBank(phrase.tokens, p.distractors ?? this.journeyWordPool));
   }
+
+  /** Show a phrase: set the bank + stage, render, then measure how many rows
+   *  the bank takes so the answer area gets the same number of lines. All
+   *  synchronous (before the browser paints) so there's no visible re-layout. */
+  private showPhrase(phrase: BuilderPhrase, words: string[]): void {
+    this.clearReject();
+    this.bank = words.map((word, id) => ({ id, word, used: false }));
+    this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
+    this.lineRows = 1;
+    this.cdr.detectChanges();
+    this.measureBankRows();
+    // Fonts / the page transition can still settle a frame later; re-check.
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => this.measureBankRows());
+  }
+
+  /** Count the distinct rows the bank tiles wrap onto and size the answer
+   *  lines to match. */
+  private measureBankRows(): void {
+    const el = this.bankEl?.nativeElement;
+    if (!el) return;
+    const tops = new Set<number>();
+    el.querySelectorAll<HTMLElement>('.bank-word').forEach(b => tops.add(b.offsetTop));
+    const rows = Math.max(1, tops.size);
+    if (rows !== this.lineRows) { this.lineRows = rows; this.cdr.detectChanges(); }
+  }
+
+  /** Re-measure on rotation / window resize (the bank may wrap differently). */
+  @HostListener('window:resize') onResize(): void { this.measureBankRows(); }
 
   private buildBank(tokens: string[], pool: string[]): string[] {
     const inPhrase = new Set(tokens.map(t => t.toLowerCase()));
@@ -279,8 +326,14 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
     this.journeyIndex++;
     if (this.journeyIndex < this.journeyPhrases.length) { this.openJourneyPhrase(); return; }
     await this.flashcards.saveRoundProgress(this.journeyDeckId, 'journey-builder-plus', this.journeyLevel, 100);
-    this.navCtrl.navigateBack(this.journeyBack);
+    // Don't close instantly: show a recap of what was built first (like Learn).
+    this.recapPhrases = this.journeyPhrases.map(p => ({ target: p.target, en: p.en }));
+    this.stage = { kind: 'recap' };
+    this.cdr.detectChanges();
   }
+
+  /** Leave the recap (progress was already saved) and return to the map. */
+  finishRecap(): void { this.navCtrl.navigateBack(this.journeyBack); }
 
   private async loadDataset(): Promise<void> {
     this.loadProgress();
@@ -339,30 +392,10 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
   // ── Phrase building (self-checking: correct order only) ─────────────────────
   openPhrase(phrase: BuilderPhrase): void {
     if (!this.isPhraseUnlocked(phrase)) return;
-    this.clearReject();
     const pool = (this.data?.groups ?? [])
       .flatMap(g => g.words.map(w => w.text))
       .filter(w => w && !/\s/.test(w));
-    this.bank = this.buildBank(phrase.tokens, pool);
-    this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
-    this.cdr.detectChanges();
-  }
-
-  /** The index of the NEXT slot to fill (how many words are already placed). */
-  get nextSlot(): number { return this.stage.kind === 'phrase' ? this.stage.chosen.length : 0; }
-
-  /** How many words are still to be placed (drives the dashed-line length). */
-  get remainingSlots(): number {
-    if (this.stage.kind !== 'phrase') return 0;
-    return Math.max(0, this.stage.phrase.tokens.length - this.stage.chosen.length);
-  }
-
-  /** Width (px) of the single continuous dashed underline — scales with the
-   *  number of words left to place so it visibly shrinks as you fill it in. */
-  get remainingLineWidth(): number {
-    const PER_WORD = 52;   // approx width budget per remaining word
-    const MIN = 56;
-    return Math.max(MIN, this.remainingSlots * PER_WORD);
+    this.showPhrase(phrase, this.buildBank(phrase.tokens, pool));
   }
 
   /**
@@ -370,14 +403,15 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
    * Correct → drop it into the next slot (and complete the phrase if it was the
    * last). Wrong → flash that bank word red/blinking and refuse it.
    */
-  pick(token: string): void {
-    if (this.stage.kind !== 'phrase' || this.stage.done) return;
+  pick(item: BankWord): void {
+    if (this.stage.kind !== 'phrase' || this.stage.done || item.used) return;
     const expected = this.stage.phrase.tokens[this.stage.chosen.length];
-    if (token !== expected) { this.reject(token); return; }
+    // Only the tile that was tapped is judged — a duplicate twin is untouched.
+    if (item.word !== expected) { this.reject(item.id); return; }
 
     this.clearReject();
-    const chosen = [...this.stage.chosen, token];
-    this.bank = this.removeFirst(this.bank, token);
+    const chosen = [...this.stage.chosen, item.word];
+    item.used = true;     // stays in place, greyed out (the bank never reflows)
     const done = chosen.length === this.stage.phrase.tokens.length;
     this.stage = { ...this.stage, chosen, done };
     this.cdr.detectChanges();
@@ -389,12 +423,12 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
     }
   }
 
-  /** Flash the wrong bank word red for a moment, then clear it. */
-  private reject(token: string): void {
-    this.rejectedWord = token;
+  /** Flash the tapped (wrong) bank tile red for a moment, then clear it. */
+  private reject(id: number): void {
+    this.rejectedId = id;
     if (this.rejectTimer) clearTimeout(this.rejectTimer);
     this.rejectTimer = setTimeout(() => {
-      this.rejectedWord = null;
+      this.rejectedId = null;
       this.rejectTimer = null;
       this.cdr.detectChanges();
     }, 600);
@@ -403,7 +437,7 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
 
   private clearReject(): void {
     if (this.rejectTimer) { clearTimeout(this.rejectTimer); this.rejectTimer = null; }
-    this.rejectedWord = null;
+    this.rejectedId = null;
   }
 
   backToMap(): void {
@@ -419,10 +453,5 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
-  }
-  private removeFirst(arr: string[], v: string): string[] {
-    const i = arr.indexOf(v);
-    if (i < 0) return arr;
-    return [...arr.slice(0, i), ...arr.slice(i + 1)];
   }
 }

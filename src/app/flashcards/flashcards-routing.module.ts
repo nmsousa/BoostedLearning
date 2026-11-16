@@ -69,6 +69,12 @@ const routes: Routes = [
     loadChildren: () => import('../maps/explore-plus/explore-plus.module').then(m => m.ExplorePlusPageModule)
   },
   {
+    // The level page shared by Explore and Explore+: one node's level (words,
+    // Learn, 7 games — 5 to complete). /practice/tier/<core|themeId>/<tier>?origin=…
+    path: 'tier/:nodeId/:tier',
+    loadChildren: () => import('../maps/tier-detail/tier-detail.module').then(m => m.TierDetailPageModule)
+  },
+  {
     // Mix — a single session mixing several exercise types for a level.
     path: 'mix/:id',
     loadChildren: () => import('../exercises/mix/mix.module').then(m => m.MixPageModule)

@@ -1,3 +1,5 @@
+// NOTE: do not set `display` on :host. It is an `ion-page` (a flex column);
+// overriding it to `block` pushed the pinned Continue footer below the screen.
 :host {
   --tp-bg-top: #1a1346;
   --tp-bg-bot: #0b0a24;
@@ -6,8 +8,8 @@
   --tp-muted: #9aa0d4;
   --tp-text: #eef1ff;
   --tp-green: #5ad19b;
+  --tp-gold: #ffdc78;
   --tp-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  display: block;
 }
 
 // SOLID header (the top colour of the page gradient), not transparent. With a
@@ -36,9 +38,9 @@
   color: var(--tp-text);
 }
 .tp-loading { display: grid; place-items: center; min-height: 60vh; }
-// Generous bottom padding so the LAST topic card (and its expanded panel) can
-// always scroll fully into view above the device's bottom edge / nav bar.
-.tp-body { padding: 4px 12px calc(120px + var(--ion-safe-area-bottom, 0px)); }
+// Generous bottom padding so the LAST topic card can always scroll fully into
+// view above the pinned Continue button / the device's bottom edge.
+.tp-body { padding: 4px 12px calc(24px + var(--ion-safe-area-bottom, 0px)); }
 
 .tp-admin-tip {
   display: flex; align-items: center; gap: 8px; margin: 2px 0 10px;
@@ -55,6 +57,36 @@
 }
 .tp-tagline { margin: 2px 0 14px; color: #c9cdff; font-weight: 600; font-size: 0.9rem; }
 
+// ── "This is next" highlight (Core and topic cards) ──────────────────────────
+// ONE clean solid gold border (a 1px border + a 1px gold ring = 2px), with a
+// soft glow that breathes slowly. It stays for as long as the item is the next
+// thing to do — it is not a blink that disappears.
+@mixin tp-current {
+  border-color: var(--tp-gold);
+  box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-gold), 0 0 12px 0 rgba(255, 220, 120, 0.25);
+  animation: tp-current-glow 2.8s ease-in-out infinite;
+}
+@keyframes tp-current-glow {
+  0%, 100% { box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-gold), 0 0 10px 0 rgba(255, 220, 120, 0.18); }
+  50%      { box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-gold), 0 0 20px 3px rgba(255, 220, 120, 0.45); }
+}
+// Reduced motion: keep the gold border, no glow animation.
+@mixin tp-current-static {
+  animation: none;
+  box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-gold);
+}
+// Muted look for a card whose current level is complete.
+@mixin tp-finished { filter: grayscale(0.6) brightness(0.85); opacity: 0.8; }
+
+// The "Start lesson" pill shown only on the next card.
+.tp-start {
+  display: inline-flex; align-items: center; gap: 5px; align-self: center; margin-top: 8px;
+  padding: 5px 12px; border-radius: 999px; cursor: pointer;
+  background: var(--tp-gold); color: #3a2a00; font-size: 0.74rem; font-weight: 800;
+  ion-icon { font-size: 13px; }
+  &:active { transform: scale(0.96); }
+}
+
 // ── Hero Core card ───────────────────────────────────────────────────────────
 .tp-core {
   display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
@@ -63,18 +95,26 @@
   border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: var(--tp-shadow);
   &.done { background: linear-gradient(135deg, #2f8f66, #3fae7e); }
 
-  // After a level-up: pulse the border/glow a few times so the learner notices
-  // the Core is now the next thing to play.
-  &.pulse { animation: tp-core-pulse 0.85s ease-in-out 3; }
+  // The Core is what the learner should do NOW.
+  &.current { @include tp-current; }
+
+  // Level complete: muted so the eye goes to what's still to do. Pending cards
+  // are slightly more saturated.
+  &.finished { @include tp-finished; }
+  &:not(.finished) { filter: saturate(1.15); }
+
+  .tp-start { align-self: flex-start; }
 }
-@keyframes tp-core-pulse {
-  0%, 100% { box-shadow: var(--tp-shadow), 0 0 0 0 rgba(255, 220, 120, 0); border-color: rgba(255, 255, 255, 0.18); }
-  50%      { box-shadow: var(--tp-shadow), 0 0 0 5px rgba(255, 220, 120, 0.55); border-color: #ffdc78; }
-}
-:host-context(.reduced-motion) .tp-core.pulse { animation: none; }
+:host-context(.reduced-motion) .tp-core.current { @include tp-current-static; }
 .tp-core-icon {
+  position: relative;
   flex: 0 0 auto; width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center;
   background: rgba(255, 255, 255, 0.16); font-size: 26px;
+}
+// Check on the icon's corner once this level is complete.
+.tp-core-badge {
+  position: absolute; top: -7px; right: -7px; font-size: 20px; color: var(--tp-green);
+  background: var(--tp-bg-bot); border-radius: 50%;
 }
 .tp-core-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .tp-core-title { font-size: 1.2rem; font-weight: 800; }
@@ -110,18 +150,16 @@
   background: var(--tp-glass); border: 1px solid var(--tp-glass-line); box-shadow: var(--tp-shadow);
   position: relative;
   &.state-locked { opacity: 0.6; }
-  &.expanded { outline: 2px solid hsl(var(--hue, 265), 80%, 68%); }
 
-  // After finishing a Core level: pulse the first topic's border/glow a few
-  // times (same calm gold highlight as the Core hero) so the learner notices
-  // the topics just opened at the new level and knows where to go next.
-  &.pulse { animation: tp-topic-pulse 0.85s ease-in-out 3; }
+  // The next topic to do keeps the same gold highlight as the Core.
+  &.current { @include tp-current; }
+
+  // Level complete: muted/greyed so the learner focuses on the topics still to
+  // do, which stay fully colourful (slightly boosted).
+  &.finished { @include tp-finished; }
+  &:not(.finished):not(.state-locked) { filter: saturate(1.2); }
 }
-@keyframes tp-topic-pulse {
-  0%, 100% { box-shadow: var(--tp-shadow), 0 0 0 0 rgba(255, 220, 120, 0); border-color: var(--tp-glass-line); }
-  50%      { box-shadow: var(--tp-shadow), 0 0 0 5px rgba(255, 220, 120, 0.55); border-color: #ffdc78; }
-}
-:host-context(.reduced-motion) .tp-topic.pulse { animation: none; }
+:host-context(.reduced-motion) .tp-topic.current { @include tp-current-static; }
 .tp-topic-emoji {
   position: relative; flex: 0 0 auto;
   width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
@@ -165,76 +203,13 @@
   font-size: 0.72rem; font-weight: 800; color: #c9cdff;
 }
 
-// Inline expansion spanning both grid columns, placed right after its node.
-.tp-expand-grid { grid-column: 1 / -1; }
-.tp-expand {
-  margin: 8px 0 2px; padding: 10px 12px; border-radius: 16px;
-  background: rgba(10, 12, 40, 0.6); border: 1px solid var(--tp-glass-line);
-  animation: tp-slide 0.2s ease;
-}
-@keyframes tp-slide { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-
-// ── A level (tier): header + words + activities ──────────────────────────────
-.tp-tier {
-  padding: 8px 0;
-  & + .tp-tier { border-top: 1px solid var(--tp-glass-line); margin-top: 4px; }
-}
-.tp-tier-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.tp-tier-name { font-weight: 800; font-size: 0.84rem; color: var(--tp-text); }
-.tp-tier-done { color: var(--tp-green); font-size: 1rem; }
-// Clear gap ABOVE the chips so the "Hide words" toggle (which sits directly
-// above this list) isn't cramped against the first row of words.
-.tp-words { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 8px; }
-.tp-word {
-  display: inline-flex; flex-direction: column; padding: 4px 8px; border-radius: 9px;
-  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--tp-glass-line);
-  .w-fr { font-size: 0.8rem; font-weight: 700; color: var(--tp-text); }
-  .w-en { font-size: 0.66rem; color: var(--tp-muted); }
-}
-// Two even columns, generously sized and well spaced.
-.tp-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.tp-mode {
-  display: flex; align-items: center; gap: 8px; justify-content: center;
-  padding: 16px 10px; border-radius: 14px; cursor: pointer; position: relative;
-  background: rgba(255, 255, 255, 0.06); border: 1px solid var(--tp-glass-line); color: var(--tp-text);
-  font-size: 0.88rem; font-weight: 600; min-width: 0;
-  ion-icon { font-size: 19px; flex: 0 0 auto; }
-  &.state-active { border-color: #4fd1e0; box-shadow: 0 0 0 1px rgba(79, 209, 224, 0.4); }
-  &.state-done { color: var(--tp-green); }
-  &.state-locked { opacity: 0.45; cursor: default; }
-  // Mix node: the capstone activity. It's the LAST of an odd number of modes,
-  // so span both columns to read as a deliberate full-width card (not an
-  // orphaned half-tile), with its distinct purple accent.
-  &.is-mix {
-    grid-column: 1 / -1;
-    background: rgba(130, 90, 230, 0.22); border-color: rgba(170, 140, 255, 0.5);
+// ── Pinned Continue footer (same look as Explore+) ───────────────────────────
+.tp-footer {
+  background: transparent;
+  &::before { display: none; }
+  .tp-footer-inner {
+    max-width: 480px; margin: 0 auto;
+    padding: 8px 14px calc(10px + var(--ion-safe-area-bottom, 0px));
   }
-}
-.tp-mode-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.tp-mode-tick { color: var(--tp-green); }
-.tp-mode-lock { color: var(--tp-muted); font-size: 13px; }
-
-// Words toggle (words hidden by default).
-.tp-words-toggle {
-  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
-  padding: 6px 10px; border-radius: 10px; cursor: pointer;
-  background: transparent; border: 1px solid var(--tp-glass-line);
-  color: var(--tp-muted); font-size: 0.78rem; font-weight: 600;
-  ion-icon { font-size: 15px; }
-}
-
-// ── Next Core strip ──────────────────────────────────────────────────────────
-.tp-next {
-  display: flex; align-items: center; gap: 12px; margin-top: 16px;
-  padding: 14px; border-radius: 16px; background: var(--tp-glass);
-  border: 1px solid var(--tp-glass-line); box-shadow: var(--tp-shadow);
-  ion-icon { font-size: 26px; color: #c9cdff; flex: 0 0 auto; }
-  &.locked { opacity: 0.72; ion-icon { color: var(--tp-muted); } }
-}
-.tp-next-text { display: flex; flex-direction: column; gap: 1px; }
-.tp-next-title { font-weight: 800; font-size: 0.92rem; }
-.tp-next-sub { font-size: 0.74rem; color: var(--tp-muted); }
-
-@media (prefers-reduced-motion: reduce) {
-  .tp-expand { animation: none; }
+  .tp-cta { --border-radius: 14px; font-weight: 700; min-height: 52px; }
 }

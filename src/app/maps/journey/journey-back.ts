@@ -21,9 +21,32 @@ export const JOURNEY_TREE_PLUS_FROM = 'tree-plus';
 /** `from` value passed by the "Explore+" stacked map. */
 export const JOURNEY_EXPLORE_PLUS_FROM = 'explore-plus';
 
+/** `from` value passed by the shared level page (opened from Explore / Explore+). */
+export const JOURNEY_TIER_DETAIL_FROM = 'tier-detail';
+
+/** Route of the shared level page for a node + tier (Core 'core' or a theme id).
+ *  `origin` is the list page to go back to ('tree-plus' = Explore, 'explore-plus'). */
+export function tierDetailUrl(nodeId: string, tier: number, origin: string): string {
+  return `/practice/tier/${encodeURIComponent(nodeId)}/${tier}?origin=${encodeURIComponent(origin)}`;
+}
+
+/** The list page a level page returns to (Explore by default). */
+export function tierOriginUrl(origin: string | null | undefined): string {
+  return origin === JOURNEY_EXPLORE_PLUS_FROM ? '/practice/explore-plus' : '/practice/tree-plus';
+}
+
 /** Return route for a Journey node exercise. */
 export function journeyBackUrl(query: ParamMap): string {
   switch (query.get('from')) {
+    // Launched from the shared level page: come back to that exact level page
+    // (it carries which node/tier/origin it was, as extra query params).
+    case JOURNEY_TIER_DETAIL_FROM: {
+      const node = query.get('tierNode');
+      const tier = Number(query.get('tierTier'));
+      return node && tier > 0
+        ? tierDetailUrl(node, tier, query.get('tierOrigin') ?? JOURNEY_TREE_PLUS_FROM)
+        : tierOriginUrl(query.get('tierOrigin'));
+    }
     case JOURNEY_PLUS_FROM: return '/practice/journey-plus';
     case JOURNEY_PLUS_PLUS_FROM: return '/practice/journey-plus-plus';
     case JOURNEY_TREE_FROM: return '/practice/tree';

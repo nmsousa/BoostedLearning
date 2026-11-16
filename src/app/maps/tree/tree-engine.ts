@@ -28,7 +28,9 @@ import { JOURNEY_PASS_SCORE } from '../journey/journey-model';
 import {
   CORE_TIERS, THEME_DEFS, TREE_CONFIG, TREE_LAYOUT, coreLevelOf, themeLevelOf, type CoreWord,
 } from './tree-curriculum';
-import { TREE_MODES, FLASHCARDS_REVIEW_MODE, type TreeModeDef } from './tree-modes';
+import {
+  TREE_MODES, FLASHCARDS_REVIEW_MODE, tierProgress, modeStates, type TreeModeDef, type TierProgress,
+} from './tree-modes';
 import {
   computeProgression, coreMilestoneId, themeMilestoneId, type ProgressionState,
 } from './tree-progression';
@@ -62,7 +64,9 @@ export interface TreeTier {
   label: string;
   words: CoreWord[];
   done: boolean;
-  /** The 5 activities of this tier, in order, with their unlock state. */
+  /** Learn + games progress under the 5-of-7 rule (percent, counts, complete). */
+  progress: TierProgress;
+  /** The activities of this tier (Learn, then the games), with their state. */
   modes: TreeModeView[];
 }
 
@@ -87,6 +91,9 @@ export interface TreeEngineDeps {
   t: TranslateFn;
   /** Source page tag for the exercise return route (e.g. 'tree' | 'tree-plus'). */
   from: string;
+  /** Extra query params added to every launched exercise (e.g. so it can return
+   *  to the exact level page that started it). Evaluated at launch time. */
+  extraQuery?: () => Record<string, string | number>;
 }
 
 export class TreeEngine {
@@ -188,10 +195,15 @@ export class TreeEngine {
   }
 
   // ── Completion helpers ───────────────────────────────────────────────────────
-  /** True when all 5 modes of a deck level are passed. */
+  /** True when a level is complete: Learn done + at least 5 of the 7 games. */
   tierComplete(level: number | undefined): boolean {
     if (!level) return false;
-    return TREE_MODES.every(m => this.passedModes.has(`${level}:${m.mode}`));
+    return tierProgress(m => this.passedModes.has(`${level}:${m.mode}`)).complete;
+  }
+
+  /** A level's progress (Learn + required games) under the shared rule. */
+  tierProgressOf(level: number | undefined): ReturnType<typeof tierProgress> {
+    return tierProgress(m => !!level && this.passedModes.has(`${level}:${m.mode}`));
   }
 
   /** Highest fully-completed tier of a skill group (0 = none; stops at first gap). */
@@ -202,6 +214,12 @@ export class TreeEngine {
       else break;
     }
     return done;
+  }
+
+  /** 0–100 progress of a node's tier under the 5-of-7 rule (0 if no such tier). */
+  tierPercent(nodeId: string, tier: number): number {
+    const level = this.levelOf(nodeId, tier);
+    return level && this.tierAuthored(nodeId, tier) ? this.tierProgressOf(level).percent : 0;
   }
 
   /** Level number for a node's tier (node id 'core' or a theme id). */
@@ -275,21 +293,21 @@ export class TreeEngine {
         label: node.id === 'core' ? this.deps.t('tree.coreLevel', { n: t }) : this.deps.t('tree.levelShort', { n: t }),
         words: this.wordsOf(node.id, t),
         done: this.tierComplete(level),
+        progress: this.tierProgressOf(level),
         modes: this.modesFor(level, node.id, t),
       });
     }
     return out;
   }
 
-  /** The 5 activities for a tier, with sequential unlocking. */
+  /** The activities for a tier. Learn is always playable; the 7 games open once
+   *  Learn is done and can then be played in any order (5 of 7 to complete). */
   modesFor(level: number, nodeId: string, tier: number): TreeModeView[] {
     const authored = this.tierAuthored(nodeId, tier);
-    return TREE_MODES.map((m, i) => {
-      const passed = this.passedModes.has(`${level}:${m.mode}`);
-      const prevPassed = i === 0 ? true : this.passedModes.has(`${level}:${TREE_MODES[i - 1].mode}`);
-      const state: TreeNodeState = !authored ? 'locked' : passed ? 'done' : prevPassed ? 'active' : 'locked';
-      return { modeIndex: i, id: m.id, mode: m.mode, route: m.route, icon: m.icon, labelKey: m.labelKey, state };
-    });
+    const states = modeStates(m => this.passedModes.has(`${level}:${m.mode}`), authored);
+    return TREE_MODES.map((m, i) => ({
+      modeIndex: i, id: m.id, mode: m.mode, route: m.route, icon: m.icon, labelKey: m.labelKey, state: states[i],
+    }));
   }
 
   // ── Launch ───────────────────────────────────────────────────────────────
@@ -299,7 +317,9 @@ export class TreeEngine {
     const level = this.levelOf(nodeId, tier);
     if (!level) return;
     const def = TREE_MODES[modeIndex];
-    const queryParams: Record<string, string | number> = { level, mode: def.mode, from: this.deps.from };
+    const queryParams: Record<string, string | number> = {
+      level, mode: def.mode, from: this.deps.from, ...(this.deps.extraQuery?.() ?? {}),
+    };
     // Builder, Builder+ and Mix (whose recipe includes a builder step) need the pool.
     if (def.id === 'builder' || def.id === 'builder-plus' || def.id === 'mix') {
       const pool = this.builderPoolLevels(nodeId, tier);
@@ -318,7 +338,9 @@ export class TreeEngine {
     const level = this.levelOf(nodeId, tier);
     if (!level) return;
     void this.deps.nav.navigateForward([FLASHCARDS_REVIEW_MODE.route, this.deckId], {
-      queryParams: { level, mode: FLASHCARDS_REVIEW_MODE.mode, from: this.deps.from },
+      queryParams: {
+        level, mode: FLASHCARDS_REVIEW_MODE.mode, from: this.deps.from, ...(this.deps.extraQuery?.() ?? {}),
+      },
     });
   }
 

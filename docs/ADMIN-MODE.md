@@ -18,8 +18,17 @@ Gate used everywhere: `SettingsService.adminMode()`.
   authored curriculum for **French** (`HomePage.TREE_LANGS = {'fr'}`).
 
 - **Explore / Explore+ / Tree "complete level" double-tap:** double-tapping an
-  active node/row (or a single activity) force-completes it. Single-tap opens as
-  normal. (`toggleNode`/`adminComplete` and `onModeTap`/`adminCompleteMode`.)
+  active node/row on the Explore / Explore+ lists force-completes its next level
+  (`toggleNode`/`adminComplete`); on the shared **level page** (`TierDetailPage`)
+  double-tapping an activity force-passes just that activity
+  (`onModeTap`/`adminCompleteMode`). Single-tap opens/plays as normal.
+
+  > Level completion rule (shared by Explore, Explore+, the level page and the
+  > radial Tree — `tierProgress()` in `maps/tree/tree-modes.ts`): a level is
+  > complete when **Learn** is done and any **5 of the 7 games** (quiz, write,
+  > match, match audio, builder, builder+, mix) are passed, in any order. The
+  > games unlock once Learn is done; the rest are optional. Flashcards is an
+  > optional review that never counts.
 
 - **Explore reset:** the red **"Reset progress"** button in the admin tip bar
   wipes all Tree/Explore progress (shared `tree-v2-<lang>` deck).

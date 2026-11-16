@@ -275,28 +275,12 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     };
   }
 
-  /** Per-tile count of normal-speed plays (Match Audio). After the 2nd play of
-   *  the SAME selected tile, a slow "turtle" button appears next to it (same
-   *  rule as the other modes). Keyed by pair id; reset when the board refills. */
-  private audioPlayCounts = new Map<string, number>();
-
-  /** Play a listen tile's word (recorded clip, else TTS). `slow` plays the
-   *  slow replay. Auto-plays on select; re-tapping the selected tile replays. */
-  playItem(item: MatchItem, slow = false): void {
+  /** Play a listen tile's word (recorded clip, else TTS) at normal speed.
+   *  Auto-plays on select; re-tapping the selected tile replays it. */
+  playItem(item: MatchItem): void {
     if (!item.audioText) return;
-    if (!slow) this.audioPlayCounts.set(item.id, (this.audioPlayCounts.get(item.id) ?? 0) + 1);
-    void this.audio.playWord(item.audioText, item.audioUrl, this.settings.learningLanguage(), slow);
+    void this.audio.playWord(item.audioText, item.audioUrl, this.settings.learningLanguage());
   }
-
-  /** True once this audio tile has been played twice — switches its icon to the
-   *  slow (gauge) one and makes re-taps replay slowly. */
-  showSlowFor(item: MatchItem): boolean {
-    return this.isAudio && (this.audioPlayCounts.get(item.id) ?? 0) >= 2;
-  }
-
-  /** Live "is a clip playing" signal + the real slow rate, for the audio icon. */
-  readonly playing = this.audio.playing;
-  readonly slowRate = this.audio.slowRate;
 
   /** Initial board fill: up to VISIBLE_PAIRS pairs from the queue. */
   private fillBoard() {
@@ -313,7 +297,6 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     this.initialRows = lefts.length;
     this.selectedLeft = null;
     this.selectedRight = null;
-    this.audioPlayCounts.clear();
   }
 
   /**
@@ -375,12 +358,11 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     if (item.side === 'left') {
       const alreadySelected = this.selectedLeft?.id === item.id && this.selectedLeft.side === item.side;
       if (this.isAudio) {
-        // Audio mode: tapping the SAME selected tile REPLAYS and keeps it
-        // selected. After the word has been played twice the icon switches to
-        // the slow (hourglass) icon and further taps replay SLOWLY. Selection
-        // only changes when you tap a DIFFERENT tile (or complete the pair).
+        // Audio mode: tapping the SAME selected tile REPLAYS (normal speed) and
+        // keeps it selected. Selection only changes when you tap a DIFFERENT
+        // tile (or complete the pair).
         if (alreadySelected) {
-          this.playItem(item, this.showSlowFor(item));
+          this.playItem(item);
         } else {
           this.selectedLeft = item;
           this.playItem(item);

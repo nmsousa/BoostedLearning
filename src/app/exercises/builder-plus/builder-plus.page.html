@@ -97,14 +97,16 @@
   <div *ngIf="stage.kind === 'phrase'" class="builder-phrase">
     <span class="phrase-target">{{ stage.phrase.en }}</span>
 
-    <!-- Placed words + ONE continuous dashed underline for all the words still
-         to come (not per-word segments). Correct order only, no reordering. -->
-    <div class="phrase-slots">
-      <span class="slot filled" *ngFor="let w of stage.chosen">{{ w }}</span>
-      <!-- Single underline that grows/shrinks with how many words remain; the
-           active colour signals it's the live target. -->
-      <span class="slot-line" *ngIf="remainingSlots > 0"
-        [style.width.px]="remainingLineWidth"></span>
+    <!-- Answer area: as many dashed lines as the word bank below has rows (so
+         it's always tall enough and nothing shifts while you build). Placed
+         words sit on the lines; correct order only, no reordering. -->
+    <div class="phrase-answer" [style.--rows]="lineRows">
+      <div class="answer-lines" aria-hidden="true">
+        <span class="answer-line" *ngFor="let l of lineIndexes"></span>
+      </div>
+      <div class="answer-chips">
+        <span class="slot filled" *ngFor="let w of stage.chosen">{{ w }}</span>
+      </div>
     </div>
 
     <!-- Hint: only while the phrase isn't finished. -->
@@ -113,20 +115,48 @@
     </span>
 
     <!-- Word bank. Tap the next correct word to place it; a wrong tap blinks
-         red (rejectedWord) and is refused. -->
-    <div class="phrase-bank" *ngIf="!stage.done">
+         ONLY that tile red and is refused. A placed word stays where it was,
+         greyed out, so the bank never resizes or moves. -->
+    <div class="phrase-bank" #bankEl *ngIf="!stage.done">
       <button type="button" class="bank-word"
-        *ngFor="let w of bank"
-        [class.rejected]="rejectedWord === w"
-        (click)="pick(w)">{{ w }}</button>
+        *ngFor="let b of bank; trackBy: trackBank"
+        [class.rejected]="rejectedId === b.id"
+        [class.used]="b.used" [disabled]="b.used"
+        (click)="pick(b)">{{ b.word }}</button>
     </div>
 
-    <!-- Success: just a check — the built phrase is shown in the chips above. -->
+    <!-- Success: check + the word "Correct" (like Write mode); the built
+         phrase is shown in the chips above. -->
     <div class="phrase-result" *ngIf="stage.done">
-      <ion-icon name="checkmark-circle" color="success"></ion-icon>
+      <ion-icon name="checkmark-circle"></ion-icon>
+      <span class="phrase-correct">{{ 'mode.correctLabel' | translate }}</span>
+    </div>
+  </div>
+
+  <!-- RECAP (journey node): the phrases just built, like the Learn recap. -->
+  <div *ngIf="stage.kind === 'recap'" class="builder-recap">
+    <div class="recap-head">
+      <ion-icon name="sparkles" class="recap-spark" aria-hidden="true"></ion-icon>
+      <h1 class="recap-title">{{ 'learn.recapTitle' | translate }}</h1>
+      <p class="recap-sub">{{ 'builderPlus.recapSub' | translate:{ n: recapPhrases.length } }}</p>
+    </div>
+    <div class="recap-list">
+      <div class="recap-row" *ngFor="let r of recapPhrases">
+        <div class="recap-text">
+          <span class="recap-fr">{{ r.target }}</span>
+          <span class="recap-en">{{ r.en }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </ion-content>
+
+<!-- Recap footer: Done leaves the node (progress was saved on reaching the recap). -->
+<ion-footer *ngIf="stage.kind === 'recap'" class="builder-footer">
+  <div class="footer-inner">
+    <ion-button expand="block" (click)="finishRecap()">{{ 'mode.done' | translate }}</ion-button>
+  </div>
+</ion-footer>
 
 <!-- Footer: only a Continue/Done once the phrase is complete (no Check). -->
 <ion-footer *ngIf="stage.kind === 'phrase' && stage.done" class="builder-footer">

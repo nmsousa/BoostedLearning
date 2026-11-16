@@ -1,7 +1,7 @@
 <ion-header class="tp-header ion-no-border">
   <ion-toolbar>
     <div class="tp-head">
-      <button type="button" class="tp-back" (click)="expandedId ? collapse() : close()" [attr.aria-label]="'journeyPlus.back' | translate">
+      <button type="button" class="tp-back" (click)="close()" [attr.aria-label]="'journeyPlus.back' | translate">
         <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
       </button>
       <h1 class="tp-title">{{ 'treePlus.title' | translate }}</h1>
@@ -41,11 +41,15 @@
 
     <p class="tp-tagline">✨ {{ 'treePlus.tagline' | translate }}</p>
 
-    <!-- Hero: Core Vocabulary -->
-    <button type="button" class="tp-core" [class.done]="isFullyComplete(core)" [class.pulse]="pulseCore" (click)="toggleNode(core)"
-      [attr.aria-expanded]="expandedId === 'core'"
+    <!-- Hero: Core Vocabulary. Tap → its level page. -->
+    <button type="button" class="tp-core" [class.done]="isFullyComplete(core)"
+      [class.current]="isNext(core)" [class.finished]="isTierDone(core)" (click)="toggleNode(core)"
       [attr.aria-label]="core.title + ', ' + nodeStatus(core) + ', ' + percentOf(core) + '%'">
-      <span class="tp-core-icon" aria-hidden="true"><ion-icon name="book"></ion-icon></span>
+      <span class="tp-core-icon" aria-hidden="true">
+        <ion-icon name="book"></ion-icon>
+        <!-- Check once this level is complete (the bar reads 100%). -->
+        <ion-icon *ngIf="isTierDone(core)" class="tp-core-badge" name="checkmark-circle"></ion-icon>
+      </span>
       <span class="tp-core-text">
         <span class="tp-core-title">{{ core.title }}</span>
         <span class="tp-core-level">{{ 'tree.levelShort' | translate:{ n: currentTier(core) } }}</span>
@@ -54,35 +58,34 @@
           <span class="tp-progress-track"><span class="tp-progress-fill" [style.width.%]="percentOf(core)"></span></span>
           <span class="tp-progress-pct">{{ percentOf(core) }}%</span>
         </span>
+        <!-- Only on the card that's next: starts its next activity right away. -->
+        <span *ngIf="isNext(core)" class="tp-start" role="button" tabindex="0"
+          (click)="startLesson($event)" (keydown.enter)="startLesson($event)">
+          <ion-icon name="play" aria-hidden="true"></ion-icon>{{ 'treePlus.startLesson' | translate }}
+        </span>
       </span>
-      <ion-icon class="tp-core-caret" [name]="expandedId === 'core' ? 'chevron-up' : 'chevron-forward'" aria-hidden="true"></ion-icon>
+      <ion-icon class="tp-core-caret" name="chevron-forward" aria-hidden="true"></ion-icon>
     </button>
-
-    <!-- Inline activities for the Core, when expanded -->
-    <div *ngIf="expandedId === 'core'" class="tp-expand">
-      <ng-container *ngTemplateOutlet="tiersTpl"></ng-container>
-    </div>
 
     <div class="tp-choose">
       <ion-icon name="arrow-down" aria-hidden="true"></ion-icon>
       <span>{{ 'treePlus.chooseTopic' | translate }}</span>
     </div>
 
-    <!-- Theme grid (two columns). Cards are grouped into rows of two so an
-         expanded card's panel renders AFTER the whole row (both columns),
-         keeping the sibling card in place instead of pushing it below. -->
+    <!-- Theme grid (two columns). -->
     <div class="tp-grid">
       <ng-container *ngFor="let row of themeRows; trackBy: trackRow">
         <button type="button" class="tp-topic" *ngFor="let node of row; trackBy: trackNode"
-          [ngClass]="'state-' + node.state" [class.expanded]="expandedId === node.id"
-          [class.pulse]="pulseTopicId === node.id" [attr.data-topic-id]="node.id"
+          [ngClass]="'state-' + node.state"
+          [class.current]="isNext(node)" [class.finished]="isTierDone(node)"
+          [attr.data-topic-id]="node.id"
           [style.--hue]="node.hue" (click)="toggleNode(node)"
-          [attr.aria-expanded]="expandedId === node.id"
           [attr.aria-label]="node.title + ', ' + nodeStatus(node) + ', ' + percentOf(node) + '%'">
-          <!-- Icon on top; status badge overlaid on its corner. -->
+          <!-- Icon on top; status badge overlaid on its corner (check = this
+               level is complete, lock = not open yet). -->
           <span class="tp-topic-emoji" aria-hidden="true">
             {{ node.emoji }}
-            <ion-icon *ngIf="isFullyComplete(node)" class="tp-topic-badge done" name="checkmark-circle" aria-hidden="true"></ion-icon>
+            <ion-icon *ngIf="isTierDone(node)" class="tp-topic-badge done" name="checkmark-circle" aria-hidden="true"></ion-icon>
             <ion-icon *ngIf="node.state === 'locked'" class="tp-topic-badge lock" name="lock-closed" aria-hidden="true"></ion-icon>
           </span>
           <span class="tp-topic-name">{{ node.title }}</span>
@@ -92,49 +95,25 @@
             <span class="tp-progress-track"><span class="tp-progress-fill" [style.width.%]="percentOf(node)"></span></span>
             <span class="tp-progress-pct">{{ percentOf(node) }}%</span>
           </span>
+          <!-- Only on the card that's next: starts its next activity right away. -->
+          <span *ngIf="isNext(node)" class="tp-start" role="button" tabindex="0"
+            (click)="startLesson($event)" (keydown.enter)="startLesson($event)">
+            <ion-icon name="play" aria-hidden="true"></ion-icon>{{ 'treePlus.startLesson' | translate }}
+          </span>
         </button>
-
-        <!-- One full-width expansion slot per row, emitted only when a card in
-             this row is expanded, so it always starts its own new row. -->
-        <div *ngIf="rowHasExpanded(row)" class="tp-expand tp-expand-grid">
-          <ng-container *ngTemplateOutlet="tiersTpl"></ng-container>
-        </div>
       </ng-container>
     </div>
 
   </div>
 </ion-content>
 
-<!-- Shared template: the expanded node's levels (newest first) + 5 activities -->
-<ng-template #tiersTpl>
-  <div class="tp-tier" *ngFor="let tier of expandedTiers; trackBy: trackTier" [class.done]="tier.done">
-    <div class="tp-tier-head">
-      <span class="tp-tier-name">{{ tier.label }}</span>
-      <ion-icon *ngIf="tier.done" name="checkmark-circle" class="tp-tier-done" aria-hidden="true"></ion-icon>
-    </div>
-
-    <!-- Activities grid (bigger, more-spaced buttons). Mix is the last node. -->
-    <div class="tp-modes">
-      <button type="button" class="tp-mode" *ngFor="let m of tier.modes; trackBy: trackMode"
-        [ngClass]="'state-' + m.state" [class.is-mix]="m.id === 'mix'" [disabled]="m.state === 'locked'"
-        (click)="onModeTap(tier, m.modeIndex)" [attr.aria-label]="(m.labelKey | translate) + ', ' + ('tree.unit.' + m.state | translate)">
-        <ion-icon [name]="m.icon" aria-hidden="true"></ion-icon>
-        <span class="tp-mode-label">{{ m.labelKey | translate }}</span>
-        <ion-icon *ngIf="m.state === 'done'" class="tp-mode-tick" name="checkmark" aria-hidden="true"></ion-icon>
-        <ion-icon *ngIf="m.state === 'locked'" class="tp-mode-lock" name="lock-closed" aria-hidden="true"></ion-icon>
-      </button>
-    </div>
-
-    <!-- Words for this level, hidden by default behind a toggle. -->
-    <button *ngIf="tier.words.length" type="button" class="tp-words-toggle"
-      (click)="toggleWords(tier.tier)" [attr.aria-expanded]="isWordsOpen(tier.tier)">
-      <ion-icon [name]="isWordsOpen(tier.tier) ? 'chevron-up' : 'chevron-down'" aria-hidden="true"></ion-icon>
-      <span>{{ (isWordsOpen(tier.tier) ? 'treePlus.hideWords' : 'treePlus.showWords') | translate:{ n: tier.words.length } }}</span>
-    </button>
-    <div class="tp-words" *ngIf="tier.words.length && isWordsOpen(tier.tier)">
-      <span class="tp-word" *ngFor="let w of tier.words">
-        <span class="w-fr">{{ w.fr }}</span><span class="w-en">{{ w.en }}</span>
-      </span>
-    </div>
+<!-- Pinned Continue (like Explore+): plays the next activity of the next node,
+     whether that's the Core or a topic. Hidden when nothing is left to do. -->
+<ion-footer *ngIf="!isLoading && !switchingLanguage && nextTargetId" class="tp-footer">
+  <div class="tp-footer-inner">
+    <ion-button expand="block" class="tp-cta" (click)="continueNext()">
+      {{ 'journeyPlus.continue' | translate }}
+      <ion-icon name="chevron-forward" slot="end" aria-hidden="true"></ion-icon>
+    </ion-button>
   </div>
-</ng-template>
+</ion-footer>
