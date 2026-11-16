@@ -27,8 +27,8 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: '1.3.57',
-    date: '2026-11-16T01:50:00Z',
+    version: '1.3.58',
+    date: '2026-11-16T17:18:00Z',
     notes: [
       'Explore+: tap a topic to open its page, with a Continue button for the next activity, progress bars, a green tint once done, and a highlight on where to carry on.',
       'Explore+: the Core stands out clearly from topics (a bigger purple row with a round badge) and stays purple once completed; the level\'s words are behind a "Show words" toggle.',
