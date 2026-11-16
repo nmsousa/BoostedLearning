@@ -79,15 +79,21 @@ try {
     if ($LASTEXITCODE -ne 0) {
       throw "GitHub CLI is not authenticated. Run 'gh auth login' first."
     }
-    # Refuse to clobber an existing release/tag — bump the version instead.
-    # `gh release view` writes "release not found" to stderr and exits non-zero
-    # when the tag doesn't exist (the expected, good case), so swallow both.
-    & {
+    # Refuse to clobber an existing PUBLISHED release — bump the version
+    # instead. A DRAFT with this tag is a leftover from an earlier failed upload
+    # (never served to apps), so remove it and carry on. Listing via the API
+    # also finds drafts, which `gh release view <tag>` can miss.
+    $existing = & {
       $ErrorActionPreference = 'SilentlyContinue'
-      gh release view $tag --repo $repo *>$null
+      gh api "repos/$repo/releases?per_page=30" 2>$null | ConvertFrom-Json |
+        Where-Object { $_.tag_name -eq $tag } | Select-Object -First 1
     }
-    if ($LASTEXITCODE -eq 0) {
-      throw "A release tagged $tag already exists on $repo. Use a higher -Version."
+    if ($existing) {
+      if (-not $existing.draft) {
+        throw "A published release tagged $tag already exists on $repo. Use a higher -Version."
+      }
+      Write-Host "Removing leftover draft release $tag from an earlier failed upload..." -ForegroundColor Yellow
+      & { $ErrorActionPreference = 'SilentlyContinue'; gh api -X DELETE "repos/$repo/releases/$($existing.id)" *>$null }
     }
   }
 
@@ -160,7 +166,18 @@ try {
   $hasManifest = $assets -contains 'updates.json'
   if (-not ($hasBundle -and $hasManifest)) {
     Write-Host $createOut
-    throw "Publish failed (exit $createExit): release $tag is missing its assets."
+    # Don't leave a half-made release behind: a failed upload leaves a draft
+    # (or a release with no bundle) under this tag, which blocks the next run.
+    # Delete it so re-running the same command is safe.
+    & {
+      $ErrorActionPreference = 'SilentlyContinue'
+      gh release delete $tag --repo $repo --yes --cleanup-tag *>$null
+      $left = gh api "repos/$repo/releases?per_page=30" 2>$null | ConvertFrom-Json |
+        Where-Object { $_.tag_name -eq $tag } | Select-Object -First 1
+      if ($left) { gh api -X DELETE "repos/$repo/releases/$($left.id)" *>$null }
+    }
+    throw "Publish failed (exit $createExit): the bundle upload didn't finish. " +
+          "The incomplete release was removed, so you can re-run the same command."
   }
   if ($createExit -ne 0) {
     Write-Host "Note: gh exited $createExit but the release landed with both assets." -ForegroundColor Yellow
