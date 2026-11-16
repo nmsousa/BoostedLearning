@@ -42,7 +42,7 @@
           [value]="selectedLevels"
           [multiple]="true"
           interface="popover"
-          [interfaceOptions]="{ cssClass: 'levels-popover', header: ('words.filterLevels' | translate) }"
+          [interfaceOptions]="{ cssClass: 'levels-popover', header: ('words.filterLevels' | translate), side: 'bottom', alignment: 'end', size: 'auto' }"
           [attr.aria-label]="'words.filterLevels' | translate"
           (ionChange)="onLevelsChange($event)">
           <ion-select-option *ngFor="let lvl of levelOptions" [value]="lvl">
@@ -59,7 +59,7 @@
           class="sort-select"
           [value]="sortKey"
           interface="popover"
-          [interfaceOptions]="{ cssClass: 'sort-popover', header: ('words.sortBy' | translate) }"
+          [interfaceOptions]="{ cssClass: 'sort-popover', header: ('words.sortBy' | translate), side: 'bottom', alignment: 'end', size: 'auto' }"
           [attr.aria-label]="'words.sortBy' | translate"
           (ionChange)="onSortChange($event)">
           <ion-select-option *ngFor="let opt of sortOptions" [value]="opt.value">
@@ -116,6 +116,7 @@
     <div class="word-row" *ngFor="let w of words; trackBy: trackByWord"
       role="button" tabindex="0"
       [class.hidden-word]="w.priority === 'hide'"
+      [class.custom]="w.isCustom"
       [class.selected]="selectMode && isSelected(w)"
       (click)="onRowTap(w)" (keydown.enter)="onRowTap(w)" (keydown.space)="onRowTap(w)">
       <!-- Multi-select checkbox (only while selecting). -->
@@ -134,6 +135,10 @@
           {{ w.text }}
           <ion-icon *ngIf="priorityIcon(w)" [name]="priorityIcon(w)" class="priority-flag"
             [class.boost]="w.priority === 'boost'" [class.hide]="w.priority === 'hide'"></ion-icon>
+          <!-- A word the user added themselves (not from the app's decks). -->
+          <span *ngIf="w.isCustom" class="custom-badge">
+            <ion-icon name="person-add-outline" aria-hidden="true"></ion-icon>{{ 'words.customBadge' | translate }}
+          </span>
         </span>
         <span class="word-translation">{{ w.translation }}</span>
       </div>
@@ -143,12 +148,13 @@
       <!-- Admin only: a GREEN speaker means this word still uses the borrowed
            Duolingo recording (not yet re-voiced with our TTS). Normal colour =
            our generated clip or no local clip. -->
-      <!-- SLOW (snail) first, then NORMAL — both always shown. -->
-      <button type="button" class="word-audio slow slow-audio-ring" *ngIf="!selectMode" (click)="playWord(w, $event, true)"
+      <!-- SLOW (snail) first, then NORMAL. Hidden for the user's own custom
+           words: they have no recorded audio. -->
+      <button type="button" class="word-audio slow slow-audio-ring" *ngIf="!selectMode && !w.isCustom" (click)="playWord(w, $event, true)"
         [attr.aria-label]="'mode.playSlower' | translate">
         <app-slow-audio-icon [active]="false" [rate]="slowRate"></app-slow-audio-icon>
       </button>
-      <button type="button" class="word-audio" *ngIf="!selectMode" [class.from-duolingo]="isDuolingoAudio(w)"
+      <button type="button" class="word-audio" *ngIf="!selectMode && !w.isCustom" [class.from-duolingo]="isDuolingoAudio(w)"
         (click)="playWord(w, $event)"
         [attr.aria-label]="'mode.playPronunciation' | translate">
         <ion-icon name="volume-high-outline"></ion-icon>

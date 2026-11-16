@@ -216,6 +216,9 @@ ion-popover .lang-list {
 .sort-popover {
   --min-width: 248px;
   --width: auto;
+  // Opened BELOW the tapped button (side: 'bottom' in the template); this
+  // small gap keeps the panel from touching or covering the button.
+  --offset-y: 6px;
 
   ion-list-header {
     border-bottom: 1px solid var(--ion-color-step-150, #2a3744);

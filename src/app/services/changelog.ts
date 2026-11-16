@@ -27,17 +27,22 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: '1.3.56',
-    date: '2026-11-15T20:35:00Z',
+    version: '1.3.57',
+    date: '2026-11-16T01:50:00Z',
     notes: [
-      'Slow-replay button: a new snail icon with a ring that fills smoothly and finishes exactly when the audio ends — at any speed. The normal-speed button now shows the same filling ring.',
-      'Match: tap a word on the left to hear it spoken while you match.',
-      'Match Audio: fixed the slow icon drifting off its card when tapped repeatedly.',
-      'Write: removed the tap-to-peek eye (the hint bulb covers it), and the prompt card now uses the same look as the Flashcards for a consistent feel across modes.',
-      'Explore+: the level\'s words are tucked behind a "Show words" toggle, so activities stay the focus.',
-      'Explore+: the Core now stands out clearly from topics — a bigger purple row with a round medallion — and keeps its purple identity even once completed.',
-      'Builder: the dashed "drop here" box only shows on an empty row, so it no longer looks like it\'s waiting for another word after your last pick.',
-      'Quiz: the slow (snail) button is now the same size as elsewhere.',
+      'Explore+: tap a topic to open its page, with a Continue button for the next activity, progress bars, a green tint once done, and a highlight on where to carry on.',
+      'Explore+: the Core stands out clearly from topics (a bigger purple row with a round badge) and stays purple once completed; the level\'s words are behind a "Show words" toggle.',
+      'Flashcards are now an optional review, not a required step to finish a level.',
+      'New Practice lists: pick words in Your vocabulary, save them as a list, and practise them from the Home "Practice" card (Mix by default, or any mode).',
+      '"Your words" is now "Your vocabulary". Each word shows 3 dots for your last 3 answers, and "Needs practice" puts the words with the most recent mistakes on top.',
+      'Your vocabulary: words you add yourself go at the end with a "Custom" label, and the sort and filter menus no longer cover their button.',
+      'Slow replay: a new snail button with a ring that fills as the audio plays and ends exactly with it; the normal-speed button shows the same ring.',
+      'Quiz: the word plays when each question appears (not again after a right answer), and a quiz no longer gets stuck loading when reopened.',
+      'Match: tap a word on the left to hear it. Match Audio: the slow icon no longer drifts off its card.',
+      'Mix: your previous answer no longer shows up pre-filled in the next fill-in-the-blank.',
+      'Write: the tap-to-peek eye is gone (the hint bulb covers it), and the card matches the Flashcards look.',
+      'Builder: the dashed placeholder only shows on an empty row.',
+      'Explore: the Home header no longer flashes for a moment when the page opens.',
     ],
   },
   {

@@ -197,6 +197,14 @@
 
   &.selected { background: rgba(106, 92, 255, 0.16); }
 
+  // A word the user added themselves: amber left edge + faint tint, so it
+  // stands apart from the app's words at a glance (it also carries a badge).
+  &.custom {
+    background: rgba(255, 194, 77, 0.06);
+    box-shadow: inset 3px 0 0 #ffc24d;
+  }
+  &.custom.selected { background: rgba(106, 92, 255, 0.16); }
+
   .word-check {
     flex: 0 0 auto; font-size: 22px; color: var(--ion-color-medium);
     &.on { color: var(--ion-color-primary); }
@@ -236,6 +244,15 @@
         font-size: 15px;
         &.boost { color: var(--ion-color-primary); }
         &.hide { color: var(--ion-color-medium); }
+      }
+
+      // "Custom" pill on words the user added.
+      .custom-badge {
+        display: inline-flex; align-items: center; gap: 3px; flex: 0 0 auto;
+        padding: 1px 7px; border-radius: 999px;
+        background: rgba(255, 194, 77, 0.16); border: 1px solid rgba(255, 194, 77, 0.5);
+        color: #ffd27a; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.02em;
+        ion-icon { font-size: 11px; }
       }
     }
     .word-translation {

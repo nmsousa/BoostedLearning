@@ -381,7 +381,8 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
 
     if (option.correct) {
       this.correctCount++;
-      if (this.settings.autoPlayAudio()) void this.playWord();
+      // No replay on a correct answer: the word already played when the
+      // question loaded, so hearing it again right before the next word is noise.
       if (this.deck) {
         this.flashcardService.rateFlashcard(this.deck.id, this.cards[this.currentIndex].id, 'easy');
       }

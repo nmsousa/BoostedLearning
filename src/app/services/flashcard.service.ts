@@ -172,6 +172,19 @@ export interface StudiedWord {
   /** Recorded pronunciation clip, when the source card has one. The Words page
    *  prefers this over TTS so playback matches the Flashcard modes. */
   audioUrl?: string;
+  /** true = a word the user added themselves (not part of the app's decks).
+   *  The Words page lists these after the app's words, with a "Custom" badge. */
+  isCustom?: boolean;
+  /** When a custom word was added (ms since epoch), for oldest→newest order.
+   *  Undefined for app words. */
+  addedAt?: number;
+}
+
+/** When a custom card was added, read from its `card-custom-<ms>` id (the id
+ *  is created from Date.now() in addManualCard). Undefined if it doesn't match. */
+export function customCardAddedAt(id: string): number | undefined {
+  const m = /^card-custom-(\d+)/.exec(id);
+  return m ? Number(m[1]) : undefined;
 }
 
 /**
@@ -1977,6 +1990,8 @@ export class FlashcardService {
           mastery: masteryFromResults(recent),
           priority: card.priority ?? 'normal',
           audioUrl: card.audioUrl,
+          isCustom: card.isCustom === true,
+          addedAt: card.isCustom ? customCardAddedAt(card.id) : undefined,
         });
       }
     }

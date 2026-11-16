@@ -177,6 +177,22 @@ export class WordsPage implements OnInit, ViewWillEnter {
   }
 
   private compare(a: StudiedWord, b: StudiedWord): number {
+    // The user's own (custom) words always come AFTER the app's words, in
+    // every sort, ordered oldest→newest so a just-added word is at the bottom.
+    const ac = a.isCustom ? 1 : 0;
+    const bc = b.isCustom ? 1 : 0;
+    if (ac !== bc) return ac - bc;
+    if (ac === 1) return (a.addedAt ?? 0) - (b.addedAt ?? 0) || a.text.localeCompare(b.text);
+    return this.compareBySort(a, b);
+  }
+
+  /** How many of a word's last 3 results were `kind` (what the dots show). */
+  private recentCount(w: StudiedWord, kind: 'correct' | 'incorrect'): number {
+    return w.recent.slice(-3).filter(r => r === kind).length;
+  }
+
+  /** Order two APP words by the selected sort. */
+  private compareBySort(a: StudiedWord, b: StudiedWord): number {
     switch (this.sortKey) {
       case 'mostSeen': return b.attempts - a.attempts;
       case 'leastSeen': return a.attempts - b.attempts;
@@ -190,7 +206,15 @@ export class WordsPage implements OnInit, ViewWillEnter {
         return ah - bh || b.missRate - a.missRate || b.attempts - a.attempts;
       }
       case 'needsPractice':
-      default: return b.missRate - a.missRate || b.attempts - a.attempts;
+      default:
+        // Rank by the same last-3 results the dots show, so what looks worst
+        // is on top: more recent reds first, then fewer recent greens. The
+        // lifetime miss rate only breaks ties. (Ranking by lifetime miss rate
+        // alone put a word with one wrong try above "red, green, red".)
+        return this.recentCount(b, 'incorrect') - this.recentCount(a, 'incorrect')
+          || this.recentCount(a, 'correct') - this.recentCount(b, 'correct')
+          || b.missRate - a.missRate
+          || b.attempts - a.attempts;
     }
   }
 
@@ -300,7 +324,7 @@ export class WordsPage implements OnInit, ViewWillEnter {
   reportProblem(): void {
     void this.addWordService.reportProblem({
       languageCode: this.settings.learningLanguage(),
-      modeName: 'Your words',
+      modeName: this.t('words.title'),
       reportContext: 'generic',
     });
   }

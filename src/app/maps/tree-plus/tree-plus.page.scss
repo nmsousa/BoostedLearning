@@ -10,8 +10,11 @@
   display: block;
 }
 
+// SOLID header (the top colour of the page gradient), not transparent. With a
+// transparent toolbar the Home page's header showed through while Explore slid
+// in, and only disappeared once the transition ended. Solid = seamless.
 .tp-header ion-toolbar {
-  --background: transparent;
+  --background: var(--tp-bg-top);
   --border-width: 0;
 }
 .tp-head {

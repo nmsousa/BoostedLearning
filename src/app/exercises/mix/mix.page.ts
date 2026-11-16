@@ -134,6 +134,9 @@ export class MixPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave 
     this.item = this.mix.currentItem();
     this.index = s?.index ?? 0;
     this.answered = false;
+    // Clear the previous item's pick, otherwise it carries over (e.g. a Quiz
+    // answer "coffee" showing up pre-filled in the next Blank's gap).
+    this.chosenLabel = null;
     this.matchLeftSel = this.matchRightSel = null;
     this.matchDone = new Set();
     this.matchWrong = false;
