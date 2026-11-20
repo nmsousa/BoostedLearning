@@ -6,7 +6,6 @@
   --td-glass: rgba(255, 255, 255, 0.05);
   --td-glass-line: rgba(255, 255, 255, 0.1);
   --td-green: #2dd36f;
-  --td-gold: #ffdc78;
 }
 
 // Solid header (the top colour of the page gradient) so the previous page's
@@ -108,7 +107,7 @@
   &.state-done { border-color: rgba(45, 211, 111, 0.4); .td-mode-ic { color: var(--td-green); } }
   // Every unlocked, not-yet-passed activity is playable; only the NEXT one
   // (what Continue plays) gets the highlight.
-  &.state-active.next { border-color: #6a5cff; box-shadow: 0 0 0 1px rgba(106, 92, 255, 0.45); }
+  &.state-active.next { border-color: var(--next-hl, #a9b6ff); box-shadow: 0 0 0 1px var(--next-hl, #a9b6ff); }
   &.state-locked { opacity: 0.45; cursor: default; }
 }
 

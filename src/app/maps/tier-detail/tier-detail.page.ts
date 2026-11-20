@@ -102,7 +102,8 @@ export class TierDetailPage implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     const p = this.route.snapshot.paramMap;
     this.nodeId = p.get('nodeId') ?? 'core';
-    this.tier = Math.max(1, Number(p.get('tier') ?? 1) || 1);
+    // parseInt (not Number) so a mangled value like '1?origin=tree-plus' still reads as 1.
+    this.tier = Math.max(1, parseInt(p.get('tier') ?? '1', 10) || 1);
     this.origin = this.route.snapshot.queryParamMap.get('origin') ?? JOURNEY_TREE_PLUS_FROM;
     await this.flashcards.initialize();
     await this.load();

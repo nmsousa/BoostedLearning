@@ -27,6 +27,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.60',
+    date: '2026-11-20T23:02:42Z',
+    notes: [
+      'One speaker button everywhere: the snail is gone. The first 3 times you hear a word it plays at normal speed, the 4th is slower, then it starts over.',
+      'New animated speaker icon: its sound waves play every time audio plays, including when a page plays a word on its own.',
+      'Quiz: wrong answers now come from the same topic (this level and the topic\'s earlier levels), so you can\'t rule one out just because it is about something else.',
+      'Explore: the next card or activity has one steady highlight colour everywhere, finished cards look the same grey (Core and topics), and "Start lesson" is gone from the cards.',
+      'Explore: the Flashcards review button no longer says "(optional)".',
+      'Fixed: refreshing the page on a lesson no longer leaves it stuck on the loading spinner, and it returns to the right level page.',
+    ],
+  },
+  {
     version: '1.3.59',
     date: '2026-11-16T19:46:02Z',
     notes: [

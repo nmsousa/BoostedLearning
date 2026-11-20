@@ -48,7 +48,6 @@
   color: #c9cdff; cursor: pointer;
   font-size: 22px;                       // base size for the slow (gauge) icon
   ion-icon { font-size: 20px; }          // the speaker icon fits the circle
-  &.slow { background: rgba(255, 255, 255, 0.06); }
 
   // While a clip plays: the border sweeps ONCE from the default colour to blue
   // and back (a single, calm highlight — not a repeating blink), and the icon

@@ -79,7 +79,7 @@
   .word-audio {
     width: 44px; height: 44px; border-radius: 50%; border: none;
     background: rgba(255,255,255,0.9); cursor: pointer;
-    ion-icon { font-size: 22px; color: var(--ion-color-primary-shade); }
+    color: var(--ion-color-primary-shade);
   }
 }
 .group-next { width: 100%; max-width: 420px; min-height: 52px; font-weight: 700; }

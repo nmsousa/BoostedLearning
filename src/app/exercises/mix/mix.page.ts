@@ -62,16 +62,12 @@ export class MixPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave 
   // Per-item answer state.
   answered = false;            // locked after answering (choice/builder/write)
   readonly playing = this.audio.playing;
-  readonly slowPlaying = this.audio.playingSlow;
-  readonly slowRate = this.audio.slowRate;
-  readonly slowMs = this.audio.slowDurationMs;
+  /** Audio state for the icon: whether audio is sounding, and a counter that bumps
+   *  on EVERY play so the icon replays its sound-wave animation (page-entry
+   *  auto-plays and every repeat tap alike). */
   readonly playKind = this.audio.playKind;
-  readonly playProgress = this.audio.playProgress;
-  /** Bumped on every slow tap so the ring animation restarts from scratch. */
-  slowTick = 0;
+  readonly playSeq = this.audio.playSeq;
 
-  /** Slow button tap: restart the ring sweep and play the slow prompt. */
-  playSlow(): void { this.slowTick++; this.playPrompt(true); }
 
   // Match sub-state.
   matchLeftSel: string | null = null;        // selected pair id on the left
@@ -94,7 +90,18 @@ export class MixPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave 
   t(key: string, p?: Record<string, string | number>): string { return this.i18n.t(key, p); }
 
   ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
-  ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
+  /** How many times this view has been entered. A cold load (F5 on an exercise URL)
+   *  bails out to the level page and leaves this instance cached underneath it,
+   *  still on its loading spinner. Ionic REUSES that instance on the next visit
+   *  without re-running ngOnInit, so it would sit on the spinner forever. */
+  private enterCount = 0;
+
+  ionViewWillEnter(): void {
+    this.backInterceptor.register(this.onHardwareBack);
+    // Re-entered while still loading = a stale instance left by an earlier bail-out:
+    // run the setup again for the NEW route.
+    if (++this.enterCount > 1 && this.isLoading) void this.ngOnInit();
+  }
   ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
 
   async ngOnInit(): Promise<void> {
@@ -160,13 +167,13 @@ export class MixPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave 
   }
 
   // ── Audio ────────────────────────────────────────────────────────────────────
-  playPrompt(slow = false): void {
+  playPrompt(): void {
     if (!this.item) return;
     let text = ''; let url: string | null = null;
     if (this.item.kind === 'quiz' || this.item.kind === 'audio') { text = this.item.prompt; url = this.item.audioUrl; }
     else if (this.item.kind === 'blank') text = this.item.full;
     else if (this.item.kind === 'builder' || this.item.kind === 'write') text = this.item.target;
-    if (text) void this.audio.playWord(text, url, this.settings.learningLanguage(), slow);
+    if (text) void this.audio.playWord(text, url, this.settings.learningLanguage());
   }
 
   // ── Quiz / audio / blank (multiple choice) ─────────────────────────────────────

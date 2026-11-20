@@ -8,7 +8,8 @@
   --tp-muted: #9aa0d4;
   --tp-text: #eef1ff;
   --tp-green: #5ad19b;
-  --tp-gold: #ffdc78;
+  --tp-next: var(--next-hl, #a9b6ff);
+  --tp-next-rgb: var(--next-hl-rgb, 169, 182, 255);
   --tp-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
@@ -62,30 +63,21 @@
 // soft glow that breathes slowly. It stays for as long as the item is the next
 // thing to do — it is not a blink that disappears.
 @mixin tp-current {
-  border-color: var(--tp-gold);
-  box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-gold), 0 0 12px 0 rgba(255, 220, 120, 0.25);
+  border-color: var(--tp-next);
+  box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-next), 0 0 12px 0 rgba(var(--tp-next-rgb), 0.25);
   animation: tp-current-glow 2.8s ease-in-out infinite;
 }
 @keyframes tp-current-glow {
-  0%, 100% { box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-gold), 0 0 10px 0 rgba(255, 220, 120, 0.18); }
-  50%      { box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-gold), 0 0 20px 3px rgba(255, 220, 120, 0.45); }
+  0%, 100% { box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-next), 0 0 10px 0 rgba(var(--tp-next-rgb), 0.18); }
+  50%      { box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-next), 0 0 20px 3px rgba(var(--tp-next-rgb), 0.45); }
 }
 // Reduced motion: keep the gold border, no glow animation.
 @mixin tp-current-static {
   animation: none;
-  box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-gold);
+  box-shadow: var(--tp-shadow), 0 0 0 1px var(--tp-next);
 }
 // Muted look for a card whose current level is complete.
 @mixin tp-finished { filter: grayscale(0.6) brightness(0.85); opacity: 0.8; }
-
-// The "Start lesson" pill shown only on the next card.
-.tp-start {
-  display: inline-flex; align-items: center; gap: 5px; align-self: center; margin-top: 8px;
-  padding: 5px 12px; border-radius: 999px; cursor: pointer;
-  background: var(--tp-gold); color: #3a2a00; font-size: 0.74rem; font-weight: 800;
-  ion-icon { font-size: 13px; }
-  &:active { transform: scale(0.96); }
-}
 
 // ── Hero Core card ───────────────────────────────────────────────────────────
 .tp-core {
@@ -100,10 +92,15 @@
 
   // Level complete: muted so the eye goes to what's still to do. Pending cards
   // are slightly more saturated.
-  &.finished { @include tp-finished; }
+  // Finished: exactly the same look as a finished TOPIC card (same glassy base,
+  // same muting), so Core and topics are one tone of grey when done. (The purple
+  // / green Core gradient would mute to a different grey than the dark cards.)
+  &.finished {
+    background: var(--tp-glass); border-color: var(--tp-glass-line);
+    @include tp-finished;
+  }
   &:not(.finished) { filter: saturate(1.15); }
 
-  .tp-start { align-self: flex-start; }
 }
 :host-context(.reduced-motion) .tp-core.current { @include tp-current-static; }
 .tp-core-icon {

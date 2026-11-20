@@ -1,0 +1,142 @@
+
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 512 512"
+     width="128"
+     height="128"
+     fill="none"
+     stroke="currentColor"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     aria-label="Snail with animated sound waves">
+
+  <!-- ================================= -->
+  <!-- SNAIL                             -->
+  <!-- ================================= -->
+
+  <g stroke="currentColor"
+     stroke-width="26"
+     fill="none"
+     stroke-linecap="round"
+     stroke-linejoin="round">
+
+    <!-- Main shell -->
+    <circle cx="140" cy="290" r="112"/>
+
+    <!-- Large shell spiral -->
+    <path stroke-width="22"
+          d="
+            M177 290
+            C177 255 154 232 122 232
+            C91 232 68 255 68 286
+            C68 316 91 339 121 339
+            C150 339 173 316 173 287
+            C173 265 156 249 135 249
+            C114 249 99 264 99 285
+          "/>
+
+    <!-- Wide snail body -->
+    <path d="
+      M20 420
+      H220
+      C258 420 270 393 270 355
+      V244
+    "/>
+
+    <!-- Antennae -->
+    <path d="M236 245 L224 170"/>
+    <path d="M266 245 L278 170"/>
+
+    <!-- Eyes -->
+    <circle cx="224" cy="160" r="14"
+            fill="currentColor"
+            stroke="none"/>
+
+    <circle cx="279" cy="160" r="14"
+            fill="currentColor"
+            stroke="none"/>
+
+  </g>
+
+
+  <!-- ================================= -->
+  <!-- SOUND WAVES                       -->
+  <!-- Same paths as normal audio        -->
+  <!-- ================================= -->
+
+  <g transform="translate(20 0)"
+     fill="currentColor"
+     stroke="none">
+
+    <!-- Smallest wave -->
+    <path class="wave wave-outer"
+          d="M320 336a16 16 0 0 1-14.29-23.19c9.49-18.87 14.3-38 14.3-56.81 0-19.38-4.66-37.94-14.25-56.73a16 16 0 0 1 28.5-14.54C346.19 208.12 352 231.44 352 256c0 23.86-6 47.81-17.7 71.19A16 16 0 0 1 320 336"/>
+
+    <!-- Middle wave -->
+    <path class="wave wave-middle"
+          d="M368 384a16 16 0 0 1-13.86-24C373.05 327.09 384 299.51 384 256c0-44.17-10.93-71.56-29.82-103.94a16 16 0 0 1 27.64-16.12C402.92 172.11 416 204.81 416 256c0 50.43-13.06 83.29-34.13 120a16 16 0 0 1-13.87 8"/>
+
+    <!-- Largest wave -->
+    <path class="wave wave-outermost"
+          d="M416 432a16 16 0 0 1-13.39-24.74C429.85 365.47 448 323.76 448 256c0-66.5-18.18-108.62-45.49-151.39a16 16 0 1 1 27-17.22C459.81 134.89 480 181.74 480 256c0 64.75-14.66 113.63-50.6 168.74A16 16 0 0 1 416 432"/>
+
+  </g>
+
+
+  <!-- ================================= -->
+  <!-- WAVE ANIMATION                    -->
+  <!-- ================================= -->
+
+  <style>
+
+    .wave {
+      opacity: 0;
+      transform-box: view-box;
+      transform-origin: 328px 256px;
+
+      animation: wave-expand 650ms
+                 cubic-bezier(0.22, 0.61, 0.36, 1)
+                 both;
+    }
+
+    /* Largest wave appears first */
+    .wave-outermost {
+      animation-delay: 0ms;
+    }
+
+    /* Middle wave appears second */
+    .wave-middle {
+      animation-delay: 325ms;
+    }
+
+    /* Smallest wave appears last */
+    .wave-outer {
+      animation-delay: 650ms;
+    }
+
+    @keyframes wave-expand {
+      0% {
+        opacity: 0;
+        transform: scale(0.05);
+      }
+
+      15% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .wave {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+  </style>
+
+</svg>

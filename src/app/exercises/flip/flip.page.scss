@@ -390,15 +390,10 @@
 
   &:active { transform: scale(0.94); }
 
-  // Slow state: same size as the speaker (no shrinking), just a subtler fill.
-  &.slow { background: rgba(255, 255, 255, 0.12); }
 
-  // While a clip plays: a single border highlight + a gentle icon bounce,
-  // matching the Learn play button.
-  &.playing {
-    animation: flip-audio-border 0.9s ease-in-out;
-    ion-icon, app-slow-audio-icon { animation: flip-audio-bounce 0.6s ease-in-out infinite alternate; }
-  }
+  // While a clip plays, the icon's own sound waves animate (the global
+  // .audio-wave-btn rule switches the old border flash / bounce off).
+  &.playing { animation: flip-audio-border 0.9s ease-in-out; }
 }
 .card-word { min-width: 0; overflow-wrap: anywhere; width: 100%; }
 @keyframes flip-audio-border {
@@ -407,7 +402,4 @@
   100% { box-shadow: 0 0 0 0 rgba(106, 92, 255, 0); }
 }
 @keyframes flip-audio-bounce { from { transform: scale(0.92); } to { transform: scale(1.08); } }
-:host-context(.reduced-motion) .audio-icon.playing {
-  animation: none;
-  ion-icon, app-slow-audio-icon { animation: none; }
-}
+:host-context(.reduced-motion) .audio-icon.playing { animation: none; }

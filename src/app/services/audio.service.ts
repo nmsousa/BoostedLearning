@@ -40,9 +40,6 @@ interface ManifestEntry {
   source: 'duolingo' | 'tts' | 'unknown';
   /** TTS voice name, when source === 'tts'. */
   voice?: string;
-  /** Clip duration in ms (measured at generation time) — lets the slow-replay
-   *  ring run for exactly the clip's length. */
-  durMs?: number;
 }
 
 @Injectable({
@@ -57,41 +54,29 @@ export class AudioService {
    *  src loads (some engines reset playbackRate to 1 on load). */
   private pendingRate: number | null = null;
 
-  /** requestAnimationFrame handle for the progress-ring loop (0 = not running). */
-  private progressRaf = 0;
-
-  /** A deliberately slow rate for the "turtle" (repeat slower) button. */
+  /** The slower speed the 4th hearing of a word plays at. */
   private readonly SLOW_RATE = 0.6;
 
-  /** The slow-replay playback rate, so the UI's slow icon can show the REAL
-   *  value (e.g. "0.6×"). When a proper SSML slow version lands, update this. */
-  readonly slowRate = this.SLOW_RATE;
+  /** How many hearings of the same word play at the normal speed before the next
+   *  one is slower (then the cycle starts over). */
+  private static readonly NORMAL_HEARINGS = 3;
+
+  /** The word being heard and how many times in a row it has played. Hearing a
+   *  different word starts a new count. */
+  private hearing = { key: '', count: 0 };
 
   /** True while a clip (recorded OR TTS) is sounding. Lets the shared waveform
    *  visual pulse in sync with playback, everywhere audio is played. */
   readonly playing = signal(false);
 
-  /** True while a SLOW clip is sounding (set by playWord when slow=true, and
-   *  cleared when playback stops). Lets the slow button show its sweeping ring
-   *  only for slow playback, not the normal speed. */
-  readonly playingSlow = signal(false);
-
-  /** The current slow clip's real play duration in ms (recorded clip length ÷
-   *  slow rate). 0 = unknown (e.g. TTS), so the UI uses a sensible default.
-   *  Lets the sweeping ring last exactly as long as the clip. */
-  readonly slowDurationMs = signal(0);
-
-  /** Live playback progress 0→1 of the current recorded clip, driven DIRECTLY
-   *  by the audio element's own position (timeupdate/ended). The progress ring
-   *  reads this and sets its fill to exactly currentTime/duration, so the ring
-   *  ALWAYS ends with the sound regardless of the real playback rate (no
-   *  precomputed-duration guess that can drift). Reset to 0 at each new play. */
-  readonly playProgress = signal(0);
-
-  /** Which kind of playback is live: 'normal', 'slow', or null when idle. Lets
-   *  the normal speaker and the slow snail each show their own ring only for
-   *  their own playback. */
+  /** Which speed is sounding: 'normal', 'slow' (the 4th hearing), or null when
+   *  idle. The audio icon animates for either. */
   readonly playKind = signal<'normal' | 'slow' | null>(null);
+
+  /** Counts every play request (it only ever goes up). The audio icons watch it
+   *  and replay their sound-wave animation each time audio plays: on entering a
+   *  page that auto-plays, and on every tap to repeat it. */
+  readonly playSeq = signal(0);
 
   /**
    * Bundled offline pronunciation audio: langCode → (normalized text →
@@ -100,7 +85,7 @@ export class AudioService {
    * device voice. Loaded lazily and cached (including a cached "miss" so we
    * don't refetch). `source` tells where the clip came from (admin-only UI).
    */
-  private localAudio = new Map<string, Map<string, { path: string; source: ManifestEntry['source']; durMs?: number }>>();
+  private localAudio = new Map<string, Map<string, { path: string; source: ManifestEntry['source'] }>>();
   private localAudioLoads = new Map<string, Promise<void>>();
 
   /** Play a pre-recorded clip from a URL. Returns true if playback started. */
@@ -111,28 +96,19 @@ export class AudioService {
       if (!this.audioEl) {
         this.audioEl = typeof Audio !== 'undefined' ? new Audio() : null;
         if (this.audioEl) {
-          // Drive the `playing` signal from the element's own events so the
+          // Drive the `playing` signals from the element's own events so the
           // waveform stops pulsing exactly when the clip ends.
           const stop = () => {
-            this.playing.set(false); this.playingSlow.set(false);
+            this.playing.set(false);
             this.playKind.set(null);
           };
-          this.audioEl.addEventListener('ended', () => {
-            // Snap the ring to full exactly when the sound ends, then clear.
-            this.playProgress.set(1);
-            this.stopProgressLoop();
-            stop();
-          });
-          this.audioEl.addEventListener('pause', () => { this.stopProgressLoop(); stop(); });
-          this.audioEl.addEventListener('error', () => { this.stopProgressLoop(); stop(); });
-          this.audioEl.addEventListener('playing', () => {
-            this.playing.set(true);
-            this.startProgressLoop();
-          });
+          this.audioEl.addEventListener('ended', stop);
+          this.audioEl.addEventListener('pause', stop);
+          this.audioEl.addEventListener('error', stop);
+          this.audioEl.addEventListener('playing', () => this.playing.set(true));
           // Re-assert the intended rate once metadata loads (loading a new src
-          // can reset playbackRate to 1 on some WebViews/engines). The ring no
-          // longer relies on a precomputed length — it tracks real progress
-          // below — but the rate still matters so the slow clip sounds slow.
+          // can reset playbackRate to 1 on some WebViews/engines) so the slow
+          // clip really sounds slow.
           this.audioEl.addEventListener('loadedmetadata', () => {
             const el = this.audioEl;
             if (!el) return;
@@ -145,11 +121,12 @@ export class AudioService {
       if (!this.audioEl) return false;
 
       this.tts.stop(); // don't overlap with TTS
+      // (A repeat tap restarts a clip that is mid-play. Setting the new src below
+      // cancels the pause event this queues, so it can't clear the playing state
+      // that playWord() just published for the new play.)
       this.audioEl.pause();
       const effectiveRate = rate ?? this.settings.audioSpeed();
       this.pendingRate = effectiveRate;
-      // Fresh clip → reset the ring to empty before it starts filling.
-      this.playProgress.set(0);
       this.audioEl.src = url;
       // Set BOTH so the rate survives the load: some engines snap playbackRate
       // back to defaultPlaybackRate when a fresh src loads. loadedmetadata also
@@ -167,32 +144,10 @@ export class AudioService {
     }
   }
 
-  /** Start a requestAnimationFrame loop that tracks the clip's real position
-   *  (currentTime / duration) every frame, so the progress ring fills smoothly
-   *  at 60fps and reaches exactly 1.0 as the sound ends — at ANY playback rate,
-   *  since both currentTime and duration are in the clip's own media time.
-   *  Running per-frame (not on the sparse ~4×/s timeupdate event) is what makes
-   *  it glide the full 360° in lock-step with the audio instead of lagging. */
-  private startProgressLoop(): void {
-    if (typeof requestAnimationFrame !== 'function') return;
-    this.stopProgressLoop();
-    const tick = () => {
-      const el = this.audioEl;
-      if (!el || el.paused || el.ended) { this.progressRaf = 0; return; }
-      if (isFinite(el.duration) && el.duration > 0) {
-        this.playProgress.set(Math.min(1, el.currentTime / el.duration));
-      }
-      this.progressRaf = requestAnimationFrame(tick);
-    };
-    this.progressRaf = requestAnimationFrame(tick);
-  }
-
-  /** Stop the progress-ring animation loop. */
-  private stopProgressLoop(): void {
-    if (this.progressRaf) {
-      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(this.progressRaf);
-      this.progressRaf = 0;
-    }
+  /** Nothing is (or will be) sounding: clear the kind flags (playWord sets them
+   *  up-front, before it knows whether any audio can actually play). */
+  private clearPlayKind(): void {
+    this.playKind.set(null);
   }
 
   /**
@@ -204,9 +159,11 @@ export class AudioService {
     const lang = LANG_TO_BCP47[langCode] ?? langCode;
 
     if (!this.tts.isSupported()) {
+      this.clearPlayKind();
       return { ok: false, reason: 'Speech is not supported on this device.' };
     }
     if (!this.tts.hasVoiceFor(lang)) {
+      this.clearPlayKind();
       return { ok: false, reason: `No voice installed for ${lang} on this device.` };
     }
 
@@ -217,7 +174,6 @@ export class AudioService {
       rate: rate ?? this.settings.audioSpeed(),
     });
     this.playing.set(false);
-    this.playingSlow.set(false);
     this.playKind.set(null);
     if (!result.success) {
       console.warn('AudioService: TTS failed', result.error);
@@ -240,7 +196,7 @@ export class AudioService {
     let load = this.localAudioLoads.get(langCode);
     if (!load) {
       load = (async () => {
-        const map = new Map<string, { path: string; source: ManifestEntry['source']; durMs?: number }>();
+        const map = new Map<string, { path: string; source: ManifestEntry['source'] }>();
         try {
           const json = await firstValueFrom(
             this.http.get<Record<string, ManifestEntry | string>>(
@@ -249,12 +205,11 @@ export class AudioService {
           );
           if (json) {
             for (const [text, entry] of Object.entries(json)) {
-              // Entry is { file, source, voice?, durMs? }; tolerate the old plain-string form.
+              // Entry is { file, source, voice? }; tolerate the old plain-string form.
               const file = typeof entry === 'string' ? entry : entry?.file;
               const source = typeof entry === 'string' ? 'unknown' : (entry?.source ?? 'unknown');
-              const durMs = typeof entry === 'string' ? undefined : entry?.durMs;
               if (file) {
-                map.set(this.audioKey(text), { path: `assets/audio/${langCode}/${file}`, source, durMs });
+                map.set(this.audioKey(text), { path: `assets/audio/${langCode}/${file}`, source });
               }
             }
           }
@@ -271,12 +226,6 @@ export class AudioService {
   /** The bundled local asset path for a piece of text, if one exists. */
   private localAudioFor(langCode: string, text: string): string | undefined {
     return this.localAudio.get(langCode)?.get(this.audioKey(text))?.path;
-  }
-
-  /** The bundled clip's duration (ms, at 1× speed) for a piece of text, if
-   *  known from the manifest — used to time the slow-replay ring precisely. */
-  private localAudioDurationMs(langCode: string, text: string): number | undefined {
-    return this.localAudio.get(langCode)?.get(this.audioKey(text))?.durMs;
   }
 
   /**
@@ -312,15 +261,20 @@ export class AudioService {
     text: string,
     audioUrl: string | undefined | null,
     langCode: string,
-    slow = false
   ): Promise<{ ok: boolean; reason?: string }> {
+    // ONE audio button: the first 3 hearings of a word are at the normal speed and
+    // the 4th is slower, then it starts over. Hearing counts every play, including
+    // a page's own auto-play. A different word restarts the count.
+    const key = this.audioKey(text);
+    if (this.hearing.key !== key) this.hearing = { key, count: 0 };
+    this.hearing.count++;
+    const slow = this.hearing.count > AudioService.NORMAL_HEARINGS;
+    if (slow) this.hearing.count = 0;
     const rate = slow ? this.SLOW_RATE : undefined;
-    // Which ring to show: the slow snail's or the normal speaker's. Both rings
-    // track the element's real position (playProgress), so they end exactly
-    // with the sound at any rate. Reset progress so the ring starts empty.
-    this.playingSlow.set(slow);
+    // Publish which speed is starting, and bump the play counter so the audio icon
+    // replays its sound-wave animation (also when it is a repeat).
     this.playKind.set(slow ? 'slow' : 'normal');
-    this.playProgress.set(0);
+    this.playSeq.update(n => n + 1);
 
     // 1. Bundled LOCAL file first — works offline, no device voice needed.
     //    Covers Tree words AND example sentences, without each caller having to

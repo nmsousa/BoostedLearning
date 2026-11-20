@@ -87,23 +87,28 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   /** The live "is a clip playing" signal, read in the template so the play
    *  button's waveform pulses while sound is playing. */
   readonly playing = this.audio.playing;
-  /** True only while a SLOW clip sounds — drives the snail's sweeping ring. */
-  readonly slowPlaying = this.audio.playingSlow;
-  /** Which clip kind is playing ('normal' | 'slow' | null) — each button shows
-   *  its own ring only for its own playback. */
+  /** Audio state for the icon: whether audio is sounding, and a counter that bumps
+   *  on EVERY play so the icon replays its sound-wave animation (page-entry
+   *  auto-plays and every repeat tap alike). */
   readonly playKind = this.audio.playKind;
-  /** Live 0→1 playback progress, driving both rings so they end with the sound. */
-  readonly playProgress = this.audio.playProgress;
-  /** Real slow-clip duration (ms) so the ring lasts as long as the sound. */
-  readonly slowMs = this.audio.slowDurationMs;
-  /** Bumped on every slow tap so the ring animation restarts from scratch. */
-  slowTick = 0;
-  /** Real slow-replay rate, shown on the slow (gauge) icon. */
-  readonly slowRate = this.audio.slowRate;
+  readonly playSeq = this.audio.playSeq;
 
   t(key: string, params?: Record<string, string | number>): string { return this.i18n.t(key, params); }
+  /** How many times this view has been entered. A cold load (F5 on an exercise URL)
+   *  bails out to the level page and leaves this instance cached underneath it,
+   *  still on its loading spinner. Ionic REUSES that instance on the next visit
+   *  without re-running ngOnInit, so it would sit on the spinner forever. */
+  private enterCount = 0;
 
-  ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
+
+  ionViewWillEnter(): void {
+
+    this.backInterceptor.register(this.onHardwareBack);
+    // Re-entered while still loading = a stale instance left by an earlier bail-out:
+    // run the setup again for the NEW route.
+    if (++this.enterCount > 1 && this.isLoading) void this.ngOnInit();
+
+  }
   ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); }
   ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); }
 
@@ -114,9 +119,9 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     this.isJourneyNode = !!this.route.snapshot.queryParamMap.get('from');
     this.backUrl = journeyBackUrl(this.route.snapshot.queryParamMap);
 
-    if (!deckId) { this.router.navigate([this.backUrl]); return; }
+    if (!deckId) { this.router.navigateByUrl(this.backUrl); return; }
     this.deck = this.flashcards.getDeck(deckId);
-    if (!this.deck) { this.router.navigate([this.backUrl]); return; }
+    if (!this.deck) { this.router.navigateByUrl(this.backUrl); return; }
 
     const levelCards: Flashcard[] = this.levelNumber > 0
       ? this.flashcards.getLevelCards(deckId, this.levelNumber)
@@ -146,7 +151,7 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     this.isLoading = false;
     this.cdr.detectChanges();
     // Auto-play the FIRST card's audio (normal speed).
-    setTimeout(() => this.playWord(false, true), 180);
+    setTimeout(() => this.playWord(true), 180);
   }
 
   /** True when at least one card in the set has an emoji — drives whether the
@@ -157,26 +162,12 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   get progress(): number { return this.cards.length ? (this.index / this.cards.length) * 100 : 0; }
   get isLast(): boolean { return this.index >= this.cards.length - 1; }
 
-  /** True once the user has MANUALLY tapped the audio button twice for this
-   *  card — then the button shows the slow (gauge) icon AND the next tap plays
-   *  the slow replay. Auto-plays (card arrival, Back/Continue) do NOT count, so
-   *  navigating back/forth never flips it to slow on its own. The icon and the
-   *  slow playback share this single threshold, so the icon never gets "ahead"
-   *  of the sound (what caused the earlier off-by-one: gauge shown but still
-   *  playing fast for one extra tap). */
-  /**
-   * Play the current word. `slow` = the slow (snail) replay; `auto` = triggered
-   * by navigation/card-open or a Back/Continue move (always normal speed). Both
-   * audio buttons are always shown (slow first, then normal), so there's no
-   * play-count threshold any more.
-   */
-  /** Slow button tap: restart the ring sweep and play the slow clip. */
-  playSlow(): void { this.slowTick++; void this.playWord(true); }
-
-  async playWord(slow = false, auto = false): Promise<void> {
+  /** Play the current word. The audio service picks the speed: the first 3
+   *  hearings of a word are normal, the 4th is slower. `auto` = card arrival. */
+  async playWord(auto = false): Promise<void> {
     const c = this.card;
     if (!c) return;
-    const res = await this.audio.playWord(c.fr, c.audioUrl, this.settings.learningLanguage(), slow);
+    const res = await this.audio.playWord(c.fr, c.audioUrl, this.settings.learningLanguage());
     // When there's no recording AND no device voice, tell the user why (so a
     // silent tap isn't mistaken for a bug).
     if (!res.ok && res.reason) {
@@ -209,7 +200,7 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
       this.index = newIndex;
       this.transitioning = false;
       this.cdr.detectChanges();
-      if (play) this.playWord(false, true);   // auto-play: normal speed
+      if (play) this.playWord(true);   // auto-play: normal speed
     }, LearnPage.TRANSITION_MS);
   }
 

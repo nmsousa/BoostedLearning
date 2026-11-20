@@ -58,11 +58,6 @@
           <span class="tp-progress-track"><span class="tp-progress-fill" [style.width.%]="percentOf(core)"></span></span>
           <span class="tp-progress-pct">{{ percentOf(core) }}%</span>
         </span>
-        <!-- Only on the card that's next: starts its next activity right away. -->
-        <span *ngIf="isNext(core)" class="tp-start" role="button" tabindex="0"
-          (click)="startLesson($event)" (keydown.enter)="startLesson($event)">
-          <ion-icon name="play" aria-hidden="true"></ion-icon>{{ 'treePlus.startLesson' | translate }}
-        </span>
       </span>
       <ion-icon class="tp-core-caret" name="chevron-forward" aria-hidden="true"></ion-icon>
     </button>
@@ -94,11 +89,6 @@
           <span class="tp-progress">
             <span class="tp-progress-track"><span class="tp-progress-fill" [style.width.%]="percentOf(node)"></span></span>
             <span class="tp-progress-pct">{{ percentOf(node) }}%</span>
-          </span>
-          <!-- Only on the card that's next: starts its next activity right away. -->
-          <span *ngIf="isNext(node)" class="tp-start" role="button" tabindex="0"
-            (click)="startLesson($event)" (keydown.enter)="startLesson($event)">
-            <ion-icon name="play" aria-hidden="true"></ion-icon>{{ 'treePlus.startLesson' | translate }}
           </span>
         </button>
       </ng-container>

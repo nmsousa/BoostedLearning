@@ -81,14 +81,14 @@
   // the expanding glow so it reads clearly as "this is next".
   &.pulse {
     animation: ep-row-pulse 0.9s ease-in-out 3;
-    border-color: #ffdc78;
+    border-color: var(--next-hl, #a9b6ff);
   }
 }
 @keyframes ep-row-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 220, 120, 0);   border-color: rgba(255, 220, 120, 0.35); }
-  50%      { box-shadow: 0 0 0 5px rgba(255, 220, 120, 0.6); border-color: #ffdc78; }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--next-hl-rgb, 169, 182, 255), 0);   border-color: rgba(var(--next-hl-rgb, 169, 182, 255), 0.35); }
+  50%      { box-shadow: 0 0 0 5px rgba(var(--next-hl-rgb, 169, 182, 255), 0.6); border-color: var(--next-hl, #a9b6ff); }
 }
-:host-context(.reduced-motion) .ep-row.pulse { animation: none; border-color: #ffdc78; }
+:host-context(.reduced-motion) .ep-row.pulse { animation: none; border-color: var(--next-hl, #a9b6ff); }
 
 .ep-emoji {
   flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;

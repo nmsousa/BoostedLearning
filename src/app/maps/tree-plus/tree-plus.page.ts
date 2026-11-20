@@ -157,14 +157,6 @@ export class TreePlusPage implements OnInit, OnDestroy {
     this.engine.launchMode(node.id, tier, mode.modeIndex);
   }
 
-  /** The "Start lesson" pill on the next card: same as Continue, without also
-   *  opening the card's level page. */
-  startLesson(event: Event): void {
-    event.stopPropagation();
-    event.preventDefault();
-    this.continueNext();
-  }
-
   // ── Celebrations (level up / topics unlocked) ────────────────────────────────
   /** localStorage key for the highest Core available-tier we've already
    *  celebrated (per lang) — the "all topics done → next Core unlocked" event. */

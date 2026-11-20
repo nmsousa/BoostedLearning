@@ -457,6 +457,23 @@ export function themeLevelOf(themeIndex: number, tier: number): number {
 }
 
 /**
+ * The deck levels of the SAME topic (the Core, or one theme) up to and including
+ * `level`: this level plus the topic's earlier tiers. E.g. Travel L2 → [Travel L1,
+ * Travel L2]; Core L3 → [Core 1, 2, 3]. Used to keep quiz-style wrong answers on
+ * topic (a travel word shouldn't be offered "head"). Empty if `level` isn't a
+ * Tree layout level (e.g. a non-Tree deck).
+ */
+export function topicLevelsUpTo(level: number): number[] {
+  const { coreSlots, themeSlots } = TREE_LAYOUT;
+  if (!Number.isInteger(level) || level < 1) return [];
+  if (level <= coreSlots) return Array.from({ length: level }, (_v, i) => coreLevelOf(i + 1));
+  const themeIndex = Math.floor((level - coreSlots - 1) / themeSlots);
+  const tier = ((level - coreSlots - 1) % themeSlots) + 1;
+  if (themeIndex >= THEME_DEFS.length) return [];
+  return Array.from({ length: tier }, (_v, i) => themeLevelOf(themeIndex, i + 1));
+}
+
+/**
  * Lazily-built index of every authored word (Core + themes) by its French
  * text, so the Learn step can look up a word's grammar note / emoji from the
  * deck card's text without threading the curriculum through the deck.

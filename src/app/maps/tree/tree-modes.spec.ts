@@ -4,6 +4,7 @@ import {
   TREE_MODES, REQUIRED_GAMES, GAME_COUNT, isGameMode, tierProgress, modeStates, type TreeModeDef,
 } from './tree-modes';
 import { journeyBackUrl, tierDetailUrl, tierOriginUrl } from '../journey/journey-back';
+import { topicLevelsUpTo, themeLevelOf } from './tree-curriculum';
 
 /** A `passed` predicate from a list of mode ids. */
 const passing = (ids: string[]) => (m: TreeModeDef) => ids.includes(m.id);
@@ -90,5 +91,24 @@ describe('level page return route', () => {
     expect(tierOriginUrl('explore-plus')).toBe('/practice/explore-plus');
     expect(tierOriginUrl('tree-plus')).toBe('/practice/tree-plus');
     expect(tierOriginUrl(null)).toBe('/practice/tree-plus');
+  });
+});
+
+describe('topicLevelsUpTo (same-topic wrong answers)', () => {
+  it('Core level N → Core levels 1..N', () => {
+    expect(topicLevelsUpTo(1)).toEqual([1]);
+    expect(topicLevelsUpTo(3)).toEqual([1, 2, 3]);
+  });
+
+  it('a theme level → that theme\'s own earlier levels only (never Core or other themes)', () => {
+    // Theme #0 tier 2 and theme #1 tier 3.
+    expect(topicLevelsUpTo(themeLevelOf(0, 2))).toEqual([themeLevelOf(0, 1), themeLevelOf(0, 2)]);
+    expect(topicLevelsUpTo(themeLevelOf(1, 3))).toEqual([themeLevelOf(1, 1), themeLevelOf(1, 2), themeLevelOf(1, 3)]);
+  });
+
+  it('is empty for levels outside the Tree layout', () => {
+    expect(topicLevelsUpTo(0)).toEqual([]);
+    expect(topicLevelsUpTo(-4)).toEqual([]);
+    expect(topicLevelsUpTo(99999)).toEqual([]);
   });
 });

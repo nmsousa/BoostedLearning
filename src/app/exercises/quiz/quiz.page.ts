@@ -20,6 +20,7 @@ import { AddWordService } from '../../services/add-word.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../../maps/journey/journey-back';
+import { topicLevelsUpTo } from '../../maps/tree/tree-curriculum';
 
 type QuizPhase = 'play' | 'complete';
 
@@ -54,16 +55,12 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
 
   /** Live "is a clip playing" signal + the real slow rate, for the audio icons. */
   readonly playing = this.audio.playing;
-  readonly slowPlaying = this.audio.playingSlow;
-  readonly slowRate = this.audio.slowRate;
-  readonly slowMs = this.audio.slowDurationMs;
+  /** Audio state for the icon: whether audio is sounding, and a counter that bumps
+   *  on EVERY play so the icon replays its sound-wave animation (page-entry
+   *  auto-plays and every repeat tap alike). */
   readonly playKind = this.audio.playKind;
-  readonly playProgress = this.audio.playProgress;
-  /** Bumped on every slow tap so the ring animation restarts from scratch. */
-  slowTick = 0;
+  readonly playSeq = this.audio.playSeq;
 
-  /** Slow button tap: restart the ring sweep and play the slow clip. */
-  playSlow(): void { this.slowTick++; void this.playWord(true); }
 
   /** Hardware/gesture back: if there's progress to lose, show the confirm (and
    *  claim the press so the page isn't popped behind it); otherwise leave. */
@@ -203,13 +200,13 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
     }
 
     if (!deckId) {
-      this.router.navigate([this.backUrl]);
+      this.router.navigateByUrl(this.backUrl);
       return;
     }
 
     this.deck = this.flashcardService.getDeck(deckId);
     if (!this.deck) {
-      this.router.navigate([this.backUrl]);
+      this.router.navigateByUrl(this.backUrl);
       return;
     }
 
@@ -232,7 +229,7 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
     if (this.levelNumber > 0) {
       const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
       if (!isUnlocked) {
-        this.router.navigate([this.backUrl]);
+        this.router.navigateByUrl(this.backUrl);
         return;
       }
       if (this.singlePass) {
@@ -278,23 +275,14 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
     return this.cards[this.currentIndex] ?? null;
   }
 
-  /** How many times the (normal-speed) word audio has been played this card. */
-  playCount = 0;
-
-  /** Show the slow-replay button only after the word was played twice. */
-  get showSlowButton(): boolean {
-    return this.playCount >= 2;
-  }
 
   /** Play the prompt word: recorded clip if available, else device TTS. */
-  async playWord(slow = false) {
+  async playWord() {
     if (!this.currentCard) return;
-    if (!slow) this.playCount++;
     const res = await this.audio.playWord(
       this.currentCard.text,
       this.currentCard.audioUrl,
-      this.settings.learningLanguage(),
-      slow
+      this.settings.learningLanguage()
     );
     if (!res.ok && res.reason) {
       const t = await this.toast.create({ message: res.reason, duration: 2500, position: 'bottom' });
@@ -305,7 +293,6 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
   /** Build the prompt + options for the current card. */
   private loadQuestion() {
     this.answered = false;
-    this.playCount = 0;
     const card = this.cards[this.currentIndex];
     this.prompt = card.text;
 
@@ -316,15 +303,34 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
     // excluding any that equal the correct answer or the prompt word itself.
     // "—" is the Tree deck's placeholder for not-yet-authored levels; it is
     // never a meaningful option.
-    const pool = (this.deck?.cards ?? [])
+    const usable = (cards: Flashcard[]): string[] => cards
       .filter(c => c.id !== card.id)
       .map(c => this.flashcardService.bestTranslation(c))
       .filter(t => {
         const tl = t.trim().toLowerCase();
         return tl && tl !== '—' && tl !== correctLabel.toLowerCase() && tl !== promptLower;
       });
+    const pool = usable(this.deck?.cards ?? []);
 
-    const distractors = this.pickDistractors(pool, correctLabel, this.OPTION_COUNT - 1);
+    // Explore (Tree) lessons: take the wrong answers from the SAME TOPIC first
+    // (this level + the topic's earlier levels), so an answer can't be ruled out
+    // just because it's about something else (a travel word offered "head").
+    // Only if the topic can't supply enough do we top up from the rest of the deck.
+    const need = this.OPTION_COUNT - 1;
+    let distractors: string[];
+    const topicLevels = this.deck && this.flashcardService.isTreeDeckId(this.deck.id)
+      ? topicLevelsUpTo(this.levelNumber) : [];
+    if (this.deck && topicLevels.length > 0) {
+      const deckId = this.deck.id;
+      const topicPool = usable(topicLevels.flatMap(n => this.flashcardService.getLevelCards(deckId, n)));
+      distractors = this.pickDistractors(topicPool, correctLabel, need);
+      if (distractors.length < need) {
+        const rest = pool.filter(t => !distractors.includes(t));
+        distractors = [...distractors, ...this.pickDistractors(rest, correctLabel, need - distractors.length)];
+      }
+    } else {
+      distractors = this.pickDistractors(pool, correctLabel, need);
+    }
 
     const labels = this.shuffle([correctLabel, ...distractors]);
     this.options = labels.map(label => ({

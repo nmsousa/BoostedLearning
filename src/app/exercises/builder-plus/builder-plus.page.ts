@@ -71,6 +71,10 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
   private route = inject(ActivatedRoute);
   private i18n = inject(I18nAngularService);
   private audio = inject(AudioService);
+  /** Audio state for the play icons: which kind is playing, and a counter that
+   *  bumps on EVERY play so the icon replays its sound-wave animation. */
+  readonly playKind = this.audio.playKind;
+  readonly playSeq = this.audio.playSeq;
   private settings = inject(SettingsService);
   private addWordService = inject(AddWordService);
   private flashcards = inject(FlashcardService);

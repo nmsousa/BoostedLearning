@@ -334,18 +334,25 @@ ion-header ion-progress-bar {
 }
 
 /* ---------------------------------------------------------------------------
- * Slow-audio button
+ * Audio play buttons
  * ---------------------------------------------------------------------------
- * The sweeping progress ring is drawn INSIDE app-slow-audio-icon as an SVG
- * circle (stroke-dashoffset), which physically cannot overshoot 360°. This
- * class only suppresses any per-mode "playing" glow/border (the old blue
- * circle) on a slow button so it doesn't stack with the ring.
+ * Every play-audio button shows its feedback INSIDE its icon
+ * (app-audio-play-icon): the sound waves expand in each time audio plays. So a
+ * button carrying this class must not ALSO flash its border / glow or bounce its
+ * icon while it is "playing" (the per-page .playing styles), or the cues stack.
+ * Only the icon element itself is calmed here; the waves inside it keep animating.
  */
-/* The slow button must be a positioning context so the icon component's ring
-   (position:absolute; inset:0) is exactly the button's circle. */
-.slow-audio-ring { position: relative; }
-.slow-audio-ring.playing {
+.audio-wave-btn.playing {
   animation: none !important;
   box-shadow: none !important;
-  > ion-icon { animation: none !important; }
+  > ion-icon,
+  > app-audio-play-icon { animation: none !important; }
+}
+
+/* The "do this next" highlight, shared by Explore (next Core/topic card), Explore+
+   (next row) and the level page (next activity), so it is the same colour everywhere:
+   a soft periwinkle that reads on both the purple Core card and the dark cards. */
+:root {
+  --next-hl: #a9b6ff;
+  --next-hl-rgb: 169, 182, 255;
 }

@@ -98,7 +98,7 @@
         <span class="word-article" *ngIf="groupWord.article">{{ groupWord.article }} </span>{{ groupWord.text }}
       </span>
       <button type="button" class="word-audio" (click)="playWord(groupWord.text)" aria-label="Play">
-        <ion-icon name="volume-high-outline"></ion-icon>
+        <app-audio-play-icon tone="inherit" size="24px" [active]="!!playKind()" [playToken]="playSeq()"></app-audio-play-icon>
       </button>
       <span class="word-en">{{ groupWord.translations.join(', ') }}</span>
     </div>

@@ -59,17 +59,12 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
   private audio = inject(AudioService);
   private toast = inject(ToastController);
   private cdr = inject(ChangeDetectorRef);
-  /** Real slow-replay rate for the snail icon label + slow-ring signal. */
-  readonly slowRate = this.audio.slowRate;
-  readonly slowPlaying = this.audio.playingSlow;
-  readonly slowMs = this.audio.slowDurationMs;
+  /** Audio state for the icon: whether audio is sounding, and a counter that bumps
+   *  on EVERY play so the icon replays its sound-wave animation (page-entry
+   *  auto-plays and every repeat tap alike). */
   readonly playKind = this.audio.playKind;
-  readonly playProgress = this.audio.playProgress;
-  /** Bumped on every slow tap so the ring animation restarts from scratch. */
-  slowTick = 0;
+  readonly playSeq = this.audio.playSeq;
 
-  /** Slow button tap: restart the ring sweep and play the slow clip. */
-  playSlow(): void { this.slowTick++; void this.playWord(true); }
   private addWordService = inject(AddWordService);
   private backInterceptor = inject(BackInterceptorService);
 
@@ -200,13 +195,13 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
     }
     
     if (!deckId) {
-      this.router.navigate([this.backUrl]);
+      this.router.navigateByUrl(this.backUrl);
       return;
     }
 
     this.deck = this.flashcardService.getDeck(deckId);
     if (!this.deck) {
-      this.router.navigate([this.backUrl]);
+      this.router.navigateByUrl(this.backUrl);
       return;
     }
 
@@ -223,7 +218,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
       // Check if level is unlocked
       const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
       if (!isUnlocked) {
-        this.router.navigate([this.backUrl]);
+        this.router.navigateByUrl(this.backUrl);
         return;
       }
       if (this.singlePass) {
@@ -347,9 +342,18 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
   }
 
   /** Claim the hardware/gesture back press while this exercise is on screen. */
+  /** How many times this view has been entered. A cold load (F5 on an exercise URL)
+   *  bails out to the level page and leaves this instance cached underneath it,
+   *  still on its loading spinner. Ionic REUSES that instance on the next visit
+   *  without re-running ngOnInit, so it would sit on the spinner forever. */
+  private enterCount = 0;
+
   ionViewWillEnter(): void {
     this.leaving = false;
     this.backInterceptor.register(this.onHardwareBack);
+    // Re-entered while still loading = a stale instance left by an earlier bail-out:
+    // run the setup again for the NEW route.
+    if (++this.enterCount > 1 && this.isLoading) void this.ngOnInit();
   }
 
   ionViewWillLeave(): void {
@@ -637,23 +641,14 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
       : this.t('mode.typeInEnglish');
   }
 
-  /** How many times the (normal-speed) word audio has been played this card. */
-  playCount = 0;
-
-  /** Show the slow-replay button only after the word was played twice. */
-  get showSlowButton(): boolean {
-    return this.playCount >= 2;
-  }
 
   /** Play the target-language word: recorded clip if available, else TTS. */
-  async playWord(slow = false) {
+  async playWord() {
     if (!this.currentCard) return;
-    if (!slow) this.playCount++;
     const res = await this.audio.playWord(
       this.currentCard.text,
       this.currentCard.audioUrl,
-      this.settings.learningLanguage(),
-      slow
+      this.settings.learningLanguage()
     );
     if (!res.ok && res.reason) {
       const t = await this.toast.create({ message: res.reason, duration: 2500, position: 'bottom' });
@@ -878,7 +873,6 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
     this.hintText = '';
     this.usedHint = false;
     this.revealedViaHint = false;
-    this.playCount = 0;
 
     // The session ends only when every unique card has been answered
     // correctly. Failed cards were appended to the queue, so we keep going

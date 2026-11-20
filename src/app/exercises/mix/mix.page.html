@@ -23,22 +23,17 @@
            word on its own line with the speaker on its OWN line below, so a
            long word never wraps around the icon. -->
       <div class="mix-prompt">
-        <button *ngIf="item.kind === 'audio'" type="button" class="mix-audio-big" [class.playing]="playing()" (click)="playPrompt()"
+        <button *ngIf="item.kind === 'audio'" type="button" class="mix-audio-big audio-wave-btn" [class.playing]="playing()" (click)="playPrompt()"
           [attr.aria-label]="'mode.playPronunciation' | translate">
-          <ion-icon name="volume-high" aria-hidden="true"></ion-icon>
+          <app-audio-play-icon tone="inherit" size="40px" [active]="!!playKind()" [playToken]="playSeq()"></app-audio-play-icon>
         </button>
         <ng-container *ngIf="item.kind === 'quiz'">
           <h1 class="mix-word">{{ item.prompt }}</h1>
-          <!-- SLOW (snail) first, then NORMAL — both always shown. -->
+          <!-- ONE audio button: the first 3 hearings are normal speed, the 4th is slower. -->
           <span class="mix-audio-row">
-            <button type="button" class="mix-audio slow slow-audio-ring" [class.playing]="slowPlaying()" (click)="playSlow()"
-              [attr.aria-label]="'mode.playSlower' | translate">
-              <app-slow-audio-icon [active]="playKind() === 'slow'" [rate]="slowRate" [progress]="playProgress()"></app-slow-audio-icon>
-            </button>
-            <button type="button" class="mix-audio slow-audio-ring" [class.playing]="playing() && !slowPlaying()" (click)="playPrompt()"
+            <button type="button" class="mix-audio audio-wave-btn" [class.playing]="playing()" (click)="playPrompt()"
               [attr.aria-label]="'mode.playPronunciation' | translate">
-              <ion-icon name="volume-high-outline" aria-hidden="true"></ion-icon>
-              <app-slow-audio-icon glyph="none" [active]="playKind() === 'normal'" [progress]="playProgress()"></app-slow-audio-icon>
+              <app-audio-play-icon tone="inherit" [active]="!!playKind()" [playToken]="playSeq()"></app-audio-play-icon>
             </button>
           </span>
         </ng-container>

@@ -1,13 +1,14 @@
 {
   "name": "boosted-learning",
-  "version": "1.3.59",
+  "version": "1.3.60",
   "description": "An Ionic project",
   "author": "BoostedLearning",
   "scripts": {
     "ng": "ng",
     "gen:build-info": "node scripts/gen-build-info.mjs",
-    "prestart": "node scripts/gen-build-info.mjs",
-    "prebuild": "node scripts/gen-build-info.mjs",
+    "gen:audio-icon": "node scripts/gen-audio-icon.mjs",
+    "prestart": "node scripts/gen-build-info.mjs && node scripts/gen-audio-icon.mjs",
+    "prebuild": "node scripts/gen-build-info.mjs && node scripts/gen-audio-icon.mjs",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",

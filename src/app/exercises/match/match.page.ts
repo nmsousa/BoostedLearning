@@ -51,6 +51,10 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   private i18n = inject(I18nAngularService);
   private addWordService = inject(AddWordService);
   private audio = inject(AudioService);
+  /** Audio state for the play icons: which kind is playing, and a counter that
+   *  bumps on EVERY play so the icon replays its sound-wave animation. */
+  readonly playKind = this.audio.playKind;
+  readonly playSeq = this.audio.playSeq;
   private settings = inject(SettingsService);
   private backInterceptor = inject(BackInterceptorService);
   private exitConfirm = inject(ExitConfirmService);
@@ -58,8 +62,21 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   /** Hardware/gesture back: confirm if there's progress to lose, else leave. */
   private readonly onHardwareBack: () => Promise<boolean> =
     () => this.exitConfirm.request(this.hasProgress, () => this.leave());
+  /** How many times this view has been entered. A cold load (F5 on an exercise URL)
+   *  bails out to the level page and leaves this instance cached underneath it,
+   *  still on its loading spinner. Ionic REUSES that instance on the next visit
+   *  without re-running ngOnInit, so it would sit on the spinner forever. */
+  private enterCount = 0;
 
-  ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
+
+  ionViewWillEnter(): void {
+
+    this.backInterceptor.register(this.onHardwareBack);
+    // Re-entered while still loading = a stale instance left by an earlier bail-out:
+    // run the setup again for the NEW route.
+    if (++this.enterCount > 1 && this.isLoading) void this.ngOnInit();
+
+  }
   ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); this.exitConfirm.reset(); }
 
   /** True when there are matched pairs or mistakes worth confirming. */
@@ -174,13 +191,13 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     this.isAudio = this.mode === 'match-audio' || this.mode === 'journey-match-audio';
 
     if (!deckId) {
-      this.router.navigate([this.backUrl]);
+      this.router.navigateByUrl(this.backUrl);
       return;
     }
 
     this.deck = this.flashcardService.getDeck(deckId);
     if (!this.deck) {
-      this.router.navigate([this.backUrl]);
+      this.router.navigateByUrl(this.backUrl);
       return;
     }
 
@@ -194,7 +211,7 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
       if (this.levelNumber > 0) {
         const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
         if (!isUnlocked) {
-          this.router.navigate([this.backUrl]);
+          this.router.navigateByUrl(this.backUrl);
           return;
         }
         // Match uses a longer session: the level's words + weak words from

@@ -83,7 +83,18 @@ export class BlanksPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLea
   };
 
   ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); }
-  ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
+  /** How many times this view has been entered. A cold load (F5 on an exercise URL)
+   *  bails out to the level page and leaves this instance cached underneath it,
+   *  still on its loading spinner. Ionic REUSES that instance on the next visit
+   *  without re-running ngOnInit, so it would sit on the spinner forever. */
+  private enterCount = 0;
+
+  ionViewWillEnter(): void {
+    this.backInterceptor.register(this.onHardwareBack);
+    // Re-entered while still loading = a stale instance left by an earlier bail-out:
+    // run the setup again for the NEW route.
+    if (++this.enterCount > 1 && this.isLoading) void this.ngOnInit();
+  }
   ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); }
 
   t(key: string, params?: Record<string, string | number>): string {
@@ -147,9 +158,9 @@ export class BlanksPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLea
       this.singlePass = true;
     }
 
-    if (!deckId) { this.router.navigate([this.backUrl]); return; }
+    if (!deckId) { this.router.navigateByUrl(this.backUrl); return; }
     this.deck = this.flashcardService.getDeck(deckId);
-    if (!this.deck) { this.router.navigate([this.backUrl]); return; }
+    if (!this.deck) { this.router.navigateByUrl(this.backUrl); return; }
 
     // TEMPORARY: admin test level — the phrase-builder can't make sentences
     // from "wifi"/"internet", so build 2 trivial one-word questions directly.
@@ -165,7 +176,7 @@ export class BlanksPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLea
 
     if (this.levelNumber > 0) {
       const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
-      if (!isUnlocked) { this.router.navigate([this.backUrl]); return; }
+      if (!isUnlocked) { this.router.navigateByUrl(this.backUrl); return; }
       this.levelTitle = this.flashcardService.getLevelCards(deckId, this.levelNumber)[0]?.skill ?? '';
     }
 

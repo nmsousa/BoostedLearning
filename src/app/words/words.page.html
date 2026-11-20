@@ -148,16 +148,10 @@
       <!-- Admin only: a GREEN speaker means this word still uses the borrowed
            Duolingo recording (not yet re-voiced with our TTS). Normal colour =
            our generated clip or no local clip. -->
-      <!-- SLOW (snail) first, then NORMAL. Hidden for the user's own custom
-           words: they have no recorded audio. -->
-      <button type="button" class="word-audio slow slow-audio-ring" *ngIf="!selectMode && !w.isCustom" (click)="playWord(w, $event, true)"
-        [attr.aria-label]="'mode.playSlower' | translate">
-        <app-slow-audio-icon [active]="false" [rate]="slowRate"></app-slow-audio-icon>
-      </button>
       <button type="button" class="word-audio" *ngIf="!selectMode && !w.isCustom" [class.from-duolingo]="isDuolingoAudio(w)"
         (click)="playWord(w, $event)"
         [attr.aria-label]="'mode.playPronunciation' | translate">
-        <ion-icon name="volume-high-outline"></ion-icon>
+        <app-audio-play-icon tone="inherit" size="22px" [active]="isPlaying(w)" [playToken]="playSeq()"></app-audio-play-icon>
       </button>
     </div>
   </div>

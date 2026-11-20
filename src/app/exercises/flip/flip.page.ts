@@ -54,7 +54,18 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
   };
 
   ngOnDestroy(): void { this.backInterceptor.clear(this.onHardwareBack); }
-  ionViewWillEnter(): void { this.backInterceptor.register(this.onHardwareBack); }
+  /** How many times this view has been entered. A cold load (F5 on an exercise URL)
+   *  bails out to the level page and leaves this instance cached underneath it,
+   *  still on its loading spinner. Ionic REUSES that instance on the next visit
+   *  without re-running ngOnInit, so it would sit on the spinner forever. */
+  private enterCount = 0;
+
+  ionViewWillEnter(): void {
+    this.backInterceptor.register(this.onHardwareBack);
+    // Re-entered while still loading = a stale instance left by an earlier bail-out:
+    // run the setup again for the NEW route.
+    if (++this.enterCount > 1 && this.isLoading) void this.ngOnInit();
+  }
   ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); }
 
   t(key: string, params?: Record<string, string | number>): string {
@@ -84,7 +95,7 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
    * this used a random rating, which made 3★ still lower the green count.
    */
   private async adminCompleteLevel(stars: 0 | 1 | 2 | 3): Promise<void> {
-    if (!this.deck) { this.router.navigate([this.backUrl], { replaceUrl: true }); return; }
+    if (!this.deck) { this.router.navigateByUrl(this.backUrl, { replaceUrl: true }); return; }
 
     // Stars → knowledge bucket, applied as a clean SET (not accumulate) so the
     // action is idempotent: 3★ marks every word "know it" the same way each
@@ -108,7 +119,6 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
   private skipHiddenCard(): void {
     this.currentIndex++;
     this.isFlipped = false;
-    this.playCount = 0;
     if (this.currentIndex >= this.cards.length) {
       this.completeSession();
     }
@@ -172,13 +182,13 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
     }
 
     if (!deckId) {
-      this.router.navigate([this.backUrl]);
+      this.router.navigateByUrl(this.backUrl);
       return;
     }
 
     this.deck = this.flashcardService.getDeck(deckId);
     if (!this.deck) {
-      this.router.navigate([this.backUrl]);
+      this.router.navigateByUrl(this.backUrl);
       return;
     }
 
@@ -191,7 +201,7 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
     } else if (this.levelNumber > 0) {
       const isUnlocked = await this.flashcardService.isLevelUnlocked(deckId, this.mode, this.levelNumber);
       if (!isUnlocked) {
-        this.router.navigate([this.backUrl]);
+        this.router.navigateByUrl(this.backUrl);
         return;
       }
       // Exclude words the user hid from practice (getLevelCards returns the
@@ -246,37 +256,24 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
     this.isFlipped = !this.isFlipped;
   }
 
-  /** How many times the (normal-speed) word audio has been played this card. */
-  playCount = 0;
-
-  /** Show the slow-replay button only after the word was played twice. */
-  get showSlowButton(): boolean {
-    return this.playCount >= 2;
-  }
 
   /** Live "is a clip playing" signal + the real slow rate, for the audio icon. */
   readonly playing = this.audio.playing;
-  readonly slowPlaying = this.audio.playingSlow;
-  readonly slowRate = this.audio.slowRate;
-  readonly slowMs = this.audio.slowDurationMs;
+  /** Audio state for the icon: whether audio is sounding, and a counter that bumps
+   *  on EVERY play so the icon replays its sound-wave animation (page-entry
+   *  auto-plays and every repeat tap alike). */
   readonly playKind = this.audio.playKind;
-  readonly playProgress = this.audio.playProgress;
-  /** Bumped on every slow tap so the ring animation restarts from scratch. */
-  slowTick = 0;
+  readonly playSeq = this.audio.playSeq;
 
-  /** Slow button tap: restart the ring sweep and play the slow clip. */
-  playSlow(event: Event): void { this.slowTick++; void this.playWord(event, true); }
 
   /** Play the current word: recorded clip if available, else device TTS. */
-  async playWord(event: Event, slow = false) {
+  async playWord(event: Event) {
     event.stopPropagation();
     if (!this.currentCard) return;
-    if (!slow) this.playCount++;
     const res = await this.audio.playWord(
       this.currentCard.text,
       this.currentCard.audioUrl,
-      this.settings.learningLanguage(),
-      slow
+      this.settings.learningLanguage()
     );
     if (!res.ok && res.reason) {
       const t = await this.toast.create({ message: res.reason, duration: 2500, position: 'bottom' });
@@ -308,7 +305,6 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
       this.isFlipped = false;
       this.exitDirection = '';
       this.pendingRating = null;
-      this.playCount = 0;
 
       if (this.currentIndex >= this.cards.length) {
         this.completeSession();

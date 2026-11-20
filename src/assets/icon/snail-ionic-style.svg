@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Snail icon">
-  <circle cx="9.5" cy="12.5" r="6.5"/>
-  <path d="M12 12.5c0-1.45-1.1-2.6-2.5-2.6S7 11.05 7 12.5s1.1 2.6 2.5 2.6 2.5-1.15 2.5-2.6"/>
-  <path d="M3 18.5h12.2c3.2 0 5.8-2.6 5.8-5.8V9"/>
-  <path d="M18.8 8.7 18 5.8M21.4 8.4 22.2 5.5"/>
-  <circle cx="18" cy="5.5" r=".7" fill="currentColor" stroke="none"/>
-  <circle cx="22.3" cy="5.2" r=".7" fill="currentColor" stroke="none"/>
-</svg>

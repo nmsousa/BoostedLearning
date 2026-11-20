@@ -59,10 +59,10 @@
           (click)="select(item)"
           [attr.aria-label]="isAudio ? ('mode.playPronunciation' | translate) : item.label">
           <ng-container *ngIf="!isAudio">{{ item.label }}</ng-container>
-          <!-- Audio tile: just a speaker. Tapping again replays at normal speed
-               (no slow/snail here: these are single words or short phrases, and
-               a speaker + snail on every tile would be noisy). -->
-          <ion-icon *ngIf="isAudio" class="audio-icon" name="volume-high" aria-hidden="true"></ion-icon>
+          <!-- Audio tile: the speaker (its waves animate while it plays). Tapping again
+               replays it (the 4th hearing of a word is slower). -->
+          <app-audio-play-icon *ngIf="isAudio" class="audio-icon" size="1.8rem"
+            [active]="isSelected(item) && !!playKind()" [playToken]="playSeq()"></app-audio-play-icon>
         </button>
       </div>
 

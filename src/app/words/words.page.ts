@@ -47,8 +47,16 @@ export class WordsPage implements OnInit, ViewWillEnter {
   private audio = inject(AudioService);
   private practiceLists = inject(PracticeListService);
 
-  /** Real slow-replay rate for the snail icon label. */
-  readonly slowRate = this.audio.slowRate;
+  /** Audio state for the play icons: which kind is playing, and a counter that
+   *  bumps on EVERY play so the icon replays its sound-wave animation. */
+  readonly playKind = this.audio.playKind;
+  readonly playSeq = this.audio.playSeq;
+  /** The word whose audio was last started, so only ITS row animates. */
+  private playingText = '';
+  /** True while this row's word is sounding. */
+  isPlaying(w: StudiedWord): boolean {
+    return this.playingText === w.text && !!this.playKind();
+  }
 
   /** Multi-select mode: pick words to save into a practice list. */
   selectMode = false;
@@ -256,28 +264,15 @@ export class WordsPage implements OnInit, ViewWillEnter {
     return Math.round(w.accuracy * 100);
   }
 
-  /** Per-word count of normal-speed plays, so a "slower" button appears once a
-   *  word has been played twice (same rule as the Flashcard modes). Keyed by
-   *  word text. */
-  private playCounts = new Map<string, number>();
 
-  /** True once this word has been played at normal speed twice — reveals the
-   *  slow-replay button for that row. */
-  showSlow(w: StudiedWord): boolean {
-    return (this.playCounts.get(w.text) ?? 0) >= 2;
-  }
-
-  /** Play a word's pronunciation (recorded audio if available, else TTS).
-   *  `slow` plays the "turtle" slow replay. Stops the tap from also opening the
-   *  priority sheet. */
-  playWord(w: StudiedWord, event: Event, slow = false): void {
+  /** Play a word's pronunciation (recorded audio if available, else TTS). The
+   *  speed is automatic: the first 3 hearings are normal, the 4th slower. Stops
+   *  the tap from also opening the priority sheet. */
+  playWord(w: StudiedWord, event: Event): void {
     event.stopPropagation();
-    if (!slow) {
-      this.playCounts.set(w.text, (this.playCounts.get(w.text) ?? 0) + 1);
-      this.cdr.detectChanges();
-    }
+    this.playingText = w.text;
     // Prefer the recorded clip (same as the Flashcard modes); fall back to TTS.
-    void this.audio.playWord(w.text, w.audioUrl, this.settings.learningLanguage(), slow);
+    void this.audio.playWord(w.text, w.audioUrl, this.settings.learningLanguage());
   }
 
   /** Open the priority action sheet for a word (boost / normal / hide). */
