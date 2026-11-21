@@ -26,20 +26,26 @@ export interface TreeModeDef {
   icon: string;
   /** i18n key for the mode label (reuses the shared journey.node.* keys). */
   labelKey: string;
+  /** The home page's i18n key for this mode ('home.mode.quiz'); its '.desc' sibling
+   *  is the one-line description. The level page shows the same name + description
+   *  as the home card, so a mode reads the same everywhere. */
+  homeKey: string;
+  /** Home-card accent for the icon colour ('' = the default text colour). */
+  accent: '' | 'write' | 'match' | 'quiz' | 'builder';
 }
 
 /** The modes of a level, in display order (Learn first, then the games). */
 export const TREE_MODES: readonly TreeModeDef[] = [
-  { id: 'learn',   mode: 'journey-learn',   route: '/practice/learn',           icon: 'school-outline',      labelKey: 'journey.node.learn' },
-  { id: 'quiz',    mode: 'journey-quiz',    route: '/practice/quiz',            icon: 'help',                labelKey: 'journey.node.quiz' },
-  { id: 'write',   mode: 'journey-write',   route: '/practice/journey-play',    icon: 'create-outline',      labelKey: 'journey.node.write' },
-  { id: 'match',   mode: 'journey-match',   route: '/practice/match',           icon: 'git-compare-outline', labelKey: 'journey.node.match' },
-  { id: 'match-audio', mode: 'journey-match-audio', route: '/practice/match',    icon: 'volume-high-outline', labelKey: 'journey.node.matchAudio' },
-  { id: 'builder', mode: 'journey-builder', route: '/practice/journey-builder', icon: 'construct-outline',   labelKey: 'journey.node.builder' },
-  { id: 'builder-plus', mode: 'journey-builder-plus', route: '/practice/journey-builder-plus', icon: 'construct', labelKey: 'journey.node.builderPlus' },
+  { id: 'learn',   mode: 'journey-learn',   route: '/practice/learn',           icon: 'school-outline',      labelKey: 'journey.node.learn', homeKey: 'home.mode.learn', accent: '' },
+  { id: 'quiz',    mode: 'journey-quiz',    route: '/practice/quiz',            icon: 'help',                labelKey: 'journey.node.quiz', homeKey: 'home.mode.quiz', accent: 'quiz' },
+  { id: 'write',   mode: 'journey-write',   route: '/practice/journey-play',    icon: 'create-outline',      labelKey: 'journey.node.write', homeKey: 'home.mode.write', accent: 'write' },
+  { id: 'match',   mode: 'journey-match',   route: '/practice/match',           icon: 'git-compare-outline', labelKey: 'journey.node.match', homeKey: 'home.mode.match', accent: 'match' },
+  { id: 'match-audio', mode: 'journey-match-audio', route: '/practice/match',    icon: 'volume-high-outline', labelKey: 'journey.node.matchAudio', homeKey: 'home.mode.matchAudio', accent: 'match' },
+  { id: 'builder', mode: 'journey-builder', route: '/practice/journey-builder', icon: 'construct-outline',   labelKey: 'journey.node.builder', homeKey: 'home.mode.builder', accent: 'builder' },
+  { id: 'builder-plus', mode: 'journey-builder-plus', route: '/practice/journey-builder-plus', icon: 'construct', labelKey: 'journey.node.builderPlus', homeKey: 'home.mode.builderPlus', accent: 'builder' },
   // Mix is the LAST node: a mixed session of the level's activities. It counts
   // toward tier completion like the others and is double-tap-completable (admin).
-  { id: 'mix',     mode: 'journey-mix',     route: '/practice/mix',             icon: 'shuffle-outline',     labelKey: 'home.mode.mix' },
+  { id: 'mix',     mode: 'journey-mix',     route: '/practice/mix',             icon: 'shuffle-outline',     labelKey: 'home.mode.mix', homeKey: 'home.mode.mix', accent: '' },
 ];
 
 // ── Completion rule ───────────────────────────────────────────────────────────
@@ -106,4 +112,5 @@ export function modeStates(passed: (m: TreeModeDef) => boolean, authored = true)
  */
 export const FLASHCARDS_REVIEW_MODE: TreeModeDef = {
   id: 'flip', mode: 'journey-flip', route: '/practice/flip', icon: 'albums-outline', labelKey: 'journey.node.flip',
+  homeKey: 'home.mode.flashcards', accent: '',
 };

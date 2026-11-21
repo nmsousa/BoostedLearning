@@ -332,6 +332,17 @@ export class TreePlusPage implements OnInit, OnDestroy {
     return this.t('tree.levelShort', { n: this.currentTier(node) });
   }
 
+  /** The small line under a topic's name. The level is already shown on the Core
+   *  card, so repeating "Level 2" on every topic is noise: a topic only shows a
+   *  level when it is NOT the Core's current level. Otherwise it shows "Coming
+   *  soon" (locked), "Completed", or nothing. */
+  topicStatus(node: TreeNode): string {
+    if (node.state === 'locked') return this.t('tree.comingSoon');
+    if (this.isFullyComplete(node)) return this.t('tree.unit.done');
+    const level = this.currentTier(node);
+    return level === this.currentTier(this.core) ? '' : this.t('tree.levelShort', { n: level });
+  }
+
   // ── Open a card → the shared level page ──────────────────────────────────────
   toggleNode(node: TreeNode): void {
     if (this.adminMode) {

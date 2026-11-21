@@ -39,7 +39,11 @@
       </button>
     </div>
 
-    <p class="tp-tagline">✨ {{ 'treePlus.tagline' | translate }}</p>
+    <!-- The level is said ONCE, here (not on the Core card and every topic). -->
+    <div class="tp-tagline-row">
+      <p class="tp-tagline">✨ {{ 'treePlus.tagline' | translate }}</p>
+      <span class="tp-level-pill">{{ 'tree.levelShort' | translate:{ n: currentTier(core) } }}</span>
+    </div>
 
     <!-- Hero: Core Vocabulary. Tap → its level page. -->
     <button type="button" class="tp-core" [class.done]="isFullyComplete(core)"
@@ -52,7 +56,6 @@
       </span>
       <span class="tp-core-text">
         <span class="tp-core-title">{{ core.title }}</span>
-        <span class="tp-core-level">{{ 'tree.levelShort' | translate:{ n: currentTier(core) } }}</span>
         <span class="tp-core-sub">{{ 'treePlus.foundation' | translate }}</span>
         <span class="tp-core-progress">
           <span class="tp-progress-track"><span class="tp-progress-fill" [style.width.%]="percentOf(core)"></span></span>
@@ -84,7 +87,7 @@
             <ion-icon *ngIf="node.state === 'locked'" class="tp-topic-badge lock" name="lock-closed" aria-hidden="true"></ion-icon>
           </span>
           <span class="tp-topic-name">{{ node.title }}</span>
-          <span class="tp-topic-status">{{ nodeStatus(node) }}</span>
+          <span class="tp-topic-status" *ngIf="topicStatus(node) as status">{{ status }}</span>
           <!-- Progress bar for every unlocked node (locked show an empty track). -->
           <span class="tp-progress">
             <span class="tp-progress-track"><span class="tp-progress-fill" [style.width.%]="percentOf(node)"></span></span>

@@ -78,6 +78,9 @@ export interface TreeModeView {
   route: string;
   icon: string;
   labelKey: string;
+  /** Home-page name key (+ '.desc' for the description) and icon accent. */
+  homeKey: string;
+  accent: TreeModeDef['accent'];
   state: TreeNodeState;
 }
 
@@ -306,7 +309,8 @@ export class TreeEngine {
     const authored = this.tierAuthored(nodeId, tier);
     const states = modeStates(m => this.passedModes.has(`${level}:${m.mode}`), authored);
     return TREE_MODES.map((m, i) => ({
-      modeIndex: i, id: m.id, mode: m.mode, route: m.route, icon: m.icon, labelKey: m.labelKey, state: states[i],
+      modeIndex: i, id: m.id, mode: m.mode, route: m.route, icon: m.icon, labelKey: m.labelKey,
+      homeKey: m.homeKey, accent: m.accent, state: states[i],
     }));
   }
 

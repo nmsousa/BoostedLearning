@@ -28,11 +28,9 @@
 // ── Hero ─────────────────────────────────────────────────────────────────────
 .td-hero {
   display: flex; align-items: center; gap: 14px; padding: 18px 16px; border-radius: 18px; margin-bottom: 14px;
-  background: var(--td-glass); border: 1px solid hsla(var(--hue, 265), 80%, 70%, 0.5);
-  &.core { background: linear-gradient(145deg, #6a4fd0, #4a2fa0); border-color: rgba(255, 255, 255, 0.2); }
-  // Done keeps its identity (purple for the Core) with a green edge, so a
-  // finished Core is never mistaken for a finished topic.
-  &.done { border-color: rgba(120, 240, 180, 0.6); }
+  // A plain title card: it is not clickable, so no outline (outlines mean "tap me" / "next").
+  background: var(--td-glass);
+  &.core { background: linear-gradient(145deg, #6a4fd0, #4a2fa0); }
 }
 .td-hero-emoji {
   flex: 0 0 auto; width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center;
@@ -96,13 +94,22 @@
   background: var(--td-glass); border: 1px solid var(--td-glass-line); font-weight: 600;
   .td-mode-ic { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
     background: rgba(255, 255, 255, 0.08); ion-icon { font-size: 19px; } }
-  .td-mode-label { flex: 1 1 auto; min-width: 0; font-size: 0.95rem; }
+  .td-mode-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .td-mode-label { font-size: 0.95rem; }
+  .td-mode-desc { font-size: 0.74rem; font-weight: 500; line-height: 1.3; color: var(--td-muted); }
   .td-mode-tick { flex: 0 0 auto; font-size: 22px; color: var(--td-green); }
   .td-mode-go { flex: 0 0 auto; font-size: 20px; color: #8ea2ff; }
   .td-mode-lock { flex: 0 0 auto; font-size: 16px; color: var(--td-muted); }
   .td-tag {
     flex: 0 0 auto; padding: 1px 8px; border-radius: 999px; font-size: 0.66rem; font-weight: 700;
     color: var(--td-muted); border: 1px solid var(--td-glass-line);
+  }
+  // Icon colours match the home page cards (write / match / quiz / builder).
+  .td-mode-ic {
+    &.accent-write   { color: var(--ion-color-secondary); }
+    &.accent-match   { color: var(--ion-color-tertiary-shade); }
+    &.accent-quiz    { color: var(--ion-color-success); }
+    &.accent-builder { color: var(--ion-color-tertiary); }
   }
   &.state-done { border-color: rgba(45, 211, 111, 0.4); .td-mode-ic { color: var(--td-green); } }
   // Every unlocked, not-yet-passed activity is playable; only the NEXT one

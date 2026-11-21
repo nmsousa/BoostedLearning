@@ -56,7 +56,13 @@
   ion-icon { font-size: 18px; }
   &:active { background: rgba(255, 70, 70, 0.22); }
 }
-.tp-tagline { margin: 2px 0 14px; color: #c9cdff; font-weight: 600; font-size: 0.9rem; }
+.tp-tagline-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 14px; }
+.tp-tagline { margin: 0; color: #c9cdff; font-weight: 600; font-size: 0.9rem; }
+// The level, said once for the whole page.
+.tp-level-pill {
+  flex: 0 0 auto; font-size: 0.74rem; font-weight: 800; padding: 3px 11px; border-radius: 999px;
+  color: #dfe3ff; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--tp-glass-line);
+}
 
 // ── "This is next" highlight (Core and topic cards) ──────────────────────────
 // ONE clean solid gold border (a 1px border + a 1px gold ring = 2px), with a
@@ -100,6 +106,8 @@
     @include tp-finished;
   }
   &:not(.finished) { filter: saturate(1.15); }
+  // Available but not next: no border (only the next card is outlined).
+  &:not(.finished):not(.current) { border-color: transparent; }
 
 }
 :host-context(.reduced-motion) .tp-core.current { @include tp-current-static; }
@@ -115,10 +123,6 @@
 }
 .tp-core-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .tp-core-title { font-size: 1.2rem; font-weight: 800; }
-.tp-core-level {
-  align-self: flex-start; font-size: 0.72rem; font-weight: 700; padding: 1px 9px; border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-}
 .tp-core-sub { font-size: 0.76rem; color: rgba(255, 255, 255, 0.82); }
 .tp-core-caret { flex: 0 0 auto; font-size: 22px; opacity: 0.9; }
 .tp-core-progress { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
@@ -143,7 +147,7 @@
 .tp-topic {
   display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px;
   cursor: pointer; padding: 14px 10px 12px; border-radius: 16px; color: var(--tp-text);
-  width: 100%; min-width: 0; min-height: 132px;
+  width: 100%; min-width: 0;
   background: var(--tp-glass); border: 1px solid var(--tp-glass-line); box-shadow: var(--tp-shadow);
   position: relative;
   &.state-locked { opacity: 0.6; }
@@ -155,6 +159,9 @@
   // do, which stay fully colourful (slightly boosted).
   &.finished { @include tp-finished; }
   &:not(.finished):not(.state-locked) { filter: saturate(1.2); }
+  // Available but not next: no border (only the next card is outlined). Locked
+  // and finished cards keep their faint outline.
+  &:not(.finished):not(.state-locked):not(.current) { border-color: transparent; }
 }
 :host-context(.reduced-motion) .tp-topic.current { @include tp-current-static; }
 .tp-topic-emoji {

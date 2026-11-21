@@ -85,9 +85,12 @@
 <ng-template #modeRow let-m>
   <button type="button" class="td-mode" [ngClass]="'state-' + m.state" [class.next]="isNext(m)"
     [disabled]="m.state === 'locked'" (click)="onModeTap(m)"
-    [attr.aria-label]="(m.labelKey | translate) + ', ' + ('tree.unit.' + m.state | translate)">
-    <span class="td-mode-ic"><ion-icon [name]="m.icon" aria-hidden="true"></ion-icon></span>
-    <span class="td-mode-label">{{ m.labelKey | translate }}</span>
+    [attr.aria-label]="(m.homeKey | translate) + ', ' + ('tree.unit.' + m.state | translate)">
+    <span class="td-mode-ic" [ngClass]="'accent-' + m.accent"><ion-icon [name]="m.icon" aria-hidden="true"></ion-icon></span>
+    <span class="td-mode-text">
+      <span class="td-mode-label">{{ m.homeKey | translate }}</span>
+      <span class="td-mode-desc">{{ (m.homeKey + '.desc') | translate }}</span>
+    </span>
     <span class="td-tag" *ngIf="isOptional(m)">{{ 'tier.optional' | translate }}</span>
     <ion-icon *ngIf="m.state === 'done'" class="td-mode-tick" name="checkmark-circle" aria-hidden="true"></ion-icon>
     <ion-icon *ngIf="m.state === 'active'" class="td-mode-go" name="chevron-forward" aria-hidden="true"></ion-icon>

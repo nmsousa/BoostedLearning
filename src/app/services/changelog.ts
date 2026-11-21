@@ -27,6 +27,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.61',
+    date: '2026-11-21T02:51:58Z',
+    notes: [
+      'Explore: the level is shown once, at the top next to "Your vocabulary adventure", instead of on the Core and on every topic card. Topic cards are more compact.',
+      'Explore: only the next card has a coloured outline; the others stay clean so your eye goes to what to do next.',
+      'Level page: each activity shows the same name, description and icon colour as on the home screen, with more space between the name and its description.',
+      'Level page: the title card no longer has an outline, since it is not something you tap.',
+    ],
+  },
+  {
     version: '1.3.60',
     date: '2026-11-20T23:02:42Z',
     notes: [
