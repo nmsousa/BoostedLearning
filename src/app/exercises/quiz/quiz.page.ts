@@ -20,6 +20,8 @@ import { AddWordService } from '../../services/add-word.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../../maps/journey/journey-back';
+import { GameRulesService } from '../../services/game-rules.service';
+import { accuracyRulesText, tooManyMistakes } from '../../shared/star-rules';
 import { topicLevelsUpTo } from '../../maps/tree/tree-curriculum';
 
 type QuizPhase = 'play' | 'complete';
@@ -46,6 +48,11 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
   private flashcardService = inject(FlashcardService);
   private audio = inject(AudioService);
   private settings = inject(SettingsService);
+  private rules = inject(GameRulesService);
+  /** Admin mode: shows the star-rules button. */
+  get adminMode(): boolean { return this.settings.adminMode(); }
+  /** ADMIN: how stars are earned in this round. */
+  showRules(): void { void this.rules.showRules(accuracyRulesText('Quiz', this.cards.length)); }
   private toast = inject(ToastController);
   private cdr = inject(ChangeDetectorRef);
   private i18n = inject(I18nAngularService);
@@ -401,6 +408,12 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
     }
 
     this.cdr.detectChanges();
+
+    // More than half wrong: stop with an encouraging message (nothing saved).
+    if (!option.correct && tooManyMistakes(this.mistakes, this.cards.length)) {
+      setTimeout(() => void this.rules.stopEarly(() => this.leave()), 1100);
+      return;
+    }
 
     // Pause to show the result, then advance.
     setTimeout(() => {

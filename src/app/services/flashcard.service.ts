@@ -17,6 +17,8 @@ import { fsrs, createEmptyCard, Rating, State, type Card as FsrsCard } from 'ts-
 import { CapacitorHttp } from '@capacitor/core';
 import { getDatabase, FlashcardDeckEntity, FlashcardEntity, LevelProgressEntity } from '../../persistence/database';
 import { KnowledgeBreakdown, KnowledgeLevel } from '../../core/knowledge-level';
+import { STAR_PERCENT, starsFromPercent } from '../shared/star-rules';
+import { englishWithArticle, genderOf } from '../shared/articles';
 import { parseDuomeHtml } from './duome-parser';
 
 /** Self-rating options in Flashcards (flip) mode. */
@@ -112,6 +114,9 @@ export interface Flashcard {
    * - undefined/'normal': default behaviour.
    */
   priority?: WordPriority;
+
+  /** Grammatical gender of an article + noun (Tree decks). Drives the gender badge. */
+  gender?: 'm' | 'f';
 }
 
 /** Per-word user priority override for practice queues. */
@@ -915,7 +920,9 @@ export class FlashcardService {
           id: `${deckId}-${gi}-${wi}`,
           deckId,
           text: w.fr,
-          translations: [w.en],
+          // Article rule: "le café" ↔ "the coffee", gender as a badge, not "(m.)".
+          translations: [englishWithArticle(w.fr, w.en)],
+          gender: genderOf(w.fr, w.en) ?? undefined,
           // Prefer the bundled LOCAL clip (offline) → streamed course clip →
           // (handled later) device TTS.
           audioUrl:
@@ -2042,7 +2049,7 @@ export class FlashcardService {
   /** Rounds that make up one level. */
   readonly ROUNDS_PER_LEVEL = 5;
   /** First-try accuracy needed for a round to count toward the 5. */
-  private readonly ROUND_PASS_SCORE = 70;
+  private readonly ROUND_PASS_SCORE = STAR_PERCENT[1];   // 50%: half right finishes a round
   /** Per-round composition: fraction of NEW (this-level) words. The rest is
    *  review drawn worst-first (round 5 biases to words missed in this level). */
   private readonly ROUND_NEW_FRACTION = [1.0, 0.9, 0.75, 0.6, 0.8];
@@ -2401,10 +2408,8 @@ export class FlashcardService {
    * Calculate stars from score percentage
    */
   calculateStars(scorePercent: number): number {
-    if (scorePercent >= 100) return 3;
-    if (scorePercent >= 85) return 2;
-    if (scorePercent >= 70) return 1;
-    return 0;
+    // One shared rule (shared/star-rules.ts): 3★ 100%, 2★ 85%+, 1★ 50%+.
+    return starsFromPercent(scorePercent);
   }
 
   /**
@@ -2611,7 +2616,7 @@ export class FlashcardService {
     roundScorePercent: number,
     timeSeconds?: number,
     combo?: number
-  ): Promise<{ roundsCompleted: number; stars: number; levelComplete: boolean }> {
+  ): Promise<{ roundsCompleted: number; stars: number; levelComplete: boolean; bestTimeSeconds?: number; bestCombo?: number }> {
     const progressId = this.levelProgressId(deckId, mode, levelNumber);
     const existing = await this.db.levelProgress.get(progressId);
 
@@ -2661,7 +2666,9 @@ export class FlashcardService {
     };
     await this.db.levelProgress.put(progress);
 
-    return { roundsCompleted, stars, levelComplete };
+    // Return the SAVED bests (fastest time / highest combo across all plays), so a
+    // results screen can show the real best, not just the play that just ended.
+    return { roundsCompleted, stars, levelComplete, bestTimeSeconds, bestCombo };
   }
 
   /**
@@ -2743,7 +2750,7 @@ export class FlashcardService {
    * Check if a level is unlocked
    */
   /** Minimum score on the previous level to unlock the next one (= 1 star). */
-  private readonly UNLOCK_SCORE = 70;
+  private readonly UNLOCK_SCORE = STAR_PERCENT[1];
 
   async isLevelUnlocked(deckId: string, mode: PracticeMode, levelNumber: number): Promise<boolean> {
     if (levelNumber === 1) return true;

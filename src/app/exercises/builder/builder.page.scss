@@ -225,9 +225,9 @@
   &::before { display: none; } // drop Ionic's default top shadow line
 
   .footer-inner {
-    max-width: 440px;
+    max-width: 480px;
     margin: 0 auto;
-    padding: 8px 12px calc(8px + var(--ion-safe-area-bottom, 0px));
+    padding: 8px 14px calc(10px + var(--ion-safe-area-bottom, 0px));
     box-sizing: border-box;
   }
 }

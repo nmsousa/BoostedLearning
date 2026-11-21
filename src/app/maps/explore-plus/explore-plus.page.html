@@ -15,7 +15,7 @@
 
   <div *ngIf="!isLoading" class="ep-body">
     <div *ngIf="adminMode" class="ep-admin-tip">
-      <ion-icon name="sparkles-outline" aria-hidden="true"></ion-icon>
+      <ion-icon name="shield-checkmark-outline" aria-hidden="true"></ion-icon>
       <span>{{ 'tree.adminTip' | translate }}</span>
       <button type="button" class="ep-admin-reset" (click)="resetProgress()"
         [attr.aria-label]="'treePlus.resetProgress' | translate">

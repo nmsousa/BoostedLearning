@@ -28,12 +28,12 @@ truth for the engine and is surfaced in-app on the **Admin** page.
   (the circle is full). Completing a round requires at least a passing score
   (see §4).
 - **Match**: unlocks on a **single passing play** of the previous level
-  (best score ≥ 70%) — requiring 5 full rounds just to unlock felt grindy for a
+  (best score ≥ 50%) — requiring 5 full rounds just to unlock felt grindy for a
   quick timed game. Match still fills its 5-round ring for stars/completion;
   that is separate from unlocking.
 - **Flashcards (flip)**: no gating — every level is always open (§6b).
 - Legacy records with no round data fall back to: previous level best score
-  ≥ 70%.
+  ≥ 50%.
 
 ## 3. Round composition (what words each round contains)
 
@@ -62,7 +62,7 @@ Rules:
 
 ## 4. Scoring a round & stars
 
-- A round is **passed** when first-try accuracy ≥ **70%**. A pass is required
+- A round is **passed** when first-try accuracy ≥ **50%** (at least half right). A pass is required
   for the round to count toward the 5 (an un-passed round can be retried and
   does not advance the circle).
 - **Stars** are the **best (highest) rating across the rounds played**, computed
@@ -73,8 +73,8 @@ Rules:
   Thresholds, per round (match `calculateStars` in code):
   - **3 stars** — **100%** first-try accuracy (a flawless round).
   - **2 stars** — ≥ 85%.
-  - **1 star** — ≥ 70% (the pass line).
-  - **0 stars** — below 70%.
+  - **1 star** — ≥ 50% (the pass line: the round is finished).
+  - **0 stars** — below 50% (in practice the round stops early, §11.2).
 - `bestScore` separately keeps the running **average** accuracy across rounds,
   for reference; it does not drive the star display.
 - Rationale: time, combo and stars are all "your best so far", which is
@@ -83,16 +83,24 @@ Rules:
   all 5 rounds were complete, so a just-earned 3-star round still showed 0 —
   also fixed.)
 
-## 5. Time for 3 stars (Match mode only)
+## 5. Match stars (time + mistakes)
 
-Match is timed. Time thresholds scale with the number of pairs `P`:
+Match uses a **fixed pace for every level**: **3 seconds per pair**
+(`MATCH_SECONDS_PER_PAIR` in `src/app/shared/star-rules.ts`). There is no
+level curve (levels will go away). With `P` pairs:
 
-- **3-star time** = `P * BASE_SECONDS_PER_PAIR` where `BASE_SECONDS_PER_PAIR`
-  starts at 2.2s and tightens with level depth (−0.2s every 3 levels, floor
-  1.1s). So deeper levels demand faster play.
-- Time only affects Match's star bonus; Write/Quiz/Flip are untimed.
-- Combo (consecutive correct matches) is tracked for a "best combo" record but
-  does not change unlocking.
+| Stars | Rule |
+|------:|------|
+| 3 | 0 mistakes **and** time ≤ `P × 3 s` |
+| 2 | at most 1 mistake (any time) — e.g. 0 mistakes but too slow |
+| 1 | at least half of the pairs matched without a mistake (board finished) |
+| 0 | fewer than half clean (in practice it stops early, §11.2) |
+
+- **Match Audio** uses the same table but is **untimed** (you have to wait for
+  each clip), so 0 mistakes = 3 stars.
+- The saved % is chosen so the shared %→stars mapping gives exactly these stars
+  (`matchScorePercent`).
+- Best time and best combo are records only; they don't change unlocking.
 
 ## 6. Why is this word shown so often? (word frequency)
 
@@ -394,6 +402,76 @@ Notes:
   independent from these per-word dots.
 
 ---
+
+## 11. Explore rules (Core + topic levels)
+
+All the numbers below live in ONE place, `src/app/shared/star-rules.ts`, so
+scoring, the stop-early rule and the admin explanation can never disagree.
+
+### 11.1 Stars & finishing (all games)
+
+- Accuracy games (Quiz, Write, Mix, Blanks): **3★ = 100%, 2★ ≥ 85%, 1★ ≥ 50%**.
+  Getting **at least half right finishes** the game (1★).
+- Match / Match Audio: §5.
+- Builder / Builder+ have **no stars**: you can only place the next correct
+  word, so a phrase can't be wrong. Finishing every phrase completes them.
+- Pass thresholds are all 50%: `ROUND_PASS_SCORE`, `UNLOCK_SCORE`,
+  `JOURNEY_PASS_SCORE`, `TREE_PASS_SCORE`.
+
+### 11.2 Stop early
+
+In every game with right/wrong answers (Quiz, Write, Match, Match Audio, Mix),
+once **more than half** of the questions are wrong (`tooManyMistakes`:
+`wrong > total / 2`), the game stops at once with an encouraging message
+("Almost there… try again") and goes back to the level page. Nothing is saved,
+so the learner simply replays it. (Back to the level page, not an in-place
+restart: Ionic reuses page instances.)
+
+### 11.3 Completion = best result
+
+An activity is **done** once its **best** result reaches 1★
+(`isModePassed`: `bestStars ≥ 1` or, for old records, `bestScore ≥ 50`).
+A later weaker play never undoes it. A level is complete after Learn + **5 of
+the 7 games** (`REQUIRED_GAMES = 5`).
+
+### 11.4 Progressive difficulty (Mix)
+
+The Mix plan depends on how familiar the learner is with **this level's words**
+(not on unit progress), and gradually removes assistance. Per word
+(`MixSessionService.familiarity`):
+
+- **new** (0): fewer than 2 correct, or the last answer was wrong;
+- **practised** (1): ≥ 2 correct and the last answer right;
+- **well practised** (2): ≥ 5 correct, streak ≥ 3 and the last answer right.
+
+The level's stage is the average (≥ 0.75 → guided, ≥ 1.5 → independent):
+
+| Stage | Focus | Plan (10 items, always mixed) |
+|------|-------|------|
+| Recognition | French → native: pick, match, listen | quiz, match, audio, quiz, blank, match, audio, quiz, match, builder |
+| Guided production | native → French with word blocks | quiz, builder, match, blank, builder, audio, write, blank, builder, match |
+| Independent production | type, no word bank | builder, write, match, write, blank, write, audio, write, builder, write |
+
+Quiz/Audio prompts prefer the least familiar words; single-word Write prompts
+use the most familiar ones. The later the stage, the more Write than Builder.
+
+### 11.5 Articles
+
+- A French noun is **always** shown and spoken **with its article**, exactly as
+  written: "le café" / "un café" (screen text = audio).
+- The English side mirrors it: "the coffee" / "a coffee" / "the hotel"
+  (`englishWithArticle`, applied when the Tree deck is registered).
+- The gender is shown as a small badge — "Masculine · un" / "Feminine · une" —
+  on the Learn card and the Write answer, instead of "(m.)" / "(f.)" in the text.
+  For l’ / les nouns the gender comes from the authored note.
+- Bare function words ("un" = "a (m.)", "ma" = "my (f.)") keep their English as
+  authored: there the note IS the meaning.
+
+### 11.6 Admin: star rules button
+
+In admin mode each Explore game shows an amber shield button (top right) that
+opens the exact star rules for the current round (`GameRulesService.showRules`).
+See `docs/ADMIN-MODE.md`.
 
 ## Legacy fallback (pre-rounds records)
 

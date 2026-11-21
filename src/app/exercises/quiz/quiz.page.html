@@ -12,6 +12,10 @@
       <ng-container *ngIf="!levelTitle">{{ 'mode.titleQuiz' | translate }}</ng-container>
     </ion-title>
     <ion-buttons slot="end">
+      <!-- ADMIN: how stars are earned here (admin controls are amber + shield). -->
+      <ion-button *ngIf="adminMode" class="admin-ctl" (click)="showRules()" [attr.aria-label]="'admin.rulesTitle' | translate">
+        <ion-icon slot="icon-only" name="shield-checkmark-outline"></ion-icon>
+      </ion-button>
       <ion-button (click)="openMenu()" [attr.aria-label]="'mode.addWord' | translate">
         <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
       </ion-button>

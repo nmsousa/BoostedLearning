@@ -79,6 +79,14 @@ const PT_MESSAGES: MessageCatalog = {
   'common.delete': 'Excluir',
   'common.edit': 'Editar',
   'common.close': 'Fechar',
+
+  'gender.masculine': 'Masculino',
+
+  'gender.feminine': 'Feminino',
+  'mode.stopEarlyTitle': 'Quase lá! 💪',
+  'mode.stopEarlyBody': 'Este foi difícil — e está tudo bem, é assim que se aprende. Revê as palavras e tenta outra vez: vais ver que à segunda corre melhor!',
+  'mode.stopEarlyButton': 'Tentar outra vez',
+  'admin.rulesTitle': 'Como ganhar estrelas (admin)',
   'common.loading': 'Carregando...',
   'common.error': 'Erro',
   'common.success': 'Sucesso',
@@ -651,6 +659,14 @@ const FR_MESSAGES: MessageCatalog = {
   'common.delete': 'Supprimer',
   'common.edit': 'Modifier',
   'common.close': 'Fermer',
+
+  'gender.masculine': 'Masculin',
+
+  'gender.feminine': 'Féminin',
+  'mode.stopEarlyTitle': 'Presque ! 💪',
+  'mode.stopEarlyBody': 'Celle-ci était difficile — et c’est normal, c’est comme ça qu’on apprend. Revois les mots et réessaie : la deuxième fois sera meilleure !',
+  'mode.stopEarlyButton': 'Réessayer',
+  'admin.rulesTitle': 'Comment gagner des étoiles (admin)',
   'common.loading': 'Chargement...',
   'common.error': 'Erreur',
   'common.success': 'Succès',
@@ -1223,6 +1239,14 @@ const EN_MESSAGES: MessageCatalog = {
   'common.delete': 'Delete',
   'common.edit': 'Edit',
   'common.close': 'Close',
+
+  'gender.masculine': 'Masculine',
+
+  'gender.feminine': 'Feminine',
+  'mode.stopEarlyTitle': 'Almost there! 💪',
+  'mode.stopEarlyBody': 'That one was tough — and that\'s fine, it\'s how learning works. Have another look at the words and try again: it gets easier the second time!',
+  'mode.stopEarlyButton': 'Try again',
+  'admin.rulesTitle': 'How to earn stars (admin)',
   'common.loading': 'Loading...',
   'common.error': 'Error',
   'common.success': 'Success',
@@ -1795,6 +1819,14 @@ const ES_MESSAGES: MessageCatalog = {
   'common.delete': 'Eliminar',
   'common.edit': 'Editar',
   'common.close': 'Cerrar',
+
+  'gender.masculine': 'Masculino',
+
+  'gender.feminine': 'Femenino',
+  'mode.stopEarlyTitle': '¡Casi! 💪',
+  'mode.stopEarlyBody': 'Este fue difícil — y está bien, así se aprende. Repasa las palabras y vuelve a intentarlo: ¡la segunda vez sale mejor!',
+  'mode.stopEarlyButton': 'Intentar de nuevo',
+  'admin.rulesTitle': 'Cómo ganar estrellas (admin)',
   'common.loading': 'Cargando...',
   'common.error': 'Error',
   'common.success': 'Éxito',

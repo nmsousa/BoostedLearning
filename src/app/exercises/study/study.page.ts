@@ -21,6 +21,8 @@ import { AddWordService } from '../../services/add-word.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { journeyBackUrl } from '../../maps/journey/journey-back';
 import { gradeAnswer } from '../../../core/answer-validator/typo-grader';
+import { GameRulesService } from '../../services/game-rules.service';
+import { accuracyRulesText, tooManyMistakes } from '../../shared/star-rules';
 import { generateWritePhraseCards } from '../../../core/phrase-builder/phrase-builder';
 
 type StudyPhase = 'question' | 'feedback' | 'complete';
@@ -56,6 +58,11 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
   private flashcardService = inject(FlashcardService);
   private i18n = inject(I18nAngularService);
   private settings = inject(SettingsService);
+  private rules = inject(GameRulesService);
+  /** Admin mode: shows the star-rules button. */
+  get adminMode(): boolean { return this.settings.adminMode(); }
+  /** ADMIN: how stars are earned in this round. */
+  showRules(): void { void this.rules.showRules(accuracyRulesText('Write', this.totalUnique)); }
   private audio = inject(AudioService);
   private toast = inject(ToastController);
   private cdr = inject(ChangeDetectorRef);
@@ -761,6 +768,10 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
     if (!this.currentStudyCard || !this.currentCard) return;
 
     this.failedIds.add(this.currentCard.id);
+    // More than half of the words wrong: stop with an encouraging message.
+    if (tooManyMistakes(this.failedIds.size, this.totalUnique)) {
+      setTimeout(() => void this.rules.stopEarly(() => this.navCtrl.navigateBack(this.backUrl)), 900);
+    }
 
     // Re-queue a fresh copy at the end of the session (same direction so the
     // user keeps practising in the language they chose), flagged as a retry.

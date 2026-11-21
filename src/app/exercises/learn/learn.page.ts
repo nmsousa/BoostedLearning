@@ -35,6 +35,8 @@ interface LearnCard {
   /** The word exactly as authored ("le thé") — matches the audio clip. */
   fr: string;
   en: string;
+  /** Noun gender (shown as a badge). */
+  gender?: 'm' | 'f';
   audioUrl: string | null;
   /** Grammar/usage note (Core words). */
   note?: string;
@@ -137,6 +139,7 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
           // and audio is required.
           fr: c.text,
           en: this.flashcards.bestTranslation(c),
+          gender: c.gender,
           audioUrl: c.audioUrl ?? null,
           note: meta?.note,
           icon: meta?.icon,

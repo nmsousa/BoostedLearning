@@ -47,6 +47,15 @@ Gate used everywhere: `SettingsService.adminMode()`.
   still come from a borrowed Duolingo recording (vs our generated TTS). Admin
   only. (`WordsPage.isDuolingoAudio`.)
 
+- **Admin look (pattern):** every admin-only control uses the amber colour
+  `--admin: #f5a524` and the `shield-checkmark-outline` icon (class
+  `admin-ctl`); admin tip bars use the same shield. Checked on all themes
+  (all are dark: ocean, slate, forest).
+- **Star rules button:** in Explore games (Quiz, Write, Match, Match Audio,
+  Mix, Builder, Builder+) a shield button at the top right opens a modal with
+  the exact star rules for the current round (from
+  `src/app/shared/star-rules.ts`, via `GameRulesService.showRules`).
+
 ## When removing Admin mode
 
 Flip `adminMode` to `false` by default, OR strip the feature. If stripping,

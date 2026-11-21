@@ -30,7 +30,7 @@
 
   <div *ngIf="!isLoading && !switchingLanguage" class="tp-body">
     <div *ngIf="adminMode" class="tp-admin-tip">
-      <ion-icon name="sparkles-outline" aria-hidden="true"></ion-icon>
+      <ion-icon name="shield-checkmark-outline" aria-hidden="true"></ion-icon>
       <span>{{ 'tree.adminTip' | translate }}</span>
       <button type="button" class="tp-admin-reset" (click)="resetProgress()"
         [attr.aria-label]="'treePlus.resetProgress' | translate">

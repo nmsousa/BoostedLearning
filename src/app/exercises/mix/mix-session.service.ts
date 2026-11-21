@@ -84,6 +84,34 @@ export class MixSessionService {
   private static readonly TOTAL = 10;
   private static readonly OPTIONS = 4;
 
+  /**
+   * Woven plans per familiarity stage (always mixed, assistance fades):
+   *  0 Recognition  — French → native, pick / match / listen (1 Builder at the end).
+   *  1 Guided       — native → French with word blocks (Builder, Blanks), 1 Write.
+   *  2 Independent  — mostly Write (no word bank), a little Builder/Match to vary.
+   */
+  static readonly PLANS: Record<0 | 1 | 2, MixItemKind[]> = {
+    0: ['quiz', 'match', 'audio', 'quiz', 'blank', 'match', 'audio', 'quiz', 'match', 'builder'],
+    1: ['quiz', 'builder', 'match', 'blank', 'builder', 'audio', 'write', 'blank', 'builder', 'match'],
+    2: ['builder', 'write', 'match', 'write', 'blank', 'write', 'audio', 'write', 'builder', 'write'],
+  };
+
+  /** A word's familiarity: 0 new, 1 practised, 2 well practised. */
+  static familiarity(c: Flashcard): 0 | 1 | 2 {
+    const recent = c.recentResults ?? [];
+    const lastWrong = recent[recent.length - 1] === 'incorrect';
+    if (c.correctCount >= 5 && c.streak >= 3 && !lastWrong) return 2;
+    if (c.correctCount >= 2 && !lastWrong) return 1;
+    return 0;
+  }
+
+  /** The level's stage from the average word familiarity (≥0.75 guided, ≥1.5 independent). */
+  static levelStage(cards: Flashcard[]): 0 | 1 | 2 {
+    if (!cards.length) return 0;
+    const avg = cards.reduce((s, c) => s + MixSessionService.familiarity(c), 0) / cards.length;
+    return avg >= 1.5 ? 2 : avg >= 0.75 ? 1 : 0;
+  }
+
   current(): MixSession | null { return this.session; }
   currentItem(): MixItem | null {
     const s = this.session;
@@ -116,25 +144,31 @@ export class MixSessionService {
     const blankPhrases = phrases.filter(p => p.blankIndex !== undefined);
     const buildPhrases = phrases.filter(p => p.tokens.length >= 2);
 
-    // Build a weighted, woven order similar to the user's example:
-    // quiz, match, builder, blank, builder, match, write(≤1), blank, audio, quiz.
-    const plan: MixItemKind[] = [
-      'quiz', 'match', 'builder', 'blank', 'builder',
-      'match', 'write', 'blank', 'audio', 'quiz',
-    ];
+    // Progressive difficulty (docs/LEVEL-ALGORITHM.md): the plan depends on how
+    // familiar the learner already is with THIS level's words, not on the unit.
+    const stage = MixSessionService.levelStage(playable);
+    const plan = MixSessionService.PLANS[stage];
+    // Recognition picks the least familiar words; Write picks the most familiar.
+    const byFamiliarity = [...playable].sort((a, b) => MixSessionService.familiarity(a) - MixSessionService.familiarity(b));
+    const newest = byFamiliarity.slice(0, Math.max(4, Math.ceil(byFamiliarity.length / 2)));
+    const known = byFamiliarity.slice(-Math.max(4, Math.ceil(byFamiliarity.length / 2)));
 
-    let bi = 0, bli = 0, wrote = 0;
+    let bi = 0, bli = 0, writes = 0;
     for (const kind of plan) {
       if (items.length >= MixSessionService.TOTAL) break;
       let item: MixItem | null = null;
       switch (kind) {
-        case 'quiz':  item = this.quizItem(playable, bestTr, false); break;
-        case 'audio': item = this.quizItem(playable, bestTr, true); break;
+        case 'quiz':  item = this.quizItem(playable, bestTr, false, newest); break;
+        case 'audio': item = this.quizItem(playable, bestTr, true, newest); break;
         case 'blank': item = this.blankItem(blankPhrases[bli++]); break;
         case 'match': item = this.matchItem(playable, bestTr); break;
         case 'builder': item = this.builderItem(buildPhrases[bi++]); break;
+        // Late stage: alternate phrase Write and single-word Write of known words.
         case 'write':
-          if (wrote < 1) { item = this.writeItem(buildPhrases[bi++] ?? null, playable, bestTr); wrote++; }
+          item = stage === 2 && writes % 2 === 1
+            ? this.writeItem(null, known, bestTr)
+            : this.writeItem(buildPhrases[bi++] ?? null, known, bestTr);
+          writes++;
           break;
       }
       // If a type couldn't be built (not enough content), fall back to a quiz.
@@ -148,9 +182,9 @@ export class MixSessionService {
 
   // ── Item generators ─────────────────────────────────────────────────────────
 
-  private quizItem(cards: Flashcard[], bestTr: (c: Flashcard) => string, audio: boolean): MixQuizItem | null {
+  private quizItem(cards: Flashcard[], bestTr: (c: Flashcard) => string, audio: boolean, promptPool: Flashcard[] = cards): MixQuizItem | null {
     if (cards.length < 2) return null;
-    const card = this.pick(cards);
+    const card = this.pick(promptPool.length ? promptPool : cards);
     const correct = bestTr(card);
     const pool = cards
       .filter(c => c.id !== card.id)

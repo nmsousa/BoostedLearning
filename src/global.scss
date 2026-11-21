@@ -356,3 +356,58 @@ ion-header ion-progress-bar {
   --next-hl: #a9b6ff;
   --next-hl-rgb: 169, 182, 255;
 }
+
+/* One distinct colour per mode icon (home cards + the Explore level page), so
+   Match / Match Audio and Builder / Builder+ never share a colour. Fixed hues
+   (not theme tokens) so they stay distinct on every theme. */
+:root {
+  --mode-match: #ff9f43;
+  --mode-match-audio: #f472b6;
+  --mode-builder: #a78bfa;
+  --mode-builder-plus: #2dd4bf;
+}
+
+/* ---------------------------------------------------------------------------
+ * Action buttons
+ * ---------------------------------------------------------------------------
+ * Every big action button (Continue / Check / Done / Submit / Finish) has the
+ * same shape and height as the Continue button in Explore: 14px corners, 52px
+ * tall, bold. !important so per-page sizes (56px, square corners, none) can't
+ * make some of them look different.
+ */
+ion-footer ion-button[expand="block"],
+ion-button[expand="block"].finish-button,
+ion-button[expand="block"].submit-button,
+ion-button[expand="block"].skip-button,
+ion-button[expand="block"].learn-next,
+ion-button[expand="block"].mix-check,
+ion-button[expand="block"].mix-done-btn,
+ion-button[expand="block"].group-next {
+  --border-radius: 14px !important;
+  min-height: 52px !important;
+  font-weight: 700 !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Admin controls
+ * ---------------------------------------------------------------------------
+ * Everything that only admins see uses ONE look so it's obvious it isn't part of
+ * the real app: amber colour + a shield icon. Amber reads well on every theme
+ * (all themes are dark). Use class="admin-ctl" on admin buttons, "admin-tip" on
+ * admin hint bars, and cssClass 'admin-alert' on admin pop-ups.
+ */
+:root {
+  --admin: #f5a524;
+  --admin-rgb: 245, 165, 36;
+}
+ion-button.admin-ctl {
+  --color: var(--admin);
+  --background: rgba(var(--admin-rgb), 0.14);
+  --background-hover: rgba(var(--admin-rgb), 0.22);
+  --background-activated: rgba(var(--admin-rgb), 0.28);
+  --border-radius: 999px;
+}
+.admin-alert .alert-wrapper { border: 1px solid rgba(var(--admin-rgb), 0.55); }
+.admin-alert .alert-title { color: var(--admin); }
+/* Rules text is pre-formatted (one rule per line). */
+.rules-alert .alert-message { white-space: pre-line; text-align: left; font-size: 0.9rem; line-height: 1.45; }

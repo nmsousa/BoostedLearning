@@ -31,7 +31,7 @@ export interface TreeModeDef {
    *  as the home card, so a mode reads the same everywhere. */
   homeKey: string;
   /** Home-card accent for the icon colour ('' = the default text colour). */
-  accent: '' | 'write' | 'match' | 'quiz' | 'builder';
+  accent: '' | 'write' | 'match' | 'match-audio' | 'quiz' | 'builder' | 'builder-plus';
 }
 
 /** The modes of a level, in display order (Learn first, then the games). */
@@ -40,9 +40,9 @@ export const TREE_MODES: readonly TreeModeDef[] = [
   { id: 'quiz',    mode: 'journey-quiz',    route: '/practice/quiz',            icon: 'help',                labelKey: 'journey.node.quiz', homeKey: 'home.mode.quiz', accent: 'quiz' },
   { id: 'write',   mode: 'journey-write',   route: '/practice/journey-play',    icon: 'create-outline',      labelKey: 'journey.node.write', homeKey: 'home.mode.write', accent: 'write' },
   { id: 'match',   mode: 'journey-match',   route: '/practice/match',           icon: 'git-compare-outline', labelKey: 'journey.node.match', homeKey: 'home.mode.match', accent: 'match' },
-  { id: 'match-audio', mode: 'journey-match-audio', route: '/practice/match',    icon: 'volume-high-outline', labelKey: 'journey.node.matchAudio', homeKey: 'home.mode.matchAudio', accent: 'match' },
+  { id: 'match-audio', mode: 'journey-match-audio', route: '/practice/match',    icon: 'volume-high-outline', labelKey: 'journey.node.matchAudio', homeKey: 'home.mode.matchAudio', accent: 'match-audio' },
   { id: 'builder', mode: 'journey-builder', route: '/practice/journey-builder', icon: 'construct-outline',   labelKey: 'journey.node.builder', homeKey: 'home.mode.builder', accent: 'builder' },
-  { id: 'builder-plus', mode: 'journey-builder-plus', route: '/practice/journey-builder-plus', icon: 'construct', labelKey: 'journey.node.builderPlus', homeKey: 'home.mode.builderPlus', accent: 'builder' },
+  { id: 'builder-plus', mode: 'journey-builder-plus', route: '/practice/journey-builder-plus', icon: 'construct', labelKey: 'journey.node.builderPlus', homeKey: 'home.mode.builderPlus', accent: 'builder-plus' },
   // Mix is the LAST node: a mixed session of the level's activities. It counts
   // toward tier completion like the others and is double-tap-completable (admin).
   { id: 'mix',     mode: 'journey-mix',     route: '/practice/mix',             icon: 'shuffle-outline',     labelKey: 'home.mode.mix', homeKey: 'home.mode.mix', accent: '' },
@@ -114,3 +114,17 @@ export const FLASHCARDS_REVIEW_MODE: TreeModeDef = {
   id: 'flip', mode: 'journey-flip', route: '/practice/flip', icon: 'albums-outline', labelKey: 'journey.node.flip',
   homeKey: 'home.mode.flashcards', accent: '',
 };
+
+/** Minimum score for a mode to count as passed (= 1 star). */
+const TREE_PASS_SCORE = 50;   // = 1 star (shared/star-rules.ts)
+
+/**
+ * Whether a mode is PASSED, from its saved progress. It is the BEST result that
+ * counts (1+ stars earned in any play), not the running average of every play:
+ * `bestScore` is an average over all rounds, so earlier weak plays could keep a
+ * later 2-star result from ever counting as completed. `bestStars` keeps the
+ * best round, so once you've earned a star the mode stays done.
+ */
+export function isModePassed(p: { bestStars?: number; bestScore?: number } | undefined | null): boolean {
+  return (p?.bestStars ?? 0) >= 1 || (p?.bestScore ?? 0) >= TREE_PASS_SCORE;
+}

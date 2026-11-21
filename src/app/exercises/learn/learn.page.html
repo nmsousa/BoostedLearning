@@ -36,6 +36,7 @@
       </span>
 
       <p class="learn-en">{{ card.en }}</p>
+      <app-gender-badge *ngIf="card.gender" class="learn-gender" [gender]="card.gender"></app-gender-badge>
 
       <!-- Grammar / usage note (Core words). -->
       <div *ngIf="card.note" class="learn-note">

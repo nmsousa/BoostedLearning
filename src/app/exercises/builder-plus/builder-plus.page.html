@@ -17,6 +17,10 @@
       </span>
     </ion-title>
     <ion-buttons slot="end">
+      <!-- ADMIN: how stars are earned here (admin controls are amber + shield). -->
+      <ion-button *ngIf="adminMode" class="admin-ctl" (click)="showRules()" [attr.aria-label]="'admin.rulesTitle' | translate">
+        <ion-icon slot="icon-only" name="shield-checkmark-outline"></ion-icon>
+      </ion-button>
       <button type="button" class="lang-trigger" id="builder-plus-lang-trigger"
         aria-label="Change learning language">
         <img class="flag" [src]="currentLanguage.flagUrl" [alt]="currentLanguage.name" />

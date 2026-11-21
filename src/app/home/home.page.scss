@@ -179,14 +179,16 @@
   // Accent colour per mode (icon only, keeps cards cohesive)
   &.flip ion-icon  { color: var(--ion-color-primary); }
   &.write ion-icon { color: var(--ion-color-secondary); }
-  &.match ion-icon { color: var(--ion-color-tertiary-shade); }
+  &.match ion-icon { color: var(--mode-match); }
+  &.match-audio ion-icon { color: var(--mode-match-audio); }
   &.quiz ion-icon  { color: var(--ion-color-success); }
   &.blanks ion-icon { color: var(--ion-color-danger); }
   &.journey ion-icon { color: var(--ion-color-warning); }
   &.journey-plus ion-icon { color: #22d3ee; }
   &.journey-plus-plus ion-icon { color: #4cf59a; }
   &.tree ion-icon { color: #8c9bff; }
-  &.builder ion-icon { color: var(--ion-color-tertiary); }
+  &.builder ion-icon { color: var(--mode-builder); }
+  &.builder-plus ion-icon { color: var(--mode-builder-plus); }
 }
 
 .stats-section {

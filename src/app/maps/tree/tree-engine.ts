@@ -24,12 +24,11 @@
 import type { NavController } from '@ionic/angular';
 import type { FlashcardService } from '../../services/flashcard.service';
 import type { SettingsService } from '../../services/settings.service';
-import { JOURNEY_PASS_SCORE } from '../journey/journey-model';
 import {
   CORE_TIERS, THEME_DEFS, TREE_CONFIG, TREE_LAYOUT, coreLevelOf, themeLevelOf, type CoreWord,
 } from './tree-curriculum';
 import {
-  TREE_MODES, FLASHCARDS_REVIEW_MODE, tierProgress, modeStates, type TreeModeDef, type TierProgress,
+  TREE_MODES, FLASHCARDS_REVIEW_MODE, tierProgress, modeStates, isModePassed, type TreeModeDef, type TierProgress,
 } from './tree-modes';
 import {
   computeProgression, coreMilestoneId, themeMilestoneId, type ProgressionState,
@@ -143,7 +142,7 @@ export class TreeEngine {
     for (const [, level] of this.skillLevels) {
       for (const m of TREE_MODES) {
         const p = progress.get(`${m.mode}-${level}`);
-        if ((p?.bestScore ?? 0) >= JOURNEY_PASS_SCORE) this.passedModes.add(`${level}:${m.mode}`);
+        if (isModePassed(p)) this.passedModes.add(`${level}:${m.mode}`);
       }
     }
 

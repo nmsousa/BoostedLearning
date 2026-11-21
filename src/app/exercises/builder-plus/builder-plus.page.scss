@@ -193,7 +193,7 @@ $bp-line-gap: 12px;
   background: var(--ion-background-color);
   &::before { display: none; }
   .footer-inner {
-    max-width: 440px; margin: 0 auto;
-    padding: 8px 12px calc(8px + var(--ion-safe-area-bottom, 0px)); box-sizing: border-box;
+    max-width: 480px; margin: 0 auto;
+    padding: 8px 14px calc(10px + var(--ion-safe-area-bottom, 0px)); box-sizing: border-box;
   }
 }

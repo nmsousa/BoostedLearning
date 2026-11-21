@@ -7,9 +7,10 @@ import { NgModule } from '@angular/core';
 import { TranslatePipe } from '../pipes/translate.pipe';
 import { WaveformComponent } from './waveform.component';
 import { AudioPlayIconComponent } from './audio-play-icon.component';
+import { GenderBadgeComponent } from './gender-badge.component';
 @NgModule({
   declarations: [TranslatePipe],
-  imports: [WaveformComponent, AudioPlayIconComponent], // standalone components
-  exports: [TranslatePipe, WaveformComponent, AudioPlayIconComponent],
+  imports: [WaveformComponent, AudioPlayIconComponent, GenderBadgeComponent], // standalone components
+  exports: [TranslatePipe, WaveformComponent, AudioPlayIconComponent, GenderBadgeComponent],
 })
 export class SharedModule {}

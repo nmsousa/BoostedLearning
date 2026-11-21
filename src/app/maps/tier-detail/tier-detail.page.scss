@@ -107,9 +107,11 @@
   // Icon colours match the home page cards (write / match / quiz / builder).
   .td-mode-ic {
     &.accent-write   { color: var(--ion-color-secondary); }
-    &.accent-match   { color: var(--ion-color-tertiary-shade); }
-    &.accent-quiz    { color: var(--ion-color-success); }
-    &.accent-builder { color: var(--ion-color-tertiary); }
+    &.accent-match         { color: var(--mode-match); }
+    &.accent-match-audio   { color: var(--mode-match-audio); }
+    &.accent-quiz          { color: var(--ion-color-success); }
+    &.accent-builder       { color: var(--mode-builder); }
+    &.accent-builder-plus  { color: var(--mode-builder-plus); }
   }
   &.state-done { border-color: rgba(45, 211, 111, 0.4); .td-mode-ic { color: var(--td-green); } }
   // Every unlocked, not-yet-passed activity is playable; only the NEXT one

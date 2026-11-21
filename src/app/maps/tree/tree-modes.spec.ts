@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { convertToParamMap } from '@angular/router';
 import {
-  TREE_MODES, REQUIRED_GAMES, GAME_COUNT, isGameMode, tierProgress, modeStates, type TreeModeDef,
+  TREE_MODES, REQUIRED_GAMES, GAME_COUNT, isGameMode, tierProgress, modeStates, isModePassed, type TreeModeDef,
 } from './tree-modes';
 import { journeyBackUrl, tierDetailUrl, tierOriginUrl } from '../journey/journey-back';
 import { topicLevelsUpTo, themeLevelOf } from './tree-curriculum';
@@ -110,5 +110,23 @@ describe('topicLevelsUpTo (same-topic wrong answers)', () => {
     expect(topicLevelsUpTo(0)).toEqual([]);
     expect(topicLevelsUpTo(-4)).toEqual([]);
     expect(topicLevelsUpTo(99999)).toEqual([]);
+  });
+});
+
+describe('isModePassed (an activity stays completed once you earn a star)', () => {
+  it('counts the BEST result: a 2-star play passes even when the average of all plays is low', () => {
+    // e.g. three weak 40% plays then a 2-star play: average 52%, best = 2 stars.
+    expect(isModePassed({ bestStars: 2, bestScore: 52 })).toBe(true);
+  });
+  it('passes on a 1-star best', () => {
+    expect(isModePassed({ bestStars: 1, bestScore: 30 })).toBe(true);
+  });
+  it('still accepts old records that only have a score', () => {
+    expect(isModePassed({ bestScore: 50 })).toBe(true);
+    expect(isModePassed({ bestScore: 49 })).toBe(false);
+  });
+  it('is not passed with no stars and a low score, or no record at all', () => {
+    expect(isModePassed({ bestStars: 0, bestScore: 40 })).toBe(false);
+    expect(isModePassed(undefined)).toBe(false);
   });
 });

@@ -35,11 +35,10 @@ import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { JOURNEY_TREE_FROM } from '../journey/journey-back';
-import { JOURNEY_PASS_SCORE } from '../journey/journey-model';
 import {
   CORE_TIERS, THEME_DEFS, TREE_CONFIG, TREE_LAYOUT, coreLevelOf, themeLevelOf, type CoreWord,
 } from './tree-curriculum';
-import { TREE_MODES, tierProgress, modeStates } from './tree-modes';
+import { TREE_MODES, tierProgress, modeStates, isModePassed } from './tree-modes';
 import {
   computeProgression, coreMilestoneId, themeMilestoneId, type ProgressionState,
 } from './tree-progression';
@@ -319,7 +318,7 @@ export class TreePage implements OnInit, OnDestroy {
     for (const [, level] of this.skillLevels) {
       for (const m of TREE_MODES) {
         const p = progress.get(`${m.mode}-${level}`);
-        if ((p?.bestScore ?? 0) >= JOURNEY_PASS_SCORE) this.passedModes.add(`${level}:${m.mode}`);
+        if (isModePassed(p)) this.passedModes.add(`${level}:${m.mode}`);
       }
     }
 

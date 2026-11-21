@@ -27,6 +27,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.62',
+    notes: [
+      'Getting at least half right now finishes a game (1 star). If more than half go wrong, the game stops with an encouraging message so you can try again.',
+      'Match: 3 stars for no mistakes within 3 seconds per pair, the same at every level. Your best time and combo are saved correctly.',
+      'An activity stays completed once you earn a star, even if a later play goes worse.',
+      'Words show their article in both languages ("le café" = "the coffee"), with a small Masculine / Feminine badge instead of "(m.)".',
+      'Mix adapts to you: new words start with recognition, then word blocks, then typing as you get to know them.',
+      'Each game has its own colour, and the action buttons look the same everywhere.',
+    ],
+  },
+  {
     version: '1.3.61',
     date: '2026-11-21T02:51:58Z',
     notes: [

@@ -20,6 +20,8 @@ import { SettingsService } from '../../services/settings.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../../maps/journey/journey-back';
+import { GameRulesService } from '../../services/game-rules.service';
+import { MATCH_SECONDS_PER_PAIR, matchScorePercent, matchRulesText, tooManyMistakes } from '../../shared/star-rules';
 
 type Side = 'left' | 'right';
 type MatchPhase = 'play' | 'complete';
@@ -56,6 +58,11 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
   readonly playKind = this.audio.playKind;
   readonly playSeq = this.audio.playSeq;
   private settings = inject(SettingsService);
+  private rules = inject(GameRulesService);
+  /** Admin mode: shows the star-rules button. */
+  get adminMode(): boolean { return this.settings.adminMode(); }
+  /** ADMIN: how stars are earned on this board. */
+  showRules(): void { void this.rules.showRules(matchRulesText(this.totalPairs, !this.isAudio)); }
   private backInterceptor = inject(BackInterceptorService);
   private exitConfirm = inject(ExitConfirmService);
 
@@ -453,6 +460,11 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
       if (this.deck) {
         this.flashcardService.rateFlashcard(this.deck.id, left.id, 'hard');
       }
+      // More than half wrong: stop with an encouraging message (nothing saved).
+      if (tooManyMistakes(this.mistakes, this.totalPairs)) {
+        this.stopTimer();
+        setTimeout(() => void this.rules.stopEarly(() => this.leave()), 700);
+      }
 
       setTimeout(() => {
         left.wrong = false;
@@ -474,68 +486,12 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     return a;
   }
 
-  // --- Difficulty curve for the time target ---------------------------------
-  // The no-penalty pace (seconds allowed per pair for a full-time run) starts
-  // generous on the first levels and tightens every few levels, down to a
-  // floor. This keeps early levels forgiving and makes 3 stars progressively
-  // harder to earn as the learner advances.
-  /** Pace on the easiest (first) levels. */
-  private readonly BASE_SECONDS_PER_PAIR = 2.2;
-  /** Tightest pace the curve can reach (hardest levels). */
-  private readonly MIN_SECONDS_PER_PAIR = 1.1;
-  /** How much the pace tightens at each step. */
-  private readonly PACE_STEP = 0.2;
-  /** Number of levels per difficulty step. */
-  private readonly LEVELS_PER_STEP = 3;
-
-  /** Lowest the time multiplier can drag the score (so a slow-but-perfect run
-   *  can still earn stars). */
-  private readonly MIN_TIME_FACTOR = 0.6;
-
-  /**
-   * Seconds-per-pair target for the current level. Level 0 (quick study, no
-   * level) uses the base pace. Every LEVELS_PER_STEP levels the target drops
-   * by PACE_STEP, bottoming out at MIN_SECONDS_PER_PAIR.
-   */
-  private get secondsPerPair(): number {
-    const lvl = Math.max(1, this.levelNumber || 1);
-    const steps = Math.floor((lvl - 1) / this.LEVELS_PER_STEP);
-    return Math.max(
-      this.MIN_SECONDS_PER_PAIR,
-      this.BASE_SECONDS_PER_PAIR - steps * this.PACE_STEP
-    );
+  // --- Scoring (shared/star-rules.ts) ---------------------------------------
+  // 3 seconds per pair for every level. 3★ = 0 mistakes in time; 2★ = at most 1
+  // mistake; 1★ = at least half the pairs right. Match Audio is untimed.
+  private computeScorePercent(total: number): number {
+    return matchScorePercent({ pairs: total, mistakes: this.mistakes, seconds: this.elapsedSeconds, timed: !this.isAudio });
   }
-
-  /**
-   * Final score combines accuracy and speed:
-   *   accuracy  = clean pairs / total
-   *   timeFactor= 1.0 at/under the target pace, easing down to MIN_TIME_FACTOR
-   *               the slower the run.
-   *   score%    = round(accuracy * timeFactor * 100)
-   * Stars come from the shared thresholds (100/85/70).
-   */
-  private computeScorePercent(total: number, cleanPairs: number): number {
-    if (total === 0) return 0;
-    const accuracy = cleanPairs / total;
-
-    // Match AUDIO is paced by how long each clip takes to play — you must wait
-    // to hear every word — so the speed-based time factor (tuned for VISUAL
-    // matching) would unfairly tank the score (a flawless run could still get 0
-    // stars). Score audio on accuracy alone.
-    if (this.isAudio) return Math.round(accuracy * 100);
-
-    const targetSeconds = total * this.secondsPerPair;
-    const elapsed = Math.max(1, this.elapsedSeconds);
-    const timeFactor = Math.min(
-      1,
-      Math.max(this.MIN_TIME_FACTOR, targetSeconds / elapsed)
-    );
-
-    return Math.round(accuracy * timeFactor * 100);
-  }
-
-  /** Star thresholds (percent) matching FlashcardService.calculateStars. */
-  private readonly STAR_THRESHOLDS = { 3: 100, 2: 85, 1: 70 };
 
   /** Format seconds as m:ss. */
   private fmt(sec: number): string {
@@ -544,24 +500,10 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  /**
-   * With a perfect run (no mistakes), the time needed to reach a star tier T%:
-   *   accuracy = 1, so score = timeFactor*100, need timeFactor >= T/100
-   *   targetSeconds / elapsed >= T/100  ->  elapsed <= targetSeconds * 100 / T
-   * Returns the seconds the user must beat to earn the next tier above their
-   * current stars, or '' if already at 3 stars.
-   */
+  /** "Finish in m:ss with no mistakes for 3 stars" (only time-based tier). */
   private buildNextStarHint(total: number, stars: number): string {
     if (stars >= 3) return '';
-    const nextTier = (stars + 1) as 1 | 2 | 3;
-    const thresholdPct = this.STAR_THRESHOLDS[nextTier];
-    const targetSeconds = total * this.secondsPerPair;
-    // Max time (with a flawless run) to still hit the next tier.
-    const maxSeconds = (targetSeconds * 100) / thresholdPct;
-    return this.t(nextTier === 1 ? 'mode.nextStarHint1' : 'mode.nextStarHintN', {
-      time: this.fmt(maxSeconds),
-      stars: nextTier,
-    });
+    return this.t('mode.nextStarHintN', { time: this.fmt(total * MATCH_SECONDS_PER_PAIR), stars: 3 });
   }
 
   /**
@@ -575,8 +517,7 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     this.elapsedSeconds = Math.max(this.elapsedSeconds, Math.floor((Date.now() - this.timerStart) / 1000));
 
     const total = this.totalPairs;
-    const cleanPairs = Math.max(0, total - this.mistakes);
-    const scorePercent = this.computeScorePercent(total, cleanPairs);
+    const scorePercent = this.computeScorePercent(total);
 
     if (this.levelNumber > 0 && this.deck) {
       // 5-round model: each Match playthrough counts as one round toward the 5.
@@ -592,8 +533,9 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
       );
       this.earnedStars = result.stars;
       this.isNewBest = result.levelComplete;
-      this.bestTimeSeconds = this.elapsedSeconds;
-      this.bestComboSaved = this.bestCombo;
+      // The SAVED bests (across all plays), not just this run.
+      this.bestTimeSeconds = result.bestTimeSeconds ?? this.elapsedSeconds;
+      this.bestComboSaved = Math.max(result.bestCombo ?? 0, this.bestCombo);
     } else {
       this.earnedStars = this.flashcardService.calculateStars(scorePercent);
       this.bestTimeSeconds = this.elapsedSeconds;

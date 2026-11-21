@@ -22,6 +22,8 @@ import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../../maps/journey/journey-back';
 import { gradeAnswer } from '../../../core/answer-validator/typo-grader';
 import type { SourceCard } from '../../../core/phrase-builder/phrase-builder';
+import { GameRulesService } from '../../services/game-rules.service';
+import { accuracyRulesText, tooManyMistakes } from '../../shared/star-rules';
 import {
   MixSessionService, type MixItem, type MixChoice,
   type MixMatchItem, type MixBuilderItem,
@@ -40,6 +42,11 @@ export class MixPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave 
   private navCtrl = inject(NavController);
   private flashcards = inject(FlashcardService);
   private settings = inject(SettingsService);
+  private rules = inject(GameRulesService);
+  /** Admin mode: shows the star-rules button. */
+  get adminMode(): boolean { return this.settings.adminMode(); }
+  /** ADMIN: how stars are earned in this session. */
+  showRules(): void { void this.rules.showRules(accuracyRulesText('Mix', this.total)); }
   private i18n = inject(I18nAngularService);
   private audio = inject(AudioService);
   private backInterceptor = inject(BackInterceptorService);
@@ -130,6 +137,7 @@ export class MixPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave 
       (c) => this.flashcards.bestTranslation(c),
     );
     this.total = session.items.length;
+    this.wrongCount = 0;
     this.loadCurrent();
     this.isLoading = false;
     this.cdr.detectChanges();
@@ -303,7 +311,18 @@ export class MixPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave 
 
   // ── Flow ───────────────────────────────────────────────────────────────────────
   /** After an item is answered, pause to show the result, then advance. */
+  /** Items answered wrong so far (for the stop-early rule). */
+  private wrongCount = 0;
+
   private autoNext(correct: boolean): void {
+    if (!correct) {
+      this.wrongCount++;
+      // More than half wrong: stop with an encouraging message (nothing saved).
+      if (tooManyMistakes(this.wrongCount, this.total)) {
+        setTimeout(() => void this.rules.stopEarly(() => this.leave()), 1300);
+        return;
+      }
+    }
     setTimeout(() => {
       this.mix.advance();
       if (!this.mix.currentItem()) { void this.finishSession(); return; }

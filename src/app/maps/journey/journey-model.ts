@@ -70,7 +70,7 @@ export const JOURNEY_BLANKS_NODE_DEF: NodeDef = {
 };
 
 /** A node is passed once its best score reaches this. */
-export const JOURNEY_PASS_SCORE = 70;
+export const JOURNEY_PASS_SCORE = 50;   // = 1 star (shared/star-rules.ts)
 
 /**
  * Build one chapter per skill level from the bulk progress map

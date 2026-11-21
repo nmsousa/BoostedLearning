@@ -27,6 +27,8 @@ import { FlashcardService } from '../../services/flashcard.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../../maps/journey/journey-back';
+import { GameRulesService } from '../../services/game-rules.service';
+import { builderRulesText } from '../../shared/star-rules';
 import {
   buildTokens, buildTreeTokens, generatePhrases, type GeneratedPhrase,
 } from '../../../core/phrase-builder/phrase-builder';
@@ -63,6 +65,11 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
   readonly playKind = this.audio.playKind;
   readonly playSeq = this.audio.playSeq;
   private settings = inject(SettingsService);
+  private rules = inject(GameRulesService);
+  /** Admin mode: shows the star-rules button. */
+  get adminMode(): boolean { return this.settings.adminMode(); }
+  /** ADMIN: how this activity is completed. */
+  showRules(): void { void this.rules.showRules(builderRulesText('Builder', this.journeyPhrases.length)); }
   private addWordService = inject(AddWordService);
   private flashcards = inject(FlashcardService);
   private actionSheet = inject(ActionSheetController);
