@@ -32,6 +32,7 @@ import { builderRulesText } from '../../shared/star-rules';
 import {
   buildTokens, buildTreeTokens, generatePhrases, type GeneratedPhrase,
 } from '../../../core/phrase-builder/phrase-builder';
+import { lessonPhrases } from '../../maps/explore-plus/lessons/lessons';
 
 interface BuilderWord { text: string; translations: string[]; article?: string; lemma?: string; }
 interface BuilderGroup { id: string; category: string; name: string; order: number; words: BuilderWord[]; }
@@ -284,7 +285,11 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
       for (const c of this.flashcards.getLevelCards(deckId, n)) earlier.push(toSrc(c));
     }
 
-    if (this.flashcards.isTreeDeckId(deckId)) {
+    if (this.flashcards.isLessonDeckId(deckId)) {
+      // Explore+ lessons: the lesson's AUTHORED sentences (never generated).
+      this.journeyPhrases = lessonPhrases(level, 5);
+      this.journeyWordPool = [];
+    } else if (this.flashcards.isTreeDeckId(deckId)) {
       // Tree: authored nouns with articles + Core chunks → the v2 generator
       // (real phrases like "un professeur et un élève"). A random seed varies
       // the phrases between sessions.

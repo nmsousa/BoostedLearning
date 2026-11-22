@@ -135,13 +135,17 @@ export class MixSessionService {
     current: SourceCard[],
     earlier: SourceCard[],
     bestTr: (c: Flashcard) => string,
+    /** Authored sentences (Explore+ lessons); when given, nothing is generated. */
+    authored?: GeneratedPhrase[],
   ): MixSession {
     const items: MixItem[] = [];
 
     // Pools.
     const playable = cards.filter(c => c.text && c.text !== '—');
-    const phrases = this.safe(() => generatePhrases(buildTreeTokens(current, earlier), 12, 'fr', { engine: 'v2', seed: 1 + Math.floor(Math.random() * 1e6) }));
-    const blankPhrases = phrases.filter(p => p.blankIndex !== undefined);
+    const phrases = authored ?? this.safe(() => generatePhrases(buildTreeTokens(current, earlier), 12, 'fr', { engine: 'v2', seed: 1 + Math.floor(Math.random() * 1e6) }));
+    // Authored sentences are few, so Blanks takes them from the END of the list
+    // and Builder/Write from the start: the same sentence rarely appears twice.
+    const blankPhrases = (authored ? [...phrases].reverse() : phrases).filter(p => p.blankIndex !== undefined);
     const buildPhrases = phrases.filter(p => p.tokens.length >= 2);
 
     // Progressive difficulty (docs/LEVEL-ALGORITHM.md): the plan depends on how
@@ -228,7 +232,7 @@ export class MixSessionService {
 
   private writeItem(p: GeneratedPhrase | null, cards: Flashcard[], bestTr: (c: Flashcard) => string): MixWriteItem | null {
     if (p && p.tokens.length >= 2) {
-      return { kind: 'write', gloss: p.en, accepted: [p.target], target: p.target };
+      return { kind: 'write', gloss: p.en, accepted: p.accepted ?? [p.target], target: p.target };
     }
     // Fall back to a single-word write from a card.
     if (cards.length) {

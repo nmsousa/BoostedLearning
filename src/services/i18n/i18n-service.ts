@@ -420,6 +420,52 @@ const PT_MESSAGES: MessageCatalog = {
   'treePlus.coreDoneTitle': 'Core Nível {n} concluído! 🎉',
   'treePlus.coreDoneBody': 'Os temas estão agora abertos no Nível {n}. Escolhe um para continuar.',
   'explorePlus.title': 'Explorar+',
+
+  'xp.band.preA1': 'Iniciante absoluto',
+
+  'xp.band.a1': 'Iniciante',
+
+  'xp.band.a2': 'Elementar',
+
+  'xp.lessonN': 'Lição {n}',
+
+  'xp.lessonOf': 'Lição {n} de {total}',
+
+  'xp.start': 'Começar lição',
+
+  'xp.review': 'Rever',
+
+  'xp.locked': 'Bloqueada',
+
+  'xp.lockedHint': 'Termina a lição anterior para abrir esta.',
+
+  'xp.introTitle': 'Já sabes algum francês?',
+
+  'xp.introBody': 'Faz um teste de 2 minutos para começares no nível certo: nem fácil demais, nem difícil demais.',
+
+  'xp.findLevel': 'Descobrir o meu nível',
+
+  'xp.findLevelDesc': 'Um teste curto coloca-te na lição certa.',
+
+  'xp.startZero': 'Começar pela primeira lição',
+
+  'xp.testAsk': 'Como se diz isto em francês?',
+
+  'xp.testProgress': 'Pergunta {n} de {total}',
+
+  'xp.dontKnow': 'Não sei',
+
+  'xp.resultTitle': 'Começa aqui: {band}',
+
+  'xp.resultBody': 'As lições anteriores ficam abertas para as poderes rever quando quiseres.',
+
+  'xp.resultTop': 'Sabes isto bem. Os próximos níveis (B1) estão a caminho; até lá podes praticar o A2.',
+
+  'xp.resultGo': 'Começar: {lesson}',
+
+  'xp.notAvailable': 'Por agora, as lições do Explorar+ só existem em francês.',
+
+  'xp.bands': 'Níveis',
   'explorePlus.tagline': 'Todo o percurso, de cima a baixo',
   'explorePlus.reviewFlashcards': 'Rever com cartões',
   'explorePlus.levelDone': 'Nível concluído',
@@ -525,7 +571,7 @@ const PT_MESSAGES: MessageCatalog = {
   'home.mode.explore': 'Explorar',
   'home.mode.explore.desc': 'O teu mapa de vocabulário',
   'home.mode.explorePlus': 'Explorar+',
-  'home.mode.explorePlus.desc': 'Percurso completo, de cima a baixo',
+  'home.mode.explorePlus.desc': 'Lições por nível (A1, A2…) com frases reais',
   'home.mode.learn': 'Aprender',
   'home.mode.learn.desc': 'Conhece palavras novas',
   'home.mode.mix': 'Mistura',
@@ -1000,6 +1046,52 @@ const FR_MESSAGES: MessageCatalog = {
   'treePlus.coreDoneTitle': 'Core Niveau {n} terminé ! 🎉',
   'treePlus.coreDoneBody': 'Les thèmes sont maintenant ouverts au Niveau {n}. Choisissez-en un pour continuer.',
   'explorePlus.title': 'Explorer+',
+
+  'xp.band.preA1': 'Grand débutant',
+
+  'xp.band.a1': 'Débutant',
+
+  'xp.band.a2': 'Élémentaire',
+
+  'xp.lessonN': 'Leçon {n}',
+
+  'xp.lessonOf': 'Leçon {n} sur {total}',
+
+  'xp.start': 'Commencer la leçon',
+
+  'xp.review': 'Réviser',
+
+  'xp.locked': 'Verrouillée',
+
+  'xp.lockedHint': 'Termine la leçon précédente pour ouvrir celle-ci.',
+
+  'xp.introTitle': 'Tu connais déjà un peu de français ?',
+
+  'xp.introBody': 'Fais un test de 2 minutes pour commencer au bon niveau : ni trop facile, ni trop difficile.',
+
+  'xp.findLevel': 'Trouver mon niveau',
+
+  'xp.findLevelDesc': 'Un court test te place dans la bonne leçon.',
+
+  'xp.startZero': 'Commencer par la première leçon',
+
+  'xp.testAsk': 'Comment dit-on ceci en français ?',
+
+  'xp.testProgress': 'Question {n} sur {total}',
+
+  'xp.dontKnow': 'Je ne sais pas',
+
+  'xp.resultTitle': 'Commence ici : {band}',
+
+  'xp.resultBody': 'Les leçons précédentes restent ouvertes : tu peux les réviser quand tu veux.',
+
+  'xp.resultTop': 'Tu maîtrises bien. Les niveaux suivants (B1) arrivent ; en attendant, tu peux pratiquer l’A2.',
+
+  'xp.resultGo': 'Commencer : {lesson}',
+
+  'xp.notAvailable': 'Pour l’instant, les leçons d’Explorer+ n’existent qu’en français.',
+
+  'xp.bands': 'Niveaux',
   'explorePlus.tagline': 'Tout le parcours, de haut en bas',
   'explorePlus.reviewFlashcards': 'Réviser avec les cartes',
   'explorePlus.levelDone': 'Niveau terminé',
@@ -1105,7 +1197,7 @@ const FR_MESSAGES: MessageCatalog = {
   'home.mode.explore': 'Explorer',
   'home.mode.explore.desc': 'Votre carte de vocabulaire',
   'home.mode.explorePlus': 'Explorer+',
-  'home.mode.explorePlus.desc': 'Le parcours complet, de haut en bas',
+  'home.mode.explorePlus.desc': 'Des leçons par niveau (A1, A2…) avec de vraies phrases',
   'home.mode.learn': 'Apprendre',
   'home.mode.learn.desc': 'Découvrez de nouveaux mots',
   'home.mode.mix': 'Mix',
@@ -1580,6 +1672,52 @@ const EN_MESSAGES: MessageCatalog = {
   'treePlus.coreDoneTitle': 'Core Level {n} complete! 🎉',
   'treePlus.coreDoneBody': 'Topics are now open at Level {n}. Pick one to carry on.',
   'explorePlus.title': 'Explore+',
+
+  'xp.band.preA1': 'Absolute beginner',
+
+  'xp.band.a1': 'Beginner',
+
+  'xp.band.a2': 'Elementary',
+
+  'xp.lessonN': 'Lesson {n}',
+
+  'xp.lessonOf': 'Lesson {n} of {total}',
+
+  'xp.start': 'Start lesson',
+
+  'xp.review': 'Review',
+
+  'xp.locked': 'Locked',
+
+  'xp.lockedHint': 'Finish the previous lesson to open this one.',
+
+  'xp.introTitle': 'Already know some French?',
+
+  'xp.introBody': 'Take a 2-minute test to start at the right level: not too easy, not too hard.',
+
+  'xp.findLevel': 'Find my level',
+
+  'xp.findLevelDesc': 'A short test places you in the right lesson.',
+
+  'xp.startZero': 'Start from the first lesson',
+
+  'xp.testAsk': 'How do you say this in French?',
+
+  'xp.testProgress': 'Question {n} of {total}',
+
+  'xp.dontKnow': 'I don’t know',
+
+  'xp.resultTitle': 'Start here: {band}',
+
+  'xp.resultBody': 'The lessons before it stay open, so you can review them any time.',
+
+  'xp.resultTop': 'You know this well. The next levels (B1) are on the way; meanwhile you can practise A2.',
+
+  'xp.resultGo': 'Start: {lesson}',
+
+  'xp.notAvailable': 'For now, Explore+ lessons are only available in French.',
+
+  'xp.bands': 'Levels',
   'explorePlus.tagline': 'The whole path, top to bottom',
   'explorePlus.reviewFlashcards': 'Review with Flashcards',
   'explorePlus.levelDone': 'Level complete',
@@ -1685,7 +1823,7 @@ const EN_MESSAGES: MessageCatalog = {
   'home.mode.explore': 'Explore',
   'home.mode.explore.desc': 'Your vocabulary map',
   'home.mode.explorePlus': 'Explore+',
-  'home.mode.explorePlus.desc': 'Full path, top to bottom',
+  'home.mode.explorePlus.desc': 'Lessons by level (A1, A2…) with real sentences',
   'home.mode.learn': 'Learn',
   'home.mode.learn.desc': 'Meet new words',
   'home.mode.mix': 'Mix',
@@ -2130,6 +2268,52 @@ const ES_MESSAGES: MessageCatalog = {
   'treePlus.coreDoneTitle': '¡Core Nivel {n} completado! 🎉',
   'treePlus.coreDoneBody': 'Los temas ya están abiertos en el Nivel {n}. Elige uno para continuar.',
   'explorePlus.title': 'Explorar+',
+
+  'xp.band.preA1': 'Principiante absoluto',
+
+  'xp.band.a1': 'Principiante',
+
+  'xp.band.a2': 'Elemental',
+
+  'xp.lessonN': 'Lección {n}',
+
+  'xp.lessonOf': 'Lección {n} de {total}',
+
+  'xp.start': 'Empezar lección',
+
+  'xp.review': 'Repasar',
+
+  'xp.locked': 'Bloqueada',
+
+  'xp.lockedHint': 'Termina la lección anterior para abrir esta.',
+
+  'xp.introTitle': '¿Ya sabes algo de francés?',
+
+  'xp.introBody': 'Haz una prueba de 2 minutos para empezar en el nivel adecuado: ni muy fácil ni muy difícil.',
+
+  'xp.findLevel': 'Encontrar mi nivel',
+
+  'xp.findLevelDesc': 'Una prueba corta te coloca en la lección adecuada.',
+
+  'xp.startZero': 'Empezar por la primera lección',
+
+  'xp.testAsk': '¿Cómo se dice esto en francés?',
+
+  'xp.testProgress': 'Pregunta {n} de {total}',
+
+  'xp.dontKnow': 'No lo sé',
+
+  'xp.resultTitle': 'Empieza aquí: {band}',
+
+  'xp.resultBody': 'Las lecciones anteriores quedan abiertas para repasarlas cuando quieras.',
+
+  'xp.resultTop': 'Lo dominas. Pronto llegarán más niveles (B1); mientras, puedes practicar el A2.',
+
+  'xp.resultGo': 'Empezar: {lesson}',
+
+  'xp.notAvailable': 'Por ahora, las lecciones de Explorar+ solo están en francés.',
+
+  'xp.bands': 'Niveles',
   'explorePlus.tagline': 'Todo el recorrido, de arriba abajo',
   'explorePlus.reviewFlashcards': 'Repasar con tarjetas',
   'explorePlus.levelDone': 'Nivel completado',
@@ -2235,7 +2419,7 @@ const ES_MESSAGES: MessageCatalog = {
   'home.mode.explore': 'Explorar',
   'home.mode.explore.desc': 'Tu mapa de vocabulario',
   'home.mode.explorePlus': 'Explorar+',
-  'home.mode.explorePlus.desc': 'Recorrido completo, de arriba abajo',
+  'home.mode.explorePlus.desc': 'Lecciones por nivel (A1, A2…) con frases reales',
   'home.mode.learn': 'Aprender',
   'home.mode.learn.desc': 'Conoce palabras nuevas',
   'home.mode.mix': 'Mezcla',

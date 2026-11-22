@@ -473,6 +473,36 @@ In admin mode each Explore game shows an amber shield button (top right) that
 opens the exact star rules for the current round (`GameRulesService.showRules`).
 See `docs/ADMIN-MODE.md`.
 
+## 12. Explore+ lessons (CEFR bands)
+
+Explore+ has its own curriculum, separate from Explore:
+`src/app/maps/explore-plus/lessons/` (one file per band), readable copy in
+`docs/EXPLORE-PLUS-LESSONS.md`. Explore keeps its Core + topics unchanged.
+
+- **Lessons, not topic levels.** Each lesson is one mission (a subject + the
+  grammar it needs), with its own words (10–13) and its own **authored**
+  sentences (8–9). Bands: Pre-A1 (4 lessons), A1 (12), A2 (12). CEFR labels are
+  an approximate map, not a certificate.
+- **Nothing French is generated at runtime.** Builder, Builder+, Write and Mix
+  use the lesson's authored sentences; the games only pick and shuffle them.
+  Each sentence has a focus word (the Blanks gap) and 3 authored wrong options
+  (Blanks choices and extra Builder tiles); Write accepts the sentence plus any
+  listed alternatives (e.g. the feminine form), ignoring punctuation and case.
+- **Same activities and rules as Explore**: Learn + any 5 of the 7 games
+  complete a lesson (§11.3), with the same stars and stop-early rules (§11.1–2).
+  Quiz options come from the lesson's own words.
+- **Unlocking is linear**: a lesson opens when the previous one is complete.
+- **Placement test** ("Find my level"): band by band, 4 questions each (an
+  English sentence → pick the French; wrong options are other sentences of the
+  band). 3 of 4 right moves on to the next band; otherwise the learner starts
+  at that band's first lesson. Every lesson before the start stays open for
+  review. Passing every band starts at the last band.
+- **Deck layout**: deck `lesson-<lang>` (French only for now). Each band owns 40
+  fixed levels (Pre-A1 1–40, A1 41–80, A2 81–120), so a new lesson at the end of
+  a band never shifts later bands' progress. Lessons must only be appended.
+- **Not yet**: dialogues, per-item spaced review across days, pre-generated
+  audio for the new sentences (the device voice reads them for now), and B1+.
+
 ## Legacy fallback (pre-rounds records)
 
 Progress saved before the 5-round model has no `roundsCompleted`. For those

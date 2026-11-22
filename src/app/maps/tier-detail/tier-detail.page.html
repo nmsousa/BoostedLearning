@@ -20,9 +20,18 @@
       <span class="td-hero-emoji" aria-hidden="true">{{ node.emoji }}</span>
       <div class="td-hero-text">
         <span class="td-hero-title">{{ node.title }}</span>
-        <span class="td-hero-sub">{{ 'tree.levelShort' | translate:{ n: tier } }}</span>
+        <span class="td-hero-sub">{{ heroSub }}</span>
       </div>
       <ion-icon *ngIf="complete" name="checkmark-circle" class="td-hero-check" aria-hidden="true"></ion-icon>
+    </div>
+
+    <!-- Explore+ lessons: what you'll be able to do + the grammar idea. -->
+    <div class="td-goal" *ngIf="tierDef.goal">
+      <p class="td-goal-text">{{ tierDef.goal }}</p>
+      <p class="td-grammar" *ngIf="tierDef.grammar">
+        <ion-icon name="bulb-outline" aria-hidden="true"></ion-icon>
+        <span>{{ tierDef.grammar }}</span>
+      </p>
     </div>
 
     <!-- Level switcher: replay an earlier open level of this node. -->

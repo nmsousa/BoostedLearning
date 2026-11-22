@@ -42,6 +42,15 @@
 .td-hero-sub { font-size: 0.8rem; color: rgba(255, 255, 255, 0.8); font-weight: 600; }
 .td-hero-check { flex: 0 0 auto; font-size: 26px; color: #8cf0bb; }
 
+// Explore+ lesson goal + grammar idea, under the hero.
+.td-goal { margin: -4px 2px 14px; }
+.td-goal-text { margin: 0 0 6px; font-size: 0.95rem; font-weight: 600; color: #eef1ff; line-height: 1.35; }
+.td-grammar {
+  display: flex; gap: 8px; align-items: flex-start; margin: 0;
+  font-size: 0.82rem; color: #c9cdff; line-height: 1.35;
+  ion-icon { flex: 0 0 auto; font-size: 17px; color: #ffd76a; margin-top: 1px; }
+}
+
 // ── Level switcher ───────────────────────────────────────────────────────────
 .td-tiers { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 .td-tier {

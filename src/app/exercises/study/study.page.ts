@@ -24,6 +24,7 @@ import { gradeAnswer } from '../../../core/answer-validator/typo-grader';
 import { GameRulesService } from '../../services/game-rules.service';
 import { accuracyRulesText, tooManyMistakes } from '../../shared/star-rules';
 import { generateWritePhraseCards } from '../../../core/phrase-builder/phrase-builder';
+import { lessonWriteItems } from '../../maps/explore-plus/lessons/lessons';
 
 type StudyPhase = 'question' | 'feedback' | 'complete';
 type FeedbackResult = 'correct' | 'almost' | 'incorrect';
@@ -282,6 +283,20 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
    * words, with mastered function words reused silently inside them.
    */
   private buildPhraseCards(deckId: string): Flashcard[] {
+    // Explore+ lessons: type a few of the lesson's AUTHORED sentences.
+    if (this.flashcardService.isLessonDeckId(deckId)) {
+      const level = this.levelNumber;
+      const skill = this.flashcardService.getLevelCards(deckId, level)[0]?.skill ?? '';
+      return lessonWriteItems(level, this.PHRASE_WRITE_COUNT).map((p, i) => ({
+        id: `${deckId}-phrase-${level}-${i}`,
+        deckId,
+        text: p.fr,
+        translations: [p.en],
+        skill,
+        correctCount: 0, incorrectCount: 0, lastSeen: null, nextReview: null, streak: 0,
+        acceptedForms: p.accepted,
+      } as Flashcard));
+    }
     if (!this.flashcardService.isTreeDeckId(deckId)) return [];
     if ((this.deck?.languageCode ?? '') !== 'fr') return [];
     const level = this.levelNumber;

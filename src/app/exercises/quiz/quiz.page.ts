@@ -325,8 +325,10 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
     // Only if the topic can't supply enough do we top up from the rest of the deck.
     const need = this.OPTION_COUNT - 1;
     let distractors: string[];
-    const topicLevels = this.deck && this.flashcardService.isTreeDeckId(this.deck.id)
-      ? topicLevelsUpTo(this.levelNumber) : [];
+    // Explore+ lessons: the lesson itself is the topic (its own words).
+    const topicLevels = !this.deck ? []
+      : this.flashcardService.isLessonDeckId(this.deck.id) ? [this.levelNumber]
+      : this.flashcardService.isTreeDeckId(this.deck.id) ? topicLevelsUpTo(this.levelNumber) : [];
     if (this.deck && topicLevels.length > 0) {
       const deckId = this.deck.id;
       const topicPool = usable(topicLevels.flatMap(n => this.flashcardService.getLevelCards(deckId, n)));

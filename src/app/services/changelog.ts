@@ -27,6 +27,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.63',
+    notes: [
+      'Explore+ is new: 28 French lessons by level (Pre-A1, A1, A2), each with its own words and real sentences.',
+      'Swipe between big lesson cards; you start on your current lesson, and finished ones are greyed out.',
+      'New "Find my level" test puts you in the right lesson: not too easy, not too hard.',
+      'Builder, Write and Mix in Explore+ use written sentences instead of generated ones.',
+    ],
+  },
+  {
     version: '1.3.62',
     notes: [
       'Getting at least half right now finishes a game (1 star). If more than half go wrong, the game stops with an encouraging message so you can try again.',

@@ -896,7 +896,7 @@ export class FlashcardService {
    * the existing skill-based level/exercise/progress engine works unchanged.
    *
    * The deck id is `<idPrefix>-<lang>` (default "tree-<lang>"; the prefix must
-   * start with "tree" so the tree-deck rules apply) so its `journey-*` progress
+   * start with "tree" or be "lesson" so the curriculum-deck rules apply) so its `journey-*` progress
    * is fully separate from the real course deck — the Tree curriculum never
    * collides with the Journey maps. A new prefix (e.g. "tree-v2") starts a
    * fresh progress namespace when the level layout changes. Cards are keyed by
@@ -971,9 +971,19 @@ export class FlashcardService {
     return deckId;
   }
 
-  /** True for the synthetic Tree curriculum decks ("tree-<lang>", "tree-v2-<lang>"…). */
+  /**
+   * True for the synthetic authored-curriculum decks: Explore's Tree decks
+   * ("tree-<lang>", "tree-v2-<lang>") and Explore+'s lesson deck
+   * ("lesson-<lang>"). They share the curriculum rules (per-skill de-dupe, no
+   * cross-level review pool, not used as an audio source).
+   */
   isTreeDeckId(deckId: string | null | undefined): boolean {
-    return !!deckId && deckId.startsWith('tree-');
+    return !!deckId && (deckId.startsWith('tree-') || this.isLessonDeckId(deckId));
+  }
+
+  /** True for Explore+'s lesson deck ("lesson-<lang>"): its sentences are authored. */
+  isLessonDeckId(deckId: string | null | undefined): boolean {
+    return !!deckId && deckId.startsWith('lesson-');
   }
 
   /** True for a transient custom-practice deck (built from a word selection). */

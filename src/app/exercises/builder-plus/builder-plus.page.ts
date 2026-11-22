@@ -41,6 +41,7 @@ import { builderRulesText } from '../../shared/star-rules';
 import {
   buildTokens, buildTreeTokens, generatePhrases, type GeneratedPhrase,
 } from '../../../core/phrase-builder/phrase-builder';
+import { lessonPhrases } from '../../maps/explore-plus/lessons/lessons';
 
 interface BuilderWord { text: string; translations: string[]; article?: string; lemma?: string; }
 interface BuilderGroup { id: string; category: string; name: string; order: number; words: BuilderWord[]; }
@@ -251,7 +252,11 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
       for (const c of this.flashcards.getLevelCards(deckId, n)) earlier.push(toSrc(c));
     }
 
-    if (this.flashcards.isTreeDeckId(deckId)) {
+    if (this.flashcards.isLessonDeckId(deckId)) {
+      // Explore+ lessons: the lesson's AUTHORED sentences (never generated).
+      this.journeyPhrases = lessonPhrases(level, 5);
+      this.journeyWordPool = [];
+    } else if (this.flashcards.isTreeDeckId(deckId)) {
       const tokens = buildTreeTokens(current, earlier);
       this.journeyPhrases = generatePhrases(tokens, 5, 'fr', { engine: 'v2', seed: 1 + Math.floor(Math.random() * 1e6) });
       this.journeyWordPool = [];

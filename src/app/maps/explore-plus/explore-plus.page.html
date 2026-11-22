@@ -1,57 +1,138 @@
-<ion-header class="ep-header ion-no-border">
+<ion-header class="xp-header ion-no-border">
   <ion-toolbar>
-    <div class="ep-head">
-      <button type="button" class="ep-back" (click)="close()" [attr.aria-label]="'journeyPlus.back' | translate">
+    <div class="xp-head">
+      <button type="button" class="xp-back" (click)="back()" [attr.aria-label]="'journeyPlus.back' | translate">
         <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
       </button>
-      <h1 class="ep-title">{{ 'explorePlus.title' | translate }}</h1>
-      <span class="ep-head-spacer" aria-hidden="true"></span>
+      <h1 class="xp-title">{{ (view === 'map' ? 'explorePlus.title' : 'xp.findLevel') | translate }}</h1>
+      <span class="xp-head-spacer" aria-hidden="true"></span>
     </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ep-content" [scrollY]="true">
-  <div *ngIf="isLoading" class="ep-loading"><ion-spinner name="crescent"></ion-spinner></div>
+<ion-content class="xp-content" [scrollY]="true">
+  <div *ngIf="isLoading" class="xp-loading"><ion-spinner name="crescent"></ion-spinner></div>
 
-  <div *ngIf="!isLoading" class="ep-body">
-    <div *ngIf="adminMode" class="ep-admin-tip">
+  <div *ngIf="!isLoading && !available" class="xp-body">
+    <p class="xp-empty">{{ 'xp.notAvailable' | translate }}</p>
+  </div>
+
+  <!-- ── Lesson map ───────────────────────────────────────────────────────── -->
+  <div *ngIf="!isLoading && available && view === 'map'" class="xp-body">
+    <div *ngIf="adminMode" class="xp-admin-tip">
       <ion-icon name="shield-checkmark-outline" aria-hidden="true"></ion-icon>
       <span>{{ 'tree.adminTip' | translate }}</span>
-      <button type="button" class="ep-admin-reset" (click)="resetProgress()"
-        [attr.aria-label]="'treePlus.resetProgress' | translate">
+      <button type="button" class="xp-admin-reset" (click)="resetProgress()" [attr.aria-label]="'treePlus.resetProgress' | translate">
         <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
         <span>{{ 'treePlus.resetProgress' | translate }}</span>
       </button>
     </div>
 
-    <p class="ep-tagline">✨ {{ 'explorePlus.tagline' | translate }}</p>
+    <!-- First visit: find the right level, or start from zero. -->
+    <div *ngIf="showIntro" class="xp-intro">
+      <span class="xp-intro-icon" aria-hidden="true">🎯</span>
+      <div class="xp-intro-text">
+        <h2>{{ 'xp.introTitle' | translate }}</h2>
+        <p>{{ 'xp.introBody' | translate }}</p>
+        <div class="xp-intro-actions">
+          <button type="button" class="xp-btn primary" (click)="startTest()">{{ 'xp.findLevel' | translate }}</button>
+          <button type="button" class="xp-btn ghost" (click)="startFromZero()">{{ 'xp.startZero' | translate }}</button>
+        </div>
+      </div>
+    </div>
 
-    <div class="ep-block" *ngFor="let block of blocks; trackBy: trackBlock">
-      <div class="ep-block-head">{{ 'tree.levelShort' | translate:{ n: block.tier } }}</div>
+    <!-- What the centred lesson is about. -->
+    <div class="xp-focus" *ngIf="focusedCard as f" [style.--hue]="f.band.hue">
+      <span class="xp-focus-band">{{ f.band.cefr }} · {{ f.band.nameKey | translate }}</span>
+      <span class="xp-focus-count">{{ 'xp.lessonOf' | translate:{ n: f.numberInBand, total: bandLessonCount(f.band.id) } }}</span>
+      <p class="xp-focus-goal">{{ f.lesson.goal }}</p>
+    </div>
+  </div>
 
-      <button type="button" class="ep-row" *ngFor="let row of block.rows; trackBy: trackRow"
-        [class.core]="row.kind === 'core'"
-        [class.locked]="row.locked" [class.done]="row.done"
-        [class.pulse]="pulseRowKey === rowKey(row)"
-        [attr.data-row-key]="rowKey(row)"
-        [style.--hue]="row.hue" [disabled]="row.locked" (click)="toggleRow(row)">
-        <span class="ep-emoji" aria-hidden="true">
-          <ng-container *ngIf="row.kind === 'core'">📖</ng-container>
-          <ng-container *ngIf="row.kind !== 'core'">{{ row.emoji }}</ng-container>
+  <!-- The carousel sits outside the padded body so cards can peek at the edges. -->
+  <div *ngIf="!isLoading && available && view === 'map'" #track class="xp-track" (scroll)="onTrackScroll()"
+    role="list" [attr.aria-label]="'explorePlus.title' | translate">
+    <button type="button" class="xp-card" role="listitem" *ngFor="let c of cards; trackBy: trackCard"
+      [ngClass]="'state-' + c.state" [class.current]="c.current" [class.focused]="c.index === focused"
+      [style.--hue]="c.band.hue" (click)="onCardTap(c)"
+      [attr.aria-label]="c.band.cefr + ', ' + ('xp.lessonN' | translate:{ n: c.numberInBand }) + ', ' + c.lesson.title + ', ' + (ctaKey(c) | translate)">
+      <span class="xp-card-top">
+        <span class="xp-card-num">{{ 'xp.lessonN' | translate:{ n: c.numberInBand } }}</span>
+        <span class="xp-card-band">{{ c.band.cefr }}</span>
+      </span>
+      <span class="xp-card-emoji" aria-hidden="true">
+        {{ c.lesson.icon }}
+        <ion-icon *ngIf="c.state === 'done'" class="xp-card-badge done" name="checkmark-circle"></ion-icon>
+        <ion-icon *ngIf="c.state === 'locked'" class="xp-card-badge lock" name="lock-closed"></ion-icon>
+      </span>
+      <span class="xp-card-title">{{ c.lesson.title }}</span>
+      <span class="xp-card-bottom">
+        <span class="xp-progress" *ngIf="c.state !== 'locked'">
+          <span class="xp-progress-track"><span class="xp-progress-fill" [style.width.%]="c.progress.percent"></span></span>
+          <span class="xp-progress-pct">{{ c.progress.percent }}%</span>
         </span>
-        <span class="ep-main">
-          <span class="ep-name-row">
-            <span class="ep-name">{{ row.title }}</span>
-            <ion-icon *ngIf="row.done" name="checkmark-circle" class="ep-badge done" aria-hidden="true"></ion-icon>
-            <ion-icon *ngIf="row.locked" name="lock-closed" class="ep-badge lock" aria-hidden="true"></ion-icon>
-          </span>
-          <span class="ep-progress" *ngIf="!row.locked">
-            <span class="ep-progress-track"><span class="ep-progress-fill" [style.width.%]="row.percent"></span></span>
-            <span class="ep-progress-pct">{{ row.percent }}%</span>
-          </span>
+        <span class="xp-cta">
+          <ion-icon *ngIf="c.state === 'locked'" name="lock-closed" aria-hidden="true"></ion-icon>
+          {{ ctaKey(c) | translate }}
         </span>
-        <ion-icon *ngIf="!row.locked" class="ep-caret" name="chevron-forward" aria-hidden="true"></ion-icon>
+      </span>
+    </button>
+  </div>
+
+  <div *ngIf="!isLoading && available && view === 'map'" class="xp-body xp-below">
+    <h3 class="xp-section">{{ 'xp.bands' | translate }}</h3>
+    <div class="xp-chips">
+      <button type="button" class="xp-chip" *ngFor="let ch of chips; trackBy: trackChip"
+        [class.active]="focusedCard?.band?.id === ch.band.id" [style.--hue]="ch.band.hue" (click)="jumpToBand(ch)">
+        <span class="xp-chip-cefr">{{ ch.band.cefr }}</span>
+        <span class="xp-chip-name">{{ ch.band.nameKey | translate }}</span>
+        <span class="xp-chip-count">{{ ch.done }}/{{ ch.total }}</span>
       </button>
     </div>
+
+    <button *ngIf="!showIntro" type="button" class="xp-find" (click)="startTest()">
+      <span class="xp-find-icon" aria-hidden="true">🎯</span>
+      <span class="xp-find-text">
+        <span class="xp-find-title">{{ 'xp.findLevel' | translate }}</span>
+        <span class="xp-find-desc">{{ 'xp.findLevelDesc' | translate }}</span>
+      </span>
+      <ion-icon name="chevron-forward" aria-hidden="true"></ion-icon>
+    </button>
+  </div>
+
+  <!-- ── Placement test ───────────────────────────────────────────────────── -->
+  <div *ngIf="!isLoading && view === 'test' && question as q" class="xp-body xp-test" [style.--hue]="testBand.hue">
+    <div class="xp-test-head">
+      <span class="xp-focus-band">{{ testBand.cefr }} · {{ testBand.nameKey | translate }}</span>
+      <span class="xp-focus-count">{{ 'xp.testProgress' | translate:{ n: qIndex + 1, total: questions.length } }}</span>
+    </div>
+    <span class="xp-progress-track xp-test-bar"><span class="xp-progress-fill" [style.width.%]="(answeredTotal / testTotal) * 100"></span></span>
+
+    <p class="xp-test-ask">{{ 'xp.testAsk' | translate }}</p>
+    <h2 class="xp-test-prompt">{{ q.prompt }}</h2>
+
+    <div class="xp-test-options" role="list">
+      <button type="button" class="xp-opt" role="listitem" *ngFor="let o of q.options; trackBy: trackOpt"
+        [ngClass]="'opt-' + optionState(o)" [disabled]="chosen !== null" (click)="answer(o)">
+        <span lang="fr">{{ o }}</span>
+        <ion-icon *ngIf="optionState(o) === 'right'" name="checkmark-circle" aria-hidden="true"></ion-icon>
+        <ion-icon *ngIf="optionState(o) === 'wrong'" name="close-circle" aria-hidden="true"></ion-icon>
+      </button>
+    </div>
+    <button type="button" class="xp-btn ghost xp-dont" [disabled]="chosen !== null" (click)="answer(null)">
+      {{ 'xp.dontKnow' | translate }}
+    </button>
+  </div>
+
+  <!-- ── Placement result ─────────────────────────────────────────────────── -->
+  <div *ngIf="!isLoading && view === 'result' && result as r" class="xp-body xp-result" [style.--hue]="r.band.hue">
+    <span class="xp-result-icon" aria-hidden="true">🎯</span>
+    <h2>{{ 'xp.resultTitle' | translate:{ band: r.band.cefr + ' · ' + (r.band.nameKey | translate) } }}</h2>
+    <p *ngIf="r.allPassed">{{ 'xp.resultTop' | translate }}</p>
+    <p>{{ 'xp.resultBody' | translate }}</p>
+    <button type="button" class="xp-btn primary wide" (click)="confirmResult()">
+      {{ 'xp.resultGo' | translate:{ lesson: r.lessonTitle } }}
+    </button>
+    <button type="button" class="xp-btn ghost wide" (click)="startTest()">{{ 'xp.findLevel' | translate }}</button>
   </div>
 </ion-content>

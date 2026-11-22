@@ -76,6 +76,8 @@ export interface GeneratedPhrase {
    * and other nouns, chosen so they never form an alternative CORRECT answer.
    */
   distractors?: string[];
+  /** Every accepted typed answer (authored lesson sentences); default [target]. */
+  accepted?: string[];
 }
 
 /** Options for `generatePhrases`. */

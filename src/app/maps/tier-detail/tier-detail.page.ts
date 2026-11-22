@@ -25,9 +25,12 @@ import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import {
-  JOURNEY_TIER_DETAIL_FROM, JOURNEY_TREE_PLUS_FROM, tierOriginUrl,
+  JOURNEY_EXPLORE_PLUS_FROM, JOURNEY_TIER_DETAIL_FROM, JOURNEY_TREE_PLUS_FROM, tierOriginUrl,
 } from '../journey/journey-back';
-import { TreeEngine, type TreeNode, type TreeTier, type TreeModeView } from '../tree/tree-engine';
+import {
+  TreeEngine, type LevelEngine, type TreeNode, type TreeTier, type TreeModeView,
+} from '../tree/tree-engine';
+import { LessonEngine } from '../explore-plus/lesson-engine';
 
 @Component({
   selector: 'app-tier-detail',
@@ -51,15 +54,30 @@ export class TierDetailPage implements OnInit, OnDestroy {
   /** The list page we came from ('tree-plus' = Explore, 'explore-plus'). */
   origin: string = JOURNEY_TREE_PLUS_FROM;
 
-  private engine = new TreeEngine({
-    flashcards: this.flashcards,
-    settings: this.settings,
-    nav: this.navCtrl,
-    t: (k, p) => this.i18n.t(k, p),
-    from: JOURNEY_TIER_DETAIL_FROM,
-    // Launched exercises return to this exact level page.
-    extraQuery: () => ({ tierNode: this.nodeId, tierTier: this.tier, tierOrigin: this.origin }),
-  });
+  /** Explore+ (lessons) or Explore (Core + topics), chosen by the origin. */
+  private engine: LevelEngine = this.createEngine(
+    this.route.snapshot.queryParamMap.get('origin') ?? JOURNEY_TREE_PLUS_FROM,
+  );
+
+  private createEngine(origin: string): LevelEngine {
+    const deps = {
+      flashcards: this.flashcards,
+      settings: this.settings,
+      nav: this.navCtrl,
+      t: (k: string, p?: Record<string, string | number>) => this.i18n.t(k, p),
+      from: JOURNEY_TIER_DETAIL_FROM,
+      // Launched exercises return to this exact level page.
+      extraQuery: () => ({ tierNode: this.nodeId, tierTier: this.tier, tierOrigin: this.origin }),
+    };
+    return origin === JOURNEY_EXPLORE_PLUS_FROM ? new LessonEngine(deps) : new TreeEngine(deps);
+  }
+
+  /** True on an Explore+ lesson. */
+  get isLesson(): boolean { return this.engine instanceof LessonEngine; }
+  /** Hero subtitle: "A1 · Lesson 3" for lessons, "Level 3" for Explore. */
+  get heroSub(): string {
+    return this.isLesson ? (this.tierDef?.label ?? '') : this.i18n.t('tree.levelShort', { n: this.tier });
+  }
 
   isLoading = true;
   node: TreeNode | null = null;
@@ -105,6 +123,7 @@ export class TierDetailPage implements OnInit, OnDestroy {
     // parseInt (not Number) so a mangled value like '1?origin=tree-plus' still reads as 1.
     this.tier = Math.max(1, parseInt(p.get('tier') ?? '1', 10) || 1);
     this.origin = this.route.snapshot.queryParamMap.get('origin') ?? JOURNEY_TREE_PLUS_FROM;
+    this.engine = this.createEngine(this.origin);
     await this.flashcards.initialize();
     await this.load();
   }
@@ -127,9 +146,7 @@ export class TierDetailPage implements OnInit, OnDestroy {
 
   private async load(): Promise<void> {
     await this.engine.load();
-    const node = this.nodeId === 'core'
-      ? this.engine.coreNode()
-      : this.engine.themeNodes().find(n => n.id === this.nodeId) ?? null;
+    const node = this.engine.nodeById(this.nodeId);
     if (!node) { this.back(); return; }
     this.node = node;
 

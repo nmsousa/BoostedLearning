@@ -61,6 +61,9 @@ export interface TreeTier {
   level: number;
   /** "Core 3" / "Level 3" label (localized by the caller's translate fn). */
   label: string;
+  /** Explore+ lessons: what the learner can do after it, and its grammar idea. */
+  goal?: string;
+  grammar?: string;
   words: CoreWord[];
   done: boolean;
   /** Learn + games progress under the 5-of-7 rule (percent, counts, complete). */
@@ -86,6 +89,23 @@ export interface TreeModeView {
 /** Minimal translate signature the engine needs for titles/labels. */
 export type TranslateFn = (key: string, params?: Record<string, string | number>) => string;
 
+/**
+ * What the shared level page (TierDetailPage) needs from an engine. Implemented
+ * by TreeEngine (Explore: Core + topics) and LessonEngine (Explore+: lessons).
+ */
+export interface LevelEngine {
+  readonly deckId: string;
+  readonly adminMode: boolean;
+  load(): Promise<void>;
+  /** The node a level page shows ('core' / a theme id / a lesson id), or null. */
+  nodeById(id: string): TreeNode | null;
+  tierAuthored(nodeId: string, tier: number): boolean;
+  tiersFor(node: TreeNode, maxTier: number): TreeTier[];
+  launchMode(nodeId: string, tier: number, modeIndex: number): void;
+  launchReview(nodeId: string, tier: number): void;
+  adminCompleteMode(nodeId: string, tier: number, modeIndex: number): Promise<void>;
+}
+
 export interface TreeEngineDeps {
   flashcards: FlashcardService;
   settings: SettingsService;
@@ -98,7 +118,7 @@ export interface TreeEngineDeps {
   extraQuery?: () => Record<string, string | number>;
 }
 
-export class TreeEngine {
+export class TreeEngine implements LevelEngine {
   /** Deck id prefix → "tree-v2-<lang>". A new prefix starts a fresh namespace. */
   static readonly DECK_PREFIX = 'tree-v2';
 
@@ -263,6 +283,11 @@ export class TreeEngine {
         state, doneLevel, availTier, maxTier: th.tiers.length,
       };
     });
+  }
+
+  /** The Core node or a theme node by id. */
+  nodeById(id: string): TreeNode | null {
+    return id === 'core' ? this.coreNode() : this.themeNodes().find(n => n.id === id) ?? null;
   }
 
   /** A node's own words for a tier (no Core-mix). */

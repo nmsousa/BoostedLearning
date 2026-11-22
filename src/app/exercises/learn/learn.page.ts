@@ -30,6 +30,7 @@ import { AudioService } from '../../services/audio.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { journeyBackUrl } from '../../maps/journey/journey-back';
 import { lookupCoreWord } from '../../maps/tree/tree-curriculum';
+import { lookupLessonWord } from '../../maps/explore-plus/lessons/lessons';
 
 interface LearnCard {
   /** The word exactly as authored ("le thé") — matches the audio clip. */
@@ -132,7 +133,7 @@ export class LearnPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     this.cards = levelCards
       .filter(c => c.text && c.text !== '—')
       .map(c => {
-        const meta = lookupCoreWord(c.text);
+        const meta = this.flashcards.isLessonDeckId(deckId) ? lookupLessonWord(c.text) : lookupCoreWord(c.text);
         return {
           // Show the FULL authored form ("le thé") — it matches both the audio
           // clip and the other modes (Flashcards/Write). Consistency of text

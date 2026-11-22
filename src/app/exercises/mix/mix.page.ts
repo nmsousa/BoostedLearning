@@ -22,6 +22,7 @@ import { ExitConfirmService } from '../../services/exit-confirm.service';
 import { journeyBackUrl } from '../../maps/journey/journey-back';
 import { gradeAnswer } from '../../../core/answer-validator/typo-grader';
 import type { SourceCard } from '../../../core/phrase-builder/phrase-builder';
+import { lessonPhrases } from '../../maps/explore-plus/lessons/lessons';
 import { GameRulesService } from '../../services/game-rules.service';
 import { accuracyRulesText, tooManyMistakes } from '../../shared/star-rules';
 import {
@@ -135,6 +136,8 @@ export class MixPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave 
     const session = this.mix.start(
       deckId, this.level, cards, current, earlier,
       (c) => this.flashcards.bestTranslation(c),
+      // Explore+ lessons use their authored sentences.
+      this.flashcards.isLessonDeckId(deckId) ? lessonPhrases(this.level) : undefined,
     );
     this.total = session.items.length;
     this.wrongCount = 0;

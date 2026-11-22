@@ -92,4 +92,39 @@ md += `---\n\nTotals: ${CORE_TIERS.length} Core levels (${coreWords} words, ${se
   `${THEME_DEFS.length} topics (${themeWords} words).\n`;
 
 writeFileSync(join(root, 'docs/EXPLORE-CONTENT.md'), md);
+
+// ── Explore+ lessons → docs/EXPLORE-PLUS-LESSONS.md ──────────────────────────
+const tmp2 = join(tmpdir(), `xp-lessons-${Date.now()}.mjs`);
+await build({
+  entryPoints: [join(root, 'src/app/maps/explore-plus/lessons/lessons.ts')],
+  bundle: true, format: 'esm', platform: 'node', outfile: tmp2, logLevel: 'error',
+});
+const xp = await import(pathToFileURL(tmp2).href);
+rmSync(tmp2, { force: true });
+let xmd = `# Explore+ lessons (French)
+
+Every Explore+ lesson, as shipped in \`src/app/maps/explore-plus/lessons/\`
+(one file per band). Regenerate with \`node scripts/export-explore-content.mjs\`.
+
+- Word **English** is bare ("coffee"); the app shows "the coffee". l’ / les nouns carry "(m.)" / "(f.)".
+- Sentence **Focus** is the word blanked in Blanks; **Wrong** are its 3 wrong options (also extra Builder tiles).
+- **Also accepted** are other correct answers for Write.
+
+`;
+let xw = 0, xs = 0;
+for (const band of xp.BANDS) {
+  const lessons = xp.LESSONS.filter((l) => l.band === band.id);
+  if (!lessons.length) continue;
+  xmd += `## ${band.cefr}\n\n`;
+  lessons.forEach((l, i) => {
+    xw += l.words.length; xs += l.sentences.length;
+    xmd += `### ${band.cefr} · Lesson ${i + 1} — ${l.icon} ${esc(l.title)} (\`${l.id}\`)\n\n**Goal:** ${esc(l.goal)}\n\n**Grammar:** ${esc(l.grammar)}\n\n`;
+    xmd += wordTable(l.words, true) + '\n\n';
+    xmd += '| French | English | Focus | Wrong | Also accepted |\n|---|---|---|---|---|\n';
+    xmd += l.sentences.map((x) => `| ${esc(x.fr)} | ${esc(x.en)} | ${esc(x.key)} | ${esc(x.wrong.join(', '))} | ${esc((x.alt ?? []).join(' / '))} |`).join('\n') + '\n\n';
+  });
+}
+xmd += `---\n\nTotals: ${xp.LESSONS.length} lessons, ${xw} words, ${xs} sentences.\n`;
+writeFileSync(join(root, 'docs/EXPLORE-PLUS-LESSONS.md'), xmd);
+console.log(`docs/EXPLORE-PLUS-LESSONS.md written: ${xp.LESSONS.length} lessons, ${xw} words, ${xs} sentences.`);
 console.log(`docs/EXPLORE-CONTENT.md written: ${coreWords} core words, ${themeWords} topic words, ${sentenceCount} sentences.`);

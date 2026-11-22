@@ -78,6 +78,127 @@ Real environment variables override the `.env` file, so you can still do
 `$env:GOOGLE_TTS_API_KEY = '...'` for a one-off run. `.env` is never committed;
 `.env.example` is.
 
+## Explore words & sentences (editing the curriculum)
+
+All Explore content (Core levels + topic levels: words, English, notes, icons
+and example sentences) lives in ONE source file:
+
+- **Source (edit this):** `src/app/maps/tree/tree-curriculum.ts`
+- **Readable export (generated, don't edit by hand):** `docs/EXPLORE-CONTENT.md`
+  — a Markdown list of every level, ready to hand to an AI to suggest more
+  words, sentences or icons.
+
+### Step 1 — Edit the words in `tree-curriculum.ts`
+
+- **Core levels:** `CORE_TIERS` — each level has `title`, `outcome` (the goal),
+  `example` (its example sentences in one string, separated by ` / `) and
+  `words: [{ fr, en, note?, icon? }]`.
+- **Topic levels:** `THEME_DEFS` — each topic has `tiers: [[...level 1 words], [...level 2], ...]`,
+  each word `{ fr, en, icon }`.
+
+Authoring rules (keep them, the app relies on them):
+
+- `fr` is exactly what the learner types and hears: nouns WITH their article
+  (`'le café'`, `'l’hôtel'`), no notes, no `a / b` alternatives.
+- `en` is the bare English (`'coffee'`); the app adds "the / a" itself.
+  For nouns starting with `l’` or `les`, add the gender note: `'hotel (m.)'`,
+  `'water (f.)'` — it drives the Masculine / Feminine badge.
+- `icon` is a single emoji (optional).
+
+### Step 2 — Regenerate the readable export
+
+```powershell
+node scripts/export-explore-content.mjs
+```
+
+This rewrites `docs/EXPLORE-CONTENT.md` from the curriculum (and prints how many
+words / sentences it found).
+
+### Step 3 — Generate audio for any new words or sentences
+
+```powershell
+node scripts/gen-audio.mjs
+```
+
+Needs `GOOGLE_TTS_API_KEY` in `.env` (see [Pronunciation audio](#pronunciation-audio-tts)).
+Existing clips are skipped, so only the new items are generated.
+
+### Step 4 — Build and test
+
+```powershell
+npm run build
+npm test
+```
+
+### Step 5 — Commit and (optionally) release
+
+Commit `tree-curriculum.ts`, `docs/EXPLORE-CONTENT.md` and the new files under
+`src/assets/audio/`, then follow [Releasing a new version](#releasing-a-new-version-ota-update).
+
+### Using an AI to add content
+
+1. Regenerate the export (Step 2).
+2. Give the AI `docs/EXPLORE-CONTENT.md` plus the authoring rules above, and ask
+   for more words / sentences / icons per level in the same format.
+3. Paste the result back into `tree-curriculum.ts` (or ask Kiro to merge it),
+   then do Steps 2–5.
+
+## Explore+ lessons (editing the lessons)
+
+Explore+ has its OWN content, separate from Explore: lessons grouped by CEFR
+band, each with its words AND its authored sentences (nothing is generated).
+
+- **Source (edit this):** `src/app/maps/explore-plus/lessons/`
+  - `lessons-pre-a1.ts`, `lessons-a1.ts`, `lessons-a2.ts` — one file per band;
+  - `lesson-types.ts` — the format and the authoring rules;
+  - `lessons.ts` — the order of the bands (add a new band file here).
+- **Readable export (generated):** `docs/EXPLORE-PLUS-LESSONS.md`.
+
+### Step 1 — Edit a band file
+
+Each lesson looks like this:
+
+```ts
+{
+  id: 'a1-03', band: 'a1', icon: '☕',
+  title: 'At the café',
+  goal: 'Order a drink and something to eat, and ask for the bill.',
+  grammar: 'je voudrais (I would like) as a polite fixed chunk; avec / sans.',
+  words: [
+    { fr: 'un café', en: 'coffee', icon: '☕' },
+    { fr: 'l’addition', en: 'bill (f.)', icon: '🧾' },
+  ],
+  sentences: [
+    //   French                              English                           focus word  3 wrong options
+    s('Je voudrais un café, s’il vous plaît.', 'I would like a coffee, please.', 'voudrais', ['voudrait', 'voudrez', 'veut']),
+    // optional 5th argument: other accepted answers for Write
+    s('Je suis anglais.', 'I am English.', 'suis', ['es', 'est', 'êtes'], ['Je suis anglaise.']),
+  ],
+},
+```
+
+Rules (the tests check them): at least 10 words and 8 sentences per lesson;
+the curly apostrophe `’` everywhere; nouns with their article; `(m.)`/`(f.)`
+for l’/les nouns; the focus word must be in the sentence; 3 different
+one-word wrong options; say "(tu)" or "(vous)" in the English when both fit.
+
+**Add new lessons at the END of their band file; never reorder, remove or
+insert lessons in the middle.** Progress is saved by position: each band owns
+40 fixed slots (Pre-A1 = levels 1–40, A1 = 41–80, A2 = 81–120), so a new
+lesson at the end of A1 doesn't touch A2's progress. A new band (B1) goes at
+the end of `BANDS` in `lesson-types.ts` and of `LESSONS` in `lessons.ts`.
+
+### Step 2 — Regenerate the export, then build and test
+
+```powershell
+node scripts/export-explore-content.mjs
+npm run build
+npm test
+```
+
+Audio for the new sentences isn't generated yet; until it is, the device voice
+reads them.
+
 ## Pronunciation audio (TTS)
 
 The Tree curriculum needs audio for its words and example sentences. To make it
