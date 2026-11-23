@@ -10,11 +10,13 @@ import { BANDS, type BandDef, type Lesson, type LessonBand, type LessonSentence,
 import { LESSONS_PRE_A1 } from './lessons-pre-a1';
 import { LESSONS_A1 } from './lessons-a1';
 import { LESSONS_A2 } from './lessons-a2';
+import { LESSONS_B1 } from './lessons-b1';
+import { LESSONS_B2 } from './lessons-b2';
 
 export * from './lesson-types';
 
 /** Every lesson in learning order (band by band). */
-export const LESSONS: readonly Lesson[] = [...LESSONS_PRE_A1, ...LESSONS_A1, ...LESSONS_A2];
+export const LESSONS: readonly Lesson[] = [...LESSONS_PRE_A1, ...LESSONS_A1, ...LESSONS_A2, ...LESSONS_B1, ...LESSONS_B2];
 
 /**
  * Fixed deck layout: each band owns BAND_SLOTS levels (Pre-A1 → 1–40, A1 →

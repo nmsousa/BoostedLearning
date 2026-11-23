@@ -441,7 +441,7 @@ const PT_MESSAGES: MessageCatalog = {
 
   'xp.introTitle': 'Já sabes algum francês?',
 
-  'xp.introBody': 'Faz um teste de 2 minutos para começares no nível certo: nem fácil demais, nem difícil demais.',
+  'xp.introBody': 'Faz um teste curto (5–8 minutos) para começares no nível certo: nem fácil demais, nem difícil demais.',
 
   'xp.findLevel': 'Descobrir o meu nível',
 
@@ -466,6 +466,64 @@ const PT_MESSAGES: MessageCatalog = {
   'xp.notAvailable': 'Por agora, as lições do Explorar+ só existem em francês.',
 
   'xp.bands': 'Níveis',
+
+  'xp.band.b1': 'Intermédio',
+
+  'xp.band.b2': 'Intermédio superior',
+
+  'xp.skill.languageUse': 'Gramática',
+
+  'xp.skill.vocabulary': 'Vocabulário',
+
+  'xp.skill.reading': 'Leitura',
+
+  'xp.skill.listening': 'Compreensão oral',
+
+  'xp.check': 'Verificar',
+
+  'xp.listen': 'Ouvir',
+
+  'xp.levelTestTitle': 'Teste {band}',
+
+  'xp.offerTitle': 'Desbloquear o {band}?',
+
+  'xp.offerBody': 'Faz um teste curto de {band} ({n} perguntas). Se passares, todas as lições de {band} ficam abertas.',
+
+  'xp.offerGo': 'Fazer o teste',
+
+  'xp.notNow': 'Agora não',
+
+  'xp.testCta': 'Fazer o teste {band}',
+
+  'xp.resultLevel': 'O teu nível: {band}',
+
+  'xp.resultBeginner': 'Estás a começar: bem-vindo!',
+
+  'xp.resultStart': 'Começa em {band} · {lesson}',
+
+  'xp.strengths': 'Pontos fortes',
+
+  'xp.toWork': 'A melhorar',
+
+  'xp.tryHigher': 'Tentar o teste {band}',
+
+  'xp.levelPassed': '{band} desbloqueado 🎉',
+
+  'xp.levelStrongBody': 'Excelente resultado. Todas as lições de {band} estão abertas.',
+
+  'xp.levelProvisionalBody': 'Passaste! Todas as lições de {band} estão abertas. Uma pequena revisão dos pontos a melhorar vai ajudar.',
+
+  'xp.levelNotYet': 'Ainda não',
+
+  'xp.levelNotYetBody': 'Acertaste {n} de {total}. Continua com as lições e tenta outra vez mais tarde: nada do que desbloqueaste se perde.',
+
+  'xp.score': 'Resultado: {n}/{total}',
+
+  'xp.backToLessons': 'Voltar às lições',
+
+  'xp.tryAgain': 'Tentar outra vez',
+
+  'xp.unlockedNow': 'Já está desbloqueado no teu percurso.',
   'explorePlus.tagline': 'Todo o percurso, de cima a baixo',
   'explorePlus.reviewFlashcards': 'Rever com cartões',
   'explorePlus.levelDone': 'Nível concluído',
@@ -1067,7 +1125,7 @@ const FR_MESSAGES: MessageCatalog = {
 
   'xp.introTitle': 'Tu connais déjà un peu de français ?',
 
-  'xp.introBody': 'Fais un test de 2 minutes pour commencer au bon niveau : ni trop facile, ni trop difficile.',
+  'xp.introBody': 'Fais un court test (5–8 minutes) pour commencer au bon niveau : ni trop facile, ni trop difficile.',
 
   'xp.findLevel': 'Trouver mon niveau',
 
@@ -1092,6 +1150,64 @@ const FR_MESSAGES: MessageCatalog = {
   'xp.notAvailable': 'Pour l’instant, les leçons d’Explorer+ n’existent qu’en français.',
 
   'xp.bands': 'Niveaux',
+
+  'xp.band.b1': 'Intermédiaire',
+
+  'xp.band.b2': 'Intermédiaire avancé',
+
+  'xp.skill.languageUse': 'Grammaire',
+
+  'xp.skill.vocabulary': 'Vocabulaire',
+
+  'xp.skill.reading': 'Lecture',
+
+  'xp.skill.listening': 'Compréhension orale',
+
+  'xp.check': 'Vérifier',
+
+  'xp.listen': 'Écouter',
+
+  'xp.levelTestTitle': 'Test {band}',
+
+  'xp.offerTitle': 'Débloquer le {band} ?',
+
+  'xp.offerBody': 'Fais un court test {band} ({n} questions). Si tu réussis, toutes les leçons {band} s’ouvrent.',
+
+  'xp.offerGo': 'Faire le test',
+
+  'xp.notNow': 'Pas maintenant',
+
+  'xp.testCta': 'Faire le test {band}',
+
+  'xp.resultLevel': 'Ton niveau : {band}',
+
+  'xp.resultBeginner': 'Tu débutes : bienvenue !',
+
+  'xp.resultStart': 'Commence en {band} · {lesson}',
+
+  'xp.strengths': 'Points forts',
+
+  'xp.toWork': 'À travailler',
+
+  'xp.tryHigher': 'Essayer le test {band}',
+
+  'xp.levelPassed': '{band} débloqué 🎉',
+
+  'xp.levelStrongBody': 'Excellent résultat. Toutes les leçons {band} sont ouvertes.',
+
+  'xp.levelProvisionalBody': 'Réussi ! Toutes les leçons {band} sont ouvertes. Une petite révision des points à travailler t’aidera.',
+
+  'xp.levelNotYet': 'Pas encore',
+
+  'xp.levelNotYetBody': 'Tu as {n} sur {total}. Continue les leçons et réessaie plus tard : rien de ce que tu as débloqué n’est perdu.',
+
+  'xp.score': 'Score : {n}/{total}',
+
+  'xp.backToLessons': 'Retour aux leçons',
+
+  'xp.tryAgain': 'Réessayer',
+
+  'xp.unlockedNow': 'C’est déjà débloqué dans ton parcours.',
   'explorePlus.tagline': 'Tout le parcours, de haut en bas',
   'explorePlus.reviewFlashcards': 'Réviser avec les cartes',
   'explorePlus.levelDone': 'Niveau terminé',
@@ -1693,7 +1809,7 @@ const EN_MESSAGES: MessageCatalog = {
 
   'xp.introTitle': 'Already know some French?',
 
-  'xp.introBody': 'Take a 2-minute test to start at the right level: not too easy, not too hard.',
+  'xp.introBody': 'Take a short test (5–8 minutes) to start at the right level: not too easy, not too hard.',
 
   'xp.findLevel': 'Find my level',
 
@@ -1718,6 +1834,64 @@ const EN_MESSAGES: MessageCatalog = {
   'xp.notAvailable': 'For now, Explore+ lessons are only available in French.',
 
   'xp.bands': 'Levels',
+
+  'xp.band.b1': 'Intermediate',
+
+  'xp.band.b2': 'Upper intermediate',
+
+  'xp.skill.languageUse': 'Grammar',
+
+  'xp.skill.vocabulary': 'Vocabulary',
+
+  'xp.skill.reading': 'Reading',
+
+  'xp.skill.listening': 'Listening',
+
+  'xp.check': 'Check answer',
+
+  'xp.listen': 'Listen',
+
+  'xp.levelTestTitle': '{band} test',
+
+  'xp.offerTitle': 'Unlock {band}?',
+
+  'xp.offerBody': 'Take a short {band} test ({n} questions). Pass it and every {band} lesson opens.',
+
+  'xp.offerGo': 'Take the test',
+
+  'xp.notNow': 'Not now',
+
+  'xp.testCta': 'Take the {band} test',
+
+  'xp.resultLevel': 'Your level: {band}',
+
+  'xp.resultBeginner': 'You’re just starting: welcome!',
+
+  'xp.resultStart': 'Start at {band} · {lesson}',
+
+  'xp.strengths': 'Strengths',
+
+  'xp.toWork': 'To work on',
+
+  'xp.tryHigher': 'Try the {band} test',
+
+  'xp.levelPassed': '{band} unlocked 🎉',
+
+  'xp.levelStrongBody': 'Great result. Every {band} lesson is open.',
+
+  'xp.levelProvisionalBody': 'You passed! Every {band} lesson is open. A little revision of the points to work on will help.',
+
+  'xp.levelNotYet': 'Not quite yet',
+
+  'xp.levelNotYetBody': 'You got {n} of {total}. Keep going with the lessons and try again later: nothing you unlocked is lost.',
+
+  'xp.score': 'Score: {n}/{total}',
+
+  'xp.backToLessons': 'Back to lessons',
+
+  'xp.tryAgain': 'Try again',
+
+  'xp.unlockedNow': 'This is already unlocked on your path.',
   'explorePlus.tagline': 'The whole path, top to bottom',
   'explorePlus.reviewFlashcards': 'Review with Flashcards',
   'explorePlus.levelDone': 'Level complete',
@@ -2289,7 +2463,7 @@ const ES_MESSAGES: MessageCatalog = {
 
   'xp.introTitle': '¿Ya sabes algo de francés?',
 
-  'xp.introBody': 'Haz una prueba de 2 minutos para empezar en el nivel adecuado: ni muy fácil ni muy difícil.',
+  'xp.introBody': 'Haz una prueba corta (5–8 minutos) para empezar en el nivel adecuado: ni muy fácil ni muy difícil.',
 
   'xp.findLevel': 'Encontrar mi nivel',
 
@@ -2314,6 +2488,64 @@ const ES_MESSAGES: MessageCatalog = {
   'xp.notAvailable': 'Por ahora, las lecciones de Explorar+ solo están en francés.',
 
   'xp.bands': 'Niveles',
+
+  'xp.band.b1': 'Intermedio',
+
+  'xp.band.b2': 'Intermedio alto',
+
+  'xp.skill.languageUse': 'Gramática',
+
+  'xp.skill.vocabulary': 'Vocabulario',
+
+  'xp.skill.reading': 'Lectura',
+
+  'xp.skill.listening': 'Comprensión oral',
+
+  'xp.check': 'Comprobar',
+
+  'xp.listen': 'Escuchar',
+
+  'xp.levelTestTitle': 'Prueba {band}',
+
+  'xp.offerTitle': '¿Desbloquear el {band}?',
+
+  'xp.offerBody': 'Haz una prueba corta de {band} ({n} preguntas). Si la apruebas, se abren todas las lecciones de {band}.',
+
+  'xp.offerGo': 'Hacer la prueba',
+
+  'xp.notNow': 'Ahora no',
+
+  'xp.testCta': 'Hacer la prueba {band}',
+
+  'xp.resultLevel': 'Tu nivel: {band}',
+
+  'xp.resultBeginner': 'Estás empezando: ¡bienvenido!',
+
+  'xp.resultStart': 'Empieza en {band} · {lesson}',
+
+  'xp.strengths': 'Puntos fuertes',
+
+  'xp.toWork': 'Para mejorar',
+
+  'xp.tryHigher': 'Probar la prueba {band}',
+
+  'xp.levelPassed': '{band} desbloqueado 🎉',
+
+  'xp.levelStrongBody': 'Excelente resultado. Todas las lecciones de {band} están abiertas.',
+
+  'xp.levelProvisionalBody': '¡Aprobada! Todas las lecciones de {band} están abiertas. Un pequeño repaso de los puntos para mejorar te ayudará.',
+
+  'xp.levelNotYet': 'Todavía no',
+
+  'xp.levelNotYetBody': 'Acertaste {n} de {total}. Sigue con las lecciones y vuelve a intentarlo más tarde: no pierdes nada de lo que desbloqueaste.',
+
+  'xp.score': 'Resultado: {n}/{total}',
+
+  'xp.backToLessons': 'Volver a las lecciones',
+
+  'xp.tryAgain': 'Intentar de nuevo',
+
+  'xp.unlockedNow': 'Ya está desbloqueado en tu recorrido.',
   'explorePlus.tagline': 'Todo el recorrido, de arriba abajo',
   'explorePlus.reviewFlashcards': 'Repasar con tarjetas',
   'explorePlus.levelDone': 'Nivel completado',

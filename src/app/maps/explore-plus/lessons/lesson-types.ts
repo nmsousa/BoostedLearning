@@ -26,7 +26,7 @@
  * a speaker role for dialogue audio, and an image per sentence.
  */
 
-export type LessonBand = 'pre-a1' | 'a1' | 'a2';
+export type LessonBand = 'pre-a1' | 'a1' | 'a2' | 'b1' | 'b2';
 
 export interface LessonWord {
   fr: string;
@@ -77,6 +77,8 @@ export const BANDS: readonly BandDef[] = [
   { id: 'pre-a1', cefr: 'Pre-A1', nameKey: 'xp.band.preA1', hue: 195 },
   { id: 'a1', cefr: 'A1', nameKey: 'xp.band.a1', hue: 262 },
   { id: 'a2', cefr: 'A2', nameKey: 'xp.band.a2', hue: 22 },
+  { id: 'b1', cefr: 'B1', nameKey: 'xp.band.b1', hue: 150 },
+  { id: 'b2', cefr: 'B2', nameKey: 'xp.band.b2', hue: 335 },
 ];
 
 /** Compact sentence helper for the band files. */

@@ -199,6 +199,19 @@ npm test
 Audio for the new sentences isn't generated yet; until it is, the device voice
 reads them.
 
+### Placement and level-unlock tests
+
+The test questions come from `CEFR - Test` (next to this project). To change
+them, edit the JSON there and re-import:
+
+```powershell
+node scripts/import-placement-tests.mjs                     # Long version (default)
+node scripts/import-placement-tests.mjs "..\CEFR - Test\Short version\boostionary-french-placement-tests-short-v1.json"
+```
+
+It rewrites `src/app/maps/explore-plus/lessons/placement-bank.ts` (don't edit
+that file by hand). The rules are in `docs/LEVEL-ALGORITHM.md` §12.
+
 ## Pronunciation audio (TTS)
 
 The Tree curriculum needs audio for its words and example sentences. To make it

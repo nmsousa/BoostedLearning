@@ -20,7 +20,10 @@ function makeEngine(passed: number[] = [], lang = 'fr') {
 }
 
 describe('LessonEngine', () => {
-  beforeEach(() => localStorage.removeItem(LessonEngine.START_KEY));
+  beforeEach(() => {
+    localStorage.removeItem(LessonEngine.START_KEY);
+    localStorage.removeItem(LessonEngine.OPEN_BAND_KEY);
+  });
 
   it('opens lessons one by one and points at the first unfinished one', async () => {
     const { engine } = makeEngine([0, 1]);
@@ -46,6 +49,40 @@ describe('LessonEngine', () => {
     expect(engine.currentIndex()).toBe(a1);
     expect(engine.unlocked(a1 - 1)).toBe(true);
     expect(engine.unlocked(a1 + 1)).toBe(false);
+  });
+
+  it('applies a test result at once and never locks anything again', async () => {
+    const first = (band: string) => LESSONS.findIndex(l => l.band === band);
+    const lastOf = (band: string) => LESSONS.map(l => l.band).lastIndexOf(band as never);
+    const { engine } = makeEngine();
+    await engine.load();
+    // Placement: knows A1 → A1 fully open, start at A2 lesson 1.
+    engine.applyResult({ openBand: 'a1', start: LESSONS[first('a2')].id });
+    expect(engine.unlocked(lastOf('a1'))).toBe(true);
+    expect(engine.currentIndex()).toBe(first('a2'));
+    expect(engine.unlocked(first('a2') + 1)).toBe(false);
+    // A passed B1 test opens every B1 lesson and moves the start there.
+    engine.applyResult({ openBand: 'b1', start: LESSONS[first('b1')].id });
+    expect(engine.unlocked(lastOf('b1'))).toBe(true);
+    expect(engine.unlocked(lastOf('a2'))).toBe(true);
+    expect(engine.currentIndex()).toBe(first('b1'));
+    // A lower result later (or a failed test) changes nothing.
+    engine.applyResult({ openBand: 'pre-a1', start: LESSONS[0].id });
+    await engine.load();
+    expect(engine.unlocked(lastOf('b1'))).toBe(true);
+    expect(engine.currentIndex()).toBe(first('b1'));
+    expect(engine.unlocked(first('b2'))).toBe(false);
+  });
+
+  it('offers a level test only for locked lessons of a higher band', async () => {
+    const { engine } = makeEngine();
+    await engine.load();
+    expect(engine.testOfferFor(1)).toBeNull();               // same band: finish the previous lesson
+    const a2 = LESSONS.findIndex(l => l.band === 'a2');
+    expect(engine.testOfferFor(a2)).toBe('a2');
+    const b2 = LESSONS.findIndex(l => l.band === 'b2');
+    expect(engine.testOfferFor(b2 + 1)).toBe('b2');
+    expect(engine.nextTestBand()).toBe('a1');
   });
 
   it('serves the level page and launches games on the lesson level', async () => {

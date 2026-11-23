@@ -492,16 +492,34 @@ Explore+ has its own curriculum, separate from Explore:
   complete a lesson (§11.3), with the same stars and stop-early rules (§11.1–2).
   Quiz options come from the lesson's own words.
 - **Unlocking is linear**: a lesson opens when the previous one is complete.
-- **Placement test** ("Find my level"): band by band, 4 questions each (an
-  English sentence → pick the French; wrong options are other sentences of the
-  band). 3 of 4 right moves on to the next band; otherwise the learner starts
-  at that band's first lesson. Every lesson before the start stays open for
-  review. Passing every band starts at the last band.
+- **Bands**: Pre-A1 (4 lessons), A1 (12), A2 (12), B1 (10), B2 (10).
+- **Tests** use the authored bank from `CEFR - Test` (Long version), imported
+  with `node scripts/import-placement-tests.mjs` into
+  `lessons/placement-bank.ts` (grammar, vocabulary, reading and listening
+  items; listening is read aloud and its transcript is never shown).
+  - **Initial placement** (offered only at the very beginning, 10–12 questions,
+    ~5–8 min): adaptive. It starts with an easy Pre-A1 question; a right answer
+    moves one band up, a wrong one moves one band down. It stops after 10
+    questions once the estimate didn't change over the last 2 answers (max 12).
+    Estimated level = the highest band with ≥ 2 right and ≥ 60% right there.
+    Result: every lesson of the bands up to that level opens and the learner
+    starts at the next band's first lesson (a total beginner starts at Pre-A1).
+  - **Level-unlock test** (later, by tapping a locked lesson of a higher band):
+    only that band's questions — 8 for Pre-A1–B1, 10 from B2. ≥ 90% = strong
+    pass, ≥ 75% = provisional pass (with a revision tip), below = "not yet".
+    A pass opens every lesson of that band (and all bands below) and moves the
+    start to its first lesson.
+  - A result is applied as soon as the test ends (no extra tap needed) and only
+    ever RAISES what is open; a lower or failed result never locks anything.
+  - Both end with a per-skill summary (strengths / to work on) and offer the
+    next band's test.
 - **Deck layout**: deck `lesson-<lang>` (French only for now). Each band owns 40
-  fixed levels (Pre-A1 1–40, A1 41–80, A2 81–120), so a new lesson at the end of
-  a band never shifts later bands' progress. Lessons must only be appended.
+  fixed levels (Pre-A1 1–40, A1 41–80, A2 81–120, B1 121–160, B2 161–200), so a
+  new lesson at the end of a band never shifts later bands' progress. Lessons
+  must only be appended.
 - **Not yet**: dialogues, per-item spaced review across days, pre-generated
-  audio for the new sentences (the device voice reads them for now), and B1+.
+  audio for the new sentences and test listening items (the device voice reads
+  them for now), and C1/C2 lessons (their test items are already imported).
 
 ## Legacy fallback (pre-rounds records)
 

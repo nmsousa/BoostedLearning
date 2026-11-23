@@ -4,8 +4,10 @@
  *  - registers the "lesson-<lang>" deck: lesson N = deck level N (its words);
  *  - reads per-mode pass state; a lesson is complete with Learn + 5 of the 7
  *    games (the same rule as Explore, tree-modes.ts);
- *  - unlocking is linear: lesson N opens when lesson N-1 is complete, and every
- *    lesson up to the placement-test start is open from the beginning;
+ *  - unlocking is linear: lesson N opens when lesson N-1 is complete. Tests
+ *    open more: every lesson up to the start lesson, and EVERY lesson of each
+ *    band up to the highest band passed. Test results only ever RAISE this;
+ *    a failed test never locks anything again;
  *  - implements LevelEngine so the shared level page (TierDetailPage) works
  *    unchanged (node id = lesson id, always tier 1).
  *
@@ -18,7 +20,7 @@ import {
   TREE_MODES, FLASHCARDS_REVIEW_MODE, tierProgress, modeStates, isModePassed, type TierProgress,
 } from '../tree/tree-modes';
 import type { LevelEngine, TreeEngineDeps, TreeModeView, TreeNode, TreeTier } from '../tree/tree-engine';
-import { LESSONS, bandOf, levelOfLesson, lessonDeckGroups, type BandDef, type Lesson } from './lessons/lessons';
+import { BANDS, LESSONS, bandOf, levelOfLesson, lessonDeckGroups, type BandDef, type Lesson, type LessonBand } from './lessons/lessons';
 import type { FlashcardService } from '../../services/flashcard.service';
 
 export type LessonState = 'done' | 'active' | 'locked';
@@ -44,6 +46,8 @@ export class LessonEngine implements LevelEngine {
   static readonly DECK_PREFIX = 'lesson';
   /** localStorage key of the placement start (a lesson id). */
   static readonly START_KEY = 'boostionary.explorePlus.start';
+  /** localStorage key of the highest band opened by a test (a band id). */
+  static readonly OPEN_BAND_KEY = 'boostionary.explorePlus.openBand';
   /** Languages that have lessons. */
   static readonly LANGS = ['fr'];
 
@@ -51,6 +55,8 @@ export class LessonEngine implements LevelEngine {
   private passedModes = new Set<string>();
   private startIndex = 0;
   private hasStoredStart = false;
+  /** Every lesson of the bands up to this index is open (-1 = none). */
+  private openBandIndex = -1;
 
   constructor(private readonly deps: TreeEngineDeps) {}
 
@@ -87,7 +93,31 @@ export class LessonEngine implements LevelEngine {
   }
   complete(index: number): boolean { return this.progressOf(index).complete; }
   unlocked(index: number): boolean {
-    return index === 0 || index <= this.startIndex || this.complete(index - 1) || this.complete(index);
+    const lesson = LESSONS[index];
+    if (!lesson) return false;
+    return index === 0 || index <= this.startIndex || this.bandIndex(lesson.band) <= this.openBandIndex
+      || this.complete(index - 1) || this.complete(index);
+  }
+
+  bandIndex(band: LessonBand): number { return BANDS.findIndex(b => b.id === band); }
+  /** Band index of the lesson to do now. */
+  currentBandIndex(): number { return this.bandIndex(LESSONS[this.currentIndex()]?.band ?? 'pre-a1'); }
+
+  /**
+   * Tapping a locked lesson of a band above the current one offers that band's
+   * level-unlock test. Returns the band, or null (finish the previous lesson).
+   */
+  testOfferFor(index: number): LessonBand | null {
+    const lesson = LESSONS[index];
+    if (!lesson || this.unlocked(index)) return null;
+    return this.bandIndex(lesson.band) > this.currentBandIndex() ? lesson.band : null;
+  }
+
+  /** The next band above everything open, for "try a higher-level test" (or null). */
+  nextTestBand(): LessonBand | null {
+    const top = Math.max(this.openBandIndex, this.currentBandIndex());
+    const next = BANDS[top + 1];
+    return next && LESSONS.some(l => l.band === next.id) ? next.id : null;
   }
   /** True when any lesson has any passed activity. */
   get anyProgress(): boolean { return this.passedModes.size > 0; }
@@ -117,19 +147,41 @@ export class LessonEngine implements LevelEngine {
     });
   }
 
-  // ── Placement start ─────────────────────────────────────────────────────────
+  // ── Test results (placement start + opened bands) ──────────────────────────
   private readStart(): void {
     let id: string | null = null;
-    try { id = localStorage.getItem(LessonEngine.START_KEY); } catch { /* no storage */ }
-    this.hasStoredStart = id !== null;
+    let band: string | null = null;
+    try {
+      id = localStorage.getItem(LessonEngine.START_KEY);
+      band = localStorage.getItem(LessonEngine.OPEN_BAND_KEY);
+    } catch { /* no storage */ }
+    this.hasStoredStart = id !== null || band !== null;
     this.startIndex = id ? Math.max(0, this.indexOf(id)) : 0;
+    this.openBandIndex = band ? this.bandIndex(band as LessonBand) : -1;
   }
 
-  /** Save where the learner starts (placement result, or the first lesson). */
-  setStart(lessonId: string): void {
-    try { localStorage.setItem(LessonEngine.START_KEY, lessonId); } catch { /* ignore */ }
+  /**
+   * Apply a test result. It only RAISES what's open: a start lesson earlier
+   * than the current one, or a band below the opened one, changes nothing.
+   *  - openBand: every lesson of the bands up to it opens;
+   *  - start: the lesson to begin with (and everything before it opens).
+   */
+  applyResult(r: { openBand?: LessonBand | null; start?: string | null }): void {
+    try {
+      if (r.start) {
+        const i = this.indexOf(r.start);
+        const had = localStorage.getItem(LessonEngine.START_KEY);
+        if (i >= 0 && (had === null || i > this.startIndex)) localStorage.setItem(LessonEngine.START_KEY, r.start);
+      }
+      if (r.openBand && this.bandIndex(r.openBand) > this.openBandIndex) {
+        localStorage.setItem(LessonEngine.OPEN_BAND_KEY, r.openBand);
+      }
+    } catch { /* ignore */ }
     this.readStart();
   }
+
+  /** "Start from the first lesson" (no test). */
+  setStart(lessonId: string): void { this.applyResult({ start: lessonId }); }
 
   // ── LevelEngine (the shared level page) ─────────────────────────────────────
   private indexOf(id: string): number { return LESSONS.findIndex(l => l.id === id); }
@@ -209,7 +261,10 @@ export class LessonEngine implements LevelEngine {
   async adminResetProgress(): Promise<void> {
     if (!this.adminMode || !this.deckId) return;
     await this.deps.flashcards.resetDeckProgress(this.deckId);
-    try { localStorage.removeItem(LessonEngine.START_KEY); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(LessonEngine.START_KEY);
+      localStorage.removeItem(LessonEngine.OPEN_BAND_KEY);
+    } catch { /* ignore */ }
     this.readStart();
   }
 

@@ -27,6 +27,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.64',
+    notes: [
+      'Explore+ now goes up to B2: 20 new B1 and B2 lessons (48 in total).',
+      'New placement test: 10–12 questions that adapt to your answers, with an explanation after each one and a summary of your strengths.',
+      'Your test result unlocks lessons right away, and a later test never locks anything again.',
+      'Tap a locked lesson of a higher level to take a short test for just that level (8–10 questions).',
+    ],
+  },
+  {
     version: '1.3.63',
     notes: [
       'Explore+ is new: 28 French lessons by level (Pre-A1, A1, A2), each with its own words and real sentences.',

@@ -1,16 +1,19 @@
 /**
- * Explore+ Page — lessons grouped by CEFR band (Pre-A1, A1, A2…).
+ * Explore+ Page — lessons grouped by CEFR band (Pre-A1 → B2).
  *
  * One big lesson card at a time in a horizontal, snapping carousel: the
  * previous and next cards peek at the edges, finished lessons are greyed out
  * and it opens on the lesson to do now. Tapping a card opens the shared level
- * page (TierDetailPage, origin 'explore-plus'), which runs the same Learn +
- * 7 games as Explore but on the lesson's own words and AUTHORED sentences.
+ * page (TierDetailPage, origin 'explore-plus').
  *
- * A placement test ("Find my level") places the learner in the right band:
- * every lesson before the start stays open for review.
+ * Tests (placement.ts):
+ *  - the INITIAL placement (adaptive, 10–12 questions) is offered only at the
+ *    very beginning;
+ *  - later, tapping a locked lesson of a higher band offers that band's
+ *    LEVEL-UNLOCK test (8–10 questions of that band only).
+ * A result is applied as soon as the test ends, and only ever opens more.
  *
- * Content: src/app/maps/explore-plus/lessons/. Engine: lesson-engine.ts.
+ * Content: ./lessons/. Engine: lesson-engine.ts.
  *
  * @module app/maps/explore-plus
  */
@@ -24,17 +27,36 @@ import { FlashcardService } from '../../services/flashcard.service';
 import { SettingsService } from '../../services/settings.service';
 import { I18nAngularService } from '../../services/i18n.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
+import { AudioService } from '../../services/audio.service';
 import { JOURNEY_EXPLORE_PLUS_FROM } from '../journey/journey-back';
 import { LessonEngine, type LessonCard } from './lesson-engine';
 import { BANDS, LESSONS, bandOf, type BandDef, type LessonBand } from './lessons/lessons';
 import {
-  PLACEMENT_PASS, bandPassed, placementBands, placementQuestions, placementResult, type PlacementQuestion,
+  AdaptivePlacement, levelTestQuestions, levelVerdict, skillBreakdown,
+  type LevelVerdict, type PlacementAnswer,
 } from './lessons/placement';
+import type { PlacementItem, PlacementSkill } from './lessons/placement-types';
 
 type View = 'map' | 'test' | 'result';
 
 /** One band chip under the carousel. */
 interface BandChip { band: BandDef; first: number; done: number; total: number; }
+
+interface TestResult {
+  kind: 'global' | 'level';
+  /** Global: the estimated level (null = just starting). Level: the band tested. */
+  band: BandDef | null;
+  /** Where to continue. */
+  startBand: BandDef;
+  startLesson: { id: string; title: string };
+  verdict?: LevelVerdict;
+  correct: number;
+  total: number;
+  strengths: PlacementSkill[];
+  weaknesses: PlacementSkill[];
+  /** "Try a higher-level test" target, if any. */
+  nextTest: BandDef | null;
+}
 
 @Component({
   selector: 'app-explore-plus',
@@ -53,6 +75,7 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
   private alertCtrl = inject(AlertController);
   private toastCtrl = inject(ToastController);
   private backInterceptor = inject(BackInterceptorService);
+  private audio = inject(AudioService);
 
   @ViewChild('track') private trackRef?: ElementRef<HTMLElement>;
 
@@ -78,11 +101,13 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
   get adminMode(): boolean { return this.engine.adminMode; }
   get available(): boolean { return this.engine.available; }
   get focusedCard(): LessonCard | null { return this.cards[this.focused] ?? null; }
-  /** First visit: offer the placement test. */
+  /** Very first visit: offer the initial placement test (only then). */
   get showIntro(): boolean { return !this.engine.startChosen && !this.engine.anyProgress; }
   bandLessonCount(band: LessonBand): number { return LESSONS.filter(l => l.band === band).length; }
 
   t(key: string, params?: Record<string, string | number>): string { return this.i18n.t(key, params); }
+  bandLabel(b: BandDef | null | undefined): string { return b ? `${b.cefr} · ${this.t(b.nameKey)}` : ''; }
+  skillLabel(sk: PlacementSkill): string { return this.t(`xp.skill.${sk}`); }
 
   async ngOnInit(): Promise<void> {
     await this.flashcards.initialize();
@@ -92,7 +117,6 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.backInterceptor.clear(this.onHardwareBack);
     if (this.tapTimer) { clearTimeout(this.tapTimer); this.tapTimer = null; }
-    if (this.testTimer) { clearTimeout(this.testTimer); this.testTimer = null; }
   }
 
   async ionViewWillEnter(): Promise<void> {
@@ -163,10 +187,16 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
     if (chip.first >= 0) this.scrollToCard(chip.first, true);
   }
 
-  ctaKey(c: LessonCard): string {
-    if (c.state === 'locked') return 'xp.locked';
-    if (c.state === 'done') return 'xp.review';
-    return c.progress.percent > 0 ? 'journeyPlus.continue' : 'xp.start';
+  /** A locked lesson in a band above the current one can be unlocked by a test. */
+  testBandFor(c: LessonCard): LessonBand | null { return this.engine.testOfferFor(c.index); }
+
+  ctaLabel(c: LessonCard): string {
+    if (c.state === 'locked') {
+      const band = this.testBandFor(c);
+      return band ? this.t('xp.testCta', { band: bandOf(band).cefr }) : this.t('xp.locked');
+    }
+    if (c.state === 'done') return this.t('xp.review');
+    return this.t(c.progress.percent > 0 ? 'journeyPlus.continue' : 'xp.start');
   }
 
   onCardTap(c: LessonCard): void {
@@ -180,6 +210,8 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
 
   private async open(c: LessonCard): Promise<void> {
     if (c.state === 'locked') {
+      const band = this.testBandFor(c);
+      if (band) { await this.offerLevelTest(band); return; }
       const toast = await this.toastCtrl.create({ message: this.t('xp.lockedHint'), duration: 1800, position: 'bottom' });
       await toast.present();
       return;
@@ -190,92 +222,147 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
     });
   }
 
-  // ── Placement test ──────────────────────────────────────────────────────────
-  private testBands: LessonBand[] = [];
-  private bandIdx = 0;
-  private scores: { band: LessonBand; correct: number }[] = [];
-  private correctInBand = 0;
-  private testTimer: ReturnType<typeof setTimeout> | null = null;
+  private async offerLevelTest(band: LessonBand): Promise<void> {
+    const cefr = bandOf(band).cefr;
+    const n = levelTestQuestions(band).length;
+    const alert = await this.alertCtrl.create({
+      header: this.t('xp.offerTitle', { band: cefr }),
+      message: this.t('xp.offerBody', { band: cefr, n }),
+      buttons: [
+        { text: this.t('xp.notNow'), role: 'cancel' },
+        { text: this.t('xp.offerGo'), handler: () => { this.startLevelTest(band); } },
+      ],
+    });
+    await alert.present();
+  }
 
-  questions: PlacementQuestion[] = [];
-  qIndex = 0;
-  /** Questions answered across the whole test (for the progress line). */
-  answeredTotal = 0;
-  chosen: string | null = null;
-  result: { band: BandDef; lessonId: string; lessonTitle: string; allPassed: boolean } | null = null;
+  // ── Tests ───────────────────────────────────────────────────────────────────
+  testKind: 'global' | 'level' = 'global';
+  /** The band of a level-unlock test. */
+  testBand: LessonBand | null = null;
+  private adaptive: AdaptivePlacement | null = null;
+  private levelQs: PlacementItem[] = [];
+  private answers: PlacementAnswer[] = [];
 
-  get question(): PlacementQuestion | null { return this.questions[this.qIndex] ?? null; }
-  get testBand(): BandDef { return bandOf(this.testBands[this.bandIdx] ?? 'pre-a1'); }
-  /** Total questions if every band is played (for the progress bar). */
-  get testTotal(): number { return this.testBands.length * this.questions.length || 1; }
+  question: PlacementItem | null = null;
+  /** Selected option index (before Check). */
+  selected: number | null = null;
+  /** True once the answer is checked (feedback shown). */
+  checked = false;
+  result: TestResult | null = null;
+
+  get questionNumber(): number { return this.answers.length + (this.checked ? 0 : 1); }
+  get questionTotal(): number { return this.testKind === 'global' ? (this.adaptive?.maxQuestions ?? 12) : this.levelQs.length; }
+  get progressPct(): number { return Math.min(100, (this.answers.length / Math.max(1, this.questionTotal)) * 100); }
+  get questionBand(): BandDef | null { return this.question ? bandOf(this.question.band as LessonBand) : null; }
+  get isListening(): boolean { return this.question?.skill === 'listening' && !!this.question.audio; }
+  get testTitle(): string {
+    return this.testKind === 'level' && this.testBand ? this.t('xp.levelTestTitle', { band: bandOf(this.testBand).cefr }) : this.t('xp.findLevel');
+  }
 
   startTest(): void {
-    this.testBands = placementBands();
-    this.bandIdx = 0;
-    this.scores = [];
-    this.answeredTotal = 0;
+    this.testKind = 'global';
+    this.testBand = null;
+    this.adaptive = new AdaptivePlacement();
+    this.beginTest();
+  }
+
+  startLevelTest(band: LessonBand): void {
+    this.testKind = 'level';
+    this.testBand = band;
+    this.adaptive = null;
+    this.levelQs = levelTestQuestions(band);
+    this.beginTest();
+  }
+
+  private beginTest(): void {
+    this.answers = [];
     this.result = null;
-    this.startBand();
     this.view = 'test';
+    this.loadNext();
+  }
+
+  private loadNext(): void {
+    this.selected = null;
+    this.checked = false;
+    this.question = this.testKind === 'global'
+      ? this.adaptive?.next() ?? null
+      : this.levelQs[this.answers.length] ?? null;
+    if (!this.question) { this.finishTest(); return; }
+    this.cdr.detectChanges();
+    if (this.isListening) setTimeout(() => this.playQuestion(), 350);
+  }
+
+  playQuestion(): void {
+    const text = this.question?.audio;
+    if (text) void this.audio.playWord(text, undefined, 'fr');
+  }
+
+  select(i: number): void {
+    if (this.checked) return;
+    this.selected = i;
     this.cdr.detectChanges();
   }
 
-  private startBand(): void {
-    this.questions = placementQuestions(this.testBands[this.bandIdx]);
-    this.qIndex = 0;
-    this.correctInBand = 0;
-    this.chosen = null;
-  }
-
-  optionState(opt: string): 'idle' | 'right' | 'wrong' | 'dim' {
-    const q = this.question;
-    if (!q || this.chosen === null) return 'idle';
-    if (opt === q.answer) return 'right';
-    if (opt === this.chosen) return 'wrong';
+  optionState(i: number): 'idle' | 'selected' | 'right' | 'wrong' | 'dim' {
+    if (!this.checked) return this.selected === i ? 'selected' : 'idle';
+    if (i === this.question?.answer) return 'right';
+    if (i === this.selected) return 'wrong';
     return 'dim';
   }
 
-  answer(opt: string | null): void {
+  /** Check the selected answer (or "I don't know" with nothing selected). */
+  check(dontKnow = false): void {
     const q = this.question;
-    if (!q || this.chosen !== null) return;
-    this.chosen = opt ?? '';
-    if (opt === q.answer) this.correctInBand++;
-    this.answeredTotal++;
+    if (!q || this.checked) return;
+    if (dontKnow) this.selected = null;
+    else if (this.selected === null) return;
+    const correct = this.selected === q.answer;
+    this.answers.push({ item: q, correct });
+    this.adaptive?.record(q, correct);
+    this.checked = true;
     this.cdr.detectChanges();
-    this.testTimer = setTimeout(() => this.nextQuestion(), opt === q.answer ? 650 : 1300);
   }
 
-  private nextQuestion(): void {
-    this.testTimer = null;
-    this.chosen = null;
-    this.qIndex++;
-    const left = this.questions.length - this.qIndex;
-    const decided = bandPassed(this.correctInBand) || this.correctInBand + left < PLACEMENT_PASS;
-    if (decided || left <= 0) {
-      this.scores.push({ band: this.testBands[this.bandIdx], correct: this.correctInBand });
-      if (bandPassed(this.correctInBand) && this.bandIdx + 1 < this.testBands.length) {
-        this.bandIdx++;
-        this.startBand();
-      } else {
-        this.finishTest();
-        return;
-      }
-    }
-    this.cdr.detectChanges();
-  }
+  continueTest(): void { this.loadNext(); }
 
   private finishTest(): void {
-    const r = placementResult(this.scores);
-    const lesson = LESSONS.find(l => l.id === r.lessonId) ?? LESSONS[0];
-    const allPassed = this.scores.length === this.testBands.length && this.scores.every(sc => bandPassed(sc.correct));
-    this.result = { band: bandOf(r.band), lessonId: lesson.id, lessonTitle: lesson.title, allPassed };
+    const { strengths, weaknesses } = skillBreakdown(this.answers);
+    const correct = this.answers.filter(a => a.correct).length;
+    const total = this.answers.length;
+    const firstOf = (band: LessonBand) => LESSONS.find(l => l.band === band) ?? LESSONS[0];
+
+    if (this.testKind === 'global' && this.adaptive) {
+      const { level, start } = this.adaptive.result();
+      const bands = this.adaptive.bands;
+      const startBand = bands[start] ?? bands[0];
+      const lesson = firstOf(startBand);
+      // Apply now: everything up to the estimated level opens, start at the next band.
+      this.engine.applyResult({ openBand: level >= 0 ? bands[level] : null, start: lesson.id });
+      this.result = {
+        kind: 'global', band: level >= 0 ? bandOf(bands[level]) : null, startBand: bandOf(startBand),
+        startLesson: { id: lesson.id, title: lesson.title }, correct, total, strengths, weaknesses,
+        nextTest: this.engine.nextTestBand() ? bandOf(this.engine.nextTestBand()!) : null,
+      };
+    } else if (this.testBand) {
+      const verdict = levelVerdict(correct, total);
+      const lesson = firstOf(this.testBand);
+      if (verdict !== 'notYet') this.engine.applyResult({ openBand: this.testBand, start: lesson.id });
+      const current = LESSONS[this.engine.currentIndex()] ?? lesson;
+      const next = verdict !== 'notYet' ? this.engine.nextTestBand() : null;
+      this.result = {
+        kind: 'level', band: bandOf(this.testBand), startBand: bandOf(current.band),
+        startLesson: { id: current.id, title: current.title }, verdict, correct, total, strengths, weaknesses,
+        nextTest: next ? bandOf(next) : null,
+      };
+    }
+    this.question = null;
     this.view = 'result';
-    this.cdr.detectChanges();
+    void this.load(false);
   }
 
-  async confirmResult(): Promise<void> {
-    if (!this.result) return;
-    this.engine.setStart(this.result.lessonId);
+  /** Back to the lessons, on the lesson to do now. */
+  async goToLessons(): Promise<void> {
     this.view = 'map';
     await this.load(false);
     this.scrollToCard(this.engine.currentIndex(), false);
@@ -332,17 +419,11 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
 
   // ── Misc ────────────────────────────────────────────────────────────────────
   back(): void {
-    if (this.view !== 'map') {
-      if (this.testTimer) { clearTimeout(this.testTimer); this.testTimer = null; }
-      this.view = 'map';
-      this.cdr.detectChanges();
-      this.scrollToCard(this.focused, false);
-      return;
-    }
+    if (this.view !== 'map') { void this.goToLessons(); return; }
     this.router.navigate(['/home']);
   }
 
   trackCard = (_i: number, c: LessonCard): string => c.lesson.id;
   trackChip = (_i: number, c: BandChip): string => c.band.id;
-  trackOpt = (_i: number, o: string): string => o;
+  trackIdx = (i: number): number => i;
 }

@@ -4,7 +4,7 @@
       <button type="button" class="xp-back" (click)="back()" [attr.aria-label]="'journeyPlus.back' | translate">
         <ion-icon name="chevron-back" aria-hidden="true"></ion-icon>
       </button>
-      <h1 class="xp-title">{{ (view === 'map' ? 'explorePlus.title' : 'xp.findLevel') | translate }}</h1>
+      <h1 class="xp-title">{{ view === 'map' ? ('explorePlus.title' | translate) : testTitle }}</h1>
       <span class="xp-head-spacer" aria-hidden="true"></span>
     </div>
   </ion-toolbar>
@@ -55,7 +55,7 @@
     <button type="button" class="xp-card" role="listitem" *ngFor="let c of cards; trackBy: trackCard"
       [ngClass]="'state-' + c.state" [class.current]="c.current" [class.focused]="c.index === focused"
       [style.--hue]="c.band.hue" (click)="onCardTap(c)"
-      [attr.aria-label]="c.band.cefr + ', ' + ('xp.lessonN' | translate:{ n: c.numberInBand }) + ', ' + c.lesson.title + ', ' + (ctaKey(c) | translate)">
+      [attr.aria-label]="c.band.cefr + ', ' + ('xp.lessonN' | translate:{ n: c.numberInBand }) + ', ' + c.lesson.title + ', ' + ctaLabel(c)">
       <span class="xp-card-top">
         <span class="xp-card-num">{{ 'xp.lessonN' | translate:{ n: c.numberInBand } }}</span>
         <span class="xp-card-band">{{ c.band.cefr }}</span>
@@ -72,8 +72,8 @@
           <span class="xp-progress-pct">{{ c.progress.percent }}%</span>
         </span>
         <span class="xp-cta">
-          <ion-icon *ngIf="c.state === 'locked'" name="lock-closed" aria-hidden="true"></ion-icon>
-          {{ ctaKey(c) | translate }}
+          <ion-icon *ngIf="c.state === 'locked'" [name]="testBandFor(c) ? 'ribbon-outline' : 'lock-closed'" aria-hidden="true"></ion-icon>
+          {{ ctaLabel(c) }}
         </span>
       </span>
     </button>
@@ -90,49 +90,81 @@
       </button>
     </div>
 
-    <button *ngIf="!showIntro" type="button" class="xp-find" (click)="startTest()">
-      <span class="xp-find-icon" aria-hidden="true">🎯</span>
-      <span class="xp-find-text">
-        <span class="xp-find-title">{{ 'xp.findLevel' | translate }}</span>
-        <span class="xp-find-desc">{{ 'xp.findLevelDesc' | translate }}</span>
-      </span>
-      <ion-icon name="chevron-forward" aria-hidden="true"></ion-icon>
-    </button>
   </div>
 
-  <!-- ── Placement test ───────────────────────────────────────────────────── -->
-  <div *ngIf="!isLoading && view === 'test' && question as q" class="xp-body xp-test" [style.--hue]="testBand.hue">
+  <!-- ── Test (initial placement or one band's unlock test) ───────────────── -->
+  <div *ngIf="!isLoading && view === 'test' && question as q" class="xp-body xp-test" [style.--hue]="questionBand?.hue">
     <div class="xp-test-head">
-      <span class="xp-focus-band">{{ testBand.cefr }} · {{ testBand.nameKey | translate }}</span>
-      <span class="xp-focus-count">{{ 'xp.testProgress' | translate:{ n: qIndex + 1, total: questions.length } }}</span>
+      <span class="xp-focus-count">{{ 'xp.testProgress' | translate:{ n: questionNumber, total: questionTotal } }}</span>
+      <span class="xp-focus-band">{{ questionBand?.cefr }} · {{ skillLabel(q.skill) }}</span>
     </div>
-    <span class="xp-progress-track xp-test-bar"><span class="xp-progress-fill" [style.width.%]="(answeredTotal / testTotal) * 100"></span></span>
+    <span class="xp-progress-track xp-test-bar"><span class="xp-progress-fill" [style.width.%]="progressPct"></span></span>
 
-    <p class="xp-test-ask">{{ 'xp.testAsk' | translate }}</p>
     <h2 class="xp-test-prompt">{{ q.prompt }}</h2>
+    <button *ngIf="isListening" type="button" class="xp-listen" (click)="playQuestion()" [attr.aria-label]="'xp.listen' | translate">
+      <ion-icon name="volume-high" aria-hidden="true"></ion-icon>
+      <span>{{ 'xp.listen' | translate }}</span>
+    </button>
 
-    <div class="xp-test-options" role="list">
-      <button type="button" class="xp-opt" role="listitem" *ngFor="let o of q.options; trackBy: trackOpt"
-        [ngClass]="'opt-' + optionState(o)" [disabled]="chosen !== null" (click)="answer(o)">
-        <span lang="fr">{{ o }}</span>
-        <ion-icon *ngIf="optionState(o) === 'right'" name="checkmark-circle" aria-hidden="true"></ion-icon>
-        <ion-icon *ngIf="optionState(o) === 'wrong'" name="close-circle" aria-hidden="true"></ion-icon>
+    <div class="xp-test-options" role="radiogroup">
+      <button type="button" class="xp-opt" role="radio" *ngFor="let o of q.options; let i = index; trackBy: trackIdx"
+        [ngClass]="'opt-' + optionState(i)" [attr.aria-checked]="selected === i" [disabled]="checked" (click)="select(i)">
+        <span class="xp-radio" aria-hidden="true"></span>
+        <span class="xp-opt-text">{{ o }}</span>
+        <ion-icon *ngIf="optionState(i) === 'right'" name="checkmark-circle" aria-hidden="true"></ion-icon>
+        <ion-icon *ngIf="optionState(i) === 'wrong'" name="close-circle" aria-hidden="true"></ion-icon>
       </button>
     </div>
-    <button type="button" class="xp-btn ghost xp-dont" [disabled]="chosen !== null" (click)="answer(null)">
-      {{ 'xp.dontKnow' | translate }}
-    </button>
+
+    <p *ngIf="checked && q.explanation" class="xp-explain" [class.ok]="selected === q.answer">
+      <ion-icon [name]="selected === q.answer ? 'checkmark-circle' : 'bulb-outline'" aria-hidden="true"></ion-icon>
+      <span>{{ q.explanation }}</span>
+    </p>
+
+    <ng-container *ngIf="!checked">
+      <button type="button" class="xp-btn primary wide" [disabled]="selected === null" (click)="check()">{{ 'xp.check' | translate }}</button>
+      <button type="button" class="xp-btn ghost wide" (click)="check(true)">{{ 'xp.dontKnow' | translate }}</button>
+    </ng-container>
+    <button *ngIf="checked" type="button" class="xp-btn primary wide" (click)="continueTest()">{{ 'journeyPlus.continue' | translate }}</button>
   </div>
 
-  <!-- ── Placement result ─────────────────────────────────────────────────── -->
-  <div *ngIf="!isLoading && view === 'result' && result as r" class="xp-body xp-result" [style.--hue]="r.band.hue">
-    <span class="xp-result-icon" aria-hidden="true">🎯</span>
-    <h2>{{ 'xp.resultTitle' | translate:{ band: r.band.cefr + ' · ' + (r.band.nameKey | translate) } }}</h2>
-    <p *ngIf="r.allPassed">{{ 'xp.resultTop' | translate }}</p>
-    <p>{{ 'xp.resultBody' | translate }}</p>
-    <button type="button" class="xp-btn primary wide" (click)="confirmResult()">
-      {{ 'xp.resultGo' | translate:{ lesson: r.lessonTitle } }}
+  <!-- ── Result ───────────────────────────────────────────────────────────── -->
+  <div *ngIf="!isLoading && view === 'result' && result as r" class="xp-body xp-result" [style.--hue]="(r.band ?? r.startBand).hue">
+    <ng-container *ngIf="r.kind === 'global'">
+      <span class="xp-result-icon" aria-hidden="true">🎯</span>
+      <h2>{{ r.band ? ('xp.resultLevel' | translate:{ band: bandLabel(r.band) }) : ('xp.resultBeginner' | translate) }}</h2>
+      <p class="xp-result-start">{{ 'xp.resultStart' | translate:{ band: r.startBand.cefr, lesson: r.startLesson.title } }}</p>
+      <p>{{ 'xp.resultBody' | translate }}</p>
+    </ng-container>
+
+    <ng-container *ngIf="r.kind === 'level' && r.band">
+      <span class="xp-result-icon" aria-hidden="true">{{ r.verdict === 'notYet' ? '💪' : '🏅' }}</span>
+      <h2>{{ r.verdict === 'notYet' ? ('xp.levelNotYet' | translate) : ('xp.levelPassed' | translate:{ band: r.band.cefr }) }}</h2>
+      <p class="xp-result-start">{{ 'xp.score' | translate:{ n: r.correct, total: r.total } }}</p>
+      <p *ngIf="r.verdict === 'strong'">{{ 'xp.levelStrongBody' | translate:{ band: r.band.cefr } }}</p>
+      <p *ngIf="r.verdict === 'provisional'">{{ 'xp.levelProvisionalBody' | translate:{ band: r.band.cefr } }}</p>
+      <p *ngIf="r.verdict === 'notYet'">{{ 'xp.levelNotYetBody' | translate:{ n: r.correct, total: r.total } }}</p>
+    </ng-container>
+
+    <div class="xp-skills" *ngIf="r.strengths.length || r.weaknesses.length">
+      <div *ngIf="r.strengths.length" class="xp-skill-row ok">
+        <span class="xp-skill-head">{{ 'xp.strengths' | translate }}</span>
+        <span class="xp-skill-chip" *ngFor="let sk of r.strengths">{{ skillLabel(sk) }}</span>
+      </div>
+      <div *ngIf="r.weaknesses.length" class="xp-skill-row work">
+        <span class="xp-skill-head">{{ 'xp.toWork' | translate }}</span>
+        <span class="xp-skill-chip" *ngFor="let sk of r.weaknesses">{{ skillLabel(sk) }}</span>
+      </div>
+    </div>
+
+    <button type="button" class="xp-btn primary wide" (click)="goToLessons()">
+      {{ r.kind === 'level' && r.verdict === 'notYet' ? ('xp.backToLessons' | translate) : ('xp.resultGo' | translate:{ lesson: r.startLesson.title }) }}
     </button>
-    <button type="button" class="xp-btn ghost wide" (click)="startTest()">{{ 'xp.findLevel' | translate }}</button>
+    <button *ngIf="r.nextTest" type="button" class="xp-btn ghost wide" (click)="startLevelTest(r.nextTest.id)">
+      {{ 'xp.tryHigher' | translate:{ band: r.nextTest.cefr } }}
+    </button>
+    <button *ngIf="r.kind === 'level' && r.verdict === 'notYet' && r.band" type="button" class="xp-btn ghost wide" (click)="startLevelTest(r.band.id)">
+      {{ 'xp.tryAgain' | translate }}
+    </button>
   </div>
 </ion-content>
