@@ -7,6 +7,7 @@ import {
   AdaptivePlacement, GLOBAL_MAX, GLOBAL_MIN, courseBands, estimateLevel, levelTestQuestions, levelVerdict, skillBreakdown,
 } from './placement';
 import { GLOBAL_ITEMS, LEVEL_ITEMS } from './placement-bank';
+import { instructionLang, localizePrompt } from './placement-i18n';
 import { englishWithArticle } from '../../../shared/articles';
 
 describe('Explore+ lessons content', () => {
@@ -99,6 +100,28 @@ describe('Explore+ lessons content', () => {
     expect(lessonPhrases(1, 5).length).toBe(5);
     expect(lessonPhrases(999)).toEqual([]);
     expect(lessonWriteItems(1, 3).length).toBe(3);
+  });
+});
+
+describe('Explore+ test instructions', () => {
+  const all = [...GLOBAL_ITEMS, ...Object.values(LEVEL_ITEMS).flat()];
+
+  it('translates every instruction and keeps the quoted French untouched', () => {
+    for (const q of all) {
+      for (const lang of ['pt', 'es', 'fr']) {
+        const out = localizePrompt(q.prompt, lang);
+        expect(out, `${q.id} ${lang}`).not.toBe(q.prompt);
+        for (const quote of q.prompt.match(/«[^»]*»/g) ?? []) expect(out, `${q.id} ${lang}`).toContain(quote);
+      }
+    }
+  });
+
+  it('uses the app language up to A2 and French from B1', () => {
+    expect(instructionLang('a2', 'pt')).toBe('pt');
+    expect(instructionLang('b1', 'pt')).toBe('fr');
+    expect(instructionLang('b2', 'en')).toBe('fr');
+    expect(localizePrompt('Complete: « Je ___ . »', 'en')).toBe('Complete: « Je ___ . »');
+    expect(localizePrompt('Complete: « Je ___ . »', 'fr')).toBe('Complétez : « Je ___ . »');
   });
 });
 

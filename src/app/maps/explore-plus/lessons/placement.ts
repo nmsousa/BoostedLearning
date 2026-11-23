@@ -10,10 +10,12 @@
  *    The learner starts at the NEXT band (that's what they need to learn).
  *
  * 2. LEVEL-UNLOCK TEST (later, for ONE band): only that band's questions,
- *    8 for Pre-A1–B1, 10 for B2+. ≥ 75% unlocks the band (all of it); 100%
+ *    8 for Pre-A1–B1, 10 for B2+, drawn at random from the band's pool. ≥ 75% unlocks the band (all of it); 100%
  *    (or ≥ 90%) is a strong pass, otherwise it's a provisional pass with a
  *    revision tip; below 75% the band stays locked ("not yet").
  *
+ * Answers are never revealed during or after a test (so a retake isn't a
+ * memory game), and each test draws randomly from the band's pool.
  * Results only ever RAISE what is unlocked, never lower it (lesson-engine.ts).
  */
 import { BANDS, type LessonBand } from './lesson-types';
@@ -69,12 +71,9 @@ export class AdaptivePlacement {
     // Nearest band (current first, then the closest ones) with an unused item.
     const order = [...this.bands.keys()].sort((a, b) => Math.abs(a - this.level) - Math.abs(b - this.level) || a - b);
     for (const bi of order) {
-      const band = this.bands[bi];
-      // Global items first, then that band's level-test items as a reserve.
-      const pool = [...GLOBAL_ITEMS.filter(i => i.band === band), ...(LEVEL_ITEMS[band] ?? [])]
-        .filter(i => !this.used.has(i.id));
-      const globals = pool.filter(i => GLOBAL_ITEMS.includes(i));
-      const pick = shuffled(globals.length ? globals : pool, this.rand)[0];
+      // A random unused question of that band from the WHOLE pool, so a repeat
+      // test isn't the same test.
+      const pick = shuffled(bandPool(this.bands[bi]).filter(i => !this.used.has(i.id)), this.rand)[0];
       if (pick) { this.used.add(pick.id); return pick; }
     }
     return null;
@@ -102,12 +101,22 @@ export class AdaptivePlacement {
   }
 }
 
-/** The questions of a level-unlock test for one band (8, or 10 from B2). */
+/** Every question of a band (initial-test and level-test items: one pool). */
+export function bandPool(band: LessonBand): PlacementItem[] {
+  return [...GLOBAL_ITEMS.filter(i => i.band === band), ...(LEVEL_ITEMS[band] ?? [])];
+}
+
+/**
+ * The questions of a level-unlock test for one band (8, or 10 from B2): a
+ * random draw from the band's pool (~12), always with at least one listening
+ * question, so repeating the test gives a different set.
+ */
 export function levelTestQuestions(band: LessonBand, rand: () => number = Math.random): PlacementItem[] {
   const count = BANDS.findIndex(b => b.id === band) >= BANDS.findIndex(b => b.id === 'b2') ? 10 : 8;
-  const own = shuffled(LEVEL_ITEMS[band] ?? [], rand);
-  const extra = shuffled(GLOBAL_ITEMS.filter(i => i.band === band), rand);
-  return [...own, ...extra].slice(0, count);
+  const pool = shuffled(bandPool(band), rand);
+  const listening = pool.find(i => i.skill === 'listening');
+  const picked = listening ? [listening, ...pool.filter(i => i !== listening)].slice(0, count) : pool.slice(0, count);
+  return shuffled(picked, rand);
 }
 
 export type LevelVerdict = 'strong' | 'provisional' | 'notYet';

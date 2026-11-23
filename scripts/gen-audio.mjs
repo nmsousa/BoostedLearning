@@ -21,6 +21,7 @@
  *   node scripts/gen-audio.mjs                   # words + example sentences
  *   node scripts/gen-audio.mjs --words           # words only
  *   node scripts/gen-audio.mjs --dry-run         # list what WOULD be generated
+ *   node scripts/gen-audio.mjs --placement       # only the Explore+ test listening items
  *   node scripts/gen-audio.mjs --replace-duolingo  # re-make the borrowed
  *                                                  # Duolingo clips with OUR TTS
  *                                                  # voice, for one uniform voice
@@ -63,6 +64,9 @@ const DRY_RUN = args.has('--dry-run');
 /** Regenerate every clip currently sourced from Duolingo using OUR TTS voice,
  *  so the whole Tree shares one voice. Needs the API key. */
 const REPLACE_DUOLINGO = args.has('--replace-duolingo');
+/** Voice only the Explore+ placement-test listening items. */
+const PLACEMENT = args.has('--placement');
+const PLACEMENT_BANK = path.join(ROOT, 'src/app/maps/explore-plus/lessons/placement-bank.ts');
 
 // ── Text helpers ─────────────────────────────────────────────────────────────
 
@@ -85,6 +89,13 @@ function fileKey(text) {
 // ── Collect the text to voice ────────────────────────────────────────────────
 
 function collectTexts() {
+  // --placement: ONLY the listening transcripts of the Explore+ placement tests.
+  if (PLACEMENT) {
+    const bank = fs.readFileSync(PLACEMENT_BANK, 'utf8');
+    const sentences = new Set();
+    for (const m of bank.matchAll(/"audio":\s*("(?:[^"\\]|\\.)*")/g)) sentences.add(JSON.parse(m[1]));
+    return { words: [], sentences: [...sentences] };
+  }
   const src = fs.readFileSync(CURRICULUM, 'utf8');
   const words = new Set();
   const sentences = new Set();

@@ -210,7 +210,13 @@ node scripts/import-placement-tests.mjs "..\CEFR - Test\Short version\boostionar
 ```
 
 It rewrites `src/app/maps/explore-plus/lessons/placement-bank.ts` (don't edit
-that file by hand). The rules are in `docs/LEVEL-ALGORITHM.md` §12.
+that file by hand). Then voice any new listening items (needs the TTS key):
+
+```powershell
+node scripts/gen-audio.mjs --placement
+```
+
+The rules are in `docs/LEVEL-ALGORITHM.md` §12.
 
 ## Pronunciation audio (TTS)
 

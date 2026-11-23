@@ -100,7 +100,7 @@
     </div>
     <span class="xp-progress-track xp-test-bar"><span class="xp-progress-fill" [style.width.%]="progressPct"></span></span>
 
-    <h2 class="xp-test-prompt">{{ q.prompt }}</h2>
+    <h2 class="xp-test-prompt">{{ promptText }}</h2>
     <button *ngIf="isListening" type="button" class="xp-listen" (click)="playQuestion()" [attr.aria-label]="'xp.listen' | translate">
       <ion-icon name="volume-high" aria-hidden="true"></ion-icon>
       <span>{{ 'xp.listen' | translate }}</span>
@@ -111,30 +111,24 @@
         [ngClass]="'opt-' + optionState(i)" [attr.aria-checked]="selected === i" [disabled]="checked" (click)="select(i)">
         <span class="xp-radio" aria-hidden="true"></span>
         <span class="xp-opt-text">{{ o }}</span>
-        <ion-icon *ngIf="optionState(i) === 'right'" name="checkmark-circle" aria-hidden="true"></ion-icon>
-        <ion-icon *ngIf="optionState(i) === 'wrong'" name="close-circle" aria-hidden="true"></ion-icon>
       </button>
     </div>
 
-    <p *ngIf="checked && q.explanation" class="xp-explain" [class.ok]="selected === q.answer">
-      <ion-icon [name]="selected === q.answer ? 'checkmark-circle' : 'bulb-outline'" aria-hidden="true"></ion-icon>
-      <span>{{ q.explanation }}</span>
-    </p>
-
-    <ng-container *ngIf="!checked">
-      <button type="button" class="xp-btn primary wide" [disabled]="selected === null" (click)="check()">{{ 'xp.check' | translate }}</button>
-      <button type="button" class="xp-btn ghost wide" (click)="check(true)">{{ 'xp.dontKnow' | translate }}</button>
-    </ng-container>
-    <button *ngIf="checked" type="button" class="xp-btn primary wide" (click)="continueTest()">{{ 'journeyPlus.continue' | translate }}</button>
+    <!-- No right / wrong or explanation: answers stay secret, so retakes are fair. -->
+    <button type="button" class="xp-btn primary wide" [disabled]="selected === null" (click)="check()">{{ 'common.next' | translate }}</button>
+    <button type="button" class="xp-btn ghost wide" (click)="check(true)">{{ 'xp.dontKnow' | translate }}</button>
   </div>
 
   <!-- ── Result ───────────────────────────────────────────────────────────── -->
   <div *ngIf="!isLoading && view === 'result' && result as r" class="xp-body xp-result" [style.--hue]="(r.band ?? r.startBand).hue">
     <ng-container *ngIf="r.kind === 'global'">
       <span class="xp-result-icon" aria-hidden="true">🎯</span>
-      <h2>{{ r.band ? ('xp.resultLevel' | translate:{ band: bandLabel(r.band) }) : ('xp.resultBeginner' | translate) }}</h2>
-      <p class="xp-result-start">{{ 'xp.resultStart' | translate:{ band: r.startBand.cefr, lesson: r.startLesson.title } }}</p>
-      <p>{{ 'xp.resultBody' | translate }}</p>
+      <!-- One clear message: where you start. What you already know is secondary. -->
+      <h2>{{ 'xp.resultTitle' | translate:{ band: bandLabel(r.startBand) } }}</h2>
+      <p class="xp-result-start">{{ 'xp.resultFirst' | translate:{ lesson: r.startLesson.title } }}</p>
+      <p *ngIf="!r.band">{{ 'xp.resultBeginner' | translate }}</p>
+      <p *ngIf="r.band && r.band.id !== r.startBand.id">{{ 'xp.resultKnown' | translate:{ band: r.band.cefr } }}</p>
+      <p *ngIf="r.band && r.band.id === r.startBand.id">{{ 'xp.resultTop' | translate:{ band: r.band.cefr } }}</p>
     </ng-container>
 
     <ng-container *ngIf="r.kind === 'level' && r.band">

@@ -36,6 +36,7 @@ import {
   type LevelVerdict, type PlacementAnswer,
 } from './lessons/placement';
 import type { PlacementItem, PlacementSkill } from './lessons/placement-types';
+import { instructionLang, localizePrompt } from './lessons/placement-i18n';
 
 type View = 'map' | 'test' | 'result';
 
@@ -256,6 +257,11 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
   get progressPct(): number { return Math.min(100, (this.answers.length / Math.max(1, this.questionTotal)) * 100); }
   get questionBand(): BandDef | null { return this.question ? bandOf(this.question.band as LessonBand) : null; }
   get isListening(): boolean { return this.question?.skill === 'listening' && !!this.question.audio; }
+  /** The instruction: app language up to A2, French from B1 (the tested French is unchanged). */
+  get promptText(): string {
+    const q = this.question;
+    return q ? localizePrompt(q.prompt, instructionLang(q.band, this.i18n.lang())) : '';
+  }
   get testTitle(): string {
     return this.testKind === 'level' && this.testBand ? this.t('xp.levelTestTitle', { band: bandOf(this.testBand).cefr }) : this.t('xp.findLevel');
   }
@@ -304,14 +310,15 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  optionState(i: number): 'idle' | 'selected' | 'right' | 'wrong' | 'dim' {
-    if (!this.checked) return this.selected === i ? 'selected' : 'idle';
-    if (i === this.question?.answer) return 'right';
-    if (i === this.selected) return 'wrong';
-    return 'dim';
+  optionState(i: number): 'idle' | 'selected' {
+    return this.selected === i ? 'selected' : 'idle';
   }
 
-  /** Check the selected answer (or "I don't know" with nothing selected). */
+  /**
+   * Record the selected answer (or "I don't know") and go straight to the next
+   * question. Right / wrong and the explanation are NEVER shown, so retaking
+   * the test isn't a memory game.
+   */
   check(dontKnow = false): void {
     const q = this.question;
     if (!q || this.checked) return;
@@ -321,10 +328,8 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
     this.answers.push({ item: q, correct });
     this.adaptive?.record(q, correct);
     this.checked = true;
-    this.cdr.detectChanges();
+    this.loadNext();
   }
-
-  continueTest(): void { this.loadNext(); }
 
   private finishTest(): void {
     const { strengths, weaknesses } = skillBreakdown(this.answers);

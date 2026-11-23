@@ -459,13 +459,15 @@ const PT_MESSAGES: MessageCatalog = {
 
   'xp.resultBody': 'As lições anteriores ficam abertas para as poderes rever quando quiseres.',
 
-  'xp.resultTop': 'Sabes isto bem. Os próximos níveis (B1) estão a caminho; até lá podes praticar o A2.',
+  'xp.resultTop': 'Excelente resultado: todas as lições até ao {band} estão desbloqueadas.',
 
   'xp.resultGo': 'Começar: {lesson}',
 
   'xp.notAvailable': 'Por agora, as lições do Explorar+ só existem em francês.',
 
   'xp.bands': 'Níveis',
+  'xp.resultFirst': 'Primeira lição: {lesson}',
+  'xp.resultKnown': 'Já dominas o {band}, por isso essas lições também ficam abertas, caso queiras rever.',
 
   'xp.band.b1': 'Intermédio',
 
@@ -497,7 +499,7 @@ const PT_MESSAGES: MessageCatalog = {
 
   'xp.resultLevel': 'O teu nível: {band}',
 
-  'xp.resultBeginner': 'Estás a começar: bem-vindo!',
+  'xp.resultBeginner': 'Bem-vindo! Vamos começar pelo básico.',
 
   'xp.resultStart': 'Começa em {band} · {lesson}',
 
@@ -1143,13 +1145,15 @@ const FR_MESSAGES: MessageCatalog = {
 
   'xp.resultBody': 'Les leçons précédentes restent ouvertes : tu peux les réviser quand tu veux.',
 
-  'xp.resultTop': 'Tu maîtrises bien. Les niveaux suivants (B1) arrivent ; en attendant, tu peux pratiquer l’A2.',
+  'xp.resultTop': 'Excellent résultat : toutes les leçons jusqu’au {band} sont débloquées.',
 
   'xp.resultGo': 'Commencer : {lesson}',
 
   'xp.notAvailable': 'Pour l’instant, les leçons d’Explorer+ n’existent qu’en français.',
 
   'xp.bands': 'Niveaux',
+  'xp.resultFirst': 'Première leçon : {lesson}',
+  'xp.resultKnown': 'Tu maîtrises déjà le {band} : ces leçons sont aussi ouvertes si tu veux réviser.',
 
   'xp.band.b1': 'Intermédiaire',
 
@@ -1181,7 +1185,7 @@ const FR_MESSAGES: MessageCatalog = {
 
   'xp.resultLevel': 'Ton niveau : {band}',
 
-  'xp.resultBeginner': 'Tu débutes : bienvenue !',
+  'xp.resultBeginner': 'Bienvenue ! On commence par les bases.',
 
   'xp.resultStart': 'Commence en {band} · {lesson}',
 
@@ -1827,13 +1831,15 @@ const EN_MESSAGES: MessageCatalog = {
 
   'xp.resultBody': 'The lessons before it stay open, so you can review them any time.',
 
-  'xp.resultTop': 'You know this well. The next levels (B1) are on the way; meanwhile you can practise A2.',
+  'xp.resultTop': 'Great result: every lesson up to {band} is unlocked.',
 
   'xp.resultGo': 'Start: {lesson}',
 
   'xp.notAvailable': 'For now, Explore+ lessons are only available in French.',
 
   'xp.bands': 'Levels',
+  'xp.resultFirst': 'First lesson: {lesson}',
+  'xp.resultKnown': 'You already know {band}, so those lessons are open too if you want a refresher.',
 
   'xp.band.b1': 'Intermediate',
 
@@ -1865,7 +1871,7 @@ const EN_MESSAGES: MessageCatalog = {
 
   'xp.resultLevel': 'Your level: {band}',
 
-  'xp.resultBeginner': 'You’re just starting: welcome!',
+  'xp.resultBeginner': 'Welcome! We’ll start with the basics.',
 
   'xp.resultStart': 'Start at {band} · {lesson}',
 
@@ -2481,13 +2487,15 @@ const ES_MESSAGES: MessageCatalog = {
 
   'xp.resultBody': 'Las lecciones anteriores quedan abiertas para repasarlas cuando quieras.',
 
-  'xp.resultTop': 'Lo dominas. Pronto llegarán más niveles (B1); mientras, puedes practicar el A2.',
+  'xp.resultTop': 'Excelente resultado: todas las lecciones hasta el {band} están desbloqueadas.',
 
   'xp.resultGo': 'Empezar: {lesson}',
 
   'xp.notAvailable': 'Por ahora, las lecciones de Explorar+ solo están en francés.',
 
   'xp.bands': 'Niveles',
+  'xp.resultFirst': 'Primera lección: {lesson}',
+  'xp.resultKnown': 'Ya dominas el {band}, así que esas lecciones también están abiertas por si quieres repasar.',
 
   'xp.band.b1': 'Intermedio',
 
@@ -2519,7 +2527,7 @@ const ES_MESSAGES: MessageCatalog = {
 
   'xp.resultLevel': 'Tu nivel: {band}',
 
-  'xp.resultBeginner': 'Estás empezando: ¡bienvenido!',
+  'xp.resultBeginner': '¡Bienvenido! Empezamos por lo básico.',
 
   'xp.resultStart': 'Empieza en {band} · {lesson}',
 

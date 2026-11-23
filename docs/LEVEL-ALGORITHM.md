@@ -512,7 +512,15 @@ Explore+ has its own curriculum, separate from Explore:
   - A result is applied as soon as the test ends (no extra tap needed) and only
     ever RAISES what is open; a lower or failed result never locks anything.
   - Both end with a per-skill summary (strengths / to work on) and offer the
-    next band's test.
+    next band's test. The result screen leads with where to start ("Start
+    here: A2 · First lesson: …"); a known lower band is only mentioned as
+    "already unlocked for a refresher".
+  - **Answers are never revealed** (no right/wrong colours, no explanation),
+    so a retake isn't a memory game. Every question is drawn at random from
+    the band's whole pool (initial + level items, ~12 per band), and a level
+    test always includes at least one listening question.
+  - Listening items play bundled clips (`node scripts/gen-audio.mjs
+    --placement`), falling back to the device voice.
 - **Deck layout**: deck `lesson-<lang>` (French only for now). Each band owns 40
   fixed levels (Pre-A1 1–40, A1 41–80, A2 81–120, B1 121–160, B2 161–200), so a
   new lesson at the end of a band never shifts later bands' progress. Lessons

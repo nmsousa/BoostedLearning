@@ -27,7 +27,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.65',
+    date: '2026-11-23T12:11:10Z',
+    notes: [
+      'Placement test: the result now simply says where you start and which lesson comes first.',
+      'Tests no longer reveal the answers, and each test picks different questions, so a retake is fair.',
+      'Listening questions now have real audio.',
+      'Test instructions are in your language up to A2 and in French from B1.',
+      'The release date is back in "What\'s new".',
+    ],
+  },
+  {
     version: '1.3.64',
+    date: '2026-11-23T01:22:30Z',
     notes: [
       'Explore+ now goes up to B2: 20 new B1 and B2 lessons (48 in total).',
       'New placement test: 10–12 questions that adapt to your answers, with an explanation after each one and a summary of your strengths.',
@@ -37,6 +49,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
   {
     version: '1.3.63',
+    date: '2026-11-22T23:50:26Z',
     notes: [
       'Explore+ is new: 28 French lessons by level (Pre-A1, A1, A2), each with its own words and real sentences.',
       'Swipe between big lesson cards; you start on your current lesson, and finished ones are greyed out.',
@@ -46,6 +59,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
   {
     version: '1.3.62',
+    date: '2026-11-21T23:46:17Z',
     notes: [
       'Getting at least half right now finishes a game (1 star). If more than half go wrong, the game stops with an encouraging message so you can try again.',
       'Match: 3 stars for no mistakes within 3 seconds per pair, the same at every level. Your best time and combo are saved correctly.',

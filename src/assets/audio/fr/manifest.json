@@ -54,6 +54,12 @@
     "source": "duolingo",
     "durMs": 1968
   },
+  "attention, le train à destination de lille partira voie douze au lieu de la voie huit.": {
+    "file": "attention-le-train-à-destination-de-lill-b388c678.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 5112
+  },
   "au": {
     "file": "au-f095160c.mp3",
     "source": "duolingo",
@@ -137,6 +143,12 @@
     "file": "bon-3b4f1440.mp3",
     "source": "duolingo",
     "durMs": 1464
+  },
+  "bonjour, je voudrais un café, s'il vous plaît.": {
+    "file": "bonjour-je-voudrais-un-café-s-il-vous-pl-76d82666.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 2760
   },
   "c'est le livre que je veux.": {
     "file": "c-est-le-livre-que-je-veux-3b08071b.mp3",
@@ -351,6 +363,18 @@
     "source": "duolingo",
     "durMs": 1800
   },
+  "dimanche, nous avons fait une randonnée en forêt, puis nous avons déjeuné dans un petit village.": {
+    "file": "dimanche-nous-avons-fait-une-randonnée-e-e005ee71.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 5448
+  },
+  "dire que cette mesure a échoué partout relève sans doute de la formule. qu'elle ait produit, dans certains contextes, des effets bien moins probants qu'annoncé, voilà qui me paraît en revanche difficile à contester.": {
+    "file": "dire-que-cette-mesure-a-échoué-partout-r-f76085e8.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 11808
+  },
   "diriger": {
     "file": "diriger-0c6ae63f.mp3",
     "source": "duolingo",
@@ -446,6 +470,12 @@
     "source": "tts",
     "voice": "fr-FR-Neural2-A",
     "durMs": 840
+  },
+  "en raison de travaux dans la rue de la gare, le bus numéro cinq s'arrête provisoirement devant la mairie.": {
+    "file": "en-raison-de-travaux-dans-la-rue-de-la-g-1909d885.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 5952
   },
   "en": {
     "file": "en-094b0fe0.mp3",
@@ -666,6 +696,12 @@
     "voice": "fr-FR-Neural2-A",
     "durMs": 936
   },
+  "j'ai accepté ce poste parce que je peux désormais aller au travail à vélo et que mes nouvelles fonctions me permettent de coordonner une petite équipe.": {
+    "file": "j-ai-accepté-ce-poste-parce-que-je-peux--0960798d.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 7560
+  },
   "j'ai beaucoup de livres.": {
     "file": "j-ai-beaucoup-de-livres-603b4faa.mp3",
     "source": "tts",
@@ -683,6 +719,12 @@
     "source": "tts",
     "voice": "fr-FR-Neural2-A",
     "durMs": 1008
+  },
+  "j'ai deux frères.": {
+    "file": "j-ai-deux-frères-557db3e1.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 1056
   },
   "j'ai envie de": {
     "file": "j-ai-envie-de-4428fd3e.mp3",
@@ -813,6 +855,12 @@
     "voice": "fr-FR-Neural2-A",
     "durMs": 864
   },
+  "je ne suis pas opposé à la réforme. je souhaiterais simplement qu'elle fasse d'abord l'objet d'une expérimentation locale, avec des critères d'évaluation publics, avant toute généralisation.": {
+    "file": "je-ne-suis-pas-opposé-à-la-réforme-je-so-fe0c83c8.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 9936
+  },
   "je parle": {
     "file": "je-parle-ff93aca5.mp3",
     "source": "tts",
@@ -824,6 +872,12 @@
     "source": "tts",
     "voice": "fr-FR-Neural2-A",
     "durMs": 888
+  },
+  "je partage assez largement les objectifs poursuivis. là où le bât blesse, c'est dans la définition des critères : on annonce une transformation profonde sans préciser à partir de quels éléments on en jugera les effets.": {
+    "file": "je-partage-assez-largement-les-objectifs-17ec8902.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 11952
   },
   "je pense que": {
     "file": "je-pense-que-42dea7a2.mp3",
@@ -854,6 +908,12 @@
     "source": "tts",
     "voice": "fr-FR-Neural2-A",
     "durMs": 1032
+  },
+  "je suis désolé d'avoir manqué les premières minutes. ma connexion a coupé au moment où je rejoignais la réunion.": {
+    "file": "je-suis-désolé-d-avoir-manqué-les-premiè-09f2a289.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 5760
   },
   "je suis ici.": {
     "file": "je-suis-ici-6d6a6105.mp3",
@@ -1102,6 +1162,12 @@
     "source": "tts",
     "voice": "fr-FR-Neural2-A",
     "durMs": 984
+  },
+  "l'innovation ne dispense nullement de rendre des comptes. bien au contraire, plus les dispositifs gagnent en complexité, plus il importe de rendre explicites les choix qui les orientent.": {
+    "file": "l-innovation-ne-dispense-nullement-de-re-992803f1.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 10464
   },
   "l'intelligence artificielle": {
     "file": "l-intelligence-artificielle-7b4462a7.mp3",
@@ -2028,6 +2094,12 @@
     "voice": "fr-FR-Neural2-A",
     "durMs": 960
   },
+  "le rendez-vous est à huit heures et demie.": {
+    "file": "le-rendez-vous-est-à-huit-heures-et-demi-a4d9bdcb.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 2088
+  },
   "le rendez-vous": {
     "file": "le-rendez-vous-977ccab3.mp3",
     "source": "tts",
@@ -2194,6 +2266,12 @@
     "voice": "fr-FR-Neural2-A",
     "durMs": 1080
   },
+  "le télétravail peut améliorer la concentration, à condition que les équipes définissent des règles communes. sans cela, la souplesse promise peut vite se transformer en isolement.": {
+    "file": "le-télétravail-peut-améliorer-la-concent-d3ada5ba.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 10464
+  },
   "le vent": {
     "file": "le-vent-dddde748.mp3",
     "source": "tts",
@@ -2234,6 +2312,18 @@
     "source": "tts",
     "voice": "fr-FR-Neural2-A",
     "durMs": 864
+  },
+  "les objectifs affichés sont parfaitement lisibles. ce qui l'est beaucoup moins, en revanche, c'est la manière dont les moyens seront répartis et les responsabilités assumées sur le terrain.": {
+    "file": "les-objectifs-affichés-sont-parfaitement-e06d8dbc.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 10056
+  },
+  "les participants ont certes été invités à s'exprimer. quant à savoir si leurs remarques ont infléchi la décision, c'est une autre affaire : le texte final était déjà pratiquement arrêté.": {
+    "file": "les-participants-ont-certes-été-invités--d13e5bfc.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 10440
   },
   "les soldes": {
     "file": "les-soldes-4bc6de67.mp3",
@@ -2308,6 +2398,12 @@
     "source": "duolingo",
     "durMs": 1656
   },
+  "merci !": {
+    "file": "merci-29543744.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 744
+  },
   "moins… que": {
     "file": "moins-que-c4651136.mp3",
     "source": "tts",
@@ -2379,6 +2475,12 @@
     "source": "duolingo",
     "durMs": 1728
   },
+  "on nous présente cela comme une rupture. il est vrai que l'emballage a changé ; pour le reste, on reconnaît sans peine une recette que l'on croyait rangée au placard depuis des décennies.": {
+    "file": "on-nous-présente-cela-comme-une-rupture--1e7a8cd1.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 9576
+  },
   "on": {
     "file": "on-db3d405b.mp3",
     "source": "duolingo",
@@ -2404,6 +2506,12 @@
     "file": "oui-5898fc86.mp3",
     "source": "duolingo",
     "durMs": 1416
+  },
+  "ouvre la fenêtre, s'il te plaît.": {
+    "file": "ouvre-la-fenêtre-s-il-te-plaît-8bda5f8d.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 2040
   },
   "ouvrir": {
     "file": "ouvrir-a52ede37.mp3",
@@ -2484,6 +2592,12 @@
     "source": "tts",
     "voice": "fr-FR-Neural2-A",
     "durMs": 1248
+  },
+  "pour les trajets de moyenne distance, je conseille de rejoindre la gare à vélo, puis de prendre le train. on évite ainsi les embouteillages sans passer toute la journée sur la route.": {
+    "file": "pour-les-trajets-de-moyenne-distance-je--690b6874.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 10032
   },
   "pourquoi": {
     "file": "pourquoi-9a3e86e7.mp3",
@@ -2745,6 +2859,12 @@
     "source": "duolingo",
     "durMs": 1704
   },
+  "sur le papier, le dispositif paraît exemplaire. sur le terrain, les résultats sont beaucoup plus contrastés, notamment pour les petites structures qui disposent de moins de moyens.": {
+    "file": "sur-le-papier-le-dispositif-paraît-exemp-edaaf109.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 10008
+  },
   "sur": {
     "file": "sur-3d54fd66.mp3",
     "source": "duolingo",
@@ -2810,6 +2930,12 @@
     "file": "triste-f47590ee.mp3",
     "source": "duolingo",
     "durMs": 1728
+  },
+  "trois billets, s'il vous plaît.": {
+    "file": "trois-billets-s-il-vous-plaît-a4e02708.mp3",
+    "source": "tts",
+    "voice": "fr-FR-Neural2-A",
+    "durMs": 1800
   },
   "trop de": {
     "file": "trop-de-a0ca2741.mp3",
