@@ -27,6 +27,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.69',
+    date: '2026-11-26T13:08:00Z',
+    notes: [
+      'Words with the same meaning are now treated as the same: hello, hi and good morning all match "bonjour" in Match, Match Audio and typed answers, and Quiz never offers two of them as different options.',
+      'Builder+ recap: the French phrases are no longer underlined, since their meaning is shown right below.',
+    ],
+  },
+  {
     version: '1.3.68',
     date: '2026-11-26T10:54:00Z',
     notes: [

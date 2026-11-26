@@ -9,6 +9,8 @@
  * @module app/exercises/match
  */
 
+import { englishAlternatives } from '../../shared/articles';
+import { sameMeaning } from '../../shared/synonyms';
 import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NavController, ViewWillEnter, ViewWillLeave } from '@ionic/angular';
@@ -35,6 +37,8 @@ interface MatchItem {
   /** Match Audio only: the target word + recording for the left (listen) tile. */
   audioText?: string;
   audioUrl?: string | null;
+  /** Left tile: every English meaning that counts as a correct match (synonyms too). */
+  meanings?: string[];
 }
 
 @Component({
@@ -294,6 +298,7 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
       left: {
         id: card.id, label: card.text, side: 'left', matched: false, wrong: false,
         audioText: card.text, audioUrl: card.audioUrl,
+        meanings: [this.flashcardService.bestTranslation(card), ...card.translations.flatMap(x => englishAlternatives(x))],
       },
       right: { id: card.id, label: this.flashcardService.bestTranslation(card), side: 'right', matched: false, wrong: false },
     };
@@ -416,7 +421,8 @@ export class MatchPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeav
     const left = this.selectedLeft!;
     const right = this.selectedRight!;
 
-    if (left.id === right.id) {
+    // Same pair, or an English synonym of it (hello / hi / good morning): both are right.
+    if (left.id === right.id || (left.meanings ?? []).some(m => sameMeaning(m, right.label))) {
       // Correct pair - briefly mark it matched (fade), then swap in a fresh
       // pair so the board stays filled.
       const matchedId = left.id;

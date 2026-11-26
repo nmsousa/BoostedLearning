@@ -9,6 +9,8 @@
  * @module app/exercises/quiz
  */
 
+import { englishAlternatives } from '../../shared/articles';
+import { sameMeaning } from '../../shared/synonyms';
 import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FlashcardService, Flashcard, FlashcardDeck, PracticeMode } from '../../services/flashcard.service';
@@ -305,6 +307,9 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
 
     const correctLabel = this.flashcardService.bestTranslation(card);
     const promptLower = card.text.trim().toLowerCase();
+    // Every valid meaning of this word (incl. synonyms like hello / hi / good morning):
+    // none of them may show up as a WRONG option next to the right one.
+    const validMeanings = [correctLabel, ...card.translations.flatMap(x => englishAlternatives(x))];
 
     // Gather distractors from other cards in the deck (clean translations),
     // excluding any that equal the correct answer or the prompt word itself.
@@ -315,7 +320,8 @@ export class QuizPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
       .map(c => this.flashcardService.bestTranslation(c))
       .filter(t => {
         const tl = t.trim().toLowerCase();
-        return tl && tl !== '—' && tl !== correctLabel.toLowerCase() && tl !== promptLower;
+        return tl && tl !== '—' && tl !== correctLabel.toLowerCase() && tl !== promptLower
+          && !validMeanings.some(m => sameMeaning(m, t));
       });
     const pool = usable(this.deck?.cards ?? []);
 

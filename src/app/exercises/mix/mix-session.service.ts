@@ -13,6 +13,7 @@
  *
  * @module app/exercises/mix
  */
+import { sameMeaning } from '../../shared/synonyms';
 import { Injectable } from '@angular/core';
 import type { Flashcard } from '../../services/flashcard.service';
 import {
@@ -193,7 +194,8 @@ export class MixSessionService {
     const pool = cards
       .filter(c => c.id !== card.id)
       .map(bestTr)
-      .filter(t => t && t !== '—' && t.toLowerCase() !== correct.toLowerCase());
+      .filter(t => t && t !== '—' && t.toLowerCase() !== correct.toLowerCase()
+        && !sameMeaning(t, correct) && !card.translations.some(x => sameMeaning(x, t)));
     const distractors = this.uniqueShuffle(pool).slice(0, MixSessionService.OPTIONS - 1);
     const choices = this.shuffle([correct, ...distractors]).map(label => ({ label, correct: label === correct }));
     return { kind: audio ? 'audio' : 'quiz', prompt: card.text, audioUrl: card.audioUrl ?? null, choices };

@@ -24,6 +24,7 @@ import { gradeAnswer } from '../../../core/answer-validator/typo-grader';
 import { GameRulesService } from '../../services/game-rules.service';
 import { accuracyRulesText, tooManyMistakes } from '../../shared/star-rules';
 import { englishAlternatives } from '../../shared/articles';
+import { synonymsOf } from '../../shared/synonyms';
 import { generateWritePhraseCards } from '../../../core/phrase-builder/phrase-builder';
 import { lessonWriteItems } from '../../maps/explore-plus/lessons/lessons';
 
@@ -695,7 +696,9 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
 
     if (this.currentDirection === 'target-to-en') {
       // Translating NL -> EN: accept any English translation of this card.
-      return this.currentCard.translations;
+      // Plus known synonyms (hello / hi / good morning).
+      const base = this.currentCard.translations;
+      return [...new Set([...base, ...base.flatMap(x => synonymsOf(x))])];
     }
 
     // Translating EN -> NL: accept every Dutch form that maps to this prompt

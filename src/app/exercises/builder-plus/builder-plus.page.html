@@ -148,7 +148,7 @@
     <div class="recap-list">
       <div class="recap-row" *ngFor="let r of recapPhrases">
         <div class="recap-text">
-          <app-tap-text class="recap-fr" [text]="r.target"></app-tap-text>
+          <span class="recap-fr">{{ r.target }}</span>
           <span class="recap-en">{{ r.en }}</span>
         </div>
       </div>

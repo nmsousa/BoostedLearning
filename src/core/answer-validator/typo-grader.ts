@@ -45,7 +45,7 @@ function stripAccents(s: string): string {
  * Apostrophes become separators ON PURPOSE (see module docs).
  */
 function normalize(s: string, { keepAccents }: { keepAccents: boolean }): string {
-  let r = (s ?? '').toLowerCase();
+  let r = (s ?? '').normalize('NFC').toLowerCase();
   if (!keepAccents) r = stripAccents(r);
   return r
     // apostrophes (straight + smart) → space (word separator)
