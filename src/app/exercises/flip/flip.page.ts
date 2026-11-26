@@ -240,6 +240,8 @@ export class FlipPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLeave
   get backText(): string {
     const c = this.currentCard;
     if (!c) return '';
+    // Authored (Explore / Explore+) cards show ONE meaning; the others live in the tap popup.
+    if (this.flashcardService.isTreeDeckId(this.deck?.id)) return this.flashcardService.bestTranslation(c);
     return this.flashcardService.displayTranslations(c, 4).join(', ');
   }
 

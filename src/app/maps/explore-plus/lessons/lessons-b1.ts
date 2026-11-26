@@ -47,7 +47,7 @@ export const LESSONS_B1: Lesson[] = [
       { fr: 'je serai', en: 'I will be' },
       { fr: 'j’aurai', en: 'I will have' },
       { fr: 'j’irai', en: 'I will go' },
-      { fr: 'je ferai', en: 'I will do / make' },
+      { fr: 'je ferai', en: 'I will do' },
       { fr: 'je pourrai', en: 'I will be able to' },
       { fr: 'bientôt', en: 'soon', icon: '🔜' },
       { fr: 'l’avenir', en: 'future (m.)', icon: '🔮' },

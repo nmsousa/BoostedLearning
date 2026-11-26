@@ -23,6 +23,7 @@ import { journeyBackUrl } from '../../maps/journey/journey-back';
 import { gradeAnswer } from '../../../core/answer-validator/typo-grader';
 import { GameRulesService } from '../../services/game-rules.service';
 import { accuracyRulesText, tooManyMistakes } from '../../shared/star-rules';
+import { englishAlternatives } from '../../shared/articles';
 import { generateWritePhraseCards } from '../../../core/phrase-builder/phrase-builder';
 import { lessonWriteItems } from '../../maps/explore-plus/lessons/lessons';
 
@@ -624,7 +625,7 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
   get promptText(): string {
     if (!this.currentCard) return '';
     return this.currentDirection === 'en-to-target'
-      ? this.currentCard.translations[0]  // Show English
+      ? (englishAlternatives(this.currentCard.translations[0] ?? '')[0] ?? '')  // Show English (one option only)
       : this.currentCard.text;             // Show Dutch
   }
 

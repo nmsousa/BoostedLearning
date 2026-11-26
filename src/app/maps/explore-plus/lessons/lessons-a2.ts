@@ -354,7 +354,7 @@ export const LESSONS_A2: Lesson[] = [
       { fr: 'je te rappelle', en: 'I’ll call you back' },
       { fr: 'je le vois', en: 'I see him / I see it', icon: '👀' },
       { fr: 'je la connais', en: 'I know her', icon: '🙋‍♀️' },
-      { fr: 'je lui parle', en: 'I speak to him / to her', icon: '🗣️' },
+      { fr: 'je lui parle', en: 'I speak to him or her', icon: '🗣️' },
       { fr: 'plus tard', en: 'later', icon: '⏰' },
     ],
     sentences: [

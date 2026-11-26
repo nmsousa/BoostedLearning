@@ -27,6 +27,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.68',
+    date: '2026-11-26T10:54:00Z',
+    notes: [
+      'No more "hello / good morning" in the app: every screen now shows the one meaning that fits best. The other meanings appear when you tap the underlined word.',
+    ],
+  },
+  {
     version: '1.3.67',
     date: '2026-11-26T10:24:00Z',
     notes: [

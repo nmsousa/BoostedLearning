@@ -18,7 +18,7 @@ import { CapacitorHttp } from '@capacitor/core';
 import { getDatabase, FlashcardDeckEntity, FlashcardEntity, LevelProgressEntity } from '../../persistence/database';
 import { KnowledgeBreakdown, KnowledgeLevel } from '../../core/knowledge-level';
 import { STAR_PERCENT, starsFromPercent } from '../shared/star-rules';
-import { englishWithArticle, genderOf } from '../shared/articles';
+import { englishAlternatives, englishWithArticle, genderOf } from '../shared/articles';
 import { parseDuomeHtml } from './duome-parser';
 
 /** Self-rating options in Flashcards (flip) mode. */
@@ -921,7 +921,8 @@ export class FlashcardService {
           deckId,
           text: w.fr,
           // Article rule: "le café" ↔ "the coffee", gender as a badge, not "(m.)".
-          translations: [englishWithArticle(w.fr, w.en)],
+          // Only the first alternative is shown ("hello", not "hello / good morning"); the rest stay as accepted answers.
+          translations: englishAlternatives(w.en).map(e => englishWithArticle(w.fr, e)),
           gender: genderOf(w.fr, w.en) ?? undefined,
           // Prefer the bundled LOCAL clip (offline) → streamed course clip →
           // (handled later) device TTS.
@@ -1720,6 +1721,12 @@ export class FlashcardService {
    *   5. Else the shortest raw option.
    */
   bestTranslation(card: Flashcard): string {
+    // Never show two options joined by " / ": keep the first (the tap popup lists the rest).
+    const pick = this.pickTranslation(card);
+    return englishAlternatives(pick)[0] ?? pick;
+  }
+
+  private pickTranslation(card: Flashcard): string {
     const curated = this.curatedTranslation(card);
     if (curated) return curated;
 

@@ -49,3 +49,23 @@ export function englishWithArticle(fr: string, en: string): string {
   if (art === 'des') return `some ${bare}`;
   return `the ${bare}`;
 }
+
+/**
+ * The alternatives of an English gloss ("hello / good morning"), best first. A slash
+ * inside brackets ("you (plural / formal)") is not a split. The app shows only the
+ * FIRST one; the others stay available as accepted answers and in the tap popup.
+ */
+export function englishAlternatives(en: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let cur = '';
+  for (let i = 0; i < en.length; i++) {
+    const ch = en[i];
+    if (ch === '(') depth++;
+    else if (ch === ')') depth = Math.max(0, depth - 1);
+    if (depth === 0 && ch === '/' && en[i - 1] === ' ' && en[i + 1] === ' ') { out.push(cur.trim()); cur = ''; continue; }
+    cur += ch;
+  }
+  out.push(cur.trim());
+  return out.filter(Boolean);
+}
