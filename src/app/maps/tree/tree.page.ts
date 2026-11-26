@@ -361,7 +361,7 @@ export class TreePage implements OnInit, OnDestroy {
   }
 
   // ── Completion helpers ──────────────────────────────────────────────────────
-  /** True when a level is complete: Learn done + at least 5 of the 7 games. */
+  /** True when a level is complete: Learn done + at least 5 of the 8 games. */
   private tierComplete(level: number | undefined): boolean {
     if (!level) return false;
     return tierProgress(m => this.passedModes.has(`${level}:${m.mode}`)).complete;
@@ -502,7 +502,7 @@ export class TreePage implements OnInit, OnDestroy {
   }
 
   /** Build the mode nodes orbiting the expanded centre. Learn is always
-   *  playable; the games open once Learn is done, in any order (5 of 7 to
+   *  playable; the games open once Learn is done, in any order (6 of 8 to
    *  complete the level). */
   private buildModeNodes(level: number, authored: boolean): void {
     const cx = this.expandedCenterX, cy = this.expandedCenterY;
@@ -601,7 +601,7 @@ export class TreePage implements OnInit, OnDestroy {
     // The Builder combines this level's words with what the learner already
     // knows. In the fixed-slot layout "earlier deck levels" are NOT earlier
     // lessons, so tell it exactly which levels to draw from.
-    if (def.id === 'builder') {
+    if (def.id === 'builder' || def.id === 'blanks') {
       const pool = this.builderPoolLevels();
       if (pool.length) queryParams['pool'] = pool.join(',');
     }

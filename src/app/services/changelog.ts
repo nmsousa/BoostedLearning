@@ -27,6 +27,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.66',
+    date: '2026-11-26T01:11:00Z',
+    notes: [
+      'Tap any French word in a sentence to see its meaning (or meanings), shown right under the word. Tap it again or tap elsewhere to hide it; you can open several at once.',
+      'In Builder and Builder+, a new "Word meanings" button lets you tap the word tiles to see what they mean instead of placing them.',
+      'Blanks is now one of the games in Explore and Explore+, so a level needs 6 of the 8 games to be complete.',
+      'Builder and Builder+ now show a progress bar instead of "1/5", and Builder says "Correct" after each phrase.',
+      'Placement test: no listening questions below A2, and a clear beginner is placed after 4 questions. Audio stops when you move on or close the test.',
+      'Export my custom cards now saves a .json file. Problem reports are saved and sent later when you are offline, never by email.',
+      'After a typo, the Continue button is yellow like the warning.',
+    ],
+  },
+  {
     version: '1.3.65',
     date: '2026-11-23T12:11:10Z',
     notes: [

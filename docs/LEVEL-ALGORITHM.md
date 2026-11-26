@@ -431,8 +431,11 @@ restart: Ionic reuses page instances.)
 
 An activity is **done** once its **best** result reaches 1★
 (`isModePassed`: `bestStars ≥ 1` or, for old records, `bestScore ≥ 50`).
-A later weaker play never undoes it. A level is complete after Learn + **5 of
-the 7 games** (`REQUIRED_GAMES = 5`).
+A later weaker play never undoes it. A level is complete after Learn + **6 of
+the 8 games** (`REQUIRED_GAMES = 6`): Quiz, Write, Match, Match Audio, Builder,
+Builder+, Blanks and Mix. Blanks (pick the missing word) uses the lesson's
+authored sentences in Explore+ and the generated ones in Explore, and follows
+the same stars and stop-early rules.
 
 ### 11.4 Progressive difficulty (Mix)
 
@@ -488,7 +491,35 @@ Explore+ has its own curriculum, separate from Explore:
   Each sentence has a focus word (the Blanks gap) and 3 authored wrong options
   (Blanks choices and extra Builder tiles); Write accepts the sentence plus any
   listed alternatives (e.g. the feminine form), ignoring punctuation and case.
-- **Same activities and rules as Explore**: Learn + any 5 of the 7 games
+- **Builder and Builder+** show a progress bar at the top (no "1 / 5"
+  counter) and a "Correct" label after each built phrase.
+- **Tap-to-translate** (French): in Blanks (the sentence around the gap), the
+  Mix blank, the built phrase and the Builder+ recap, every word can be tapped
+  to see its meaning(s):
+  - normal word = text with a subtle dotted underline (no icon per word); the
+    whole word area is the tap target; pressed = a slight highlight;
+  - revealed = the meaning slides in UNDERNEATH (150 ms fade/expand) on a small
+    muted-green background, with no modal or sheet; it hangs under the word
+    without moving the neighbouring words and is kept inside the screen;
+  - several words can be open at once; tap the word again, tap anywhere that is
+    not a word, or press Esc to hide; punctuation stays attached to its word;
+  - multi-word phrases ("je voudrais" = I would like) are shown on each of their
+    words, since a word alone ("voudrais") may mean little; elisions ("j’" = I)
+    and plural / feminine forms ("petites" → small (plural)) are understood;
+  - **Builder and Builder+** tiles are tap-to-place, so they get ONE "Word
+    meanings" toggle under the prompt: while it is on, tapping a bank word shows
+    its meaning instead of placing it (it does not hint the word order). Placed
+    words are always tappable in Builder+, and in Builder once the phrase is built;
+  - **Blanks never leaks the answer**: only the visible parts of the sentence
+    are glossed, so a phrase covering the blanked word cannot match.
+  - Where the meanings come from (`shared/glossary.service.ts`), best first:
+    hand-written words (`shared/french-glosses.ts`, final), then the Explore+
+    lesson words and the Explore Core + topic words (these add to each other:
+    one word can have several meanings), then the course deck (7,000+ cards) as
+    a last fallback for words nobody else knows. A test fails if any word of an
+    authored lesson sentence has no meaning, so new sentences must come with
+    their words in `french-glosses.ts`.
+- **Same activities and rules as Explore**: Learn + any 6 of the 8 games
   complete a lesson (§11.3), with the same stars and stop-early rules (§11.1–2).
   Quiz options come from the lesson's own words.
 - **Unlocking is linear**: a lesson opens when the previous one is complete.
@@ -497,11 +528,15 @@ Explore+ has its own curriculum, separate from Explore:
   with `node scripts/import-placement-tests.mjs` into
   `lessons/placement-bank.ts` (grammar, vocabulary, reading and listening
   items; listening is read aloud and its transcript is never shown).
+  - **Listening questions only appear from A2** (a total beginner can't be
+    judged on spoken French), in both kinds of test.
   - **Initial placement** (offered only at the very beginning, 10–12 questions,
     ~5–8 min): adaptive. It starts with an easy Pre-A1 question; a right answer
     moves one band up, a wrong one moves one band down. It stops after 10
     questions once the estimate didn't change over the last 2 answers (max 12).
     Estimated level = the highest band with ≥ 2 right and ≥ 60% right there.
+    A clear beginner (4 answers at Pre-A1 with at most 1 right) is placed
+    after those 4 questions instead of 10–12.
     Result: every lesson of the bands up to that level opens and the learner
     starts at the next band's first lesson (a total beginner starts at Pre-A1).
   - **Level-unlock test** (later, by tapping a locked lesson of a higher band):

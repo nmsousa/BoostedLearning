@@ -25,8 +25,8 @@ Gate used everywhere: `SettingsService.adminMode()`.
 
   > Level completion rule (shared by Explore, Explore+, the level page and the
   > radial Tree — `tierProgress()` in `maps/tree/tree-modes.ts`): a level is
-  > complete when **Learn** is done and any **5 of the 7 games** (quiz, write,
-  > match, match audio, builder, builder+, mix) are passed, in any order. The
+  > complete when **Learn** is done and any **6 of the 8 games** (quiz, write,
+  > match, match audio, builder, builder+, blanks, mix) are passed, in any order. The
   > games unlock once Learn is done; the rest are optional. Flashcards is an
   > optional review that never counts.
 

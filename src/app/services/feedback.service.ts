@@ -8,9 +8,9 @@
  * GitHub token server-side and opens a GitHub Issue. The app never contains the
  * token — it only knows the public Worker URL.
  *
- * If the Worker URL isn't configured, or the POST fails (offline / server
- * down), we fall back to opening a pre-filled `mailto:` so the report is never
- * silently lost.
+ * Reports are NEVER sent by email. If the POST fails (offline / server down) the
+ * report is saved on the device and sent automatically the next time the app
+ * starts or the phone comes back online, so it is never lost.
  *
  * @module app/services
  */
@@ -57,12 +57,22 @@ export interface Diagnostics {
   colorTheme: string;
 }
 
+/** Where reports wait until they can be sent. */
+const QUEUE_KEY = 'boostionary.feedbackQueue';
+/** Keep the queue small: the oldest reports are dropped past this. */
+const MAX_QUEUED = 20;
+
+/** The body POSTed to the Worker. */
+type FeedbackPayload = FeedbackReport & { kind: 'bug' | 'suggestion'; testerName: string | null; diagnostics: Diagnostics };
+
 @Injectable({ providedIn: 'root' })
 export class FeedbackService {
   private settings = inject(SettingsService);
 
-  /** Fallback email (same address used by the custom-card export). */
-  private readonly FALLBACK_EMAIL = 'wizard.night@gmail.com';
+  constructor() {
+    // Send anything saved while offline, as soon as the phone is back online.
+    if (typeof window !== 'undefined') window.addEventListener('online', () => { void this.flushQueue(); });
+  }
 
   /** Collect device + app diagnostics. Best-effort: never throws. */
   async collectDiagnostics(): Promise<Diagnostics> {
@@ -92,62 +102,71 @@ export class FeedbackService {
   }
 
   /**
-   * Submit a report. Tries the Worker endpoint first; on any failure (or when
-   * no endpoint is configured) falls back to a pre-filled mailto so the report
-   * still reaches the developer. Returns true if the POST succeeded.
+   * Submit a report to the Worker. Returns 'sent' on success. On any failure
+   * (offline, server down, no endpoint) the report is saved locally and
+   * 'queued' is returned: it is retried automatically (see flushQueue). Nothing
+   * is ever emailed.
    */
-  async submit(report: FeedbackReport): Promise<boolean> {
+  async submit(report: FeedbackReport): Promise<'sent' | 'queued'> {
     const diagnostics = await this.collectDiagnostics();
     // Attach the tester's name (set in Settings) so GitHub issues show WHO
     // reported them — the Worker opens issues under one token, so without this
     // every report looks like it came from the repo owner.
     const testerName = this.settings.testerName()?.trim() || null;
-    const payload = { ...report, kind: report.kind ?? 'bug', testerName, diagnostics };
+    const payload: FeedbackPayload = { ...report, kind: report.kind ?? 'bug', testerName, diagnostics };
 
-    const url = environment.feedbackEndpoint?.trim();
-    if (url) {
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        if (res.ok) return true;
-      } catch {
-        // Network/CORS/offline — fall through to the mailto fallback.
-      }
+    if (await this.post(payload)) return 'sent';
+    this.enqueue(payload);
+    return 'queued';
+  }
+
+  /** Try to send every saved report (oldest first); keeps the ones that still fail. */
+  async flushQueue(): Promise<void> {
+    const queue = this.readQueue();
+    if (!queue.length) return;
+    const left: FeedbackPayload[] = [];
+    for (const p of queue) {
+      if (!(await this.post(p))) left.push(p);
     }
-
-    this.openMailtoFallback(report, diagnostics);
-    return false;
+    this.writeQueue(left);
   }
 
-  /** Build a readable plain-text body for both the issue and the mailto. */
-  private composeBody(report: FeedbackReport, d: Diagnostics): string {
-    return [
-      `Word: ${report.word ?? '-'}`,
-      `Expected answer: ${report.correctAnswer ?? '-'}`,
-      `Mode: ${report.modeName ?? '-'}`,
-      `Reasons: ${report.reasons.join('; ') || '-'}`,
-      `Note: ${report.note?.trim() || '-'}`,
-      '',
-      '--- diagnostics ---',
-      `App: ${d.appVersion} (${d.buildDate})`,
-      `Platform: ${d.platform}${d.osVersion ? ' ' + d.osVersion : ''}${d.androidSdk ? ' / SDK ' + d.androidSdk : ''}`,
-      `Device: ${d.manufacturer ?? '-'} ${d.model ?? ''}`.trim(),
-      `WebView: ${d.webViewVersion ?? '-'}`,
-      `Screen: ${d.screen} @${d.dpr}x`,
-      `Languages: learning ${d.learningLanguage}, base ${d.baseLanguage}`,
-      `Theme: ${d.theme} / ${d.colorTheme}`,
-    ].join('\n');
+  /** Number of reports waiting to be sent. */
+  get pending(): number { return this.readQueue().length; }
+
+  private async post(payload: FeedbackPayload): Promise<boolean> {
+    const url = environment.feedbackEndpoint?.trim();
+    if (!url) return false;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return res.ok;
+    } catch {
+      return false; // Network/CORS/offline
+    }
   }
 
-  private openMailtoFallback(report: FeedbackReport, d: Diagnostics): void {
-    const subject = `Boostionary feedback: ${report.word ?? '(no word)'}`;
-    const mailto =
-      `mailto:${this.FALLBACK_EMAIL}` +
-      `?subject=${encodeURIComponent(subject)}` +
-      `&body=${encodeURIComponent(this.composeBody(report, d))}`;
-    window.location.href = mailto;
+  private enqueue(payload: FeedbackPayload): void {
+    this.writeQueue([...this.readQueue(), payload].slice(-MAX_QUEUED));
+  }
+
+  private readQueue(): FeedbackPayload[] {
+    try {
+      const raw = localStorage.getItem(QUEUE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private writeQueue(queue: FeedbackPayload[]): void {
+    try {
+      if (queue.length) localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+      else localStorage.removeItem(QUEUE_KEY);
+    } catch { /* storage full or unavailable: nothing more we can do */ }
   }
 }

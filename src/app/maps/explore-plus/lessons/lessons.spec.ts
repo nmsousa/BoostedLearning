@@ -4,7 +4,8 @@ import {
 } from './lessons';
 import { BANDS } from './lesson-types';
 import {
-  AdaptivePlacement, GLOBAL_MAX, GLOBAL_MIN, courseBands, estimateLevel, levelTestQuestions, levelVerdict, skillBreakdown,
+  AdaptivePlacement, BEGINNER_QUESTIONS, GLOBAL_MAX, GLOBAL_MIN, bandPool, courseBands, estimateLevel, levelTestQuestions,
+  levelVerdict, listeningAllowed, skillBreakdown,
 } from './placement';
 import { GLOBAL_ITEMS, LEVEL_ITEMS } from './placement-bank';
 import { instructionLang, localizePrompt } from './placement-i18n';
@@ -150,11 +151,34 @@ describe('Explore+ placement tests', () => {
   it('starts easy, adapts, and stops after 10–12 questions', () => {
     const t = new AdaptivePlacement();
     expect(t.next()!.band).toBe('pre-a1');
-    for (const knows of [-1, 0, 1, 2, 3, 4]) {
+    for (const knows of [0, 1, 2, 3, 4]) {
       const r = run(knows);
       expect(r.answers.length).toBeGreaterThanOrEqual(GLOBAL_MIN);
       expect(r.answers.length).toBeLessThanOrEqual(GLOBAL_MAX);
       expect(new Set(r.answers.map(a => a.item.id)).size).toBe(r.answers.length);
+    }
+  });
+
+  it('places a clear beginner after a few questions, not 10–12', () => {
+    const r = run(-1); // gets everything wrong
+    expect(r.answers.length).toBe(BEGINNER_QUESTIONS);
+    expect(r.answers.every(a => a.item.band === 'pre-a1')).toBe(true);
+    expect(r.result()).toEqual({ level: -1, start: 0 });
+  });
+
+  it('never asks listening questions below A2', () => {
+    for (const band of ['pre-a1', 'a1'] as const) {
+      expect(listeningAllowed(band)).toBe(false);
+      expect(bandPool(band).some(q => q.skill === 'listening')).toBe(false);
+      expect(levelTestQuestions(band).some(q => q.skill === 'listening')).toBe(false);
+    }
+    for (const band of ['a2', 'b1', 'b2'] as const) {
+      expect(listeningAllowed(band)).toBe(true);
+      expect(levelTestQuestions(band).some(q => q.skill === 'listening')).toBe(true);
+    }
+    for (let i = 0; i < 20; i++) {
+      const t = run(0);
+      expect(t.answers.filter(a => a.item.band === 'pre-a1' || a.item.band === 'a1').some(a => a.item.skill === 'listening')).toBe(false);
     }
   });
 

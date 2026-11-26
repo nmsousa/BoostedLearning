@@ -257,10 +257,10 @@ export class AddWordService {
     await alert.present();
   }
 
-  /** Deliver the report via FeedbackService (Worker → GitHub issue, with a
-   *  mailto fallback) and confirm to the user. */
+  /** Deliver the report via FeedbackService (Worker → GitHub issue). Offline,
+   *  it is saved and sent later — never by email — and the user is told so. */
   private async sendReport(checkedReasons: string[], note: string, opts: ModeMenuOptions, lang: string): Promise<void> {
-    const ok = await this.feedback.submit({
+    const result = await this.feedback.submit({
       reasons: checkedReasons,
       note,
       word: opts.currentWord ?? null,
@@ -268,11 +268,7 @@ export class AddWordService {
       modeName: opts.modeName ?? null,
       learningLanguage: lang,
     });
-    // On a successful POST we confirm; the mailto fallback already opened the
-    // mail client, so no toast is needed there.
-    if (ok) {
-      await this.toast(this.i18n.t('feedback.thanks'));
-    }
+    await this.toast(this.i18n.t(result === 'sent' ? 'feedback.thanks' : 'feedback.queued'));
   }
 
   /**

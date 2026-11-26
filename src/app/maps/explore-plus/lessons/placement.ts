@@ -14,6 +14,10 @@
  *    (or ≥ 90%) is a strong pass, otherwise it's a provisional pass with a
  *    revision tip; below 75% the band stays locked ("not yet").
  *
+ * Listening questions only appear from A2: a total beginner can't be judged on
+ * understanding spoken French at Pre-A1/A1. A learner who fails almost
+ * everything at Pre-A1 is placed there after 4 questions, not 10–12.
+ *
  * Answers are never revealed during or after a test (so a retake isn't a
  * memory game), and each test draws randomly from the band's pool.
  * Results only ever RAISE what is unlocked, never lower it (lesson-engine.ts).
@@ -25,6 +29,11 @@ import type { PlacementItem, PlacementSkill } from './placement-types';
 export const GLOBAL_MIN = 10;
 export const GLOBAL_MAX = 12;
 export const LEVEL_PASS = 0.75;
+/** Listening questions are only used from this band up. */
+export const LISTENING_FROM: LessonBand = 'a2';
+/** At the lowest band: this many answers with at most this many right = a beginner. */
+export const BEGINNER_QUESTIONS = 4;
+export const BEGINNER_MAX_RIGHT = 1;
 export const LEVEL_STRONG = 0.9;
 
 export interface PlacementAnswer { item: PlacementItem; correct: boolean }
@@ -89,6 +98,9 @@ export class AdaptivePlacement {
   get done(): boolean {
     const n = this.answers.length;
     if (n >= GLOBAL_MAX) return true;
+    // Clearly a beginner: failed (almost) everything at the lowest band.
+    const low = this.answers.filter(a => a.item.band === this.bands[0]);
+    if (low.length >= BEGINNER_QUESTIONS && low.filter(a => a.correct).length <= BEGINNER_MAX_RIGHT) return true;
     if (n < GLOBAL_MIN) return false;
     // Enough evidence: the estimate didn't move over the last 2 answers.
     return estimateLevel(this.answers, this.bands) === estimateLevel(this.answers.slice(0, n - 2), this.bands);
@@ -101,9 +113,15 @@ export class AdaptivePlacement {
   }
 }
 
+/** True when listening questions may be asked at this band. */
+export function listeningAllowed(band: LessonBand): boolean {
+  return BANDS.findIndex(b => b.id === band) >= BANDS.findIndex(b => b.id === LISTENING_FROM);
+}
+
 /** Every question of a band (initial-test and level-test items: one pool). */
 export function bandPool(band: LessonBand): PlacementItem[] {
-  return [...GLOBAL_ITEMS.filter(i => i.band === band), ...(LEVEL_ITEMS[band] ?? [])];
+  const all = [...GLOBAL_ITEMS.filter(i => i.band === band), ...(LEVEL_ITEMS[band] ?? [])];
+  return listeningAllowed(band) ? all : all.filter(i => i.skill !== 'listening');
 }
 
 /**

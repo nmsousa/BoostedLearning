@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SettingsService } from './services/settings.service';
 import { AppUpdateService } from './services/app-update.service';
+import { FeedbackService } from './services/feedback.service';
 import { FlashcardService } from './services/flashcard.service';
 import { BackInterceptorService } from './services/back-interceptor.service';
 
@@ -19,6 +20,7 @@ export class AppComponent {
   // theme effect runs, applying the saved light/dark palette immediately.
   private settings = inject(SettingsService);
   private appUpdate = inject(AppUpdateService);
+  private feedback = inject(FeedbackService);
   private flashcards = inject(FlashcardService);
   private backInterceptor = inject(BackInterceptorService);
   private router = inject(Router);

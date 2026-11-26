@@ -10,10 +10,11 @@ import { topicLevelsUpTo, themeLevelOf } from './tree-curriculum';
 const passing = (ids: string[]) => (m: TreeModeDef) => ids.includes(m.id);
 const GAMES = TREE_MODES.filter(isGameMode).map(m => m.id);
 
-describe('level completion rule (Learn + 5 of 7 games)', () => {
-  it('has Learn plus 7 games, 5 of them required', () => {
-    expect(REQUIRED_GAMES).toBe(5);
-    expect(GAME_COUNT).toBe(7);
+describe('level completion rule (Learn + 6 of 8 games)', () => {
+  it('has Learn plus 8 games (Blanks included), 6 of them required', () => {
+    expect(REQUIRED_GAMES).toBe(6);
+    expect(GAME_COUNT).toBe(8);
+    expect(GAMES).toContain('blanks');
     expect(TREE_MODES.filter(m => !isGameMode(m)).map(m => m.id)).toEqual(['learn']);
   });
 
@@ -23,29 +24,29 @@ describe('level completion rule (Learn + 5 of 7 games)', () => {
     expect(p.percent).toBe(0);
   });
 
-  it('is incomplete with Learn + only 4 games', () => {
-    const p = tierProgress(passing(['learn', ...GAMES.slice(0, 4)]));
+  it('is incomplete with Learn + only 5 games', () => {
+    const p = tierProgress(passing(['learn', ...GAMES.slice(0, 5)]));
     expect(p.complete).toBe(false);
-    expect(p.gamesDone).toBe(4);
-    expect(p.percent).toBe(83);   // 5 of 6 steps
+    expect(p.gamesDone).toBe(5);
+    expect(p.percent).toBe(86);   // 6 of 7 steps
   });
 
-  it('is complete with Learn + any 5 games, in any order', () => {
-    // Deliberately NOT the first five, to show the order doesn't matter.
-    const p = tierProgress(passing(['learn', GAMES[6], GAMES[2], GAMES[4], GAMES[0], GAMES[5]]));
+  it('is complete with Learn + any 6 games, in any order', () => {
+    // Deliberately NOT the first six, to show the order doesn't matter.
+    const p = tierProgress(passing(['learn', GAMES[6], GAMES[2], GAMES[4], GAMES[0], GAMES[5], GAMES[7]]));
     expect(p.complete).toBe(true);
     expect(p.percent).toBe(100);
   });
 
-  it('needs Learn: 5 games alone do not complete a level', () => {
-    const p = tierProgress(passing(GAMES.slice(0, 5)));
+  it('needs Learn: 6 games alone do not complete a level', () => {
+    const p = tierProgress(passing(GAMES.slice(0, 6)));
     expect(p.complete).toBe(false);
     expect(p.learnDone).toBe(false);
   });
 
-  it('extra games beyond 5 are optional and never push past 100%', () => {
+  it('extra games beyond 6 are optional and never push past 100%', () => {
     const p = tierProgress(passing(['learn', ...GAMES]));
-    expect(p.gamesDone).toBe(7);
+    expect(p.gamesDone).toBe(8);
     expect(p.complete).toBe(true);
     expect(p.percent).toBe(100);
   });

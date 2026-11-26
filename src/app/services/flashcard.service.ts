@@ -1085,6 +1085,20 @@ export class FlashcardService {
   }
 
   /**
+   * Every card of the real course decks of a language (text + translations),
+   * for dictionary lookups (tap-to-translate). The synthetic Tree / lesson /
+   * practice decks are skipped: they only repeat authored words.
+   */
+  languageCards(languageCode: string): { text: string; translations: string[] }[] {
+    const out: { text: string; translations: string[] }[] = [];
+    for (const deck of this.decksSignal()) {
+      if (deck.languageCode !== languageCode || this.isTreeDeckId(deck.id) || this.isPracticeDeckId(deck.id)) continue;
+      for (const c of deck.cards) out.push({ text: c.text, translations: c.translations });
+    }
+    return out;
+  }
+
+  /**
    * Find a recording for a Tree word: exact match first, then the bare noun
    * after dropping a leading article (le/la/les/un/une/des/l’), so "le café"
    * borrows the clip recorded for "café". Returns undefined when none exists

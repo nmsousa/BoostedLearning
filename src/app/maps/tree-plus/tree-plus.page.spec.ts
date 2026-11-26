@@ -175,16 +175,16 @@ describe('TreePlusPage (vertical Tree)', () => {
     expect(route[0]).toBe('/practice/quiz');
   });
 
-  it('progress follows the rule: Learn + 3 games of 5 = 4 of 6 steps = 67%', async () => {
+  it('progress follows the rule: Learn + 3 games of 6 = 4 of 7 steps = 57%', async () => {
     extraPassed = ['journey-learn-1', 'journey-quiz-1', 'journey-write-1', 'journey-match-1'];
     await component.ngOnInit();
-    expect(component.percentOf(component.core)).toBe(67);
+    expect(component.percentOf(component.core)).toBe(57);
     expect(component.isTierDone(component.core)).toBe(false);
   });
 
-  it('Learn + any 5 games completes the level (even skipping some games)', async () => {
-    // Skips Match + Match Audio; plays quiz, write, builder, builder+, mix.
-    extraPassed = ['journey-learn-1', 'journey-quiz-1', 'journey-write-1', 'journey-builder-1', 'journey-builder-plus-1', 'journey-mix-1'];
+  it('Learn + any 6 games completes the level (even skipping some games)', async () => {
+    // Skips Match + Match Audio; plays quiz, write, builder, builder+, blanks, mix.
+    extraPassed = ['journey-learn-1', 'journey-quiz-1', 'journey-write-1', 'journey-builder-1', 'journey-builder-plus-1', 'journey-blanks-1', 'journey-mix-1'];
     await component.ngOnInit();
     expect(component.percentOf(component.core)).toBe(100);
     expect(component.isTierDone(component.core)).toBe(true);

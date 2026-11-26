@@ -199,6 +199,16 @@ npm test
 Audio for the new sentences isn't generated yet; until it is, the device voice
 reads them.
 
+### Word meanings (tap-to-translate)
+
+Every French word of a sentence can be tapped for its meaning. The meanings
+come from the lesson words, the Core/topic words and
+`src/app/shared/french-glosses.ts` (little words, conjugated verb forms,
+names). When you add lesson sentences, run `npm test`: it lists any word that
+has no meaning yet, and you add it to `french-glosses.ts` as
+`['word', 'meaning / other meaning']` (a hand-written entry always wins over
+the others).
+
 ### Placement and level-unlock tests
 
 The test questions come from `CEFR - Test` (next to this project). To change

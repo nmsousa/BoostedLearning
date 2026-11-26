@@ -119,6 +119,8 @@ $bp-line-gap: 12px;
   height: $bp-line-h; padding: 0 16px; font-size: 1.05rem; font-weight: 700; line-height: 1;
   &.filled { border-radius: 12px; background: var(--ion-color-primary); color: #fff; animation: bp-pop 0.18s ease; }
 }
+// A placed word (tap-to-translate chip) pops in like the old filled slot.
+.answer-chips app-tap-word.chip-pop { animation: bp-pop 0.18s ease; }
 @keyframes bp-pop { from { transform: scale(0.8); opacity: 0.4; } to { transform: scale(1); opacity: 1; } }
 
 .phrase-hint {

@@ -56,11 +56,11 @@
     <ng-container *ngIf="item.kind === 'blank'">
       <p class="mix-hint">{{ 'mode.chooseMissingWord' | translate }}</p>
       <div class="mix-sentence">
-        <span *ngIf="item.before" class="part">{{ item.before }}</span>
+        <app-tap-words *ngIf="item.before" class="part" [text]="item.before"></app-tap-words>
         <span *ngIf="!chosenLabel" class="blank"></span>
         <span *ngIf="chosenLabel" class="blank filled"
           [class.correct]="chosenLabel === item.answer" [class.wrong]="chosenLabel !== item.answer">{{ chosenLabel }}</span>
-        <span *ngIf="item.after" class="part">{{ item.after }}</span>
+        <app-tap-words *ngIf="item.after" class="part" [text]="item.after"></app-tap-words>
       </div>
       <p class="mix-gloss">{{ item.gloss }}</p>
       <div class="mix-options">

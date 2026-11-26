@@ -66,7 +66,7 @@ export interface TreeTier {
   grammar?: string;
   words: CoreWord[];
   done: boolean;
-  /** Learn + games progress under the 5-of-7 rule (percent, counts, complete). */
+  /** Learn + games progress under the 6-of-8 rule (percent, counts, complete). */
   progress: TierProgress;
   /** The activities of this tier (Learn, then the games), with their state. */
   modes: TreeModeView[];
@@ -217,7 +217,7 @@ export class TreeEngine implements LevelEngine {
   }
 
   // ── Completion helpers ───────────────────────────────────────────────────────
-  /** True when a level is complete: Learn done + at least 5 of the 7 games. */
+  /** True when a level is complete: Learn done + at least 5 of the 8 games. */
   tierComplete(level: number | undefined): boolean {
     if (!level) return false;
     return tierProgress(m => this.passedModes.has(`${level}:${m.mode}`)).complete;
@@ -238,7 +238,7 @@ export class TreeEngine implements LevelEngine {
     return done;
   }
 
-  /** 0–100 progress of a node's tier under the 5-of-7 rule (0 if no such tier). */
+  /** 0–100 progress of a node's tier under the 6-of-8 rule (0 if no such tier). */
   tierPercent(nodeId: string, tier: number): number {
     const level = this.levelOf(nodeId, tier);
     return level && this.tierAuthored(nodeId, tier) ? this.tierProgressOf(level).percent : 0;
@@ -327,8 +327,8 @@ export class TreeEngine implements LevelEngine {
     return out;
   }
 
-  /** The activities for a tier. Learn is always playable; the 7 games open once
-   *  Learn is done and can then be played in any order (5 of 7 to complete). */
+  /** The activities for a tier. Learn is always playable; the 8 games open once
+   *  Learn is done and can then be played in any order (6 of 8 to complete). */
   modesFor(level: number, nodeId: string, tier: number): TreeModeView[] {
     const authored = this.tierAuthored(nodeId, tier);
     const states = modeStates(m => this.passedModes.has(`${level}:${m.mode}`), authored);
@@ -348,8 +348,8 @@ export class TreeEngine implements LevelEngine {
     const queryParams: Record<string, string | number> = {
       level, mode: def.mode, from: this.deps.from, ...(this.deps.extraQuery?.() ?? {}),
     };
-    // Builder, Builder+ and Mix (whose recipe includes a builder step) need the pool.
-    if (def.id === 'builder' || def.id === 'builder-plus' || def.id === 'mix') {
+    // Builder, Builder+, Blanks and Mix (whose recipe includes a builder step) need the pool.
+    if (def.id === 'builder' || def.id === 'builder-plus' || def.id === 'blanks' || def.id === 'mix') {
       const pool = this.builderPoolLevels(nodeId, tier);
       if (pool.length) queryParams['pool'] = pool.join(',');
     }

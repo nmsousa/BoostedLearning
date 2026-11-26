@@ -459,3 +459,146 @@ Open questions when picked up: how long/how many stories, how to pick which
 words to build a story around, whether questions are hand-authored per story or
 generated, and where stories sit in the progression (optional vs. a required
 node).
+
+### Conversation Simulator (branching dialogues)
+Status: **not implemented** — idea to evaluate (inspired by a "Conversation
+Simulator" screen in another language app: an NPC avatar speaks a line with a
+speaker button and a translation, the learner's answer appears as a reply
+bubble, then a "Your turn" panel asks for the next reply).
+
+A new exercise that simulates a real-life conversation: ordering food, checking
+into a hotel, asking for directions, buying a ticket ("Hi! Can I help you?" →
+"I want to go to Times Square" → "You can go by bus" → "How much is the bus
+ticket?"). Learned phrases are practised in a flow instead of one by one, which
+trains understanding and production in context. A short, "semi-dynamic"
+conversation, not an open chatbot.
+
+How it should work:
+- An **NPC** (with an avatar) says a line; every line has audio (TTS) and an
+  optional translation, with the slow-replay option like the other modes.
+- The learner **chooses or types** the reply (see "Input" below).
+- The conversation **branches depending on the answer**: each choice leads to a
+  different next line, so the same scene can play out differently. Keep it
+  small (2–3 branches deep) and converge back to a common ending, so each scene
+  stays cheap to author.
+- **Mistakes get a contextual explanation** ("In a café you'd say *je voudrais*,
+  not *je veux*, to be polite"), not just a red cross. A wrong or odd reply can
+  still continue the conversation (like the "no-fail" practice item), with a
+  note.
+- A recap at the end: the full dialogue, what was said well and what to review.
+
+Input (pick one, then add the other later):
+1. **Selecting from options** (simplest, works offline, no mic): 2–4 reply
+   choices per turn, one best answer plus plausible alternatives that are
+   either also fine (different branch) or contextually wrong (with an
+   explanation).
+2. **Typing** the reply, checked against authored accepted answers with the
+   existing typo-tolerant grader (same as Write).
+3. **Voice input**: say the reply out loud, scored with speech recognition. This
+   depends on the "Speech Recognition mode" item above (shared engine,
+   permissions and scoring); do this last.
+
+Authoring (follow the Explore+ rule: authored content, never generated at
+runtime):
+- A scene is a small graph in a content file next to the lessons, e.g.
+  `src/app/maps/explore-plus/dialogues/`: `{ id, title, cefr, npc, nodes: [{ id,
+  npc line (fr/en), replies: [{ fr, en, next, quality, explanation }] }] }`.
+  Typed replies list their accepted answers; reply options list their wrong
+  distractors.
+- The Core v2 package from the other AI already has 20 short dialogues (4 turns
+  each, English drafts, audio ids) in `boostionary-french-core-course-v2.json`;
+  they are linear, so they could seed the first scenes, then be extended with
+  branches.
+- Tie scenes to lessons (e.g. "At the café" lesson → a café scene) and CEFR
+  bands, so a scene only uses words and grammar the learner has met.
+- Audio for every line, bundled like the other clips (`scripts/gen-audio.mjs`
+  would need a `--dialogues` option, like `--placement`). A different voice per
+  character would be nicer than one voice for everyone.
+
+In-app experience (when picked up):
+- Where it lives: a new activity for Explore+ (a lesson's optional extra, or a
+  "Conversations" section), a new route under `src/app/exercises/`, and a
+  progress namespace `dialogue` / `journey-dialogue`. Decide whether it counts
+  towards the 6-of-8 games or stays optional practice.
+- UI: chat bubbles with the NPC avatar and a speaker button, the learner's
+  reply as a right-aligned bubble, and a bottom "Your turn" panel (options, a
+  text field, and later a mic button + the slow-replay snail).
+- Scoring: stars from how many replies were good (best answer = full credit,
+  acceptable-but-different = partial, wrong = a contextual explanation and no
+  credit), following the shared star rules.
+
+Open questions: how many scenes per band to start with, how to write good
+distractors and explanations at scale (review with a native speaker), whether
+replies can be shown in French only or with a translation toggle, and whether
+the NPC avatar is an illustration, an emoji or per-scene artwork.
+
+### On-device answer checking: spellcheck, typo tolerance & embeddings
+Status: **not implemented** — investigation / research item.
+
+Goal: an embedded, lightweight, offline checker that evaluates what the user
+typed (Write, Blanks, Builder, future sentence exercises) beyond exact string
+match — forgiving small typos, flagging real spelling errors, and (for free-form
+sentences) judging whether the meaning is right. Nothing here generates text;
+it is all fast, deterministic math/lookup, no LLM.
+
+Options to evaluate (cheapest/most useful first):
+
+1. **SymSpell — typo tolerance (best fit for Write)**
+   - Pre-computes character edits (insert / delete / swap) from a plain-text
+     frequency dictionary (~1 MB); extremely fast fuzzy lookup.
+   - Lets us tell "almost right" (e.g. "hungri" → warn: "Almost! Watch your
+     spelling") from a genuinely wrong word, instead of a binary pass/fail.
+   - Relates to the existing Write tolerance (accents/punctuation/minor typos);
+     could replace or refine the current edit-distance logic.
+
+2. **Hunspell dictionaries — consistent spellcheck across platforms**
+   - Open-source engine (Chrome, Firefox, LibreOffice, macOS). Bundle a `.dic`
+     (word list) + `.aff` (affix/grammar rules: plurals, verb endings) per
+     language, ~2–5 MB each, via a lightweight JS wrapper.
+   - Pros: identical results on web/iOS/Android; we can add custom vocabulary
+     (slang, names from lessons).
+   - Cons: adds app size per language → pairs with the planned download-on-
+     demand language loading.
+
+3. **Native OS spellcheckers — zero size, per-platform behaviour**
+   - iOS: `UITextChecker` (string + language code like `en_US`, `pt_PT`,
+     `es_ES` → ranges of misspelled words).
+   - Android: `SpellCheckerSession` (Text Services framework) querying the
+     device dictionary.
+   - Pros: no extra bundle size, instant, many languages for free. Cons: needs
+     a Capacitor plugin/bridge, results differ per platform, not available on
+     web, and Android availability depends on the device's installed dictionaries.
+
+4. **Sentence-embedding model — "meaning" similarity (for free-form answers)**
+   - Converts text to a vector; cosine similarity of two sentences measures how
+     close in meaning they are. ~5–20 ms per sentence on a phone CPU, no GPU,
+     runs offline, never hallucinates (outputs numbers only).
+   - Possible use: accept valid paraphrases/synonyms in sentence translation
+     instead of requiring one exact string.
+   - **Known blind spots (important for a language learner):**
+     - Grammar/typos: "I goed to the store" vs "I went to the store" scores very
+       high (~0.92) — it will NOT catch broken grammar or conjugation mistakes.
+     - Negation/opposites: "I like apples" vs "I don't like apples" can still
+       score high (~0.80) unless using an NLI-style model trained for
+       contradictions.
+     - No feedback: yields a score, not a reason — can't explain why a
+       conjugation was wrong.
+   - So embeddings alone are NOT a grammar checker; at best a "same meaning?"
+     signal combined with the spelling tools above.
+
+Suggested investigation plan:
+- Start with **SymSpell** (small, fast, directly improves Write's "almost
+  right" feedback); prototype against a frequency dictionary for en/fr/nl.
+- Compare **Hunspell** vs native spellcheck for cross-platform consistency vs
+  bundle size; decide per-language packaging with the lazy-loading plan.
+- Only then evaluate an **embedding model** (e.g. a small multilingual
+  sentence-transformer, quantized/ONNX or TFLite) for sentence-level meaning
+  checks, and whether an NLI model is needed to handle negation.
+- Measure: bundle size, latency on a low-end phone, language coverage, and false
+  accept/reject rate on real learner answers (including the typo/negation cases
+  above).
+
+Open questions: which exercises get "almost right" feedback vs. strict marking;
+whether a typo counts as correct, as a soft-warn, or as wrong for SRS/progress;
+and how to give the user a *reason* (not just a score) — likely needs rule-based
+checks (conjugation tables, accent rules) on top of these tools.

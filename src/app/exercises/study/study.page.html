@@ -226,10 +226,11 @@
       </ion-button>
     </div>
 
-    <!-- Correct: a persistent green Continue (no auto-advance), so the user
-         moves on at their own pace — same interaction as a miss/typo. -->
+    <!-- Correct: a persistent Continue (no auto-advance), so the user moves on at
+         their own pace. Green for a perfect answer; the same amber as the card
+         when accepted with an accent or typo note. -->
     <ion-button *ngIf="phase === 'feedback' && feedbackResult === 'correct'"
-      expand="block" color="success" (click)="nextCard()" class="submit-button">
+      expand="block" [color]="nearMiss === 'none' ? 'success' : 'warning'" (click)="nextCard()" class="submit-button">
       {{ 'mode.continue' | translate }}
     </ion-button>
 

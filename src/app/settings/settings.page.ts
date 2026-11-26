@@ -65,7 +65,6 @@ export class SettingsPage {
   duomeError = '';
   duomeBusy = false;
 
-  private readonly EXPORT_EMAIL = 'wizard.night@gmail.com';
 
   // App version + build date for the About section (helps with debugging).
   readonly appVersion = BUILD_INFO.version;
@@ -550,55 +549,45 @@ export class SettingsPage {
       return;
     }
 
-    const subject = `BoostedLearning - ${result.count} custom card(s)`;
-    const body = `Here are my custom flashcards to add in a future version:\n\n${result.json}`;
-
-    const alert = await this.alertController.create({
-      header: 'Export Custom Cards',
-      message: `You have ${result.count} custom card(s). Send them by email or copy the data.`,
-      buttons: [
-        { text: 'Cancel', role: 'cancel' },
-        { text: 'Copy', handler: () => { this.copyToClipboard(result.json); } },
-        { text: 'Email', handler: () => { this.openEmail(subject, body); } },
-      ],
-    });
-    await alert.present();
-  }
-
-  private openEmail(subject: string, body: string) {
-    const mailto =
-      `mailto:${this.EXPORT_EMAIL}` +
-      `?subject=${encodeURIComponent(subject)}` +
-      `&body=${encodeURIComponent(body)}`;
-    window.location.href = mailto;
-  }
-
-  private async copyToClipboard(text: string) {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-      }
-      const alert = await this.alertController.create({
-        header: 'Copied',
-        message: `Card data copied. Paste it in an email to ${this.EXPORT_EMAIL}.`,
-        buttons: ['OK'],
+    // A plain .json file the user keeps. (No email: nothing is sent anywhere.)
+    const stamp = new Date().toISOString().slice(0, 10);
+    const fileName = `boostionary-custom-cards-${stamp}.json`;
+    const saved = await this.saveJsonFile(fileName, result.json);
+    if (saved) {
+      const t = await this.toast.create({
+        message: `${fileName} (${result.count} cards)`, duration: 2500, position: 'bottom',
       });
-      await alert.present();
-    } catch {
-      const alert = await this.alertController.create({
-        header: 'Copy Failed',
-        message: 'Could not copy automatically. Please use the Email option.',
-        buttons: ['OK'],
-      });
-      await alert.present();
+      await t.present();
     }
+  }
+
+  /**
+   * Save text as a .json file. In a browser it downloads straight away. In the
+   * Android app (a WebView, which ignores <a download> for generated files) it
+   * opens the system share sheet with the file, so it can be saved to Files /
+   * Drive. Returns false if the user cancelled.
+   */
+  private async saveJsonFile(fileName: string, json: string): Promise<boolean> {
+    const file = new File([json], fileName, { type: 'application/json' });
+    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+    if (Capacitor.isNativePlatform() && nav.canShare?.({ files: [file] })) {
+      try {
+        await nav.share({ files: [file], title: fileName });
+        return true;
+      } catch (e) {
+        if ((e as DOMException)?.name === 'AbortError') return false; // user closed the sheet
+        // Any other failure: fall through to the plain download below.
+      }
+    }
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    return true;
   }
 
   /** Localized display name of the currently selected learning language. */

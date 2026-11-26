@@ -116,6 +116,7 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.audio.stop();
     this.backInterceptor.clear(this.onHardwareBack);
     if (this.tapTimer) { clearTimeout(this.tapTimer); this.tapTimer = null; }
   }
@@ -129,7 +130,10 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
     }
   }
 
-  ionViewWillLeave(): void { this.backInterceptor.clear(this.onHardwareBack); }
+  ionViewWillLeave(): void {
+    this.backInterceptor.clear(this.onHardwareBack);
+    this.audio.stop(); // closing the page must silence a playing question
+  }
 
   private async load(initialScroll: boolean): Promise<void> {
     await this.engine.load();
@@ -289,6 +293,7 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
   }
 
   private loadNext(): void {
+    this.audio.stop(); // the previous question's audio must not carry on
     this.selected = null;
     this.checked = false;
     this.question = this.testKind === 'global'
@@ -301,6 +306,7 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
 
   playQuestion(): void {
     const text = this.question?.audio;
+    this.audio.stop(); // restart cleanly if tapped again
     if (text) void this.audio.playWord(text, undefined, 'fr');
   }
 
@@ -332,6 +338,7 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
   }
 
   private finishTest(): void {
+    this.audio.stop();
     const { strengths, weaknesses } = skillBreakdown(this.answers);
     const correct = this.answers.filter(a => a.correct).length;
     const total = this.answers.length;
@@ -424,6 +431,7 @@ export class ExplorePlusPage implements OnInit, OnDestroy {
 
   // ── Misc ────────────────────────────────────────────────────────────────────
   back(): void {
+    this.audio.stop();
     if (this.view !== 'map') { void this.goToLessons(); return; }
     this.router.navigate(['/home']);
   }

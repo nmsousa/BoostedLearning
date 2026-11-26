@@ -10,6 +10,10 @@
       <ng-container *ngIf="!levelTitle">{{ 'mode.titleBlanks' | translate }}</ng-container>
     </ion-title>
     <ion-buttons slot="end">
+      <!-- ADMIN: how stars are earned here (admin controls are amber + shield). -->
+      <ion-button *ngIf="adminMode && singlePass" class="admin-ctl" (click)="showRules()" [attr.aria-label]="'admin.rulesTitle' | translate">
+        <ion-icon slot="icon-only" name="shield-checkmark-outline"></ion-icon>
+      </ion-button>
       <ion-button (click)="openMenu()" [attr.aria-label]="'practice.menu' | translate">
         <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
       </ion-button>
@@ -31,11 +35,11 @@
          FILLS the blank (coloured by correctness) so they can read the whole
          sentence before the next question. -->
     <div class="blanks-sentence">
-      <span *ngIf="current.before" class="part">{{ current.before }}</span>
+      <app-tap-words *ngIf="current.before" class="part" [text]="current.before"></app-tap-words>
       <span *ngIf="!chosenLabel" class="blank" aria-label="blank"></span>
       <span *ngIf="chosenLabel" class="blank filled"
         [class.correct]="chosenCorrect" [class.wrong]="!chosenCorrect">{{ chosenLabel }}</span>
-      <span *ngIf="current.after" class="part">{{ current.after }}</span>
+      <app-tap-words *ngIf="current.after" class="part" [text]="current.after"></app-tap-words>
     </div>
     <p class="blanks-gloss">{{ current.gloss }}</p>
 

@@ -24,8 +24,11 @@ import { I18nAngularService } from '../../services/i18n.service';
 import { AddWordService } from '../../services/add-word.service';
 import { BackInterceptorService } from '../../services/back-interceptor.service';
 import { journeyBackUrl } from '../../maps/journey/journey-back';
+import { GameRulesService } from '../../services/game-rules.service';
+import { accuracyRulesText, tooManyMistakes } from '../../shared/star-rules';
+import { lessonPhrases } from '../../maps/explore-plus/lessons/lessons';
 import {
-  buildTokens, generatePhrases, type BuilderToken, type BuilderLang,
+  buildTokens, buildTreeTokens, generatePhrases, type BuilderToken, type BuilderLang,
   type GeneratedPhrase, type WordCategory,
 } from '../../../core/phrase-builder/phrase-builder';
 
@@ -71,6 +74,12 @@ export class BlanksPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLea
   private i18n = inject(I18nAngularService);
   private addWordService = inject(AddWordService);
   private backInterceptor = inject(BackInterceptorService);
+  private rules = inject(GameRulesService);
+
+  /** Admin mode: shows the star-rules button. */
+  get adminMode(): boolean { return this.settings.adminMode(); }
+  /** ADMIN: how stars are earned in this round. */
+  showRules(): void { void this.rules.showRules(accuracyRulesText('Blanks', this.questions.length)); }
 
   /** Hardware/gesture back → same as the header X: return to the level list /
    *  Journey map. Registered on enter, cleared on leave. Stable ref.
@@ -261,9 +270,27 @@ export class BlanksPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLea
     }
 
     const lang = this.builderLang();
-    const tokens = buildTokens(current, earlier, lang);
-    const phrases = generatePhrases(tokens, this.MAX_QUESTIONS * 2, lang)
-      .filter(p => p.blankIndex !== undefined);
+    let tokens: BuilderToken[];
+    let phrases: GeneratedPhrase[];
+    if (this.flashcardService.isLessonDeckId(deckId)) {
+      // Explore+ lessons: the lesson's AUTHORED sentences (nothing generated).
+      tokens = [];
+      phrases = lessonPhrases(level, this.MAX_QUESTIONS * 2);
+    } else if (this.flashcardService.isTreeDeckId(deckId)) {
+      // Explore: the v2 generator over this level + the levels in ?pool=.
+      const poolParam = this.route.snapshot.queryParamMap.get('pool');
+      const earlierLevels = poolParam
+        ? [...new Set(poolParam.split(',').map(x => Number(x.trim())))].filter(n => Number.isInteger(n) && n > 0 && n !== level)
+        : [];
+      const pooled: { text: string; translations: string[] }[] = [];
+      for (const n of earlierLevels) for (const c of this.flashcardService.getLevelCards(deckId, n)) pooled.push(toSrc(c));
+      tokens = buildTreeTokens(current, pooled);
+      phrases = generatePhrases(tokens, this.MAX_QUESTIONS * 2, 'fr', { engine: 'v2', seed: 1 + Math.floor(Math.random() * 1e6) });
+    } else {
+      tokens = buildTokens(current, earlier, lang);
+      phrases = generatePhrases(tokens, this.MAX_QUESTIONS * 2, lang);
+    }
+    phrases = phrases.filter(p => p.blankIndex !== undefined);
 
     const questions: BlankQuestion[] = [];
     const usedAnswers = new Set<string>();
@@ -287,7 +314,12 @@ export class BlanksPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLea
     const before = p.tokens.slice(0, idx).join(' ');
     const after = p.tokens.slice(idx + 1).join(' ');
 
-    const distractors = this.pickDistractors(tokens, answer, p.blankCategory, this.OPTION_COUNT - 1);
+    // Authored (Explore+) and v2 phrases carry wrong options that can never form
+    // another correct sentence; otherwise fall back to same-category words.
+    const own = (p.distractors ?? []).filter(d => d.toLowerCase() !== answer.toLowerCase());
+    const distractors = own.length >= this.OPTION_COUNT - 1
+      ? this.shuffle([...new Set(own)]).slice(0, this.OPTION_COUNT - 1)
+      : this.pickDistractors(tokens, answer, p.blankCategory, this.OPTION_COUNT - 1);
     if (distractors.length < this.OPTION_COUNT - 1) return null; // not enough plausible options
 
     const labels = this.shuffle([answer, ...distractors]);
@@ -366,6 +398,12 @@ export class BlanksPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLea
     else this.mistakes++;
 
     this.cdr.detectChanges();
+
+    // Explore / Explore+: more than half wrong stops with an encouraging message.
+    if (!option.correct && this.singlePass && tooManyMistakes(this.mistakes, this.questions.length)) {
+      setTimeout(() => void this.rules.stopEarly(() => { void this.finish(); }), 1500);
+      return;
+    }
     // Hold a touch longer so the user can read the completed sentence (longer
     // still on a wrong pick, where the correct option is also highlighted).
     setTimeout(() => {

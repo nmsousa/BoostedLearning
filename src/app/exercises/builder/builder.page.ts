@@ -33,6 +33,7 @@ import {
   buildTokens, buildTreeTokens, generatePhrases, type GeneratedPhrase,
 } from '../../../core/phrase-builder/phrase-builder';
 import { lessonPhrases } from '../../maps/explore-plus/lessons/lessons';
+import { GlossaryService } from '../../shared/glossary.service';
 
 interface BuilderWord { text: string; translations: string[]; article?: string; lemma?: string; }
 interface BuilderGroup { id: string; category: string; name: string; order: number; words: BuilderWord[]; }
@@ -71,6 +72,27 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
   get adminMode(): boolean { return this.settings.adminMode(); }
   /** ADMIN: how this activity is completed. */
   showRules(): void { void this.rules.showRules(builderRulesText('Builder', this.journeyPhrases.length)); }
+  private glossary = inject(GlossaryService);
+
+  // ── Tap-to-translate ("Word meanings" toggle) ───────────────────────────────
+  /** While on, tapping a word shows its meaning instead of placing it. */
+  translateMode = false;
+  private glossCache = new Map<string, string[]>();
+  get canTranslate(): boolean { return this.glossary.supports(this.settings.learningLanguage()); }
+  /** The words in the chosen row are tappable once the phrase is built or in translate mode. */
+  get showGloss(): boolean { return this.translateMode || (this.stage.kind === 'phrase' && this.stage.done); }
+  toggleTranslate(): void { this.translateMode = !this.translateMode; this.cdr.detectChanges(); }
+  /** The meaning of a word (cached per phrase; only singles, so the order isn't hinted). */
+  glossLines(word: string): string[] {
+    let lines = this.glossCache.get(word);
+    if (!lines) {
+      const context = this.stage.kind === 'phrase' ? this.stage.phrase.tokens : undefined;
+      lines = this.glossary.wordLines(this.settings.learningLanguage(), word, context);
+      this.glossCache.set(word, lines);
+    }
+    return lines;
+  }
+
   private addWordService = inject(AddWordService);
   private flashcards = inject(FlashcardService);
   private actionSheet = inject(ActionSheetController);
@@ -343,6 +365,7 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
     // v2 phrases bring their own distractors (chosen so they never form a
     // second correct answer); legacy phrases draw from the chapter's words.
     this.bank = this.buildBank(phrase.tokens, p.distractors ?? this.journeyWordPool);
+    this.glossCache.clear();
     this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
     this.cdr.detectChanges();
   }
@@ -455,6 +478,7 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
       .flatMap(g => g.words.map(w => w.text))
       .filter(w => w && !/\s/.test(w));
     this.bank = this.buildBank(phrase.tokens, pool);
+    this.glossCache.clear();
     this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
     this.cdr.detectChanges();
   }
@@ -663,9 +687,11 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
     void this.exitConfirm.request(this.hasProgress, () => this.leave());
   }
 
-  /** "n / total" progress label for the Journey Builder node. */
-  get journeyPosition(): string {
-    return `${this.journeyIndex + 1} / ${this.journeyPhrases.length}`;
+  /** 0–1 progress bar for the Journey Builder node (the phrase being shown counts once built). */
+  get journeyProgress(): number {
+    const total = this.journeyPhrases.length || 1;
+    const built = this.stage.kind === 'phrase' && this.stage.done ? 1 : 0;
+    return Math.min(1, (this.journeyIndex + built) / total);
   }
 
   private shuffle<T>(a: T[]): T[] {

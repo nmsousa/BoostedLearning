@@ -9,7 +9,7 @@
  *   - a pinned Continue button that plays the next activity of the NEXT item
  *     (the Core, or a topic once the Core's level is done);
  *   - tapping a card opens the level page shared with Explore+ (TierDetailPage),
- *     where the activities are played (Learn, then any 5 of 7 games).
+ *     where the activities are played (Learn, then any 6 of 8 games).
  *
  * All logic lives in TreeEngine so this view and the star view never drift.
  *
@@ -310,7 +310,7 @@ export class TreePlusPage implements OnInit, OnDestroy {
     return avail;   // all available tiers complete → the highest one (100%)
   }
 
-  /** "% done" of the current tier under the Learn + 5-of-7-games rule. */
+  /** "% done" of the current tier under the Learn + 6-of-8-games rule. */
   percentOf(node: TreeNode): number {
     if (node.availTier <= 0) return 0;
     return this.engine.tierPercent(node.id, this.currentTier(node));

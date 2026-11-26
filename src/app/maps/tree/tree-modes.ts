@@ -1,8 +1,8 @@
 /**
  * Tree lesson modes — the activities a Core/theme LEVEL contains: a Learn step,
- * then 7 games (quiz, write, match, match-audio, builder, builder+, mix). A level
- * is complete when Learn is done and any 5 of the 7 games are passed, in any
- * order (see tierProgress below) — the other 2 are optional.
+ * then 8 games (quiz, write, match, match-audio, builder, builder+, blanks, mix).
+ * A level is complete when Learn is done and any 6 of the 8 games are passed, in
+ * any order (see tierProgress below) — the other 2 are optional.
  *
  * Flashcards (flip) is not one of them: it's offered as OPTIONAL review (see
  * FLASHCARDS_REVIEW_MODE) and never gates level completion.
@@ -17,7 +17,7 @@ import type { PracticeMode } from '../../services/flashcard.service';
 
 export interface TreeModeDef {
   /** Stable id / order key. */
-  id: 'learn' | 'flip' | 'quiz' | 'write' | 'match' | 'match-audio' | 'builder' | 'builder-plus' | 'mix';
+  id: 'learn' | 'flip' | 'quiz' | 'write' | 'match' | 'match-audio' | 'builder' | 'builder-plus' | 'blanks' | 'mix';
   /** Progress namespace (independent per mode). */
   mode: PracticeMode;
   /** Exercise route the node launches. */
@@ -31,7 +31,7 @@ export interface TreeModeDef {
    *  as the home card, so a mode reads the same everywhere. */
   homeKey: string;
   /** Home-card accent for the icon colour ('' = the default text colour). */
-  accent: '' | 'write' | 'match' | 'match-audio' | 'quiz' | 'builder' | 'builder-plus';
+  accent: '' | 'write' | 'match' | 'match-audio' | 'quiz' | 'builder' | 'builder-plus' | 'blanks';
 }
 
 /** The modes of a level, in display order (Learn first, then the games). */
@@ -43,6 +43,8 @@ export const TREE_MODES: readonly TreeModeDef[] = [
   { id: 'match-audio', mode: 'journey-match-audio', route: '/practice/match',    icon: 'volume-high-outline', labelKey: 'journey.node.matchAudio', homeKey: 'home.mode.matchAudio', accent: 'match-audio' },
   { id: 'builder', mode: 'journey-builder', route: '/practice/journey-builder', icon: 'construct-outline',   labelKey: 'journey.node.builder', homeKey: 'home.mode.builder', accent: 'builder' },
   { id: 'builder-plus', mode: 'journey-builder-plus', route: '/practice/journey-builder-plus', icon: 'construct', labelKey: 'journey.node.builderPlus', homeKey: 'home.mode.builderPlus', accent: 'builder-plus' },
+  // Blanks: pick the missing word in a sentence (authored sentences in Explore+).
+  { id: 'blanks',  mode: 'journey-blanks',  route: '/practice/blanks',          icon: 'reorder-four-outline', labelKey: 'home.mode.blanks', homeKey: 'home.mode.blanks', accent: 'blanks' },
   // Mix is the LAST node: a mixed session of the level's activities. It counts
   // toward tier completion like the others and is double-tap-completable (admin).
   { id: 'mix',     mode: 'journey-mix',     route: '/practice/mix',             icon: 'shuffle-outline',     labelKey: 'home.mode.mix', homeKey: 'home.mode.mix', accent: '' },
@@ -55,12 +57,12 @@ export const TREE_MODES: readonly TreeModeDef[] = [
 // radial Tree can never disagree.
 
 /** How many of the games must be passed to complete a level. */
-export const REQUIRED_GAMES = 5;
+export const REQUIRED_GAMES = 6;
 
 /** Learn is the teaching intro; every other mode is a "game". */
 export function isGameMode(m: { id: string }): boolean { return m.id !== 'learn'; }
 
-/** Number of game modes available per level (7 today). */
+/** Number of game modes available per level (8 today). */
 export const GAME_COUNT = TREE_MODES.filter(isGameMode).length;
 
 export type ModeState = 'done' | 'active' | 'locked';

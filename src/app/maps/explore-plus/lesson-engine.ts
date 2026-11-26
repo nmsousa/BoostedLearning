@@ -2,7 +2,7 @@
  * Lesson engine — the brain behind Explore+ (lessons grouped by CEFR band).
  *
  *  - registers the "lesson-<lang>" deck: lesson N = deck level N (its words);
- *  - reads per-mode pass state; a lesson is complete with Learn + 5 of the 7
+ *  - reads per-mode pass state; a lesson is complete with Learn + 6 of the 8
  *    games (the same rule as Explore, tree-modes.ts);
  *  - unlocking is linear: lesson N opens when lesson N-1 is complete. Tests
  *    open more: every lesson up to the start lesson, and EVERY lesson of each

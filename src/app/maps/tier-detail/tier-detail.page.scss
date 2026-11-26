@@ -121,6 +121,7 @@
     &.accent-quiz          { color: var(--ion-color-success); }
     &.accent-builder       { color: var(--mode-builder); }
     &.accent-builder-plus  { color: var(--mode-builder-plus); }
+    &.accent-blanks        { color: var(--ion-color-danger); }
   }
   &.state-done { border-color: rgba(45, 211, 111, 0.4); .td-mode-ic { color: var(--td-green); } }
   // Every unlocked, not-yet-passed activity is playable; only the NEXT one

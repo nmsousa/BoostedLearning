@@ -251,6 +251,15 @@ export class AudioService {
     return this.tts.hasVoiceFor(lang);
   }
 
+  /** Stop whatever is playing (recorded clip or device voice). Safe to call any time. */
+  stop(): void {
+    try { this.tts.stop(); } catch { /* no voice active */ }
+    if (this.audioEl) {
+      try { this.audioEl.pause(); } catch { /* ignore */ }
+    }
+    this.playing.set(false);
+  }
+
   /**
    * Play a word's audio with the preferred source: the recorded clip when
    * available, falling back to device TTS when there's no recording or the

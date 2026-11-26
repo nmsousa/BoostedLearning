@@ -210,6 +210,10 @@
   80% { transform: translateX(4px); }
 }
 
+.phrase-result .phrase-correct {
+  font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--ion-color-success);
+}
 .phrase-result {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   ion-icon { font-size: 44px; }

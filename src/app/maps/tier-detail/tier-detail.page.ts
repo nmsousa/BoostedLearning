@@ -2,8 +2,8 @@
  * Tier Detail Page — the ONE level page shared by Explore and Explore+.
  *
  * Tapping a Core/topic card in either list opens this page for that node's
- * level (tier): its words (hidden behind a toggle), the Learn step, and the 7
- * games. A level is complete when Learn is done and ANY 5 of the 7 games are
+ * level (tier): its words (hidden behind a toggle), the Learn step, and the 8
+ * games. A level is complete when Learn is done and ANY 6 of the 8 games are
  * passed (in any order) — the other two are optional. A pinned Continue plays
  * the next activity; an optional Flashcards review sits underneath.
  *
