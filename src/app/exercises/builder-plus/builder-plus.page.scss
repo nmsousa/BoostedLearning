@@ -112,15 +112,13 @@ $bp-line-gap: 12px;
 // The placed chips, laid over the lines.
 .answer-chips {
   position: relative; display: flex; flex-wrap: wrap; gap: 10px;
-  align-content: flex-start; row-gap: $bp-line-gap; min-height: $bp-line-h;
+  align-content: flex-start; row-gap: $bp-line-gap + 4px; min-height: $bp-line-h;
 }
 .answer-chips .slot {
   display: inline-flex; align-items: center; justify-content: center;
-  height: $bp-line-h; padding: 0 16px; font-size: 1.05rem; font-weight: 700; line-height: 1;
+  height: $bp-line-h - 4px; padding: 0 16px; font-size: 1.05rem; font-weight: 700; line-height: 1;
   &.filled { border-radius: 12px; background: var(--ion-color-primary); color: #fff; animation: bp-pop 0.18s ease; }
 }
-// A placed word (tap-to-translate chip) pops in like the old filled slot.
-.answer-chips app-tap-word.chip-pop { animation: bp-pop 0.18s ease; }
 @keyframes bp-pop { from { transform: scale(0.8); opacity: 0.4; } to { transform: scale(1); opacity: 1; } }
 
 .phrase-hint {

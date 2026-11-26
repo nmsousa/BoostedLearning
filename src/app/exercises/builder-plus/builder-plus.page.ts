@@ -42,7 +42,6 @@ import {
   buildTokens, buildTreeTokens, generatePhrases, type GeneratedPhrase,
 } from '../../../core/phrase-builder/phrase-builder';
 import { lessonPhrases } from '../../maps/explore-plus/lessons/lessons';
-import { GlossaryService } from '../../shared/glossary.service';
 
 interface BuilderWord { text: string; translations: string[]; article?: string; lemma?: string; }
 interface BuilderGroup { id: string; category: string; name: string; order: number; words: BuilderWord[]; }
@@ -85,25 +84,6 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
   get adminMode(): boolean { return this.settings.adminMode(); }
   /** ADMIN: how this activity is completed. */
   showRules(): void { void this.rules.showRules(builderRulesText('Builder+', this.journeyPhrases.length)); }
-  private glossary = inject(GlossaryService);
-
-  // ── Tap-to-translate ────────────────────────────────────────────────────────
-  /** While on, tapping a bank word shows its meaning instead of placing it. (Placed words are always tappable.) */
-  translateMode = false;
-  private glossCache = new Map<string, string[]>();
-  get canTranslate(): boolean { return this.glossary.supports(this.settings.learningLanguage()); }
-  toggleTranslate(): void { this.translateMode = !this.translateMode; this.cdr.detectChanges(); }
-  /** The meaning of a word (cached per phrase; only singles, so the order isn't hinted). */
-  glossLines(word: string): string[] {
-    let lines = this.glossCache.get(word);
-    if (!lines) {
-      const context = this.stage.kind === 'phrase' ? this.stage.phrase.tokens : undefined;
-      lines = this.glossary.wordLines(this.settings.learningLanguage(), word, context);
-      this.glossCache.set(word, lines);
-    }
-    return lines;
-  }
-
   private addWordService = inject(AddWordService);
   private flashcards = inject(FlashcardService);
   private actionSheet = inject(ActionSheetController);
@@ -330,7 +310,6 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
   private showPhrase(phrase: BuilderPhrase, words: string[]): void {
     this.clearReject();
     this.bank = words.map((word, id) => ({ id, word, used: false }));
-    this.glossCache.clear();
     this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
     this.lineRows = 1;
     this.cdr.detectChanges();
@@ -346,7 +325,6 @@ export class BuilderPlusPage implements OnInit, OnDestroy, ViewWillEnter, ViewWi
     if (!el) return;
     const tops = new Set<number>();
     el.querySelectorAll<HTMLElement>('.bank-word').forEach(b => tops.add(b.offsetTop));
-    if (tops.size === 0) return; // translate mode swaps the tiles: keep the current lines
     const rows = Math.max(1, tops.size);
     if (rows !== this.lineRows) { this.lineRows = rows; this.cdr.detectChanges(); }
   }

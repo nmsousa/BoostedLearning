@@ -100,11 +100,7 @@
 
   <!-- PHRASE: self-checking — tap/drag words in the CORRECT ORDER only -->
   <div *ngIf="stage.kind === 'phrase'" class="builder-phrase">
-    <span class="phrase-target">{{ stage.phrase.en }}</span>
-    <!-- One toggle (not an icon on every word): while on, tapping a bank word shows its meaning. -->
-    <button *ngIf="canTranslate" type="button" class="tw-toggle" [class.on]="translateMode" [attr.aria-pressed]="translateMode" (click)="toggleTranslate()">
-      <ion-icon name="language-outline" aria-hidden="true"></ion-icon><span>{{ 'tw.translate' | translate }}</span>
-    </button>
+    <span class="phrase-target"><app-tap-text [text]="stage.phrase.en" dir="native" [context]="stage.phrase.tokens"></app-tap-text></span>
 
     <!-- Answer area: as many dashed lines as the word bank below has rows (so
          it's always tall enough and nothing shifts while you build). Placed
@@ -114,30 +110,24 @@
         <span class="answer-line" *ngFor="let l of lineIndexes"></span>
       </div>
       <div class="answer-chips">
-        <!-- Placed words never move, so they are always tappable for their meaning. -->
-        <app-tap-word *ngFor="let w of stage.chosen" class="chip-pop" [word]="w" variant="chip" [lines]="glossLines(w)"></app-tap-word>
+        <span class="slot filled" *ngFor="let w of stage.chosen">{{ w }}</span>
       </div>
     </div>
 
     <!-- Hint: only while the phrase isn't finished. -->
     <span class="phrase-hint" [class.is-hidden]="stage.done">
-      {{ (translateMode ? 'tw.hint' : 'builderPlus.tapInOrder') | translate }}
+      {{ 'builderPlus.tapInOrder' | translate }}
     </span>
 
     <!-- Word bank. Tap the next correct word to place it; a wrong tap blinks
          ONLY that tile red and is refused. A placed word stays where it was,
          greyed out, so the bank never resizes or moves. -->
     <div class="phrase-bank" #bankEl *ngIf="!stage.done">
-      <ng-container *ngIf="!translateMode; else glossBank">
-        <button type="button" class="bank-word"
-          *ngFor="let b of bank; trackBy: trackBank"
-          [class.rejected]="rejectedId === b.id"
-          [class.used]="b.used" [disabled]="b.used"
-          (click)="pick(b)">{{ b.word }}</button>
-      </ng-container>
-      <ng-template #glossBank>
-        <app-tap-word *ngFor="let b of bank; trackBy: trackBank" [word]="b.word" variant="tile" [used]="b.used" [lines]="glossLines(b.word)"></app-tap-word>
-      </ng-template>
+      <button type="button" class="bank-word"
+        *ngFor="let b of bank; trackBy: trackBank"
+        [class.rejected]="rejectedId === b.id"
+        [class.used]="b.used" [disabled]="b.used"
+        (click)="pick(b)">{{ b.word }}</button>
     </div>
 
     <!-- Success: check + the word "Correct" (like Write mode); the built
@@ -158,7 +148,7 @@
     <div class="recap-list">
       <div class="recap-row" *ngFor="let r of recapPhrases">
         <div class="recap-text">
-          <app-tap-words class="recap-fr" [text]="r.target"></app-tap-words>
+          <app-tap-text class="recap-fr" [text]="r.target"></app-tap-text>
           <span class="recap-en">{{ r.en }}</span>
         </div>
       </div>

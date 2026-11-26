@@ -493,32 +493,30 @@ Explore+ has its own curriculum, separate from Explore:
   listed alternatives (e.g. the feminine form), ignoring punctuation and case.
 - **Builder and Builder+** show a progress bar at the top (no "1 / 5"
   counter) and a "Correct" label after each built phrase.
-- **Tap-to-translate** (French): in Blanks (the sentence around the gap), the
-  Mix blank, the built phrase and the Builder+ recap, every word can be tapped
-  to see its meaning(s):
-  - normal word = text with a subtle dotted underline (no icon per word); the
-    whole word area is the tap target; pressed = a slight highlight;
-  - revealed = the meaning slides in UNDERNEATH (150 ms fade/expand) on a small
-    muted-green background, with no modal or sheet; it hangs under the word
-    without moving the neighbouring words and is kept inside the screen;
-  - several words can be open at once; tap the word again, tap anywhere that is
-    not a word, or press Esc to hide; punctuation stays attached to its word;
-  - multi-word phrases ("je voudrais" = I would like) are shown on each of their
-    words, since a word alone ("voudrais") may mean little; elisions ("j’" = I)
-    and plural / feminine forms ("petites" → small (plural)) are understood;
-  - **Builder and Builder+** tiles are tap-to-place, so they get ONE "Word
-    meanings" toggle under the prompt: while it is on, tapping a bank word shows
-    its meaning instead of placing it (it does not hint the word order). Placed
-    words are always tappable in Builder+, and in Builder once the phrase is built;
-  - **Blanks never leaks the answer**: only the visible parts of the sentence
-    are glossed, so a phrase covering the blanked word cannot match.
-  - Where the meanings come from (`shared/glossary.service.ts`), best first:
-    hand-written words (`shared/french-glosses.ts`, final), then the Explore+
-    lesson words and the Explore Core + topic words (these add to each other:
-    one word can have several meanings), then the course deck (7,000+ cards) as
-    a last fallback for words nobody else knows. A test fails if any word of an
-    authored lesson sentence has no meaning, so new sentences must come with
-    their words in `french-glosses.ts`.
+- **Tap-to-translate** (French): meanings live on the SENTENCE, never on the
+  tiles or chips. Words of a sentence have a dotted underline; tap (or click)
+  one to see its meaning in ONE small popup with an arrow pointing at the middle
+  of the word.
+  - A multi-word expression with one meaning ("s'il vous pla�t", "salle de
+    bain") is one block with one underline. "article + noun" ("un caf�") stays
+    two words. Course-deck fallback phrases never form blocks.
+  - Works in both directions: the French sentence shows the English meaning(s);
+    an English sentence shows the aligned French word/block (+ up to 2
+    alternatives). English alignment is heuristic (about 2% of words show
+    nothing).
+  - Only one popup at a time. It closes at once on a tap/click anywhere else,
+    tapping the same word again, Esc, scroll/resize, or (mouse) leaving the word.
+    The popup does not move the layout; it goes below the word in the top half
+    of the screen, above otherwise, and stays inside the screen.
+  - Where: Builder and Builder+ prompt, Mix builder prompt, Blanks and Mix-blank
+    visible French parts, Builder+ recap. Not on the Blanks English gloss, Write
+    or Quiz prompts (they would leak the answer). Bank tiles and placed chips are
+    plain.
+  - Meanings come from (`shared/glossary.service.ts`), best first: hand-written
+    words (`shared/french-glosses.ts`), Explore+ lesson words and Explore
+    Core + topic words, then the course deck as a fallback. A test fails if any
+    word of an authored lesson sentence has no meaning: add it to
+    `french-glosses.ts`.
 - **Same activities and rules as Explore**: Learn + any 6 of the 8 games
   complete a lesson (§11.3), with the same stars and stop-early rules (§11.1–2).
   Quiz options come from the lesson's own words.

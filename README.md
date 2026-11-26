@@ -201,7 +201,9 @@ reads them.
 
 ### Word meanings (tap-to-translate)
 
-Every French word of a sentence can be tapped for its meaning. The meanings
+Words of a sentence (French, or the English prompt) are underlined; tapping one
+shows its meaning in a single popup with an arrow. Expressions like "s'il vous
+pla�t" are one block. The meanings
 come from the lesson words, the Core/topic words and
 `src/app/shared/french-glosses.ts` (little words, conjugated verb forms,
 names). When you add lesson sentences, run `npm test`: it lists any word that

@@ -114,17 +114,12 @@
 
   <!-- PHRASE: tap words in the right order -->
   <div *ngIf="stage.kind === 'phrase'" class="builder-phrase">
-    <span class="phrase-target">{{ stage.phrase.en }}</span>
-    <!-- One toggle (not an icon on every word): while on, tapping a word shows its meaning. -->
-    <button *ngIf="canTranslate" type="button" class="tw-toggle" [class.on]="translateMode" [attr.aria-pressed]="translateMode" (click)="toggleTranslate()">
-      <ion-icon name="language-outline" aria-hidden="true"></ion-icon><span>{{ 'tw.translate' | translate }}</span>
-    </button>
+    <span class="phrase-target"><app-tap-text [text]="stage.phrase.en" dir="native" [context]="stage.phrase.tokens"></app-tap-text></span>
 
     <!-- Chosen words. Tap one to remove it (back to the bank), or DRAG one onto
          another to reorder. When the phrase is full but out of order the slots
          stay red (with the hint) until you edit; `shaking` replays the shake. -->
     <div class="phrase-slots" [class.wrong]="wrongOrder" [class.shaking]="shaking" #slotsRow>
-      <ng-container *ngIf="!showGloss; else glossSlots">
       <button type="button" class="slot" *ngFor="let w of stage.chosen; let i = index"
         [disabled]="stage.done"
         [class.dragging]="dragIndex === i"
@@ -137,25 +132,16 @@
            so it never looks like "one more word is still required" (which was
            confusing even right after placing the last word). -->
       <span class="slot empty" *ngIf="!stage.done && stage.chosen.length === 0"></span>
-      </ng-container>
-      <!-- Built phrase / translate mode: each word reveals its meaning. -->
-      <ng-template #glossSlots>
-        <app-tap-word *ngFor="let w of stage.chosen" [word]="w" variant="chip" [lines]="glossLines(w)"></app-tap-word>
-      </ng-template>
     </div>
     <!-- Always in the layout (just invisible when empty) so showing/hiding the
          hint doesn't change the block height and shift the dashed line. -->
-    <span class="phrase-hint" [class.is-hidden]="stage.done || (!stage.chosen.length && !translateMode)">
-      {{ translateMode ? ('tw.hint' | translate) : ((wrongOrder ? 'builder.wrongOrder' : 'builder.tapToRemove') | translate) }}
+    <span class="phrase-hint" [class.is-hidden]="stage.done || !stage.chosen.length">
+      {{ (wrongOrder ? 'builder.wrongOrder' : 'builder.tapToRemove') | translate }}
     </span>
 
     <div class="phrase-bank" *ngIf="!stage.done">
-      <ng-container *ngIf="!translateMode; else glossBank">
-        <button type="button" class="bank-word" *ngFor="let w of bank" (click)="pick(w)">{{ w }}</button>
-      </ng-container>
-      <ng-template #glossBank>
-        <app-tap-word *ngFor="let w of bank" [word]="w" variant="tile" [lines]="glossLines(w)"></app-tap-word>
-      </ng-template>
+      <button type="button" class="bank-word" *ngFor="let w of bank; let i = index"
+        [class.used]="isUsed(i)" [disabled]="isUsed(i)" (click)="pick(w)">{{ w }}</button>
     </div>
 
     <div class="phrase-result" *ngIf="stage.done">

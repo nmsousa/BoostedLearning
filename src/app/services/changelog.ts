@@ -27,6 +27,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.67',
+    date: '2026-11-26T10:24:00Z',
+    notes: [
+      'Word meanings now live on the sentence: tap an underlined word (or a group like "s\'il vous plaît") to see its meaning in one small popup with an arrow. It closes when you tap elsewhere or move the mouse away.',
+      'Write mode prompts have the same tappable words.',
+      'Builder: a word you place stays in the bank, greyed out, so the other words never move.',
+      'Builder: fixed dragging a placed word to the right.',
+      'Builder+: a small gap between placed words and the dashed lines.',
+    ],
+  },
+  {
     version: '1.3.66',
     date: '2026-11-26T01:11:00Z',
     notes: [

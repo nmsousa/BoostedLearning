@@ -33,7 +33,6 @@ import {
   buildTokens, buildTreeTokens, generatePhrases, type GeneratedPhrase,
 } from '../../../core/phrase-builder/phrase-builder';
 import { lessonPhrases } from '../../maps/explore-plus/lessons/lessons';
-import { GlossaryService } from '../../shared/glossary.service';
 
 interface BuilderWord { text: string; translations: string[]; article?: string; lemma?: string; }
 interface BuilderGroup { id: string; category: string; name: string; order: number; words: BuilderWord[]; }
@@ -72,27 +71,6 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
   get adminMode(): boolean { return this.settings.adminMode(); }
   /** ADMIN: how this activity is completed. */
   showRules(): void { void this.rules.showRules(builderRulesText('Builder', this.journeyPhrases.length)); }
-  private glossary = inject(GlossaryService);
-
-  // ── Tap-to-translate ("Word meanings" toggle) ───────────────────────────────
-  /** While on, tapping a word shows its meaning instead of placing it. */
-  translateMode = false;
-  private glossCache = new Map<string, string[]>();
-  get canTranslate(): boolean { return this.glossary.supports(this.settings.learningLanguage()); }
-  /** The words in the chosen row are tappable once the phrase is built or in translate mode. */
-  get showGloss(): boolean { return this.translateMode || (this.stage.kind === 'phrase' && this.stage.done); }
-  toggleTranslate(): void { this.translateMode = !this.translateMode; this.cdr.detectChanges(); }
-  /** The meaning of a word (cached per phrase; only singles, so the order isn't hinted). */
-  glossLines(word: string): string[] {
-    let lines = this.glossCache.get(word);
-    if (!lines) {
-      const context = this.stage.kind === 'phrase' ? this.stage.phrase.tokens : undefined;
-      lines = this.glossary.wordLines(this.settings.learningLanguage(), word, context);
-      this.glossCache.set(word, lines);
-    }
-    return lines;
-  }
-
   private addWordService = inject(AddWordService);
   private flashcards = inject(FlashcardService);
   private actionSheet = inject(ActionSheetController);
@@ -365,7 +343,6 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
     // v2 phrases bring their own distractors (chosen so they never form a
     // second correct answer); legacy phrases draw from the chapter's words.
     this.bank = this.buildBank(phrase.tokens, p.distractors ?? this.journeyWordPool);
-    this.glossCache.clear();
     this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
     this.cdr.detectChanges();
   }
@@ -478,7 +455,6 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
       .flatMap(g => g.words.map(w => w.text))
       .filter(w => w && !/\s/.test(w));
     this.bank = this.buildBank(phrase.tokens, pool);
-    this.glossCache.clear();
     this.stage = { kind: 'phrase', phrase, chosen: [], done: false };
     this.cdr.detectChanges();
   }
@@ -496,9 +472,19 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
     // This avoids flashing red the instant the row fills.
     this.clearWrong();
     const chosen = [...this.stage.chosen, token];
-    this.bank = this.removeFirst(this.bank, token);
     this.stage = { ...this.stage, chosen, done: false };
     this.cdr.detectChanges();
+  }
+
+  /** True when this bank tile is already placed (it stays, greyed out). A word
+   *  that appears twice in the bank is used first-come, first-served. */
+  isUsed(i: number): boolean {
+    if (this.stage.kind !== 'phrase') return false;
+    const w = this.bank[i];
+    const placed = this.stage.chosen.filter(c => c === w).length;
+    let rank = 0;
+    for (let k = 0; k < i; k++) if (this.bank[k] === w) rank++;
+    return rank < placed;
   }
 
   /** True when every slot is filled — enables the Check button. */
@@ -548,8 +534,7 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
     if (this.justDragged) { this.justDragged = false; return; }
     if (index < 0 || index >= this.stage.chosen.length) return;
     const chosen = [...this.stage.chosen];
-    const [removed] = chosen.splice(index, 1);
-    this.bank = [...this.bank, removed];
+    chosen.splice(index, 1);
     this.clearWrong();
     this.stage = { ...this.stage, chosen, done: false };
     this.cdr.detectChanges();
@@ -657,17 +642,18 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
     if (!row) return null;
     const chips = Array.from(row.querySelectorAll<HTMLElement>('.slot:not(.empty)'));
     if (!chips.length) return null;
-    let nearest = 0;
-    let best = Infinity;
+    // The dragged chip follows the pointer, so it always sits under it: ignore
+    // it, otherwise dragging toward higher indexes just "hits" itself.
+    const drag = this.dragIndex;
     for (let i = 0; i < chips.length; i++) {
+      if (i === drag) continue;
       const r = chips[i].getBoundingClientRect();
       if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
-      const cx = r.left + r.width / 2;
-      const cy = r.top + r.height / 2;
-      const d = Math.hypot(x - cx, y - cy);
-      if (d < best) { best = d; nearest = i; }
     }
-    return nearest;
+    // Past the end (right of the last chip on its row, or below it): last slot.
+    const last = chips[chips.length - 1].getBoundingClientRect();
+    if (drag !== chips.length - 1 && (y > last.bottom || (y >= last.top && x > last.right))) return chips.length - 1;
+    return null;
   }
 
   private clearWrong(): void {
@@ -700,10 +686,5 @@ export class BuilderPage implements OnInit, OnDestroy, ViewWillEnter, ViewWillLe
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
-  }
-  private removeFirst(arr: string[], v: string): string[] {
-    const i = arr.indexOf(v);
-    if (i < 0) return arr;
-    return [...arr.slice(0, i), ...arr.slice(i + 1)];
   }
 }

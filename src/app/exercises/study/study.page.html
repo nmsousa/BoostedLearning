@@ -51,7 +51,7 @@
         <!-- The prompt word(s) to translate. The bulb hint button below offers
              help; there's no tap-to-peek on the prompt itself. -->
         <div class="word-row">
-          <h1 class="target-word">{{ promptText }}</h1>
+          <h1 class="target-word"><app-tap-text [text]="promptText" [dir]="currentDirection === 'en-to-target' ? 'native' : 'learning'" [context]="promptContext"></app-tap-text></h1>
         </div>
         <p class="instruction" *ngIf="phase === 'question'">{{ instructionText }}</p>
         <p *ngIf="hintText && phase === 'question'" class="hint-display">

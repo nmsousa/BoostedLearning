@@ -628,6 +628,16 @@ export class StudyPage implements OnInit, OnDestroy, ViewDidEnter, ViewWillEnter
       : this.currentCard.text;             // Show Dutch
   }
 
+  /** Target-language words of the card (context for tapping an English prompt). */
+  get promptContext(): string[] {
+    const text = this.currentCard?.text ?? '';
+    // Cached: a new array each change detection would re-run the tap-text and close its popup.
+    if (text !== this.ctxText) { this.ctxText = text; this.ctxWords = text.split(/\s+/).filter(Boolean); }
+    return this.ctxWords;
+  }
+  private ctxText = '';
+  private ctxWords: string[] = [];
+
   /** The target-language word (e.g. "hij") — always the card's own text. */
   get targetWord(): string {
     return this.currentCard?.text ?? '';

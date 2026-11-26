@@ -56,11 +56,11 @@
     <ng-container *ngIf="item.kind === 'blank'">
       <p class="mix-hint">{{ 'mode.chooseMissingWord' | translate }}</p>
       <div class="mix-sentence">
-        <app-tap-words *ngIf="item.before" class="part" [text]="item.before"></app-tap-words>
+        <app-tap-text *ngIf="item.before" class="part" [text]="item.before"></app-tap-text>
         <span *ngIf="!chosenLabel" class="blank"></span>
         <span *ngIf="chosenLabel" class="blank filled"
           [class.correct]="chosenLabel === item.answer" [class.wrong]="chosenLabel !== item.answer">{{ chosenLabel }}</span>
-        <app-tap-words *ngIf="item.after" class="part" [text]="item.after"></app-tap-words>
+        <app-tap-text *ngIf="item.after" class="part" [text]="item.after"></app-tap-text>
       </div>
       <p class="mix-gloss">{{ item.gloss }}</p>
       <div class="mix-options">
@@ -91,7 +91,7 @@
     <!-- BUILDER: arrange the chips -->
     <ng-container *ngIf="builderItem as b">
       <p class="mix-hint">{{ 'builder.title' | translate }}</p>
-      <p class="mix-gloss">{{ b.gloss }}</p>
+      <p class="mix-gloss"><app-tap-text [text]="b.gloss" dir="native" [context]="b.tokens"></app-tap-text></p>
       <div class="mix-slots" [class.wrong]="builderResult === 'wrong'" [class.correct]="builderResult === 'correct'">
         <button *ngFor="let w of builderChosen; let i = index" type="button" class="slot"
           [disabled]="answered" (click)="builderUnpick(i)">{{ w }}</button>

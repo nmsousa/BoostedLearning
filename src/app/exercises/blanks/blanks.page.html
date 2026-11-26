@@ -35,11 +35,11 @@
          FILLS the blank (coloured by correctness) so they can read the whole
          sentence before the next question. -->
     <div class="blanks-sentence">
-      <app-tap-words *ngIf="current.before" class="part" [text]="current.before"></app-tap-words>
+      <app-tap-text *ngIf="current.before" class="part" [text]="current.before"></app-tap-text>
       <span *ngIf="!chosenLabel" class="blank" aria-label="blank"></span>
       <span *ngIf="chosenLabel" class="blank filled"
         [class.correct]="chosenCorrect" [class.wrong]="!chosenCorrect">{{ chosenLabel }}</span>
-      <app-tap-words *ngIf="current.after" class="part" [text]="current.after"></app-tap-words>
+      <app-tap-text *ngIf="current.after" class="part" [text]="current.after"></app-tap-text>
     </div>
     <p class="blanks-gloss">{{ current.gloss }}</p>
 

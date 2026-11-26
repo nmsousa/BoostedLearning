@@ -412,13 +412,25 @@ ion-button.admin-ctl {
 /* Rules text is pre-formatted (one rule per line). */
 .rules-alert .alert-message { white-space: pre-line; text-align: left; font-size: 0.9rem; line-height: 1.45; }
 
-/* Tap-to-translate: the one "Word meanings" toggle in the Builders (no icon on each word). */
-.tw-toggle {
-  display: inline-flex; align-items: center; gap: 6px; align-self: center;
-  padding: 6px 13px; border-radius: 999px; cursor: pointer;
-  font-size: 0.8rem; font-weight: 700; color: var(--ion-color-medium);
-  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14);
-  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
-  ion-icon { font-size: 16px; }
-  &.on { color: #c8f3de; background: rgba(90, 209, 155, 0.16); border-color: rgba(90, 209, 155, 0.45); }
+/* ── Tap-to-translate popup (one at a time; created by TapPopupService) ─────────
+   A small dark-green bubble with an arrow pointing at the middle of the tapped
+   word or block. pointer-events: none, so it never blocks a tap. */
+.tp-popup {
+  position: fixed; z-index: 100000; box-sizing: border-box; pointer-events: none;
+  max-width: min(16rem, calc(100vw - 16px)); padding: 7px 12px; border-radius: 10px;
+  font-size: 0.84rem; line-height: 1.3; text-align: left; font-weight: 600; color: #d4f7e6;
+  background: #1c3a33; border: 1px solid rgba(90, 209, 155, 0.5); box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+  opacity: 0; transform: translateY(var(--tp-shift, 0px));
+  transition: opacity 120ms ease, transform 120ms ease;
+  &.tp-in { opacity: 1; transform: none; }
+  &.tp-above { --tp-shift: 4px; }
+  &.tp-below { --tp-shift: -4px; }
+  .tp-line + .tp-line { margin-top: 3px; font-weight: 500; opacity: 0.8; }
+  .tp-arrow {
+    position: absolute; left: var(--tp-arrow-x, 50%); width: 10px; height: 10px; margin-left: -5px;
+    background: #1c3a33; transform: rotate(45deg);
+  }
+  &.tp-below .tp-arrow { top: -6px; border-left: 1px solid rgba(90, 209, 155, 0.5); border-top: 1px solid rgba(90, 209, 155, 0.5); }
+  &.tp-above .tp-arrow { bottom: -6px; border-right: 1px solid rgba(90, 209, 155, 0.5); border-bottom: 1px solid rgba(90, 209, 155, 0.5); }
 }
+.reduced-motion .tp-popup { transition: none; }
